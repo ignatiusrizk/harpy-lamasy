@@ -1,0 +1,39 @@
+name: Diagnose 500 error
+
+on:
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - name: SSH and inspect logs
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          port: ${{ secrets.SSH_PORT }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            APP=~/domains/harpy.id/public_html/lamasy
+            echo "=== Last 50 lines of PHP error log (lamasy folder) ==="
+            tail -50 $APP/error_log 2>/dev/null || echo "no error_log here"
+            echo ""
+            echo "=== Hostinger error log ==="
+            tail -80 ~/.logs/*.log 2>/dev/null | tail -80 || echo "no .logs"
+            echo ""
+            echo "=== Find any error_log file in domain ==="
+            find ~/domains/harpy.id -name "error_log" -mtime -1 2>/dev/null | head -5
+            echo ""
+            echo "=== Check db.php exists & APP_URL ==="
+            ls -la $APP/master/config/db.php 2>/dev/null || echo "MISSING db.php!"
+            grep -E "APP_URL|DB_NAME" $APP/master/config/db.php 2>/dev/null
+            echo ""
+            echo "=== Check core/Database.php first lines ==="
+            head -20 $APP/core/Database.php
+            echo ""
+            echo "=== login.php first 30 lines ==="
+            head -30 $APP/login.php
+            echo ""
+            echo "=== File permissions check ==="
+            ls -la $APP/login.php $APP/index.php $APP/.htaccess
