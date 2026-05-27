@@ -1,7 +1,7 @@
 <?php
 // ══════════════════════════════════════════════════════
 // verify-email.php — Verifikasi token email
-// URL: /lamasy/verify-email.php?token=XXXX
+// URL: /verify-email.php?token=XXXX
 // ══════════════════════════════════════════════════════
 
 session_start();
@@ -88,7 +88,7 @@ $tenantId    = $result['tenant_id'] ?? 0;
     <h1>Email Terverifikasi!</h1>
     <p>Akun LAMASY kamu sudah aktif. Selamat menggunakan platform manajemen laundry terbaik!<br>
     Kami juga sudah kirim email sambutan ke kotak masuk kamu.</p>
-    <a href="/lamasy/login.php" class="btn btn-primary">🚀 Login Sekarang</a>
+    <a href="/login.php" class="btn btn-primary">🚀 Login Sekarang</a>
 
   <?php elseif ($expired): ?>
     <div class="icon">⏰</div>
@@ -97,14 +97,14 @@ $tenantId    = $result['tenant_id'] ?? 0;
     <p>Link verifikasi ini sudah tidak berlaku (expired setelah 24 jam).<br>
     Minta kirim ulang untuk mendapatkan link baru.</p>
     <?php if ($tenantId): ?>
-      <form method="POST" action="/lamasy/resend-verify.php" style="display:inline">
+      <form method="POST" action="/resend-verify.php" style="display:inline">
         <input type="hidden" name="tenant_id" value="<?= (int)$tenantId ?>">
         <button type="submit" class="btn btn-primary">📨 Kirim Ulang Verifikasi</button>
       </form>
     <?php else: ?>
-      <a href="/lamasy/register.php" class="btn btn-primary">Daftar Ulang</a>
+      <a href="/register.php" class="btn btn-primary">Daftar Ulang</a>
     <?php endif; ?>
-    <a href="/lamasy/login.php" class="btn btn-outline">Sudah punya akun</a>
+    <a href="/login.php" class="btn btn-outline">Sudah punya akun</a>
 
   <?php elseif ($alreadyUsed): ?>
     <div class="icon">ℹ️</div>
@@ -112,15 +112,15 @@ $tenantId    = $result['tenant_id'] ?? 0;
     <h1>Link Sudah Digunakan</h1>
     <p>Email kamu sudah terverifikasi sebelumnya.<br>
     Silakan login langsung.</p>
-    <a href="/lamasy/login.php" class="btn btn-primary">Login Sekarang</a>
+    <a href="/login.php" class="btn btn-primary">Login Sekarang</a>
 
   <?php else: ?>
     <div class="icon">❌</div>
     <div class="badge">Verifikasi Gagal</div>
     <h1>Verifikasi Gagal</h1>
     <p><?= htmlspecialchars($message) ?></p>
-    <a href="/lamasy/register.php" class="btn btn-primary">Daftar Baru</a>
-    <a href="/lamasy/login.php" class="btn btn-outline">Login</a>
+    <a href="/register.php" class="btn btn-primary">Daftar Baru</a>
+    <a href="/login.php" class="btn btn-outline">Login</a>
   <?php endif; ?>
 
   <p style="margin-top:32px;font-size:12px;color:rgba(255,255,255,.3)">

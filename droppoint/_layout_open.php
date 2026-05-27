@@ -60,7 +60,7 @@ body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:#F4F7FB;col
 <div class="mt-top">
   <div class="mt-top-row">
     <div class="mt-brand">📦 <?= mitraEsc($_namaMitra) ?> <small>Drop Point · <?= mitraEsc($_userNama) ?></small></div>
-    <a href="/lamasy/logout.php" class="mt-logout" onclick="return confirm('Logout?')">Keluar</a>
+    <a href="/logout.php" class="mt-logout" onclick="return confirm('Logout?')">Keluar</a>
   </div>
 </div>
 <main class="mt-main">

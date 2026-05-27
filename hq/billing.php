@@ -204,7 +204,7 @@ async function loadMonitor(){
   const start = document.getElementById('fStart').value;
   const end = document.getElementById('fEnd').value;
   try {
-    const r = await fetch(`/lamasy/hq/billing.php?action=monitor&start=${start}&end=${end}`);
+    const r = await fetch(`/hq/billing.php?action=monitor&start=${start}&end=${end}`);
     const d = await r.json();
     if (d.error){ document.getElementById('outletBox').innerHTML = `<div class="empty">⚠️ ${esc(d.error)}</div>`; return; }
     renderOutlets(d.by_outlet);
@@ -262,7 +262,7 @@ function openBudget(oid, nama, cur){
 }
 async function saveBudget(){
   const body = {outlet_id: document.getElementById('bdOutlet').value, budget: document.getElementById('bdBudget').value};
-  const r = await fetch('/lamasy/hq/billing.php?action=set_budget', {method:'POST', body:JSON.stringify(body)});
+  const r = await fetch('/hq/billing.php?action=set_budget', {method:'POST', body:JSON.stringify(body)});
   const d = await r.json();
   if (d.error){ alert('⚠️ '+d.error); return; }
   closeModal('budgetModal'); loadMonitor();
@@ -275,7 +275,7 @@ async function doTransfer(){
     from: document.getElementById('trFrom').value, to: document.getElementById('trTo').value,
     amount: document.getElementById('trAmount').value, desc: document.getElementById('trDesc').value,
   };
-  const r = await fetch('/lamasy/hq/billing.php?action=transfer', {method:'POST', body:JSON.stringify(body)});
+  const r = await fetch('/hq/billing.php?action=transfer', {method:'POST', body:JSON.stringify(body)});
   const d = await r.json();
   if (d.error){ alert('⚠️ '+d.error); return; }
   alert('✅ Transfer berhasil!');

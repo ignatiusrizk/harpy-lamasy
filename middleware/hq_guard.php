@@ -29,9 +29,9 @@ require_once ROOT . '/core/TenantResolver.php';
 if (empty($_SESSION['user_id']) || empty($_SESSION['tenant_id'])) {
     if (!empty($_GET['action']) || !empty($_SERVER['HTTP_X_REQUESTED_WITH'])) {
         header('Content-Type: application/json');
-        echo json_encode(['error'=>'Sesi habis. Silakan login kembali.', 'redirect'=>'/lamasy/login.php']);
+        echo json_encode(['error'=>'Sesi habis. Silakan login kembali.', 'redirect'=>'/login.php']);
     } else {
-        header('Location: /lamasy/login.php?msg=not_logged_in');
+        header('Location: /login.php?msg=not_logged_in');
     }
     exit;
 }
@@ -44,9 +44,9 @@ if (isset($_SESSION['hl_last_activity'])
     session_destroy();
     if (!empty($_GET['action']) || !empty($_SERVER['HTTP_X_REQUESTED_WITH'])) {
         header('Content-Type: application/json');
-        echo json_encode(['error'=>'Sesi habis. Silakan login kembali.', 'redirect'=>'/lamasy/login.php']);
+        echo json_encode(['error'=>'Sesi habis. Silakan login kembali.', 'redirect'=>'/login.php']);
     } else {
-        header('Location: /lamasy/login.php?msg=session_expired');
+        header('Location: /login.php?msg=session_expired');
     }
     exit;
 }
@@ -54,7 +54,7 @@ if (isset($_SESSION['hl_login_time'])
     && defined('SESSION_LIFETIME')
     && ($_now - $_SESSION['hl_login_time'] > SESSION_LIFETIME)) {
     session_destroy();
-    header('Location: /lamasy/login.php?msg=session_expired');
+    header('Location: /login.php?msg=session_expired');
     exit;
 }
 $_SESSION['hl_last_activity'] = $_now;
@@ -68,18 +68,18 @@ $hqTenant = $_stmt->fetch();
 
 if (!$hqTenant) {
     session_destroy();
-    header('Location: /lamasy/login.php?error=tenant_not_found');
+    header('Location: /login.php?error=tenant_not_found');
     exit;
 }
 
 // ── Tenant status check ───────────────────────────────
 if ($hqTenant['status'] === 'pending_verification') {
-    header('Location: /lamasy/pending-verify.php');
+    header('Location: /pending-verify.php');
     exit;
 }
 
 if (in_array($hqTenant['status'], ['suspended', 'closed'])) {
-    header('Location: /lamasy/account-suspended.php');
+    header('Location: /account-suspended.php');
     exit;
 }
 
@@ -92,7 +92,7 @@ if (!in_array($hqRole, ['owner', 'manager', 'superadmin'])) {
     die('<div style="font-family:sans-serif;padding:60px;text-align:center;background:#0F1C3A;color:#fff;min-height:100vh">
         <h2 style="color:#35E8D5">🔒 Akses HQ Ditolak</h2>
         <p style="color:rgba(255,255,255,.6)">HQ view hanya untuk Owner & Manager.</p>
-        <a href="/lamasy/dashboard.php" style="color:#35E8D5">← Kembali ke Dashboard</a>
+        <a href="/dashboard.php" style="color:#35E8D5">← Kembali ke Dashboard</a>
     </div>');
 }
 

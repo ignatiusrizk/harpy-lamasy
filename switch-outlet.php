@@ -11,7 +11,7 @@ define('ROOT', __DIR__);
 if (session_status() === PHP_SESSION_NONE) session_start();
 
 if (empty($_SESSION['user_id']) || empty($_SESSION['tenant_id'])) {
-    header('Location: /lamasy/login.php?msg=not_logged_in');
+    header('Location: /login.php?msg=not_logged_in');
     exit;
 }
 
@@ -23,7 +23,7 @@ $outletId = (int)($_GET['id'] ?? 0);
 $tenantId = (int)$_SESSION['tenant_id'];
 
 if ($outletId <= 0) {
-    header('Location: /lamasy/dashboard.php');
+    header('Location: /dashboard.php');
     exit;
 }
 
@@ -39,7 +39,7 @@ $outlet = $stmt->fetch();
 
 if (!$outlet) {
     // Outlet tidak ditemukan / bukan milik tenant ini / status tidak valid
-    header('Location: /lamasy/dashboard.php?switch_error=invalid_outlet');
+    header('Location: /dashboard.php?switch_error=invalid_outlet');
     exit;
 }
 
@@ -49,5 +49,5 @@ $_SESSION['has_outlet'] = true;
 $_SESSION['hq_mode']    = false;
 TenantResolver::reset();
 
-header('Location: /lamasy/dashboard.php?switched=1');
+header('Location: /dashboard.php?switched=1');
 exit;

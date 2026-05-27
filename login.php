@@ -458,7 +458,7 @@ input[type="password"]:focus {
 
 <div class="login-card">
   <div class="login-logo">
-    <div style="margin-bottom:14px;"><img src="/lamasy/assets/logo.png" alt="LAMASY" style="height:60px;"></div>
+    <div style="margin-bottom:14px;"><img src="/assets/logo.png" alt="LAMASY" style="height:60px;"></div>
     <h1>LAMASY</h1>
     <p>Laundry Management System</p>
   </div>

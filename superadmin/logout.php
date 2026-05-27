@@ -21,5 +21,5 @@ if (!empty($_SESSION['superadmin_id'])) {
 session_unset();
 session_destroy();
 
-header('Location: /lamasy/superadmin/login.php?msg=logout');
+header('Location: /superadmin/login.php?msg=logout');
 exit;

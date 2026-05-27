@@ -25,7 +25,7 @@ if ($tenantId) {
         $tenantEmail = $t['email'] ?? '';
     } else {
         // Tidak suspended → kembalikan ke dashboard
-        header('Location: /lamasy/dashboard.php');
+        header('Location: /dashboard.php');
         exit;
     }
 }
@@ -90,7 +90,7 @@ $waMessage    = urlencode("Halo Tim LAMASY, akun saya ($tenantEmail) statusnya s
     </a>
   </div>
 
-  <a href="/lamasy/logout.php" class="btn btn-logout">Logout</a>
+  <a href="/logout.php" class="btn btn-logout">Logout</a>
 </div>
 </body>
 </html>

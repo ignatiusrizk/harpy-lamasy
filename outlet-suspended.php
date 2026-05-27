@@ -15,7 +15,7 @@ $tenantId = (int)($_SESSION['tenant_id'] ?? 0);
 $outletId = (int)($_SESSION['outlet_id'] ?? 0);
 
 if (!$tenantId || !$outletId) {
-    header('Location: /lamasy/login.php');
+    header('Location: /login.php');
     exit;
 }
 
@@ -29,7 +29,7 @@ $outlet = $stmt->fetch();
 
 if (!$outlet || $outlet['status'] !== 'suspended') {
     // Outlet tidak suspended → balik ke dashboard
-    header('Location: /lamasy/dashboard.php');
+    header('Location: /dashboard.php');
     exit;
 }
 
@@ -146,7 +146,7 @@ $waMsg     = urlencode("Halo Tim LAMASY, saya mau aktivasi ulang outlet '" . ($o
   <a href="add-outlet.php" class="btn btn-secondary" style="margin-top:14px">
     🏪 Buat Outlet Baru
   </a>
-  <a href="/lamasy/logout.php" class="btn btn-link">Logout</a>
+  <a href="/logout.php" class="btn btn-link">Logout</a>
 </div>
 </body>
 </html>

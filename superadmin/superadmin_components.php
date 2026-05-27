@@ -13,7 +13,7 @@ function saRenderHead(string $title = 'Super Admin'): void {
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/lamasy/harpy-erp.css?v=<?= date('Ymd') ?>">
+    <link rel="stylesheet" href="/harpy-erp.css?v=<?= date('Ymd') ?>">
     <style>
     :root {
       --sa: #6366F1;
@@ -368,7 +368,7 @@ function saRenderNav(string $activePage = '', string $pageTitle = ''): void {
 
     <aside class="sa-sidebar" id="saSidebar">
       <div class="sa-sidebar-brand">
-        <img src="/lamasy/assets/logo.png" alt="LAMASY" style="height:28px; flex-shrink:0;">
+        <img src="/assets/logo.png" alt="LAMASY" style="height:28px; flex-shrink:0;">
         <div class="brand-text">
           LAMASY <span style="color:var(--sa)">Admin</span>
           <small>Super Admin Panel</small>
@@ -377,29 +377,29 @@ function saRenderNav(string $activePage = '', string $pageTitle = ''): void {
 
       <nav class="sa-sidebar-nav">
         <div class="sa-nav-section">Platform</div>
-        <a href="/lamasy/superadmin/dashboard.php" class="sa-nav-link <?= $activePage === 'dashboard' ? 'active' : '' ?>">
+        <a href="/superadmin/dashboard.php" class="sa-nav-link <?= $activePage === 'dashboard' ? 'active' : '' ?>">
           <span class="icon">🏠</span> Dashboard
         </a>
-        <a href="/lamasy/superadmin/clients.php" class="sa-nav-link <?= $activePage === 'clients' ? 'active' : '' ?>">
+        <a href="/superadmin/clients.php" class="sa-nav-link <?= $activePage === 'clients' ? 'active' : '' ?>">
           <span class="icon">🏪</span> Clients
         </a>
 
         <div class="sa-nav-section">CS & Growth</div>
-        <a href="/lamasy/superadmin/registrations.php" class="sa-nav-link <?= $activePage === 'registrations' ? 'active' : '' ?>">
+        <a href="/superadmin/registrations.php" class="sa-nav-link <?= $activePage === 'registrations' ? 'active' : '' ?>">
           <span class="icon">&#x1F4DD;</span> Registrasi
         </a>
-        <a href="/lamasy/superadmin/onboarding.php" class="sa-nav-link <?= $activePage === 'onboarding' ? 'active' : '' ?>">
+        <a href="/superadmin/onboarding.php" class="sa-nav-link <?= $activePage === 'onboarding' ? 'active' : '' ?>">
           <span class="icon">&#x1F680;</span> Onboarding
         </a>
-        <a href="/lamasy/superadmin/churn_risk.php" class="sa-nav-link <?= $activePage === 'churn_risk' ? 'active' : '' ?>">
+        <a href="/superadmin/churn_risk.php" class="sa-nav-link <?= $activePage === 'churn_risk' ? 'active' : '' ?>">
           <span class="icon">⚠️</span> Churn Risk
         </a>
-        <a href="/lamasy/superadmin/broadcast.php" class="sa-nav-link <?= $activePage === 'broadcast' ? 'active' : '' ?>">
+        <a href="/superadmin/broadcast.php" class="sa-nav-link <?= $activePage === 'broadcast' ? 'active' : '' ?>">
           <span class="icon">📣</span> Broadcast
         </a>
 
         <div class="sa-nav-section">Finance</div>
-        <a href="/lamasy/superadmin/billing.php" class="sa-nav-link <?= $activePage === 'billing' ? 'active' : '' ?>">
+        <a href="/superadmin/billing.php" class="sa-nav-link <?= $activePage === 'billing' ? 'active' : '' ?>">
           <span class="icon">💳</span> Billing
         </a>
       </nav>
@@ -409,7 +409,7 @@ function saRenderNav(string $activePage = '', string $pageTitle = ''): void {
           <strong><?= htmlspecialchars($admin['name'] ?? 'Admin') ?></strong>
           <?= htmlspecialchars($admin['username'] ?? '') ?>
         </div>
-        <a href="/lamasy/superadmin/logout.php" class="sa-logout-btn"
+        <a href="/superadmin/logout.php" class="sa-logout-btn"
            onclick="return confirm('Yakin logout?')">🚪 Logout</a>
       </div>
     </aside>
@@ -422,7 +422,7 @@ function saRenderNav(string $activePage = '', string $pageTitle = ''): void {
         </div>
         <div class="sa-topbar-right">
           <span><?= htmlspecialchars($admin['name'] ?? '') ?></span>
-          <a href="/lamasy/superadmin/logout.php" style="color:#FCA5A5;font-size:12px;text-decoration:none;"
+          <a href="/superadmin/logout.php" style="color:#FCA5A5;font-size:12px;text-decoration:none;"
              onclick="return confirm('Yakin logout?')">Logout</a>
         </div>
       </div>

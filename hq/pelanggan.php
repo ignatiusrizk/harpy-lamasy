@@ -460,7 +460,7 @@ function isNewThisMonth(createdAt){
 
 async function loadSegmentStats(){
   try {
-    const r = await fetch('/lamasy/hq/pelanggan.php?action=segment_stats');
+    const r = await fetch('/hq/pelanggan.php?action=segment_stats');
     const s = await r.json();
     document.getElementById('cnt-all').textContent     = s.all || 0;
     document.getElementById('cnt-new').textContent     = s.new || 0;
@@ -485,7 +485,7 @@ async function loadSegmentStats(){
 async function loadList(){
   const q     = document.getElementById('searchInput').value;
   const sort  = document.getElementById('sortBy').value;
-  const url = '/lamasy/hq/pelanggan.php?action=list&q=' + encodeURIComponent(q)
+  const url = '/hq/pelanggan.php?action=list&q=' + encodeURIComponent(q)
     + '&segment=' + encodeURIComponent(currentSegment)
     + '&sort=' + encodeURIComponent(sort);
   const r = await fetch(url);
@@ -521,7 +521,7 @@ async function loadList(){
 }
 
 async function showDetail(id){
-  const r = await fetch('/lamasy/hq/pelanggan.php?action=detail&id=' + id);
+  const r = await fetch('/hq/pelanggan.php?action=detail&id=' + id);
   const d = await r.json();
   if (d.error) { alert(d.error); return; }
   const p = d.pelanggan;
@@ -591,7 +591,7 @@ async function showDetail(id){
 
 async function openEdit(id){
   closeModal('detailModal');
-  const r = await fetch('/lamasy/hq/pelanggan.php?action=detail&id=' + id);
+  const r = await fetch('/hq/pelanggan.php?action=detail&id=' + id);
   const d = await r.json();
   if (d.error) { alert(d.error); return; }
   const p = d.pelanggan;
@@ -620,7 +620,7 @@ async function submitEdit(){
   };
   if (!data.nama) { alertEl.innerHTML = '<div class="alert error">Nama wajib diisi</div>'; return; }
 
-  const r = await fetch('/lamasy/hq/pelanggan.php?action=update', {
+  const r = await fetch('/hq/pelanggan.php?action=update', {
     method:'POST',
     headers:{'Content-Type':'application/json','X-CSRF-TOKEN':csrf},
     body: JSON.stringify(data),

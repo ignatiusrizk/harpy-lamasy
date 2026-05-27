@@ -251,7 +251,7 @@ function provisionTenant(array $wizard): array
         $db->commit();
 
         $waMsg = "Halo *{$wizard['owner_name']}*\n\nSelamat datang di *Harpy Laundry ERP*!\n\nAkun Anda sudah aktif:\n\n"
-            . "Link Login: https://harpy.id/lamasy/login.php\n"
+            . "Link Login: https://harpy.id/login.php\n"
             . "Username: *{$username}*\n"
             . "Password: *{$password}*\n\n"
             . "Silakan login dan mulai setup outlet Anda.\n"
@@ -673,7 +673,7 @@ $csrf = saGetCsrf();
         <div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:10px;">Kredensial Login (tampil sekali)</div>
         <div class="cred-row">
           <span class="cred-key">URL Login</span>
-          <span class="cred-value">harpy.id/lamasy/login.php</span>
+          <span class="cred-value">harpy.id/login.php</span>
         </div>
         <div class="cred-row">
           <span class="cred-key">Username</span>

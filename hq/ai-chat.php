@@ -231,7 +231,7 @@ async function submitQ() {
   try {
     const fd = new FormData();
     fd.append('question', q);
-    const r = await fetch('/lamasy/hq/ai-chat.php?action=ask', { method: 'POST', body: fd });
+    const r = await fetch('/hq/ai-chat.php?action=ask', { method: 'POST', body: fd });
     const d = await r.json();
     removeTyping();
     qSubmit.disabled = false;

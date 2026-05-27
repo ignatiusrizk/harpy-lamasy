@@ -267,7 +267,7 @@ require __DIR__ . '/_layout_open.php';
     <h1>🏪 Manajemen Outlet
       <small>Kelola semua cabang · <?= htmlspecialchars($tenantNm) ?></small>
     </h1>
-    <?php if ($hqCanManageOutlet): ?><a href="/lamasy/add-outlet.php" class="btn btn-primary">+ Tambah Outlet Baru</a><?php endif; ?>
+    <?php if ($hqCanManageOutlet): ?><a href="/add-outlet.php" class="btn btn-primary">+ Tambah Outlet Baru</a><?php endif; ?>
   </div>
 
   <div class="summary-bar">
@@ -367,7 +367,7 @@ function fmtDate(s){if(!s)return null;const d=new Date(s);return d.toLocaleDateS
 function daysUntil(s){if(!s)return null;const diff=new Date(s).getTime()-Date.now();return Math.ceil(diff/86400000)}
 
 async function loadList(){
-  const r = await fetch('/lamasy/hq/outlet.php?action=list');
+  const r = await fetch('/hq/outlet.php?action=list');
   const rows = await r.json();
   document.getElementById('outletCountInfo').innerHTML =
     `<strong>${rows.length}</strong> total outlet (` +
@@ -376,7 +376,7 @@ async function loadList(){
   if (rows.length === 0) {
     document.getElementById('outletList').innerHTML =
       '<div style="text-align:center;padding:48px;background:#fff;border-radius:14px;color:#6B7280">' +
-      '<div style="font-size:48px">🏪</div><p>Belum ada outlet. <a href="/lamasy/add-outlet.php" style="color:#0891B2;font-weight:700">Tambah outlet pertama →</a></p>' +
+      '<div style="font-size:48px">🏪</div><p>Belum ada outlet. <a href="/add-outlet.php" style="color:#0891B2;font-weight:700">Tambah outlet pertama →</a></p>' +
       '</div>';
     return;
   }
@@ -429,7 +429,7 @@ async function loadList(){
         </div>
         <div class="ocard-coin">${coinShow}</div>
         <div class="ocard-actions">
-          ${canEnter ? `<a href="/lamasy/switch-outlet.php?id=${o.id}" class="btn btn-primary btn-sm">Masuk →</a>` : ''}
+          ${canEnter ? `<a href="/switch-outlet.php?id=${o.id}" class="btn btn-primary btn-sm">Masuk →</a>` : ''}
           ${!isClosed ? `<button class="btn btn-light btn-sm" onclick="openEdit(${o.id})">✏️ Edit</button>` : ''}
           ${topupBtn}
         </div>
@@ -439,7 +439,7 @@ async function loadList(){
 }
 
 async function openEdit(id){
-  const r = await fetch('/lamasy/hq/outlet.php?action=detail&id=' + id);
+  const r = await fetch('/hq/outlet.php?action=detail&id=' + id);
   const d = await r.json();
   if (d.error) { alert(d.error); return; }
   const o = d.outlet;
@@ -478,7 +478,7 @@ async function submitEdit(){
   }
   if (!data.nama_outlet) { alertEl.innerHTML = '<div class="alert error">Nama outlet wajib diisi</div>'; return; }
 
-  const r = await fetch('/lamasy/hq/outlet.php?action=update', {
+  const r = await fetch('/hq/outlet.php?action=update', {
     method:'POST',
     headers:{'Content-Type':'application/json','X-CSRF-TOKEN':csrf},
     body: JSON.stringify(data),

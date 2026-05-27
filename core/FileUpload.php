@@ -59,10 +59,10 @@ class FileUpload
         return false;
     }
 
-    /** URL untuk akses public (relative ke web root /lamasy/) */
+    /** URL untuk akses public (relative ke web root /) */
     public static function publicUrl(?string $relativePath): string
     {
         if (!$relativePath) return '';
-        return '/lamasy/' . ltrim($relativePath, '/');
+        return '/' . ltrim($relativePath, '/');
     }
 }

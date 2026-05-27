@@ -255,7 +255,7 @@ const OUTLETS = <?= json_encode($outletList) ?>;
 async function loadList(){
   const wrap = document.getElementById('lynListWrap');
   try {
-    const r = await fetch('/lamasy/hq/layanan.php?action=list');
+    const r = await fetch('/hq/layanan.php?action=list');
     const d = await r.json();
     if (d.error) { wrap.innerHTML = `<div class="empty"><div class="ico">⚠️</div>${esc(d.error)}</div>`; return; }
     if (!d.master || d.master.length === 0) {
@@ -338,7 +338,7 @@ async function saveMaster(){
   fd.append('allow_override', document.getElementById('fAllowOverride').checked ? 1 : 0);
   fd.append('override_max_pct', document.getElementById('fOverridePct').value);
   try {
-    const r = await fetch('/lamasy/hq/layanan.php?action=save', {method:'POST', body:fd});
+    const r = await fetch('/hq/layanan.php?action=save', {method:'POST', body:fd});
     const d = await r.json();
     if (d.error) { alert('⚠️ ' + d.error); return; }
     closeModal('formModal');
@@ -351,7 +351,7 @@ async function delMaster(id, nama){
   const fd = new FormData();
   fd.append('id', id); fd.append('remove_outlets', 1);
   try {
-    const r = await fetch('/lamasy/hq/layanan.php?action=delete', {method:'POST', body:fd});
+    const r = await fetch('/hq/layanan.php?action=delete', {method:'POST', body:fd});
     const d = await r.json();
     if (d.error) { alert('⚠️ ' + d.error); return; }
     loadList();
@@ -383,7 +383,7 @@ async function doPush(){
   ids.forEach(id => fd.append('outlet_ids[]', id));
   fd.append('overwrite_overrides', document.getElementById('pushOverwrite').checked ? 1 : 0);
   try {
-    const r = await fetch('/lamasy/hq/layanan.php?action=push', {method:'POST', body:fd});
+    const r = await fetch('/hq/layanan.php?action=push', {method:'POST', body:fd});
     const d = await r.json();
     if (d.error) { alert('⚠️ ' + d.error); return; }
     const res = d.result;

@@ -31,8 +31,8 @@ $_canSwitch = !empty($hqIsOwner) || !empty($hqIsManager);
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/lamasy/harpy-erp.css?v=<?= @filemtime(dirname(__DIR__).'/harpy-erp.css') ?: date('Ymd') ?>">
-  <link rel="stylesheet" href="/lamasy/harpy-hq.css?v=<?= @filemtime(dirname(__DIR__).'/harpy-hq.css') ?: date('Ymd') ?>">
+  <link rel="stylesheet" href="/harpy-erp.css?v=<?= @filemtime(dirname(__DIR__).'/harpy-erp.css') ?: date('Ymd') ?>">
+  <link rel="stylesheet" href="/harpy-hq.css?v=<?= @filemtime(dirname(__DIR__).'/harpy-hq.css') ?: date('Ymd') ?>">
   <?php if (function_exists('getCsrfToken')): ?>
   <meta name="csrf-token" content="<?= htmlspecialchars(getCsrfToken()) ?>">
   <?php endif; ?>
@@ -54,19 +54,19 @@ $_canSwitch = !empty($hqIsOwner) || !empty($hqIsManager);
     <nav class="hq-side-nav">
       <div class="hq-side-label">Eksekutif</div>
 
-      <a href="/lamasy/dashboard.php?to=hq"
+      <a href="/dashboard.php?to=hq"
          class="hq-side-link <?= $_aPage === 'hq-dashboard' ? 'active' : '' ?>">
         <span class="ico">📊</span> Dashboard
       </a>
-      <a href="/lamasy/hq/outlet.php"
+      <a href="/hq/outlet.php"
          class="hq-side-link <?= $_aPage === 'hq-outlet' ? 'active' : '' ?>">
         <span class="ico">🏪</span> Outlet
       </a>
-      <a href="/lamasy/hq/droppoint.php"
+      <a href="/hq/droppoint.php"
          class="hq-side-link <?= $_aPage === 'hq-droppoint' ? 'active' : '' ?>">
         <span class="ico">📦</span> Drop Point
       </a>
-      <a href="/lamasy/hq/layanan.php"
+      <a href="/hq/layanan.php"
          class="hq-side-link <?= $_aPage === 'hq-layanan' ? 'active' : '' ?>">
         <span class="ico">🧺</span> Layanan & Harga
       </a>
@@ -82,15 +82,15 @@ $_canSwitch = !empty($hqIsOwner) || !empty($hqIsManager);
           <span class="arr">▼</span>
         </button>
         <div class="hq-side-submenu">
-          <a href="/lamasy/hq/karyawan.php"
+          <a href="/hq/karyawan.php"
              class="hq-side-link <?= $_aPage === 'hq-karyawan' ? 'active' : '' ?>">Karyawan</a>
-          <a href="/lamasy/hq/mutasi.php"
+          <a href="/hq/mutasi.php"
              class="hq-side-link <?= $_aPage === 'hq-mutasi' ? 'active' : '' ?>">Riwayat Mutasi</a>
-          <a href="/lamasy/hq/sdm.php"
+          <a href="/hq/sdm.php"
              class="hq-side-link <?= $_aPage === 'hq-sdm' ? 'active' : '' ?>">SDM Analytics</a>
-          <a href="/lamasy/hq/penggajian.php"
+          <a href="/hq/penggajian.php"
              class="hq-side-link <?= $_aPage === 'hq-penggajian' ? 'active' : '' ?>">Penggajian</a>
-          <a href="/lamasy/hq/roles.php"
+          <a href="/hq/roles.php"
              class="hq-side-link <?= $_aPage === 'hq-roles' ? 'active' : '' ?>">Role & Akses</a>
         </div>
       </div>
@@ -103,9 +103,9 @@ $_canSwitch = !empty($hqIsOwner) || !empty($hqIsManager);
           <span class="arr">▼</span>
         </button>
         <div class="hq-side-submenu">
-          <a href="/lamasy/hq/pelanggan.php"
+          <a href="/hq/pelanggan.php"
              class="hq-side-link <?= $_aPage === 'hq-pelanggan' ? 'active' : '' ?>">Pelanggan</a>
-          <a href="/lamasy/hq/promo.php"
+          <a href="/hq/promo.php"
              class="hq-side-link <?= $_aPage === 'hq-promo' ? 'active' : '' ?>">Promo & Voucher</a>
         </div>
       </div>
@@ -113,23 +113,23 @@ $_canSwitch = !empty($hqIsOwner) || !empty($hqIsManager);
       <div class="hq-side-divider"></div>
       <div class="hq-side-label">Analitik</div>
 
-      <a href="/lamasy/hq/laporan.php"
+      <a href="/hq/laporan.php"
          class="hq-side-link <?= $_aPage === 'hq-laporan' ? 'active' : '' ?>">
         <span class="ico">📈</span> Laporan
       </a>
-      <a href="/lamasy/hq/billing.php"
+      <a href="/hq/billing.php"
          class="hq-side-link <?= $_aPage === 'hq-billing' ? 'active' : '' ?>">
         <span class="ico">💳</span> Coin & Billing
       </a>
-      <a href="/lamasy/hq/checklist.php"
+      <a href="/hq/checklist.php"
          class="hq-side-link <?= $_aPage === 'hq-checklist' ? 'active' : '' ?>">
         <span class="ico">✅</span> Checklist
       </a>
-      <a href="/lamasy/hq/broadcast.php"
+      <a href="/hq/broadcast.php"
          class="hq-side-link <?= $_aPage === 'hq-broadcast' ? 'active' : '' ?>">
         <span class="ico">📢</span> Broadcast
       </a>
-      <a href="/lamasy/hq/audit.php"
+      <a href="/hq/audit.php"
          class="hq-side-link <?= $_aPage === 'hq-audit' ? 'active' : '' ?>">
         <span class="ico">📋</span> Audit
       </a>
@@ -137,18 +137,18 @@ $_canSwitch = !empty($hqIsOwner) || !empty($hqIsManager);
       <div class="hq-side-divider"></div>
       <div class="hq-side-label">AI Tools</div>
 
-      <a href="/lamasy/hq/ai-chat.php"
+      <a href="/hq/ai-chat.php"
          class="hq-side-link <?= $_aPage === 'hq-ai-chat' ? 'active' : '' ?>">
         <span class="ico">✨</span> AI Chat
       </a>
-      <a href="/lamasy/hq/ai-churning.php"
+      <a href="/hq/ai-churning.php"
          class="hq-side-link <?= $_aPage === 'hq-ai-churning' ? 'active' : '' ?>">
         <span class="ico">🎯</span> Smart Notif
       </a>
 
       <div class="hq-side-divider"></div>
 
-      <a href="/lamasy/hq/settings.php"
+      <a href="/hq/settings.php"
          class="hq-side-link <?= $_aPage === 'hq-settings' ? 'active' : '' ?>">
         <span class="ico">⚙️</span> Settings
       </a>
@@ -168,9 +168,9 @@ $_canSwitch = !empty($hqIsOwner) || !empty($hqIsManager);
       <div class="hq-top-right">
         <span class="hq-top-user"><?= htmlspecialchars($_ownerNama) ?></span>
         <?php if ($_canSwitch): ?>
-          <a href="/lamasy/dashboard.php?to=outlet" class="hq-top-switch" title="Pindah ke Outlet View">Ke Outlet →</a>
+          <a href="/dashboard.php?to=outlet" class="hq-top-switch" title="Pindah ke Outlet View">Ke Outlet →</a>
         <?php endif; ?>
-        <a href="/lamasy/logout.php" class="hq-top-logout" onclick="return confirm('Yakin logout?')">Logout</a>
+        <a href="/logout.php" class="hq-top-logout" onclick="return confirm('Yakin logout?')">Logout</a>
       </div>
     </div>
 

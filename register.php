@@ -18,7 +18,7 @@ if (session_status() === PHP_SESSION_NONE) session_start();
 
 // Kalau sudah login → redirect ke dashboard
 if (!empty($_SESSION['tenant_id']) && empty($_SESSION['pending_verify'])) {
-    header('Location: /lamasy/dashboard.php');
+    header('Location: /dashboard.php');
     exit;
 }
 
@@ -225,7 +225,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['step3_submit'])) {
                 unset($_SESSION['reg']);
                 regResetCsrf();
 
-                header('Location: /lamasy/pending-verify.php');
+                header('Location: /pending-verify.php');
                 exit;
 
             } catch (Throwable $e) {
@@ -377,7 +377,7 @@ $captchaB = $r['captcha_b'] ?? 5;
 
 <div class="brand-bar">
   <div class="brand">LAMASY <small>Laundry Management System</small></div>
-  <a href="/lamasy/login.php">Sudah punya akun? Login →</a>
+  <a href="/login.php">Sudah punya akun? Login →</a>
 </div>
 
 <div class="stepper">
@@ -565,8 +565,8 @@ elseif ($step === 3): ?>
       <input type="checkbox" name="terms" required>
       <span>
         Saya menyetujui
-        <a href="/lamasy/landing.php#terms" target="_blank">Syarat &amp; Ketentuan</a>
-        dan <a href="/lamasy/landing.php#privacy" target="_blank">Kebijakan Privasi</a>
+        <a href="/landing.php#terms" target="_blank">Syarat &amp; Ketentuan</a>
+        dan <a href="/landing.php#privacy" target="_blank">Kebijakan Privasi</a>
         LAMASY.
       </span>
     </label>

@@ -194,7 +194,7 @@ async function loadData(){
   const box = document.getElementById('tblBox');
   box.innerHTML = '<div class="empty">⏳ Memuat…</div>';
   try {
-    const r = await fetch(`/lamasy/hq/penggajian.php?action=data&bulan=${bulan}`);
+    const r = await fetch(`/hq/penggajian.php?action=data&bulan=${bulan}`);
     const d = await r.json();
     if (d.error){ box.innerHTML = `<div class="empty">⚠️ ${esc(d.error)}</div>`; return; }
     document.getElementById('mBeban').textContent = fmtRp(d.total.beban);
@@ -237,7 +237,7 @@ async function genOutlet(oid){
 }
 async function doGenerate(bulan, oid){
   try {
-    const r = await fetch('/lamasy/hq/penggajian.php?action=generate', {method:'POST', body:JSON.stringify({bulan, outlet_id:oid})});
+    const r = await fetch('/hq/penggajian.php?action=generate', {method:'POST', body:JSON.stringify({bulan, outlet_id:oid})});
     const d = await r.json();
     if (d.error){ alert('⚠️ '+d.error); return; }
     let msg = `✅ ${d.created} slip gaji baru dibuat.`;
@@ -250,7 +250,7 @@ async function markPaid(oid, nama){
   const bulan = document.getElementById('fBulan').value;
   if (!confirm(`Tandai semua slip pending di "${nama}" bulan ${bulan} sebagai DIBAYAR?`)) return;
   try {
-    const r = await fetch('/lamasy/hq/penggajian.php?action=mark_paid', {method:'POST', body:JSON.stringify({bulan, outlet_id:oid})});
+    const r = await fetch('/hq/penggajian.php?action=mark_paid', {method:'POST', body:JSON.stringify({bulan, outlet_id:oid})});
     const d = await r.json();
     if (d.error){ alert('⚠️ '+d.error); return; }
     alert(`✅ ${d.affected} slip ditandai dibayar.`);

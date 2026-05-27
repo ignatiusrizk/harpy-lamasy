@@ -268,7 +268,7 @@ class Mailer
         string $token,
         string $namaOutlet = ''
     ): bool {
-        $link   = self::appUrl() . '/lamasy/verify-email.php?token=' . urlencode($token);
+        $link   = self::appUrl() . '/verify-email.php?token=' . urlencode($token);
         $outlet = htmlspecialchars($namaOutlet ?: $toName);
 
         $html = self::baseTemplate('Verifikasi Email LAMASY', "
@@ -304,7 +304,7 @@ class Mailer
         string $toName,
         string $token
     ): bool {
-        $link = self::appUrl() . '/lamasy/reset-password.php?token=' . urlencode($token);
+        $link = self::appUrl() . '/reset-password.php?token=' . urlencode($token);
 
         $html = self::baseTemplate('Reset Password LAMASY', "
             <h2 style='color:" . self::BRAND_DARK . ";margin:0 0 8px'>Reset Password</h2>
@@ -333,7 +333,7 @@ class Mailer
         string $toName,
         string $namaOutlet
     ): bool {
-        $loginUrl = self::appUrl() . '/lamasy/login.php';
+        $loginUrl = self::appUrl() . '/login.php';
         $outlet   = htmlspecialchars($namaOutlet);
 
         $html = self::baseTemplate('Selamat Datang di LAMASY! 🎉', "
@@ -370,7 +370,7 @@ class Mailer
     }
 
     // ── Test: kirim email uji coba ────────────────────────
-    // Panggil dari browser: /lamasy/core/Mailer.php?test=1&to=kamu@email.com
+    // Panggil dari browser: /core/Mailer.php?test=1&to=kamu@email.com
     // HAPUS blok ini di production!
     public static function sendTest(string $toEmail): bool {
         return self::send(
@@ -416,7 +416,7 @@ class Mailer
   <tr><td style="background:#f8fafc;padding:20px 32px;text-align:center;border-top:1px solid #eee">
     <p style="margin:0;color:#bbb;font-size:12px">
       &copy; {$year} LAMASY by Harpy &nbsp;&middot;&nbsp;
-      <a href="{$appUrl}/lamasy/landing.php" style="color:#bbb">Beranda</a>
+      <a href="{$appUrl}/landing.php" style="color:#bbb">Beranda</a>
       &nbsp;&middot;&nbsp;
       <a href="mailto:support@harpy.id" style="color:#bbb">Bantuan</a>
     </p>

@@ -257,7 +257,7 @@ function debouncedLoad(){
 }
 
 async function loadFilterOptions(){
-  const r = await fetch('/lamasy/hq/audit.php?action=filter_options');
+  const r = await fetch('/hq/audit.php?action=filter_options');
   const d = await r.json();
   document.getElementById('filterOutlet').innerHTML = '<option value="0">📍 Semua Outlet</option>' +
     (d.outlets||[]).map(o => `<option value="${o.id}">📍 ${esc(o.nama_outlet)}</option>`).join('');
@@ -277,7 +277,7 @@ async function loadData(){
     modul: document.getElementById('filterModul').value,
     q: document.getElementById('searchQ').value,
   });
-  const r = await fetch('/lamasy/hq/audit.php?action=data&' + params.toString());
+  const r = await fetch('/hq/audit.php?action=data&' + params.toString());
   const d = await r.json();
 
   document.getElementById('statTotal').textContent = d.total || 0;
