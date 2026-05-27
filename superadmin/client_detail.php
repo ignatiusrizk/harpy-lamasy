@@ -36,6 +36,94 @@ if ($action) {
         echo json_encode($rows->fetchAll()); exit;
     }
 
+    // ── GET: billing summary + saas_manual_payments ──
+    if ($action === 'get_billing') {
+        $id = (int)($_GET['id'] ?? 0);
+
+        $stats = $db->prepare(
+            "SELECT
+               COALESCE(SUM(nominal_dibayar), 0)                                           AS grand_total,
+               COALESCE(SUM(CASE WHEN type='setup_fee'  THEN nominal_dibayar END), 0)      AS setup_total,
+               COALESCE(SUM(CASE WHEN type='coin_topup' THEN nominal_dibayar END), 0)      AS topup_total,
+               COALESCE(SUM(coin_dikreditkan), 0)                                          AS total_coin_in,
+               COUNT(*)                                                                     AS total_txn
+             FROM saas_manual_payments WHERE tenant_id=? AND status='confirmed'"
+        );
+        $stats->execute([$id]);
+        $billingStats = $stats->fetch(PDO::FETCH_ASSOC);
+
+        $rows = $db->prepare(
+            "SELECT p.*,
+                    pkg.nama AS package_nama,
+                    bdl.nama AS bundle_nama,
+                    sa.name  AS superadmin_nama
+             FROM saas_manual_payments p
+             LEFT JOIN saas_packages     pkg ON pkg.id = p.package_id
+             LEFT JOIN saas_coin_bundles bdl ON bdl.id = p.bundle_id
+             LEFT JOIN super_admins      sa  ON sa.id  = p.superadmin_id
+             WHERE p.tenant_id = ? AND p.status != 'cancelled'
+             ORDER BY p.id DESC LIMIT 10"
+        );
+        $rows->execute([$id]);
+
+        echo json_encode([
+            'stats' => $billingStats,
+            'rows'  => $rows->fetchAll(PDO::FETCH_ASSOC),
+        ]);
+        exit;
+    }
+
+    // ── POST: coin adjustment (bonus/kompensasi) ─────
+    if ($action === 'adjustment') {
+        saVerifyCsrf();
+        $id     = (int)($_POST['tenant_id'] ?? 0);
+        $coin   = (int)($_POST['coin'] ?? 0);
+        $reason = $_POST['reason'] ?? 'lainnya';
+        $note   = trim($_POST['note'] ?? '');
+
+        if ($coin === 0) { echo json_encode(['error' => 'Jumlah coin tidak boleh 0.']); exit; }
+
+        $allowed = ['kompensasi_downtime','bonus_referral','koreksi_error','promo','lainnya'];
+        if (!in_array($reason, $allowed)) $reason = 'lainnya';
+
+        try {
+            $db->beginTransaction();
+            $lockS = $db->prepare("SELECT coin_balance FROM tenants WHERE id=? FOR UPDATE");
+            $lockS->execute([$id]);
+            $cur     = (int)$lockS->fetchColumn();
+            $newBal  = max(0, $cur + $coin);
+            $ledType = $coin > 0 ? 'topup' : 'deduct';
+
+            $db->prepare("UPDATE tenants SET coin_balance=? WHERE id=?")->execute([$newBal, $id]);
+
+            // Catat di saas_manual_payments sebagai adjustment
+            $db->prepare(
+                "INSERT INTO saas_manual_payments
+                   (tenant_id, superadmin_id, type, nominal_dibayar, coin_dikreditkan,
+                    metode, tanggal_bayar, catatan, adjustment_reason, status)
+                 VALUES (?, ?, 'adjustment', 0, ?, 'lainnya', CURDATE(), ?, ?, 'confirmed')"
+            )->execute([$id, $_SESSION['superadmin_id'], $coin, $note ?: null, $reason]);
+            $payId = $db->lastInsertId();
+
+            $db->prepare(
+                "INSERT INTO coin_ledger
+                   (tenant_id, outlet_id, type, amount, feature_used, description, balance_after, ref_id)
+                 VALUES (?, NULL, ?, ?, 'manual_adjustment', ?, ?, ?)"
+            )->execute([$id, $ledType, abs($coin),
+                "Adjustment: $reason" . ($note ? " — $note" : ''), $newBal, "ADJ-$payId"]);
+
+            $db->commit();
+            logSuperAdminAction('adjustment_coin', $id,
+                "Adjustment " . ($coin > 0 ? "+$coin" : "$coin") . " coin — $reason");
+            echo json_encode(['success' => true, 'new_balance' => $newBal,
+                'msg' => ($coin > 0 ? "+$coin" : "$coin") . " coin. Saldo baru: " . number_format($newBal)]);
+        } catch (Throwable $e) {
+            $db->rollBack();
+            echo json_encode(['error' => $e->getMessage()]);
+        }
+        exit;
+    }
+
     if ($action === 'get_notes') {
         $id = (int)($_GET['id'] ?? 0);
         $rows = $db->prepare(
@@ -219,6 +307,24 @@ $users = $db->prepare("SELECT id, username, nama, role, last_login FROM hl_users
 $usrSt = $db->prepare("SELECT id, username, nama, role, last_login FROM hl_users WHERE tenant_id=? ORDER BY role, nama");
 $usrSt->execute([$tenantId]);
 $users = $usrSt->fetchAll();
+
+// Package info
+$packageInfo = null;
+if (!empty($tenant['package_id'])) {
+    $pkgSt = $db->prepare("SELECT * FROM saas_packages WHERE id=?");
+    $pkgSt->execute([$tenant['package_id']]);
+    $packageInfo = $pkgSt->fetch(PDO::FETCH_ASSOC);
+}
+
+// Billing stats (lifetime)
+$bsSt = $db->prepare(
+    "SELECT COALESCE(SUM(nominal_dibayar), 0) AS grand_total,
+            COALESCE(SUM(coin_dikreditkan), 0) AS total_coin_in,
+            COUNT(*) AS total_txn
+     FROM saas_manual_payments WHERE tenant_id=? AND status='confirmed'"
+);
+$bsSt->execute([$tenantId]);
+$billingStat = $bsSt->fetch(PDO::FETCH_ASSOC);
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -257,7 +363,7 @@ $users = $usrSt->fetchAll();
   <button class="sa-tab" onclick="showTab('health')">💊 Health</button>
   <button class="sa-tab" onclick="showTab('stats')">📊 Stats</button>
   <button class="sa-tab" onclick="showTab('coins')">🪙 Coin History</button>
-  <button class="sa-tab" onclick="showTab('payments')">💳 Payments</button>
+  <button class="sa-tab" onclick="showTab('billing')">💳 Billing</button>
   <button class="sa-tab" onclick="showTab('notes')">📝 Notes</button>
   <button class="sa-tab" onclick="showTab('comms')">💬 Komunikasi</button>
   <button class="sa-tab" onclick="showTab('aksi')">⚙️ Aksi Manual</button>
@@ -392,14 +498,80 @@ $users = $usrSt->fetchAll();
   </div>
 </div>
 
-<!-- Tab: Payments -->
-<div class="sa-tab-panel" id="tab-payments">
+<!-- Tab: Billing -->
+<div class="sa-tab-panel" id="tab-billing">
+
+  <!-- Summary card -->
+  <div class="sa-card" style="margin-bottom:20px;">
+    <div class="sa-card-header">
+      <h3>💳 Billing & Coin</h3>
+      <div style="display:flex;gap:8px;">
+        <a href="payments.php?tenant_id=<?= $tenantId ?>" class="sa-btn sa-btn-primary sa-btn-sm">
+          ＋ Konfirmasi Pembayaran
+        </a>
+        <button class="sa-btn sa-btn-outline sa-btn-sm" onclick="openAdjustModal()">
+          ⚖️ Adjustment Coin
+        </button>
+      </div>
+    </div>
+    <div class="sa-card-body">
+      <div class="sa-grid-4" style="margin-bottom:0;">
+        <div>
+          <div style="font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:rgba(255,255,255,.35);margin-bottom:6px;">Paket</div>
+          <?php if ($packageInfo): ?>
+            <div style="font-size:15px;font-weight:700;color:#A5B4FC;">
+              <?= htmlspecialchars($packageInfo['nama']) ?>
+            </div>
+            <div style="font-size:11px;color:rgba(255,255,255,.35);margin-top:2px;">
+              Max <?= $packageInfo['max_outlets'] ?: '∞' ?> outlet
+              <?= $tenant['package_assigned_at'] ? '· Sejak ' . date('d M Y', strtotime($tenant['package_assigned_at'])) : '' ?>
+            </div>
+          <?php else: ?>
+            <div style="font-size:13px;color:rgba(255,255,255,.3);">Belum ada paket</div>
+          <?php endif; ?>
+        </div>
+        <div>
+          <div style="font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:rgba(255,255,255,.35);margin-bottom:6px;">Saldo Coin</div>
+          <div style="font-size:22px;font-weight:800;font-family:var(--mono);color:#FCD34D;">
+            <?= number_format($tenant['coin_balance']) ?>
+          </div>
+          <div style="font-size:11px;color:rgba(255,255,255,.35);">coin tersedia</div>
+        </div>
+        <div>
+          <div style="font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:rgba(255,255,255,.35);margin-bottom:6px;">Total Topup</div>
+          <div style="font-size:18px;font-weight:700;font-family:var(--mono);color:#6EE7B7;">
+            Rp <?= number_format($billingStat['grand_total'] ?? 0) ?>
+          </div>
+          <div style="font-size:11px;color:rgba(255,255,255,.35);"><?= $billingStat['total_txn'] ?? 0 ?> transaksi (lifetime)</div>
+        </div>
+        <div>
+          <div style="font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:rgba(255,255,255,.35);margin-bottom:6px;">Total Coin Masuk</div>
+          <div style="font-size:18px;font-weight:700;font-family:var(--mono);color:#A5B4FC;">
+            <?= number_format($billingStat['total_coin_in'] ?? 0) ?>
+          </div>
+          <div style="font-size:11px;color:rgba(255,255,255,.35);">coin dikreditkan</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent payments -->
   <div class="sa-card">
-    <div class="sa-card-header"><h3>Riwayat Pembayaran</h3></div>
+    <div class="sa-card-header">
+      <h3>Riwayat Pembayaran (10 terakhir)</h3>
+      <a href="payments.php?tenant_id=<?= $tenantId ?>" class="sa-btn sa-btn-sm sa-btn-outline">Lihat Semua →</a>
+    </div>
     <div class="sa-table-wrap">
       <table class="sa-table">
-        <thead><tr><th>Tanggal</th><th>Tipe</th><th>Nominal</th><th>Coin</th><th>Gateway Ref</th><th>Status</th></tr></thead>
-        <tbody id="paymentsBody"><tr><td colspan="6" style="text-align:center;padding:20px;color:rgba(255,255,255,.35);">Memuat...</td></tr></tbody>
+        <thead>
+          <tr>
+            <th>Tanggal</th><th>Tipe</th><th>Paket / Bundle</th>
+            <th>Nominal</th><th>Coin</th><th>Ref</th><th>Oleh</th><th>WA</th>
+          </tr>
+        </thead>
+        <tbody id="billingBody">
+          <tr><td colspan="8" style="text-align:center;padding:20px;color:rgba(255,255,255,.35);">Memuat...</td></tr>
+        </tbody>
       </table>
     </div>
   </div>
@@ -518,6 +690,58 @@ $users = $usrSt->fetchAll();
   </div>
 </div>
 
+<!-- Modal: Adjustment Coin -->
+<div class="sa-modal-overlay" id="adjustModal">
+  <div class="sa-modal" style="max-width:420px;">
+    <h3>⚖️ Adjustment Coin</h3>
+    <p style="font-size:13px;color:rgba(255,255,255,.45);margin-bottom:18px;">
+      Saldo saat ini: <strong style="color:#FCD34D;" id="adjCurrentBal"><?= number_format($tenant['coin_balance']) ?> coin</strong>
+    </p>
+
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      <div>
+        <label style="font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:rgba(255,255,255,.4);display:block;margin-bottom:6px;">
+          Jumlah Coin *
+        </label>
+        <input type="number" id="adjCoin" placeholder="Positif = tambah, negatif = kurangi"
+               style="width:100%;padding:10px 12px;background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.1);border-radius:8px;color:#fff;font-family:var(--mono);font-size:14px;outline:none;"
+               oninput="previewAdj()"/>
+        <div id="adjPreview" style="font-size:12px;color:rgba(255,255,255,.3);margin-top:5px;"></div>
+      </div>
+
+      <div>
+        <label style="font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:rgba(255,255,255,.4);display:block;margin-bottom:6px;">
+          Alasan *
+        </label>
+        <select id="adjReason" style="width:100%;padding:9px 12px;background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.1);border-radius:8px;color:#fff;font-family:var(--font);font-size:13px;outline:none;">
+          <option value="kompensasi_downtime">Kompensasi downtime</option>
+          <option value="bonus_referral">Bonus referral</option>
+          <option value="koreksi_error">Koreksi error</option>
+          <option value="promo">Promo</option>
+          <option value="lainnya">Lainnya</option>
+        </select>
+      </div>
+
+      <div>
+        <label style="font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:rgba(255,255,255,.4);display:block;margin-bottom:6px;">
+          Catatan Internal
+        </label>
+        <input type="text" id="adjNote" placeholder="Keterangan tambahan (opsional)"
+               style="width:100%;padding:10px 12px;background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.1);border-radius:8px;color:#fff;font-family:var(--font);font-size:13px;outline:none;"/>
+      </div>
+    </div>
+
+    <div style="font-size:11px;color:rgba(255,255,255,.25);margin-top:14px;">
+      ⚠️ Adjustment tidak mengirim notifikasi WA ke tenant.
+    </div>
+
+    <div class="sa-modal-footer" style="margin-top:20px;">
+      <button class="sa-btn sa-btn-outline" onclick="closeAdjustModal()">Batal</button>
+      <button class="sa-btn sa-btn-primary" onclick="submitAdjustment()">✅ Simpan Adjustment</button>
+    </div>
+  </div>
+</div>
+
 <?php saRenderNavClose(); ?>
 
 <script>
@@ -525,16 +749,16 @@ const TENANT_ID = <?= $tenantId ?>;
 
 function showTab(name) {
   document.querySelectorAll('.sa-tab').forEach((t, i) => {
-    const tabs = ['profil','health','stats','coins','payments','notes','comms','aksi'];
+    const tabs = ['profil','health','stats','coins','billing','notes','comms','aksi'];
     t.classList.toggle('active', tabs[i] === name);
   });
   document.querySelectorAll('.sa-tab-panel').forEach(p => p.classList.remove('active'));
   document.getElementById('tab-' + name).classList.add('active');
 
-  if (name === 'coins') loadCoinHistory();
-  if (name === 'payments') loadPayments();
-  if (name === 'notes') loadNotes();
-  if (name === 'comms') loadComms();
+  if (name === 'coins')   loadCoinHistory();
+  if (name === 'billing') loadBilling();
+  if (name === 'notes')   loadNotes();
+  if (name === 'comms')   loadComms();
 }
 
 function openSection(s) { showTab(s === 'topup' ? 'aksi' : s); }
@@ -560,21 +784,81 @@ function loadCoinHistory() {
     });
 }
 
-// Payments
-function loadPayments() {
-  fetch(`client_detail.php?action=get_payments&id=${TENANT_ID}`, {headers:{'X-Requested-With':'XMLHttpRequest'}})
-    .then(r=>r.json()).then(rows => {
-      const tbody = document.getElementById('paymentsBody');
-      if (!rows.length) { tbody.innerHTML='<tr><td colspan="6" style="text-align:center;padding:20px;color:rgba(255,255,255,.35);">Belum ada pembayaran.</td></tr>'; return; }
-      tbody.innerHTML = rows.map(r => `<tr>
-        <td style="font-size:12px;">${fmtDate(r.created_at)}</td>
-        <td>${esc(r.type||'-')}</td>
-        <td style="font-family:var(--mono);">${rupiah(r.amount||0)}</td>
-        <td>${r.coin_amount ? parseInt(r.coin_amount).toLocaleString('id-ID') : '-'}</td>
-        <td style="font-family:var(--mono);font-size:11px;">${esc(r.gateway_ref||'-')}</td>
-        <td><span class="sa-badge ${r.status==='success'?'sa-badge-active':'sa-badge-yellow'}">${esc(r.status||'-')}</span></td>
-      </tr>`).join('');
+// Billing
+const typeLabel = {setup_fee:'Setup Fee', coin_topup:'Topup Coin', adjustment:'Adjustment', custom:'Custom'};
+const typeCls   = {setup_fee:'sa-badge-indigo', coin_topup:'sa-badge-active', adjustment:'sa-badge-yellow', custom:'sa-badge-indigo'};
+
+function loadBilling() {
+  fetch(`client_detail.php?action=get_billing&id=${TENANT_ID}`, {headers:{'X-Requested-With':'XMLHttpRequest'}})
+    .then(r => r.json()).then(d => {
+      const tbody = document.getElementById('billingBody');
+      if (!d.rows || !d.rows.length) {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:20px;color:rgba(255,255,255,.35);">Belum ada pembayaran.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = d.rows.map(p => {
+        const pkgBdl = p.package_nama || p.bundle_nama || '—';
+        const waHtml = p.notif_wa_sent
+          ? '<span style="color:#6EE7B7;" title="WA terkirim">📲</span>'
+          : '<span style="color:rgba(255,255,255,.2);">—</span>';
+        return `<tr>
+          <td style="font-size:12px;">${p.tanggal_bayar ? new Date(p.tanggal_bayar).toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'}) : '—'}</td>
+          <td><span class="sa-badge ${typeCls[p.type]||'sa-badge-indigo'}" style="font-size:10px;">${typeLabel[p.type]||p.type}</span></td>
+          <td style="font-size:12px;color:rgba(255,255,255,.55);">${esc(pkgBdl)}</td>
+          <td style="font-family:var(--mono);font-size:13px;font-weight:600;">${p.nominal_dibayar > 0 ? rupiah(p.nominal_dibayar) : '—'}</td>
+          <td style="font-family:var(--mono);color:#FCD34D;">${p.coin_dikreditkan > 0 ? '+' + parseInt(p.coin_dikreditkan).toLocaleString('id-ID') : (p.coin_dikreditkan < 0 ? parseInt(p.coin_dikreditkan).toLocaleString('id-ID') : '—')}</td>
+          <td style="font-family:var(--mono);font-size:11px;color:rgba(255,255,255,.4);">${esc(p.ref_transfer||'—')}</td>
+          <td style="font-size:11px;color:rgba(255,255,255,.35);">${esc(p.superadmin_nama||'—')}</td>
+          <td>${waHtml}</td>
+        </tr>`;
+      }).join('');
     });
+}
+
+// ── Adjustment modal ──────────────────────────────────
+let _currentBal = <?= (int)$tenant['coin_balance'] ?>;
+
+function openAdjustModal() {
+  document.getElementById('adjCoin').value   = '';
+  document.getElementById('adjNote').value   = '';
+  document.getElementById('adjReason').value = 'kompensasi_downtime';
+  document.getElementById('adjPreview').textContent = '';
+  document.getElementById('adjCurrentBal').textContent = _currentBal.toLocaleString('id-ID') + ' coin';
+  document.getElementById('adjustModal').classList.add('open');
+  setTimeout(() => document.getElementById('adjCoin').focus(), 100);
+}
+
+function closeAdjustModal() {
+  document.getElementById('adjustModal').classList.remove('open');
+}
+
+function previewAdj() {
+  const val = parseInt(document.getElementById('adjCoin').value) || 0;
+  const newBal = Math.max(0, _currentBal + val);
+  const el = document.getElementById('adjPreview');
+  if (!val) { el.textContent = ''; return; }
+  const sign = val > 0 ? '+' : '';
+  el.innerHTML = `${sign}${val.toLocaleString('id-ID')} coin → saldo baru: <strong style="color:#FCD34D;">${newBal.toLocaleString('id-ID')} coin</strong>`;
+}
+
+function submitAdjustment() {
+  const coin   = document.getElementById('adjCoin').value;
+  const reason = document.getElementById('adjReason').value;
+  const note   = document.getElementById('adjNote').value;
+
+  if (!coin || parseInt(coin) === 0) { saShowToast('Jumlah coin tidak boleh 0.', 'error'); return; }
+  if (!confirm(`${parseInt(coin) > 0 ? 'Tambah' : 'Kurangi'} ${Math.abs(parseInt(coin)).toLocaleString('id-ID')} coin dari tenant ini?`)) return;
+
+  saPost(`client_detail.php?action=adjustment`, {
+    tenant_id: TENANT_ID, coin, reason, note
+  }).then(r => r.json()).then(d => {
+    if (d.error) { saShowToast(d.error, 'error'); return; }
+    _currentBal = d.new_balance;
+    saShowToast('✅ ' + d.msg, 'success');
+    closeAdjustModal();
+    loadBilling();
+    loadCoinHistory();
+  });
 }
 
 // Notes
