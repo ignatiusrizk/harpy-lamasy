@@ -45,13 +45,14 @@ if (!$hasOutlet && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_p
     $ownerWa  = preg_replace('/\D/', '', $_POST['owner_wa'] ?? '');
     if (substr($ownerWa, 0, 2) === '08') $ownerWa = '628' . substr($ownerWa, 2);
     if (substr($ownerWa, 0, 1) === '8')  $ownerWa = '62' . $ownerWa;
-    $namaOutlet = trim(strip_tags($_POST['nama_outlet'] ?? ''));
-    $kota       = trim(strip_tags($_POST['kota'] ?? ''));
+    $namaOutlet     = trim(strip_tags($_POST['nama_outlet']     ?? ''));
+    $namaPerusahaan = trim(strip_tags($_POST['nama_perusahaan'] ?? ''));
+    $kota           = trim(strip_tags($_POST['kota']            ?? ''));
 
     try {
         $db = Database::get();
-        $db->prepare("UPDATE tenants SET nama_outlet=?, owner_wa=?, kota=? WHERE id=?")
-           ->execute([$namaOutlet ?: null, $ownerWa ?: null, $kota ?: null, $tid]);
+        $db->prepare("UPDATE tenants SET nama_outlet=?, nama_perusahaan=?, owner_wa=?, kota=? WHERE id=?")
+           ->execute([$namaOutlet ?: null, $namaPerusahaan ?: null, $ownerWa ?: null, $kota ?: null, $tid]);
         TenantResolver::reset();
         header('Location: dashboard.php?profile_saved=1');
         exit;
@@ -446,10 +447,11 @@ if ($action) {
 // ════════════════════════════════════════════════════════
 $tenant = currentTenant();
 $ownerNama  = $user['nama'] ?? 'Owner';
-$tenantNama = $tenant['nama_outlet'] ?? '';
-$tenantWa   = $tenant['owner_wa']   ?? '';
-$tenantKota = $tenant['kota']       ?? '';
-$tenantEmail= $tenant['email']      ?? $user['email'] ?? '';
+$tenantNama       = $tenant['nama_outlet']     ?? '';
+$tenantPerusahaan = $tenant['nama_perusahaan'] ?? '';
+$tenantWa         = $tenant['owner_wa']        ?? '';
+$tenantKota       = $tenant['kota']            ?? '';
+$tenantEmail      = $tenant['email']           ?? $user['email'] ?? '';
 
 // Cek onboarding progress
 $profileDone  = !empty($tenantWa);
@@ -518,11 +520,23 @@ $pwError      = $pwError ?? '';
     <form method="POST">
       <input type="hidden" name="save_profile" value="1">
       <div style="margin-bottom:13px">
-        <label style="font-size:12px;font-weight:600;color:#6B7280;display:block;margin-bottom:4px">Nama Outlet / Brand</label>
+        <label style="font-size:12px;font-weight:600;color:#6B7280;display:block;margin-bottom:4px">Nama Outlet</label>
         <input type="text" name="nama_outlet" value="<?= htmlspecialchars($tenantNama) ?>"
                style="width:100%;padding:9px 12px;border:1.5px solid #E5E7EB;border-radius:8px;
                       font-size:14px;box-sizing:border-box;outline:none"
-               onfocus="this.style.borderColor='#35E8D5'" onblur="this.style.borderColor='#E5E7EB'">
+               onfocus="this.style.borderColor='#35E8D5'" onblur="this.style.borderColor='#E5E7EB'"
+               placeholder="cth: Laundry Bersih Jaya">
+        <div style="font-size:11px;color:#9CA3AF;margin-top:3px">Muncul di nota & notifikasi pelanggan</div>
+      </div>
+      <div style="margin-bottom:13px">
+        <label style="font-size:12px;font-weight:600;color:#6B7280;display:block;margin-bottom:4px">
+          Nama Perusahaan / Brand <span style="font-weight:400;color:#9CA3AF">(opsional)</span>
+        </label>
+        <input type="text" name="nama_perusahaan" value="<?= htmlspecialchars($tenantPerusahaan) ?>"
+               style="width:100%;padding:9px 12px;border:1.5px solid #E5E7EB;border-radius:8px;
+                      font-size:14px;box-sizing:border-box;outline:none"
+               onfocus="this.style.borderColor='#35E8D5'" onblur="this.style.borderColor='#E5E7EB'"
+               placeholder="cth: PT Bersih Jaya Group">
       </div>
       <div style="margin-bottom:13px">
         <label style="font-size:12px;font-weight:600;color:#6B7280;display:block;margin-bottom:4px">
