@@ -301,12 +301,12 @@ let currentRolePerms = {}; // {perm_id: filter_data}
 const MODUL_ICON = {
   pos:'🧾',orders:'📋',kas:'💰',laporan:'📊',
   customer:'👥',karyawan:'👤',promo:'🎟️',
-  layanan:'🧺',absensi:'🕐',settings:'⚙️'
+  layanan:'🧺',absensi:'🕐',settings:'⚙️',bantuan:'🎧'
 };
 const MODUL_LABEL = {
   pos:'POS',orders:'Order',kas:'Kas',laporan:'Laporan',
   customer:'Customer',karyawan:'Karyawan',promo:'Promo',
-  layanan:'Layanan',absensi:'Absensi',settings:'Settings'
+  layanan:'Layanan',absensi:'Absensi',settings:'Settings',bantuan:'Support & Tiket'
 };
 
 document.addEventListener('DOMContentLoaded', () => {

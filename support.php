@@ -1,7 +1,7 @@
 <?php
 // ══════════════════════════════════════════════════════
 // support.php — Bantuan & Support Tiket (Sisi Tenant)
-// Akses: semua role
+// Akses: permission 'bantuan.view' — semua role default punya
 // ══════════════════════════════════════════════════════
 $activePage = 'support';
 define('ROOT', __DIR__);
@@ -17,7 +17,11 @@ $outletId = TenantResolver::outletId();
 $userId   = (int)($user['id'] ?? 0);
 $db       = Database::get();
 
+// dismiss_banner tidak butuh bantuan.view (tenant dismiss notif umum)
 $action = $_REQUEST['action'] ?? '';
+if ($action !== 'dismiss_banner') {
+    requirePermission('bantuan.view');
+}
 
 // ── JSON API ──────────────────────────────────────────
 if ($action) {
@@ -27,7 +31,7 @@ if ($action) {
     if ($action === 'list_tickets') {
         $rows = $db->prepare(
             "SELECT st.*,
-                    sa.nama AS assigned_nama
+                    sa.name AS assigned_nama
              FROM support_tickets st
              LEFT JOIN super_admins sa ON sa.id = st.assigned_to
              WHERE st.tenant_id = ?
@@ -55,7 +59,7 @@ if ($action) {
            ->execute([$tid, $tenantId]); // no-op touch, just fire
 
         $rs = $db->prepare(
-            "SELECT r.*, sa.nama AS sa_nama, u.nama AS user_nama
+            "SELECT r.*, sa.name AS sa_nama, u.nama AS user_nama
              FROM support_ticket_replies r
              LEFT JOIN super_admins sa ON sa.id = r.superadmin_id
              LEFT JOIN hl_users u ON u.id = r.user_id
@@ -72,6 +76,7 @@ if ($action) {
     // ── submit_ticket ────────────────────────────────
     if ($action === 'submit_ticket' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         verifyCsrf();
+        if (!hasPermission('bantuan.submit')) { echo json_encode(['error'=>'Akses ditolak.']); exit; }
 
         $subject  = substr(trim($_POST['subject'] ?? ''), 0, 200);
         $message  = trim($_POST['message'] ?? '');
@@ -104,6 +109,7 @@ if ($action) {
     // ── reply (tenant balas) ──────────────────────────
     if ($action === 'reply' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         verifyCsrf();
+        if (!hasPermission('bantuan.reply')) { echo json_encode(['error'=>'Akses ditolak.']); exit; }
 
         $tid     = (int)($_POST['ticket_id'] ?? 0);
         $message = trim($_POST['message'] ?? '');
@@ -137,6 +143,7 @@ if ($action) {
     // ── close_ticket (tenant tutup tiket resolved) ───
     if ($action === 'close_ticket' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         verifyCsrf();
+        if (!hasPermission('bantuan.close')) { echo json_encode(['error'=>'Akses ditolak.']); exit; }
 
         $tid    = (int)($_POST['ticket_id'] ?? 0);
         $rating = max(1, min(5, (int)($_POST['rating'] ?? 0)));

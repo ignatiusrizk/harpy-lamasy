@@ -184,6 +184,11 @@ class TenantProvisioner
             ['settings.roles',       'settings',  'roles',         'Kelola role & permission'],
             ['settings.outlet',      'settings',  'outlet',        'Edit info outlet'],
             ['audit.view',           'audit',     'view',          'Lihat audit log'],
+            // Bantuan & Support
+            ['bantuan.view',         'bantuan',   'view',          'Akses halaman Support & Tiket'],
+            ['bantuan.submit',       'bantuan',   'submit',        'Kirim tiket support baru'],
+            ['bantuan.reply',        'bantuan',   'reply',         'Balas tiket support'],
+            ['bantuan.close',        'bantuan',   'close',         'Tutup & beri rating tiket'],
         ];
 
         $stmtPerm = $db->prepare(
@@ -197,8 +202,10 @@ class TenantProvisioner
         $adminExclude   = ['settings.roles', 'audit.view', 'karyawan.delete'];
         $kasirInclude   = ['pos.view','pos.create','orders.view_all','orders.create',
                            'orders.update_status','orders.bayar','pelanggan.view',
-                           'pelanggan.create','absensi.clock','absensi.view','layanan.view'];
-        $karyawanInclude = ['absensi.clock','absensi.view','orders.view_own','orders.update_status'];
+                           'pelanggan.create','absensi.clock','absensi.view','layanan.view',
+                           'bantuan.view','bantuan.submit','bantuan.reply','bantuan.close'];
+        $karyawanInclude = ['absensi.clock','absensi.view','orders.view_own','orders.update_status',
+                            'bantuan.view','bantuan.submit','bantuan.reply','bantuan.close'];
 
         foreach ($permissions as [$kode, $modul, $aksi, $desc]) {
             $stmtPerm->execute([$tenantId, $kode, $modul, $aksi, $desc]);

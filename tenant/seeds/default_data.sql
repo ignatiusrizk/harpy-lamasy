@@ -58,7 +58,12 @@ INSERT INTO hl_permissions (kode, modul, aksi, deskripsi) VALUES
   ('settings.roles',        'settings',  'roles',      'Kelola role & permission'),
   ('settings.outlet',       'settings',  'outlet',     'Edit info outlet'),
   -- Audit
-  ('audit.view',            'audit',     'view',       'Lihat audit log');
+  ('audit.view',            'audit',     'view',       'Lihat audit log'),
+  -- Bantuan & Support
+  ('bantuan.view',          'bantuan',   'view',       'Akses halaman Support & Tiket'),
+  ('bantuan.submit',        'bantuan',   'submit',     'Kirim tiket support baru'),
+  ('bantuan.reply',         'bantuan',   'reply',      'Balas tiket support'),
+  ('bantuan.close',         'bantuan',   'close',      'Tutup & beri rating tiket');
 
 -- ── Owner role: semua permission ─────────────────────
 INSERT INTO hl_role_permissions (role_id, permission_id, filter_data)
@@ -69,7 +74,7 @@ INSERT INTO hl_role_permissions (role_id, permission_id, filter_data)
   SELECT 2, id, 'all' FROM hl_permissions
   WHERE kode NOT IN ('settings.roles','audit.view','karyawan.delete');
 
--- ── Kasir role: POS + orders + absensi ───────────────
+-- ── Kasir role: POS + orders + absensi + bantuan ─────
 INSERT INTO hl_role_permissions (role_id, permission_id, filter_data)
   SELECT 3, id, 'all' FROM hl_permissions
   WHERE kode IN (
@@ -77,16 +82,18 @@ INSERT INTO hl_role_permissions (role_id, permission_id, filter_data)
     'orders.view_all','orders.create','orders.update_status','orders.bayar',
     'pelanggan.view','pelanggan.create',
     'absensi.clock','absensi.view',
-    'layanan.view'
+    'layanan.view',
+    'bantuan.view','bantuan.submit','bantuan.reply','bantuan.close'
   );
 
--- ── Karyawan role: absensi + update status ────────────
+-- ── Karyawan role: absensi + update status + bantuan ─
 INSERT INTO hl_role_permissions (role_id, permission_id, filter_data)
   SELECT 4, id, 'all' FROM hl_permissions
   WHERE kode IN (
     'absensi.clock','absensi.view',
     'orders.view_own','orders.update_status',
-    'pos.view','pos.create'
+    'pos.view','pos.create',
+    'bantuan.view','bantuan.submit','bantuan.reply','bantuan.close'
   );
 
 -- ── Default Layanan ───────────────────────────────────
