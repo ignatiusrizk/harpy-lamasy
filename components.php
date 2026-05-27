@@ -101,6 +101,13 @@ function renderTopbar(string $activePage = '', bool $minimalMode = false): void 
                                    'roles'=>['owner','superadmin','admin','manager']],
             ],
         ],
+        'bantuan' => [
+            'label' => 'Bantuan',
+            'items' => [
+                'support' => ['label'=>'Support & Tiket', 'url'=>'support.php',
+                              'roles'=>['owner','superadmin','admin','manager','kasir','staff','kurir']],
+            ],
+        ],
     ];
 
     function groupVisible(array $group, string $role): bool {
@@ -125,7 +132,7 @@ function renderTopbar(string $activePage = '', bool $minimalMode = false): void 
       'laporan'=>'📊','layanan'=>'🧺','promo'=>'🎟️','customer'=>'👥',
       'karyawan'=>'👤','absensi'=>'📅','settings'=>'⚙️','audit'=>'🔍',
       'checklist'=>'✅','droppoint'=>'📦','owner_report'=>'📨','piutang'=>'💼','kanban'=>'🗂️',
-      'loyalty'=>'⭐','retention'=>'😴',
+      'loyalty'=>'⭐','retention'=>'😴','support'=>'🎧',
     ];
     ?>
     <div class="ol-shell" id="olShell">

@@ -408,6 +408,14 @@ function saRenderNav(string $activePage = '', string $pageTitle = ''): void {
         <a href="/superadmin/packages.php" class="sa-nav-link <?= $activePage === 'packages' ? 'active' : '' ?>">
           <span class="icon">📦</span> Paket & Bundle
         </a>
+
+        <div class="sa-nav-section">Support</div>
+        <a href="/superadmin/support.php" class="sa-nav-link <?= $activePage === 'support' ? 'active' : '' ?>">
+          <span class="icon">🎧</span> Tiket Support
+        </a>
+        <a href="/superadmin/announcements.php" class="sa-nav-link <?= $activePage === 'announcements' ? 'active' : '' ?>">
+          <span class="icon">📢</span> Announcement
+        </a>
       </nav>
 
       <div class="sa-sidebar-footer">
