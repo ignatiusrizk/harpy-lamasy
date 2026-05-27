@@ -674,7 +674,7 @@ require __DIR__ . '/_layout_open.php';
   <!-- ④ NOTIFIKASI PREFERENCE -->
   <div class="panel">
     <div class="panel-title">🔔 Preferensi Notifikasi</div>
-    <div class="panel-sub">Atur channel pengiriman untuk setiap jenis alert. Klik <strong>Konfigurasi</strong> untuk atur jadwal laporan harian.</div>
+    <div class="panel-sub">Pilih channel mana yang menerima alert untuk tiap jenis kejadian.</div>
 
     <?php if ($notifSuccess): ?>
     <div class="alert success">✓ Preferensi notifikasi tersimpan.</div>
@@ -691,219 +691,84 @@ require __DIR__ . '/_layout_open.php';
     </div>
     <?php else: ?>
 
-    <style>
-      /* ── Notif cards ─────────────────────────────── */
-      .notif-cards { display:flex; flex-direction:column; gap:10px; margin-bottom:20px }
-
-      .notif-card {
-        border: 1.5px solid #EEF1F8; border-radius: 12px;
-        background: #fff; overflow: hidden;
-        transition: border-color .2s, box-shadow .2s;
-      }
-      .notif-card:hover { border-color:rgba(53,232,213,.4); box-shadow:0 2px 10px rgba(53,232,213,.1) }
-
-      .notif-card-main {
-        display: flex; align-items: center; gap: 14px; padding: 16px 18px;
-      }
-
-      .notif-icon-badge {
-        width:46px; height:46px; border-radius:12px; flex-shrink:0;
-        display:flex; align-items:center; justify-content:center; font-size:22px;
-      }
-      .ni-coin   { background:#FEF9C3 }
-      .ni-timer  { background:#FEE2E2 }
-      .ni-report { background:#DBEAFE }
-
-      .notif-text { flex:1; min-width:0 }
-      .notif-title { font-size:14px; font-weight:700; color:#0F1C3A }
-      .notif-desc  { font-size:12px; color:#9CA3AF; margin-top:2px; line-height:1.4 }
-
-      /* ── Toggle switches ─────────────────────────── */
-      .notif-channels { display:flex; align-items:center; gap:20px; flex-shrink:0 }
-      .ch-col   { display:flex; flex-direction:column; align-items:center; gap:5px }
-      .ch-label { font-size:10px; font-weight:700; color:#9CA3AF; text-transform:uppercase; letter-spacing:.04em; white-space:nowrap }
-
-      .n-toggle { position:relative; display:inline-block; width:44px; height:24px }
-      .n-toggle input { opacity:0; width:0; height:0; position:absolute }
-      .n-slider {
-        position:absolute; inset:0; cursor:pointer;
-        background:#E5E7EB; border-radius:100px; transition:background .2s;
-      }
-      .n-slider::after {
-        content:''; position:absolute; width:18px; height:18px; border-radius:50%;
-        background:#fff; top:3px; left:3px; transition:transform .2s;
-        box-shadow:0 1px 4px rgba(0,0,0,.2);
-      }
-      .n-toggle input:checked + .n-slider           { background:#35E8D5 }
-      .n-toggle input:checked + .n-slider::after    { transform:translateX(20px) }
-      .n-toggle.wa input:checked + .n-slider        { background:#25D366 }
-      .n-toggle input:disabled + .n-slider          { opacity:.45; cursor:not-allowed }
-
-      .soon-badge {
-        font-size:9px; font-weight:800; letter-spacing:.04em;
-        background:#F3F4F6; color:#9CA3AF; border-radius:100px;
-        padding:1px 6px; text-transform:uppercase;
-      }
-
-      /* ── Expandable config (daily report) ────────── */
-      .notif-config-btn {
-        display:flex; align-items:center; gap:7px;
-        padding:10px 18px 12px; border-top:1px solid #F3F4F6;
-        cursor:pointer; font-size:12px; font-weight:700; color:#0891B2;
-        user-select:none; transition:background .15s;
-      }
-      .notif-config-btn:hover { background:#F0FDFA }
-      .notif-config-btn .cfg-arrow { transition:transform .25s; font-size:10px; color:#9CA3AF }
-      .notif-config-btn.open .cfg-arrow { transform:rotate(180deg) }
-
-      .notif-config-body {
-        border-top:1.5px dashed #BFDBFE; background:#F0F7FF;
-        padding:0 18px; max-height:0; overflow:hidden;
-        transition:max-height .3s ease, padding .3s ease;
-      }
-      .notif-config-body.open { max-height:320px; padding:18px }
-
-      /* ── Konten chips ────────────────────────────── */
-      .konten-chip {
-        display:flex; align-items:center; gap:6px;
-        padding:6px 12px; border:1.5px solid #E5E7EB; border-radius:8px;
-        cursor:pointer; font-size:12px; font-weight:600; color:#374151;
-        background:#fff; transition:all .15s; user-select:none;
-      }
-      .konten-chip:hover { border-color:#93C5FD }
-      .konten-chip.active { border-color:#35E8D5; background:#F0FDFA; color:#0891B2 }
-      .konten-chip input { width:0; height:0; opacity:0; position:absolute }
-
-      @media(max-width:520px) {
-        .notif-card-main { flex-wrap:wrap }
-        .notif-channels  { width:100%; justify-content:flex-end }
-      }
-    </style>
-
     <form method="POST">
       <input type="hidden" name="_csrf" value="<?= htmlspecialchars($csrf) ?>">
       <input type="hidden" name="save_notif" value="1">
 
+      <div style="overflow-x:auto">
+        <table style="width:100%;font-size:13px;border-collapse:collapse">
+          <thead>
+            <tr style="background:#F9FAFB">
+              <th style="text-align:left;padding:10px 12px;font-size:11px;color:#6B7280;font-weight:800;text-transform:uppercase;letter-spacing:.04em">Jenis Alert</th>
+              <th style="padding:10px;font-size:11px;color:#6B7280;font-weight:800;text-transform:uppercase">📧 Email</th>
+              <th style="padding:10px;font-size:11px;color:#6B7280;font-weight:800;text-transform:uppercase">💬 WhatsApp</th>
+            </tr>
+          </thead>
+          <tbody>
+            <?php
+            $alertRows = [
+                'coin_low'     => ['🪙 Coin Hampir Habis', 'Kirim alert kalau saldo coin <1000'],
+                'trial_ending' => ['⏰ Trial Mau Berakhir', 'Reminder H-3 dan H-1 sebelum trial habis'],
+                'daily_report' => ['📊 Laporan Harian', 'Ringkasan omset & order tiap pagi'],
+            ];
+            foreach ($alertRows as $key => [$lbl, $desc]):
+            ?>
+            <tr style="border-top:1px solid #F3F4F6">
+              <td style="padding:11px 12px">
+                <div style="font-weight:700;color:#0F1C3A"><?= $lbl ?></div>
+                <div style="font-size:11px;color:#9CA3AF;margin-top:2px"><?= $desc ?></div>
+              </td>
+              <td style="padding:11px 10px;text-align:center">
+                <input type="checkbox" name="notif[<?= $key ?>][email]" value="1"
+                       <?= $notifPrefs[$key]['email'] ? 'checked' : '' ?>
+                       style="width:18px;height:18px;accent-color:#35E8D5;cursor:pointer">
+              </td>
+              <td style="padding:11px 10px;text-align:center">
+                <input type="checkbox" name="notif[<?= $key ?>][wa]" value="1"
+                       <?= $notifPrefs[$key]['wa'] ? 'checked' : '' ?>
+                       style="width:18px;height:18px;accent-color:#25D366;cursor:pointer">
+              </td>
+            </tr>
+            <?php endforeach; ?>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Daily report config -->
       <?php
-        $dailyJam    = $notifPrefs['daily_report_jam'] ?? '21:00';
+        $dailyJam = $notifPrefs['daily_report_jam'] ?? '21:00';
         if (!preg_match('/^\d{2}:\d{2}$/', $dailyJam)) $dailyJam = '21:00';
         $dailyKonten = $notifPrefs['daily_report_konten'] ?? ['omset','order','kas','absensi','alert'];
         if (!is_array($dailyKonten)) $dailyKonten = ['omset','order','kas','absensi','alert'];
-
-        $alertCards = [
-          'coin_low'     => ['🪙','ni-coin',   'Coin Hampir Habis',  'Kirim alert kalau saldo coin < 1.000'],
-          'trial_ending' => ['⏰','ni-timer',  'Trial Mau Berakhir', 'Reminder H‑3 dan H‑1 sebelum trial habis'],
-          'daily_report' => ['📊','ni-report', 'Laporan Harian',     'Ringkasan omset & order tiap malam'],
-        ];
       ?>
-
-      <div class="notif-cards">
-      <?php foreach ($alertCards as $key => [$icon, $cls, $title, $desc]): ?>
-        <div class="notif-card">
-          <div class="notif-card-main">
-
-            <div class="notif-icon-badge <?= $cls ?>"><?= $icon ?></div>
-
-            <div class="notif-text">
-              <div class="notif-title"><?= $title ?></div>
-              <div class="notif-desc"><?= $desc ?></div>
-            </div>
-
-            <div class="notif-channels">
-              <!-- Email -->
-              <div class="ch-col">
-                <div class="ch-label">📧 Email</div>
-                <label class="n-toggle" title="Email">
-                  <input type="checkbox" name="notif[<?= $key ?>][email]" value="1"
-                         <?= $notifPrefs[$key]['email'] ? 'checked' : '' ?>>
-                  <span class="n-slider"></span>
-                </label>
-              </div>
-              <!-- WhatsApp (soon) -->
-              <div class="ch-col">
-                <div class="ch-label">💬 WA</div>
-                <label class="n-toggle wa" title="Segera hadir">
-                  <input type="checkbox" name="notif[<?= $key ?>][wa]" value="1"
-                         <?= $notifPrefs[$key]['wa'] ? 'checked' : '' ?> disabled>
-                  <span class="n-slider"></span>
-                </label>
-                <span class="soon-badge">Soon</span>
-              </div>
-            </div>
-
-          </div>
-
-          <?php if ($key === 'daily_report'): ?>
-          <!-- Expandable config -->
-          <div class="notif-config-btn" id="btn-daily" onclick="toggleDailyConfig()">
-            <span>⚙️</span>
-            <span>Konfigurasi Laporan Harian</span>
-            <span style="flex:1"></span>
-            <span class="cfg-arrow" id="arrow-daily">▾</span>
-          </div>
-          <div class="notif-config-body" id="body-daily">
-            <div style="display:flex;flex-wrap:wrap;gap:20px;align-items:flex-start">
-
-              <!-- Jam kirim -->
-              <div>
-                <div style="font-size:11px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px">⏰ Jam Kirim</div>
-                <input type="time" name="daily_report_jam" value="<?= htmlspecialchars($dailyJam) ?>"
-                       style="padding:9px 13px;border:1.5px solid #BFDBFE;border-radius:9px;font-family:inherit;font-size:14px;color:#0F1C3A;outline:none;background:#fff;transition:border-color .2s"
-                       onfocus="this.style.borderColor='#35E8D5'" onblur="this.style.borderColor='#BFDBFE'">
-                <div style="font-size:10px;color:#93C5FD;margin-top:5px;line-height:1.4;max-width:200px">
-                  Dikirim jika ada request masuk setelah jam ini &amp; belum dikirim hari ini
-                </div>
-              </div>
-
-              <!-- Konten -->
-              <div style="flex:1;min-width:220px">
-                <div style="font-size:11px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px">📋 Konten Laporan</div>
-                <div style="display:flex;flex-wrap:wrap;gap:7px" id="konten-chips">
-                  <?php foreach (['omset'=>'💰 Omset','order'=>'📦 Order','kas'=>'💵 Kas','absensi'=>'👥 Absensi','alert'=>'⚠️ Alert'] as $k=>$lbl): ?>
-                  <label class="konten-chip <?= in_array($k, $dailyKonten, true) ? 'active' : '' ?>">
-                    <input type="checkbox" name="daily_konten[]" value="<?= $k ?>"
-                           <?= in_array($k, $dailyKonten, true) ? 'checked' : '' ?>
-                           onchange="syncChip(this)">
-                    <?= $lbl ?>
-                  </label>
-                  <?php endforeach; ?>
-                </div>
-              </div>
-
-            </div>
-          </div>
-          <?php endif; ?>
-
+      <div style="background:#F9FAFB;border:1px solid #EEF1F8;border-radius:10px;padding:14px 16px;margin-top:16px">
+        <div style="font-weight:700;color:#0F1C3A;font-size:13px;margin-bottom:10px">📊 Konfigurasi Laporan Harian</div>
+        <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:10px">
+          <label style="font-size:12px;font-weight:600;color:#374151">Jam kirim:</label>
+          <input type="time" name="daily_report_jam" value="<?= htmlspecialchars($dailyJam) ?>"
+                 style="padding:6px 10px;border:1px solid #E5E9F2;border-radius:7px;font-family:inherit">
+          <span style="font-size:11px;color:#9CA3AF">(akan dikirim jika request masuk setelah jam ini & belum dikirim hari ini)</span>
         </div>
-      <?php endforeach; ?>
+        <div style="font-size:12px;font-weight:600;color:#374151;margin-bottom:6px">Konten:</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <?php foreach (['omset'=>'💰 Omset','order'=>'📦 Order','kas'=>'💵 Kas','absensi'=>'👥 Absensi','alert'=>'⚠️ Alert'] as $k=>$lbl): ?>
+            <label style="display:flex;align-items:center;gap:5px;font-size:12px;color:#374151;cursor:pointer">
+              <input type="checkbox" name="daily_konten[]" value="<?= $k ?>"
+                     <?= in_array($k, $dailyKonten, true) ? 'checked' : '' ?>
+                     style="accent-color:#35E8D5">
+              <?= $lbl ?>
+            </label>
+          <?php endforeach; ?>
+        </div>
       </div>
 
-      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+      <div style="margin-top:14px">
         <button type="submit" class="btn btn-primary">💾 Simpan Preferensi</button>
-        <span style="display:flex;align-items:center;gap:6px;font-size:11px;color:#9CA3AF">
-          <span class="soon-badge" style="font-size:9px">SOON</span>
-          Notifikasi WA aktif setelah integrasi selesai
+        <span style="font-size:11px;color:#9CA3AF;margin-left:10px">
+          ℹ️ Notifikasi WhatsApp memerlukan integrasi yang sedang dalam development
         </span>
       </div>
     </form>
-
-    <script>
-    function toggleDailyConfig() {
-      const body  = document.getElementById('body-daily');
-      const btn   = document.getElementById('btn-daily');
-      const arrow = document.getElementById('arrow-daily');
-      const open  = body.classList.toggle('open');
-      btn.classList.toggle('open', open);
-    }
-    function syncChip(input) {
-      input.closest('.konten-chip').classList.toggle('active', input.checked);
-    }
-    // Restore chip state on load (already set via PHP class, this handles edge cases)
-    document.querySelectorAll('#konten-chips .konten-chip input').forEach(cb => {
-      cb.closest('.konten-chip').classList.toggle('active', cb.checked);
-    });
-    </script>
-
     <?php endif; ?>
   </div>
 
