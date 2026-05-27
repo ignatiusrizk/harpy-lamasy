@@ -562,7 +562,7 @@ if ($action) {
                  . "🔄 *Status:* {$stLabel}\n"
                  . "📅 *Est. Selesai:* {$est}\n"
                  . "🧺 *Layanan:*{$itemList}\n\n"
-                 . "Cek status real-time: https://harpy.id/track.php?order={$t['no_order']}\n\n"
+                 . "Cek status real-time: https://lamasy.harpy.id/track.php?order={$t['no_order']}\n\n"
                  . "Terima kasih 🙏\n_Harpy Laundry | harpy.id_";
         }
 
@@ -1589,7 +1589,7 @@ async function cetakUlang(id) {
       ${d.catatan ? `<hr class="struk-divider"/><div style="font-size:11px">📝 ${esc(d.catatan)}</div>` : ''}
       <div class="struk-footer">
         <p>Status: ${isFull ? '✅ LUNAS' : '⚡ Belum Lunas'}</p>
-        <p>Cek status: harpy.id/track.php</p>
+        <p>Cek status: lamasy.harpy.id/track.php</p>
         <p>Terima kasih telah mempercayakan</p>
         <p>cucian Anda kepada Harpy Laundry!</p>
       </div>

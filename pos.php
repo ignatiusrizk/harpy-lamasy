@@ -1365,7 +1365,7 @@ async function showStruk(id) {
 
   const isFull    = parseFloat(data.dp) >= parseFloat(data.total);
   const metodeTxt = {'cash':'Cash','transfer':'Transfer Bank','qris':'QRIS'}[data.metode_bayar]||data.metode_bayar;
-  const trackUrl  = 'https://harpy.id/ERP/track.php?order=' + encodeURIComponent(data.no_order);
+  const trackUrl  = 'https://lamasy.harpy.id/track.php?order=' + encodeURIComponent(data.no_order);
 
   const itemRows = (data.items||[]).map(item => `
     <div class="struk-item">

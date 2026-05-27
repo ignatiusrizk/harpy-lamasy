@@ -1,7 +1,7 @@
 <?php
 // ══════════════════════════════════════════════════════
 // test-mailer.php — Test konfigurasi SMTP
-// Akses: https://harpy.id/test-mailer.php
+// Akses: https://lamasy.harpy.id/test-mailer.php
 //
 // ⚠️  HAPUS file ini setelah berhasil test!
 // ══════════════════════════════════════════════════════
