@@ -128,7 +128,7 @@ if ($action) {
     }
 
     if ($action === 'generate_gaji' && $_SERVER['REQUEST_METHOD']==='POST') {
-        if (!hasPermission('karyawan.manage_gaji')) { echo json_encode(['error'=>'Akses ditolak']); exit; }
+        if (!hasPermission('karyawan.gaji')) { echo json_encode(['error'=>'Akses ditolak']); exit; }
         verifyCsrf();
         $d     = json_decode(file_get_contents('php://input'), true);
         $bulan = $d['bulan'] ?? date('Y-m');
@@ -165,7 +165,7 @@ if ($action) {
     }
 
     if ($action === 'save_gaji' && $_SERVER['REQUEST_METHOD']==='POST') {
-        if (!hasPermission('karyawan.manage_gaji')) { echo json_encode(['error'=>'Akses ditolak']); exit; }
+        if (!hasPermission('karyawan.gaji')) { echo json_encode(['error'=>'Akses ditolak']); exit; }
         verifyCsrf();
         $d     = json_decode(file_get_contents('php://input'), true);
         $total = floatval($d['gaji_pokok']) + floatval($d['bonus'] ?? 0) - floatval($d['potongan'] ?? 0);
@@ -181,7 +181,7 @@ if ($action) {
     }
 
     if ($action === 'bayar_gaji' && $_SERVER['REQUEST_METHOD']==='POST') {
-        if (!hasPermission('karyawan.manage_gaji')) { echo json_encode(['error'=>'Akses ditolak']); exit; }
+        if (!hasPermission('karyawan.gaji')) { echo json_encode(['error'=>'Akses ditolak']); exit; }
         verifyCsrf();
         $d    = json_decode(file_get_contents('php://input'), true);
         $gId  = intval($d['id']);

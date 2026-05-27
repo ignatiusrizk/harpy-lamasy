@@ -4,6 +4,10 @@ define('ROOT', __DIR__);
 require_once ROOT . '/middleware/tenant_guard.php';
 require_once __DIR__ . '/components.php';
 $user = currentUser();
+// Akses absensi: butuh minimal absensi.view (manajer) ATAU absensi.clock (karyawan)
+if (!hasPermission('absensi.view') && !hasPermission('absensi.clock')) {
+    requirePermission('absensi.view');
+}
 
 // ── API ───────────────────────────────────────────────
 $action = $_GET['action'] ?? '';
@@ -14,6 +18,7 @@ if ($action) {
 
     // CLOCK IN
     if ($action === 'clock_in' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+        if (!hasPermission('absensi.clock')) { echo json_encode(['error'=>'Akses ditolak']); exit; }
         verifyCsrf();
         $d   = json_decode(file_get_contents('php://input'), true);
         $tgl = date('Y-m-d');
@@ -48,6 +53,7 @@ if ($action) {
 
     // CLOCK OUT
     if ($action === 'clock_out' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+        if (!hasPermission('absensi.clock')) { echo json_encode(['error'=>'Akses ditolak']); exit; }
         verifyCsrf();
         $d   = json_decode(file_get_contents('php://input'), true);
         $tgl = date('Y-m-d');
@@ -100,7 +106,7 @@ if ($action) {
         $dari   = "$y-$m-01";
         $sampai = date('Y-m-t', strtotime($dari));
 
-        $uid = hasPermission('absensi.view_all') && !empty($_GET['user_id'])
+        $uid = hasPermission('absensi.view') && !empty($_GET['user_id'])
                ? intval($_GET['user_id']) : $user['id'];
 
         $data = TenantQuery::raw(
@@ -126,7 +132,7 @@ if ($action) {
 
     // REKAP SEMUA KARYAWAN (admin only)
     if ($action === 'rekap_all') {
-        if (!hasPermission('absensi.view_all') && !hasPermission('absensi.approve_izin')) {
+        if (!hasPermission('absensi.view') && !hasPermission('absensi.approve')) {
             echo json_encode(['error'=>'Akses ditolak']); exit;
         }
         $bulan  = $_GET['bulan'] ?? date('Y-m');
@@ -193,7 +199,7 @@ if ($action) {
     // APPROVE IZIN (admin only)
     if ($action === 'approve_izin' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         verifyCsrf();
-        if (!hasPermission('absensi.view_all') && !hasPermission('absensi.approve_izin')) {
+        if (!hasPermission('absensi.view') && !hasPermission('absensi.approve')) {
             echo json_encode(['error'=>'Akses ditolak']); exit;
         }
         $d      = json_decode(file_get_contents('php://input'), true);
@@ -209,7 +215,7 @@ if ($action) {
 
     // LIST IZIN
     if ($action === 'list_izin') {
-        if (hasPermission('absensi.view_all')) {
+        if (hasPermission('absensi.view')) {
             $rows = TenantQuery::raw(
                 "SELECT i.*,u.nama FROM hl_izin i
                  JOIN hl_users u ON u.id=i.user_id AND u.tenant_id=i.tenant_id
@@ -229,7 +235,7 @@ if ($action) {
 
     // LIST USERS (admin)
     if ($action === 'list_users') {
-        if (!hasPermission('absensi.view_all') && !hasPermission('absensi.approve_izin')) {
+        if (!hasPermission('absensi.view') && !hasPermission('absensi.approve')) {
             echo json_encode([]); exit;
         }
         // Hanya karyawan yang ditugaskan ke outlet ini (per brief HQ-Outlet)
@@ -600,7 +606,7 @@ if ($action) {
   </div>
 
   <!-- TABS ADMIN -->
-  <?php if (hasPermission('absensi.view_all') || hasPermission('absensi.approve_izin')): ?>
+  <?php if (hasPermission('absensi.view') || hasPermission('absensi.approve')): ?>
   <div class="hl-tabs">
     <button class="hl-tab active" onclick="switchTab('rekap',this)">📊 Rekap Semua Karyawan</button>
     <button class="hl-tab" onclick="switchTab('izin',this)">📋 Pengajuan Izin</button>
@@ -680,7 +686,7 @@ if ($action) {
 <?php renderToast(); ?>
 
 <script>
-const IS_ADMIN = <?= (hasPermission('absensi.view_all') || hasPermission('absensi.approve_izin')) ? 'true' : 'false' ?>;
+const IS_ADMIN = <?= (hasPermission('absensi.view') || hasPermission('absensi.approve')) ? 'true' : 'false' ?>;
 
 // ── LIVE CLOCK ────────────────────────────────────────
 function updateClock() {

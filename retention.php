@@ -10,6 +10,7 @@ require_once ROOT . '/middleware/tenant_guard.php';
 require_once ROOT . '/core/RetentionManager.php';
 require_once __DIR__ . '/components.php';
 $user = currentUser();
+requirePermission('pelanggan.view');
 $tid  = (int)TenantResolver::id();
 $oid  = (int)TenantResolver::outletId();
 
@@ -17,7 +18,7 @@ $oid  = (int)TenantResolver::outletId();
 $action = $_GET['action'] ?? '';
 if ($action) {
     header('Content-Type: application/json');
-    if (!hasPermission('customer.view') && !hasPermission('customer.edit')) {
+    if (!hasPermission('pelanggan.view') && !hasPermission('pelanggan.edit')) {
         echo json_encode(['error'=>'Akses ditolak']); exit;
     }
 

@@ -5,7 +5,7 @@ require_once ROOT . '/middleware/tenant_guard.php';
 require_once ROOT . '/core/AIInsight.php';
 require_once __DIR__ . '/components.php';
 $user = currentUser();
-requirePermission('laporan.view_harian');
+requirePermission('laporan.view');
 
 // ── API ───────────────────────────────────────────────
 $action = $_GET['action'] ?? '';
@@ -16,7 +16,7 @@ if ($action) {
 
     // ── LAPORAN HARIAN ────────────────────────────────
     if ($action === 'harian') {
-        if (!hasPermission('laporan.view_harian')) { echo json_encode(['error'=>'Akses ditolak']); exit; }
+        if (!hasPermission('laporan.view')) { echo json_encode(['error'=>'Akses ditolak']); exit; }
         $tgl = substr(trim($_GET['tgl'] ?? date('Y-m-d')), 0, 10);
 
         $orderData = TenantQuery::rawOne(
@@ -71,7 +71,7 @@ if ($action) {
 
     // ── LAPORAN BULANAN ───────────────────────────────
     if ($action === 'bulanan') {
-        if (!hasPermission('laporan.view_bulanan')) { echo json_encode(['error'=>'Akses ditolak']); exit; }
+        if (!hasPermission('laporan.view')) { echo json_encode(['error'=>'Akses ditolak']); exit; }
         $bulan  = substr(trim($_GET['bulan'] ?? date('Y-m')), 0, 7);
         [$y,$m] = explode('-', $bulan);
         $dari   = "$y-$m-01";
@@ -145,7 +145,7 @@ if ($action) {
 
     // ── LAPORAN L/R ───────────────────────────────────
     if ($action === 'lr') {
-        if (!hasPermission('laporan.view_lr')) { echo json_encode(['error'=>'Akses ditolak']); exit; }
+        if (!hasPermission('laporan.view')) { echo json_encode(['error'=>'Akses ditolak']); exit; }
         $dari   = substr(trim($_GET['dari']   ?? date('Y-m-01')), 0, 10);
         $sampai = substr(trim($_GET['sampai'] ?? date('Y-m-d')), 0, 10);
 
@@ -471,20 +471,20 @@ tfoot td{padding:9px 12px;font-weight:700;font-size:13px}
 
   <!-- PAGE TABS -->
   <div class="page-tabs">
-    <?php if (hasPermission('laporan.view_harian')): ?>
+    <?php if (hasPermission('laporan.view')): ?>
     <button class="ptab active" onclick="switchTab('harian',this)">📅 Harian</button>
     <?php endif; ?>
-    <?php if (hasPermission('laporan.view_bulanan')): ?>
+    <?php if (hasPermission('laporan.view')): ?>
     <button class="ptab" onclick="switchTab('bulanan',this)">📆 Bulanan</button>
     <?php endif; ?>
-    <?php if (hasPermission('laporan.view_lr')): ?>
+    <?php if (hasPermission('laporan.view')): ?>
     <button class="ptab" onclick="switchTab('lr',this)">📈 Laba / Rugi</button>
     <?php endif; ?>
     <button class="ptab" onclick="switchTab('produktivitas',this)">👥 Produktivitas Karyawan</button>
   </div>
 
   <!-- ══ TAB HARIAN ═══════════════════════════════════ -->
-  <?php if (hasPermission('laporan.view_harian')): ?>
+  <?php if (hasPermission('laporan.view')): ?>
   <div id="tabHarian">
     <div class="hl-filter-collapsible no-print">
       <button class="hl-filter-toggle-btn" id="harianFilterBtn" onclick="toggleFilter('harianFilter')">
@@ -545,7 +545,7 @@ tfoot td{padding:9px 12px;font-weight:700;font-size:13px}
   <?php endif; ?>
 
   <!-- ══ TAB BULANAN ══════════════════════════════════ -->
-  <?php if (hasPermission('laporan.view_bulanan')): ?>
+  <?php if (hasPermission('laporan.view')): ?>
   <div id="tabBulanan" style="display:none">
     <div class="hl-filter-collapsible no-print">
       <button class="hl-filter-toggle-btn" id="bulananFilterBtn" onclick="toggleFilter('bulananFilter')">
@@ -607,7 +607,7 @@ tfoot td{padding:9px 12px;font-weight:700;font-size:13px}
   <?php endif; ?>
 
   <!-- ══ TAB LABA RUGI ════════════════════════════════ -->
-  <?php if (hasPermission('laporan.view_lr')): ?>
+  <?php if (hasPermission('laporan.view')): ?>
   <div id="tabLR" style="display:none">
     <div class="hl-filter-collapsible no-print">
       <button class="hl-filter-toggle-btn" id="lrFilterBtn" onclick="toggleFilter('lrFilter')">

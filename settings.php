@@ -408,7 +408,7 @@ function renderPermMatrix() {
       // Cek pakai "in" bukan !! agar null filter_data (seeded row) tetap dianggap checked
       const checked    = p.id in currentRolePerms;
       const filterVal  = currentRolePerms[p.id] || 'all';
-      const hasFilter  = ['orders.view_all','orders.view_own','absensi.view_own','absensi.view_all'].includes(p.kode);
+      const hasFilter  = ['orders.view_all','orders.view_own'].includes(p.kode);
 
       html += `<div class="perm-row">
         <input type="checkbox" class="hl-check perm-cb" id="perm_${p.id}"

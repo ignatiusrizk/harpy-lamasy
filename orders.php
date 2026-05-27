@@ -133,6 +133,9 @@ if ($action) {
 
     // UPDATE order
     if ($action === 'update' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+        if (!hasPermission('orders.edit') && !hasPermission('orders.update_status')) {
+            echo json_encode(['error'=>'Akses ditolak']); exit;
+        }
         verifyCsrf();
         $data = json_decode(file_get_contents('php://input'), true);
         $id   = intval($data['id']);
@@ -296,7 +299,7 @@ if ($action) {
     // UPDATE PEMBAYARAN — pilihan sebagian/lunas + bukti
     if ($action === 'bayar' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         verifyCsrf();
-        if (!hasPermission('orders.update_payment')) { echo json_encode(['error'=>'Akses ditolak']); exit; }
+        if (!hasPermission('orders.bayar')) { echo json_encode(['error'=>'Akses ditolak']); exit; }
         $id     = intval($_POST['id'] ?? 0);
         $tipe   = $_POST['tipe_bayar'] ?? 'sebagian';
         $jumlah = floatval($_POST['jumlah'] ?? 0);
@@ -399,7 +402,7 @@ if ($action) {
 
     // BULK UPDATE STATUS_PROSES
     if ($action === 'bulk_status' && $_SERVER['REQUEST_METHOD'] === 'POST') {
-        if (!hasPermission('orders.update') && !hasPermission('orders.update_own')) {
+        if (!hasPermission('orders.update_status')) {
             echo json_encode(['error'=>'Akses ditolak']); exit;
         }
         verifyCsrf();

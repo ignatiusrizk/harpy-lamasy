@@ -5,6 +5,7 @@ require_once ROOT . '/middleware/tenant_guard.php';
 require_once ROOT . '/core/Loyalty.php';
 require_once __DIR__ . '/components.php';
 $user = currentUser();
+requirePermission('pos.view');
 $loyaltyCfg = Loyalty::config((int)TenantResolver::id());
 
 // ── API HANDLER ───────────────────────────────────────

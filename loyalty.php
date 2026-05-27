@@ -11,6 +11,7 @@ require_once ROOT . '/middleware/tenant_guard.php';
 require_once ROOT . '/core/Loyalty.php';
 require_once __DIR__ . '/components.php';
 $user = currentUser();
+requirePermission('pelanggan.view');
 $tid  = (int)TenantResolver::id();
 $oid  = (int)TenantResolver::outletId();
 
@@ -18,12 +19,6 @@ $oid  = (int)TenantResolver::outletId();
 $action = $_GET['action'] ?? '';
 if ($action) {
     header('Content-Type: application/json');
-    if (!hasPermission('settings.manage_loyalty') && !hasPermission('owner') && $user['role'] !== 'owner' && $user['role'] !== 'admin') {
-        // fallback: allow owner/superadmin/admin/manager
-        if (!in_array($user['role'] ?? '', ['owner','superadmin','admin','manager'], true)) {
-            echo json_encode(['error'=>'Akses ditolak']); exit;
-        }
-    }
 
     if ($action === 'get_config') {
         try {

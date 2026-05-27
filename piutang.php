@@ -11,10 +11,7 @@ require_once ROOT . '/core/Notifier.php';
 require_once __DIR__ . '/components.php';
 
 $user = currentUser();
-$role = $user['role'] ?? 'staff';
-if (!in_array($role, ['owner','superadmin','admin','manager'], true)) {
-    http_response_code(403);
-    die('Akses ditolak — hanya owner/manager.');
+requirePermission('laporan.view');
 }
 
 $tid = TenantResolver::id();
@@ -78,6 +75,7 @@ if ($action === 'list_b2b_customer') {
 // ── API: generate tagihan dari order pelanggan B2B periode ──
 if ($action === 'generate' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     header('Content-Type: application/json');
+    if (!hasPermission('laporan.export')) { echo json_encode(['error'=>'Akses ditolak']); exit; }
     verifyCsrf();
     $d = json_decode(file_get_contents('php://input'), true) ?: [];
     $pelId   = (int)($d['pelanggan_id'] ?? 0);
@@ -121,6 +119,7 @@ if ($action === 'generate' && $_SERVER['REQUEST_METHOD'] === 'POST') {
 // ── API: tandai invoice terkirim + buka WA link invoice ──
 if ($action === 'mark_invoiced' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     header('Content-Type: application/json');
+    if (!hasPermission('laporan.export')) { echo json_encode(['error'=>'Akses ditolak']); exit; }
     verifyCsrf();
     $d = json_decode(file_get_contents('php://input'), true) ?: [];
     $id = (int)($d['id'] ?? 0);
@@ -169,6 +168,7 @@ if ($action === 'mark_invoiced' && $_SERVER['REQUEST_METHOD'] === 'POST') {
 // ── API: catat pembayaran ──
 if ($action === 'bayar' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     header('Content-Type: application/json');
+    if (!hasPermission('laporan.export')) { echo json_encode(['error'=>'Akses ditolak']); exit; }
     verifyCsrf();
     $d = json_decode(file_get_contents('php://input'), true) ?: [];
     $id = (int)($d['id'] ?? 0);
@@ -219,6 +219,7 @@ if ($action === 'bayar' && $_SERVER['REQUEST_METHOD'] === 'POST') {
 // ── API: kirim reminder + log + return WA link ──
 if ($action === 'reminder' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     header('Content-Type: application/json');
+    if (!hasPermission('laporan.export')) { echo json_encode(['error'=>'Akses ditolak']); exit; }
     verifyCsrf();
     $d = json_decode(file_get_contents('php://input'), true) ?: [];
     $id = (int)($d['id'] ?? 0);

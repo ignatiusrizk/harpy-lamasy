@@ -4,7 +4,7 @@ define('ROOT', __DIR__);
 require_once ROOT . '/middleware/tenant_guard.php';
 require_once __DIR__ . '/components.php';
 $user = currentUser();
-requirePermission('customer.view');
+requirePermission('pelanggan.view');
 
 $action = $_GET['action'] ?? '';
 if ($action) {
@@ -62,8 +62,8 @@ if ($action) {
 
     if ($action === 'save' && $_SERVER['REQUEST_METHOD']==='POST') {
         $d = json_decode(file_get_contents('php://input'), true);
-        if (!empty($d['id']) && !hasPermission('customer.edit')) { echo json_encode(['error'=>'Akses ditolak']); exit; }
-        if (empty($d['id']) && !hasPermission('customer.create')) { echo json_encode(['error'=>'Akses ditolak']); exit; }
+        if (!empty($d['id']) && !hasPermission('pelanggan.edit')) { echo json_encode(['error'=>'Akses ditolak']); exit; }
+        if (empty($d['id']) && !hasPermission('pelanggan.create')) { echo json_encode(['error'=>'Akses ditolak']); exit; }
         verifyCsrf();
 
         $metodeBayar = $d['metode_bayar'] ?? 'langsung';
@@ -133,7 +133,7 @@ if ($action) {
 
     // Save preferensi pelanggan
     if ($action === 'save_preferensi' && $_SERVER['REQUEST_METHOD'] === 'POST') {
-        if (!hasPermission('customer.edit')) { echo json_encode(['error'=>'Akses ditolak']); exit; }
+        if (!hasPermission('pelanggan.edit')) { echo json_encode(['error'=>'Akses ditolak']); exit; }
         verifyCsrf();
         $d  = json_decode(file_get_contents('php://input'), true) ?: [];
         $id = (int)($d['id'] ?? 0);
@@ -166,7 +166,7 @@ if ($action) {
 
     // Force re-run segmentasi (untuk tombol manual refresh)
     if ($action === 'segmen_refresh' && $_SERVER['REQUEST_METHOD'] === 'POST') {
-        if (!hasPermission('customer.edit') && !hasPermission('customer.view')) {
+        if (!hasPermission('pelanggan.edit') && !hasPermission('pelanggan.view')) {
             echo json_encode(['error'=>'Akses ditolak']); exit;
         }
         require_once ROOT . '/core/SegmentasiManager.php';
