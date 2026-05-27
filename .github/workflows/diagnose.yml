@@ -7,7 +7,7 @@ jobs:
   diagnose:
     runs-on: ubuntu-latest
     steps:
-      - name: SSH and inspect logs
+      - name: SSH and capture errors
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -16,24 +16,42 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             APP=~/domains/harpy.id/public_html/lamasy
-            echo "=== Last 50 lines of PHP error log (lamasy folder) ==="
-            tail -50 $APP/error_log 2>/dev/null || echo "no error_log here"
+
+            echo "=== Search all error_log in domain ==="
+            find ~/domains/harpy.id -name "error_log" 2>/dev/null
+
             echo ""
-            echo "=== Hostinger error log ==="
-            tail -80 ~/.logs/*.log 2>/dev/null | tail -80 || echo "no .logs"
+            echo "=== Last 50 lines of domain root error_log ==="
+            tail -50 ~/domains/harpy.id/public_html/error_log 2>/dev/null || echo "no root error_log"
+
             echo ""
-            echo "=== Find any error_log file in domain ==="
-            find ~/domains/harpy.id -name "error_log" -mtime -1 2>/dev/null | head -5
+            echo "=== Direct PHP CLI test of login.php ==="
+            cd $APP && php -d display_errors=1 -r '
+              define("ROOT", "'$APP'");
+              try {
+                require_once ROOT . "/master/config/db.php";
+                require_once ROOT . "/core/Database.php";
+                $pdo = Database::get();
+                echo "DB OK\n";
+                $stmt = $pdo->query("SELECT 1");
+                echo "Query OK: " . $stmt->fetchColumn() . "\n";
+                echo "APP_URL = " . APP_URL . "\n";
+                echo "DB_NAME = " . DB_NAME . "\n";
+              } catch (Throwable $e) {
+                echo "ERROR: " . $e->getMessage() . "\n";
+                echo $e->getTraceAsString() . "\n";
+              }
+            ' 2>&1
+
             echo ""
-            echo "=== Check db.php exists & APP_URL ==="
-            ls -la $APP/master/config/db.php 2>/dev/null || echo "MISSING db.php!"
-            grep -E "APP_URL|DB_NAME" $APP/master/config/db.php 2>/dev/null
+            echo "=== POST simulation to login.php via curl from server ==="
+            curl -sS -X POST -d "email=test@test.com&password=test&csrf=x" \
+              -w "\nHTTP_CODE: %{http_code}\n" \
+              https://lamasy.harpy.id/login.php 2>&1 | head -50
+
             echo ""
-            echo "=== Check core/Database.php first lines ==="
-            head -20 $APP/core/Database.php
-            echo ""
-            echo "=== login.php first 30 lines ==="
-            head -30 $APP/login.php
-            echo ""
-            echo "=== File permissions check ==="
-            ls -la $APP/login.php $APP/index.php $APP/.htaccess
+            echo "=== Re-check error_log after POST ==="
+            find ~/domains/harpy.id -name "error_log" -mmin -5 2>/dev/null | while read f; do
+              echo "--- $f ---"
+              tail -30 "$f"
+            done
