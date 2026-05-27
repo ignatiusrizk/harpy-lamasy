@@ -14,6 +14,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Ensure remote directory exists
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          port: ${{ secrets.SSH_PORT }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: mkdir -p ~/public_html/lamasy
+
       - name: Deploy via rsync over SSH
         uses: burnett01/rsync-deployments@7.0.1
         with:
