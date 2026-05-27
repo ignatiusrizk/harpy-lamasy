@@ -1,0 +1,38 @@
+name: Diagnose Hostinger paths
+
+on:
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - name: SSH and inspect filesystem
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          port: ${{ secrets.SSH_PORT }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            echo "=== whoami / pwd ==="
+            whoami
+            pwd
+            echo ""
+            echo "=== Home directory ==="
+            ls -la ~/
+            echo ""
+            echo "=== public_html contents ==="
+            ls -la ~/public_html/ 2>/dev/null || echo "no public_html in home"
+            echo ""
+            echo "=== public_html/lamasy contents (where we deployed) ==="
+            ls -la ~/public_html/lamasy/ 2>/dev/null | head -30
+            echo ""
+            echo "=== domains/ folder (Hostinger subdomain pattern) ==="
+            ls -la ~/domains/ 2>/dev/null || echo "no ~/domains/"
+            echo ""
+            echo "=== Find any 'lamasy' directory ==="
+            find ~ -maxdepth 5 -type d -name "lamasy" 2>/dev/null
+            echo ""
+            echo "=== Find any login.php in home ==="
+            find ~ -maxdepth 6 -name "login.php" 2>/dev/null | head -10
