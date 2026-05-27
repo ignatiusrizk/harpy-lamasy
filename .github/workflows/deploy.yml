@@ -21,7 +21,7 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           port: ${{ secrets.SSH_PORT }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: mkdir -p ~/public_html/lamasy
+          script: mkdir -p ~/domains/harpy.id/public_html/lamasy
 
       - name: Deploy via rsync over SSH
         uses: burnett01/rsync-deployments@7.0.1
@@ -36,7 +36,7 @@ jobs:
             --exclude='*.bak'
             --exclude='*.log'
           path: ./
-          remote_path: ~/public_html/lamasy/
+          remote_path: ~/domains/harpy.id/public_html/lamasy/
           remote_host: ${{ secrets.SSH_HOST }}
           remote_user: ${{ secrets.SSH_USER }}
           remote_port: ${{ secrets.SSH_PORT }}
