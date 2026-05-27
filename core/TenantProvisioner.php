@@ -18,7 +18,7 @@ class TenantProvisioner
         $db->beginTransaction();
         try {
             // ── Step 1: Insert tenant ─────────────────
-            $trialEnd = date('Y-m-d H:i:s', strtotime('+30 days'));
+            $trialEnd = date('Y-m-d H:i:s', strtotime('+7 days'));
             $db->prepare("
                 INSERT INTO tenants
                   (slug, nama_outlet, owner_name, owner_wa,
@@ -64,7 +64,7 @@ class TenantProvisioner
                 'outlet'   => $data['nama_outlet'],
                 'url'      => APP_URL . '/login',
                 'password' => $tempPassword,
-                'trial'    => '30 hari',
+                'trial'    => '7 hari',
             ]);
 
             return [
@@ -194,8 +194,9 @@ class TenantProvisioner
         $stmtPerm = $db->prepare(
             "INSERT INTO hl_permissions (tenant_id, kode, modul, aksi, deskripsi) VALUES (?,?,?,?,?)"
         );
+        // Sertakan filter_data='all' agar permission muncul checked di UI settings
         $stmtMap  = $db->prepare(
-            "INSERT INTO hl_role_permissions (tenant_id, role_id, permission_id) VALUES (?,?,?)"
+            "INSERT INTO hl_role_permissions (tenant_id, role_id, permission_id, filter_data) VALUES (?,?,?,?)"
         );
 
         $ownerExclude   = [];
@@ -212,21 +213,21 @@ class TenantProvisioner
             $permId = (int) $db->lastInsertId();
 
             // Owner: semua
-            $stmtMap->execute([$tenantId, $roleIds['owner'], $permId]);
+            $stmtMap->execute([$tenantId, $roleIds['owner'], $permId, 'all']);
 
             // Admin: semua kecuali daftar excluded
             if (!in_array($kode, $adminExclude)) {
-                $stmtMap->execute([$tenantId, $roleIds['admin'], $permId]);
+                $stmtMap->execute([$tenantId, $roleIds['admin'], $permId, 'all']);
             }
 
             // Kasir: hanya yang included
             if (in_array($kode, $kasirInclude)) {
-                $stmtMap->execute([$tenantId, $roleIds['kasir'], $permId]);
+                $stmtMap->execute([$tenantId, $roleIds['kasir'], $permId, 'all']);
             }
 
             // Karyawan: hanya yang included
             if (in_array($kode, $karyawanInclude)) {
-                $stmtMap->execute([$tenantId, $roleIds['karyawan'], $permId]);
+                $stmtMap->execute([$tenantId, $roleIds['karyawan'], $permId, 'all']);
             }
         }
     }

@@ -37,14 +37,17 @@ if ($action) {
             [$rid]
         );
         $map = [];
-        foreach ($rows as $r) $map[$r['permission_id']] = $r['filter_data'];
+        // Normalisasi filter_data NULL → 'all' agar permission tampil checked di UI
+        foreach ($rows as $r) $map[$r['permission_id']] = $r['filter_data'] ?? 'all';
         echo json_encode($map); exit;
     }
 
-    // GET ALL PERMISSIONS (grouped by modul) — global table, no tenant_id
+    // GET ALL PERMISSIONS (grouped by modul) — tenant-scoped
     if ($action === 'get_all_perms') {
         $db   = Database::get();
-        $rows = $db->query("SELECT * FROM hl_permissions ORDER BY modul, aksi")->fetchAll();
+        $stmt = $db->prepare("SELECT * FROM hl_permissions WHERE tenant_id=? ORDER BY modul, aksi");
+        $stmt->execute([$tid]);
+        $rows = $stmt->fetchAll();
         $grouped = [];
         foreach ($rows as $r) $grouped[$r['modul']][] = $r;
         echo json_encode($grouped); exit;
@@ -105,10 +108,20 @@ if ($action) {
         }
 
         $db = Database::get();
+
+        // Validasi: hanya permission milik tenant ini yang boleh disimpan
+        $validPermStmt = $db->prepare("SELECT id FROM hl_permissions WHERE tenant_id=?");
+        $validPermStmt->execute([$tid]);
+        $validPermIds = array_flip($validPermStmt->fetchAll(PDO::FETCH_COLUMN));
+
         $db->prepare("DELETE FROM hl_role_permissions WHERE role_id=? AND tenant_id=?")->execute([$roleId, $tid]);
         $stmt = $db->prepare("INSERT INTO hl_role_permissions (tenant_id,role_id,permission_id,filter_data) VALUES (?,?,?,?)");
         foreach ($perms as $permId => $filter) {
-            if ($filter) $stmt->execute([$tid, $roleId, intval($permId), $filter]);
+            $pid = intval($permId);
+            if (isset($validPermIds[$pid])) {
+                // filter_data null/kosong → default 'all'
+                $stmt->execute([$tid, $roleId, $pid, $filter ?: 'all']);
+            }
         }
 
         logAudit('update_permission', 'settings', 'Update permission role ID: ' . $roleId);
@@ -300,13 +313,13 @@ let currentRolePerms = {}; // {perm_id: filter_data}
 
 const MODUL_ICON = {
   pos:'🧾',orders:'📋',kas:'💰',laporan:'📊',
-  customer:'👥',karyawan:'👤',promo:'🎟️',
-  layanan:'🧺',absensi:'🕐',settings:'⚙️',bantuan:'🎧'
+  pelanggan:'👥',karyawan:'👤',promo:'🎟️',
+  layanan:'🧺',absensi:'🕐',settings:'⚙️',bantuan:'🎧',audit:'🔍'
 };
 const MODUL_LABEL = {
   pos:'POS',orders:'Order',kas:'Kas',laporan:'Laporan',
-  customer:'Customer',karyawan:'Karyawan',promo:'Promo',
-  layanan:'Layanan',absensi:'Absensi',settings:'Settings',bantuan:'Support & Tiket'
+  pelanggan:'Pelanggan',karyawan:'Karyawan',promo:'Promo',
+  layanan:'Layanan',absensi:'Absensi',settings:'Settings',bantuan:'Support & Tiket',audit:'Audit Log'
 };
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -392,7 +405,8 @@ function renderPermMatrix() {
       </div>`;
 
     perms.forEach(p => {
-      const checked    = !!currentRolePerms[p.id];
+      // Cek pakai "in" bukan !! agar null filter_data (seeded row) tetap dianggap checked
+      const checked    = p.id in currentRolePerms;
       const filterVal  = currentRolePerms[p.id] || 'all';
       const hasFilter  = ['orders.view_all','orders.view_own','absensi.view_own','absensi.view_all'].includes(p.kode);
 
@@ -401,7 +415,7 @@ function renderPermMatrix() {
           data-id="${p.id}" data-has-filter="${hasFilter}"
           ${checked?'checked':''} onchange="togglePerm(${p.id},this.checked)"/>
         <label for="perm_${p.id}" style="flex:1;cursor:pointer">
-          <div class="perm-label">${esc(p.label)}</div>
+          <div class="perm-label">${esc(p.kode)}</div>
           <div class="perm-desc">${esc(p.deskripsi||'')}</div>
         </label>
         ${hasFilter ? `
