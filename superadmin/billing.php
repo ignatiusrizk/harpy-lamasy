@@ -183,7 +183,7 @@ if ($action) {
                     t.nama_outlet, t.owner_name,
                     pk.nama AS package_nama,
                     cb.nama AS bundle_nama,
-                    sa.nama AS superadmin_nama
+                    sa.name AS superadmin_nama
              FROM saas_manual_payments p
              LEFT JOIN tenants t  ON t.id  = p.tenant_id
              LEFT JOIN saas_packages pk ON pk.id = p.package_id

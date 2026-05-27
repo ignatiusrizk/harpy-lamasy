@@ -127,7 +127,7 @@ if ($action) {
     if ($action === 'get_notes') {
         $id = (int)($_GET['id'] ?? 0);
         $rows = $db->prepare(
-            "SELECT n.*, s.nama as sa_nama FROM tenant_notes n
+            "SELECT n.*, s.name as sa_nama FROM tenant_notes n
              LEFT JOIN super_admins s ON s.id = n.superadmin_id
              WHERE n.tenant_id = ? ORDER BY n.is_pinned DESC, n.created_at DESC"
         );
@@ -164,7 +164,7 @@ if ($action) {
     if ($action === 'get_comms') {
         $id = (int)($_GET['id'] ?? 0);
         $rows = $db->prepare(
-            "SELECT s.*, sa.nama as sa_nama FROM support_tickets s
+            "SELECT s.*, sa.name as sa_nama FROM support_tickets s
              LEFT JOIN super_admins sa ON sa.id = s.superadmin_id
              WHERE s.tenant_id = ? ORDER BY s.created_at DESC LIMIT 50"
         );
