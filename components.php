@@ -22,97 +22,91 @@ function renderTopbar(string $activePage = '', bool $minimalMode = false): void 
     $tenant = currentTenant();
     if (!$user) return;
 
-    // Menu per role — sesuai brief 'Akses Karyawan Saat Login' Section 6.3
+    // Menu visibility berbasis PERMISSION — bukan role hardcoded.
+    // hasPermission() sudah handle owner/superadmin bypass (return true).
     //
-    // Role mapping:
-    //   owner/superadmin → full akses
-    //   manager/admin    → ops + analytics (tidak settings/audit/manage_karyawan)
-    //   kasir            → POS focused (Dashboard, POS, Orders, Customer)
-    //   staff            → produksi (Dashboard, Orders, Absensi)
-    //   kurir            → delivery (Dashboard, Orders, Absensi)
+    // perm: null  → selalu tampil untuk semua user login
+    // perm: 'x.y' → tampil jika user punya permission x.y
+    // perms: ['a','b'] → tampil jika user punya SALAH SATU permission
+    // roles: [...]  → fallback role-based untuk fitur tanpa permission spesifik
     $navGroups = [
         'dashboard' => [
             'label' => 'Dashboard',
             'items' => [
-                'dashboard' => ['label'=>'Dashboard', 'url'=>'dashboard.php',
-                                'roles'=>['owner','superadmin','admin','manager','kasir','staff','kurir']],
+                'dashboard' => ['label'=>'Dashboard', 'url'=>'dashboard.php', 'perm'=>null],
             ],
         ],
         'operasional' => [
             'label' => 'Operasional',
             'items' => [
-                'pos'    => ['label'=>'POS',   'url'=>'pos.php',
-                             'roles'=>['owner','superadmin','admin','manager','kasir']],
-                'orders' => ['label'=>'Order', 'url'=>'orders.php',
-                             'roles'=>['owner','superadmin','admin','manager','kasir','staff','kurir']],
-                'kanban' => ['label'=>'Kanban', 'url'=>'kanban.php',
-                             'roles'=>['owner','superadmin','admin','manager','kasir','staff','kurir']],
-                'kas'    => ['label'=>'Kas',   'url'=>'kas.php',
-                             'roles'=>['owner','superadmin','admin','manager']],
-                'checklist' => ['label'=>'Checklist', 'url'=>'checklist.php',
-                             'roles'=>['owner','superadmin','admin','manager','kasir','staff','kurir']],
+                'pos'       => ['label'=>'POS',       'url'=>'pos.php',       'perm'=>'pos.view'],
+                'orders'    => ['label'=>'Order',     'url'=>'orders.php',    'perms'=>['orders.view_all','orders.view_own']],
+                'kanban'    => ['label'=>'Kanban',    'url'=>'kanban.php',    'perms'=>['orders.view_all','orders.view_own']],
+                'kas'       => ['label'=>'Kas',       'url'=>'kas.php',       'perm'=>'kas.view'],
+                'checklist' => ['label'=>'Checklist', 'url'=>'checklist.php', 'perm'=>null],
             ],
         ],
         'keuangan' => [
             'label' => 'Keuangan',
             'items' => [
-                'laporan' => ['label'=>'Laporan', 'url'=>'laporan.php',
-                              'roles'=>['owner','superadmin','admin','manager']],
-                'piutang' => ['label'=>'Piutang B2B', 'url'=>'piutang.php',
-                              'roles'=>['owner','superadmin','admin','manager']],
+                'laporan' => ['label'=>'Laporan',    'url'=>'laporan.php', 'perm'=>'laporan.view'],
+                'piutang' => ['label'=>'Piutang B2B','url'=>'piutang.php', 'perm'=>'laporan.view'],
             ],
         ],
         'master' => [
             'label' => 'Master',
             'items' => [
-                'layanan'  => ['label'=>'Layanan',  'url'=>'layanan.php',
-                               'roles'=>['owner','superadmin','admin','manager']],
-                'promo'    => ['label'=>'Promo',    'url'=>'promo.php',
-                               'roles'=>['owner','superadmin','admin','manager']],
-                'customer' => ['label'=>'Customer', 'url'=>'customer.php',
-                               'roles'=>['owner','superadmin','admin','manager','kasir']],
-                'loyalty'  => ['label'=>'Sistem Poin', 'url'=>'loyalty.php',
-                               'roles'=>['owner','superadmin','admin','manager']],
-                'retention'=> ['label'=>'Retensi Dormant', 'url'=>'retention.php',
-                               'roles'=>['owner','superadmin','admin','manager','kasir']],
+                'layanan'  => ['label'=>'Layanan',        'url'=>'layanan.php',   'perm'=>'layanan.view'],
+                'promo'    => ['label'=>'Promo',          'url'=>'promo.php',     'perm'=>'promo.view'],
+                'customer' => ['label'=>'Customer',       'url'=>'customer.php',  'perm'=>'pelanggan.view'],
+                'loyalty'  => ['label'=>'Sistem Poin',    'url'=>'loyalty.php',   'perm'=>'pelanggan.view'],
+                'retention'=> ['label'=>'Retensi Dormant','url'=>'retention.php', 'perm'=>'pelanggan.view'],
             ],
         ],
         'hr' => [
             'label' => 'HR',
             'items' => [
-                'karyawan' => ['label'=>'Karyawan', 'url'=>'karyawan.php',
-                               'roles'=>['owner','superadmin','admin','manager']],
-                // Absensi: kasir NOT included per brief 6.3 (kasir clock via dashboard ringkas)
-                'absensi'  => ['label'=>'Absensi',  'url'=>'absensi.php',
-                               'roles'=>['owner','superadmin','admin','manager','staff','kurir']],
-                'droppoint'=> ['label'=>'Drop Point', 'url'=>'droppoint_manager.php',
-                               'roles'=>['owner','superadmin','admin','manager']],
+                'karyawan'  => ['label'=>'Karyawan',  'url'=>'karyawan.php',         'perm'=>'karyawan.view'],
+                'absensi'   => ['label'=>'Absensi',   'url'=>'absensi.php',          'perms'=>['absensi.view','absensi.clock']],
+                'droppoint' => ['label'=>'Drop Point','url'=>'droppoint_manager.php',
+                                'roles'=>['owner','superadmin','admin','manager']],
             ],
         ],
         'settings' => [
             'label' => 'Settings',
             'items' => [
-                'settings'     => ['label'=>'Role & Permission', 'url'=>'settings.php',
-                                   'roles'=>['owner','superadmin']],
-                // Audit: manager BISA lihat (brief 6.3 manager view_audit ✅, manage tidak)
-                'audit'        => ['label'=>'Audit Log',         'url'=>'audit.php',
-                                   'roles'=>['owner','superadmin','admin','manager']],
-                'owner_report' => ['label'=>'Notifikasi Owner',  'url'=>'owner_report.php',
+                'settings'     => ['label'=>'Role & Permission','url'=>'settings.php',   'perm'=>'settings.roles'],
+                'audit'        => ['label'=>'Audit Log',        'url'=>'audit.php',       'perm'=>'audit.view'],
+                'owner_report' => ['label'=>'Notifikasi Owner', 'url'=>'owner_report.php',
                                    'roles'=>['owner','superadmin','admin','manager']],
             ],
         ],
         'bantuan' => [
             'label' => 'Bantuan',
             'items' => [
-                'support' => ['label'=>'Support & Tiket', 'url'=>'support.php',
-                              'roles'=>['owner','superadmin','admin','manager','kasir','staff','kurir']],
+                'support' => ['label'=>'Support & Tiket','url'=>'support.php','perm'=>'bantuan.view'],
             ],
         ],
     ];
 
-    function groupVisible(array $group, string $role): bool {
+    // Cek visibilitas satu menu item: permission-based dulu, role-based sebagai fallback
+    function navItemVisible(array $item, array $user): bool {
+        if (array_key_exists('perm', $item)) {
+            if ($item['perm'] === null) return true;           // selalu tampil
+            return hasPermission($item['perm']);
+        }
+        if (isset($item['perms'])) {                           // cukup salah satu
+            foreach ($item['perms'] as $p) {
+                if (hasPermission($p)) return true;
+            }
+            return false;
+        }
+        return in_array($user['role'], $item['roles'] ?? []); // fallback role
+    }
+
+    function groupVisible(array $group, array $user): bool {
         foreach ($group['items'] as $item) {
-            if (in_array($role, $item['roles'])) return true;
+            if (navItemVisible($item, $user)) return true;
         }
         return false;
     }
@@ -150,8 +144,8 @@ function renderTopbar(string $activePage = '', bool $minimalMode = false): void 
         <?php if (!$minimalMode): ?>
         <nav class="ol-side-nav">
           <?php foreach ($navGroups as $groupKey => $group):
-            if (!groupVisible($group, $user['role'])) continue;
-            $visibleItems = array_filter($group['items'], fn($i) => in_array($user['role'], $i['roles']));
+            if (!groupVisible($group, $user)) continue;
+            $visibleItems = array_filter($group['items'], fn($i) => navItemVisible($i, $user));
             if (!$visibleItems) continue;
           ?>
           <div class="ol-side-label"><?= htmlspecialchars($group['label']) ?></div>
