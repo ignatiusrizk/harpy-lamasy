@@ -88,19 +88,17 @@ if ($action === 'send_now' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     exit;
 }
 
-// ── API: preview HTML laporan (untuk modal) ──
+// ── API: preview JSON (untuk modal) ──
 if ($action === 'preview') {
+    header('Content-Type: application/json');
     $id = (int)($_GET['id'] ?? 0);
     $db = Database::get();
-    $s = $db->prepare("SELECT subject, body_summary, type, sent_at FROM hl_notif_log
+    $s = $db->prepare("SELECT id, subject, body_summary, type, channel, sent_at, read_at FROM hl_notif_log
                         WHERE id=? AND tenant_id=? AND outlet_id=?");
     $s->execute([$id, $tid, $oid]);
     $row = $s->fetch(PDO::FETCH_ASSOC);
-    if (!$row) { http_response_code(404); echo 'Not found'; exit; }
-    header('Content-Type: text/html; charset=UTF-8');
-    echo "<h3>".htmlspecialchars($row['subject'])."</h3>";
-    echo "<p style='color:#6B7280;font-size:12px'>".htmlspecialchars($row['sent_at'])."</p>";
-    echo "<p>".nl2br(htmlspecialchars($row['body_summary']))."</p>";
+    if (!$row) { http_response_code(404); echo json_encode(['error'=>'Not found']); exit; }
+    echo json_encode(['ok'=>true, 'row'=>$row]);
     exit;
 }
 ?>
@@ -121,6 +119,29 @@ if ($action === 'preview') {
 .tag-alert{background:#FEE2E2;color:#991B1B}
 .tag-invoice{background:#DBEAFE;color:#1E40AF}
 .tag-reminder{background:#FEF3C7;color:#92400E}
+
+/* ── Preview Modal ── */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(15,28,58,.5);z-index:9999;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(2px)}
+.modal-overlay.open{display:flex;animation:fadeIn .15s ease}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.modal-card{background:#fff;border-radius:16px;width:100%;max-width:560px;max-height:88vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 24px 64px rgba(0,0,0,.22);animation:slideUp .2s ease}
+@keyframes slideUp{from{transform:translateY(16px);opacity:0}to{transform:translateY(0);opacity:1}}
+.modal-header{padding:20px 20px 16px;border-bottom:1px solid #F1F5F9;display:flex;align-items:flex-start;gap:14px}
+.modal-icon{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.modal-icon.t-daily{background:#D1FAE5}
+.modal-icon.t-alert{background:#FEE2E2}
+.modal-icon.t-invoice{background:#DBEAFE}
+.modal-icon.t-reminder{background:#FEF3C7}
+.modal-title-wrap{flex:1;min-width:0}
+.modal-title-wrap h2{font-size:15px;font-weight:700;color:#0F1C3A;margin:0 0 6px;line-height:1.4;word-break:break-word}
+.modal-badge{display:inline-block;font-size:10px;font-weight:700;padding:2px 9px;border-radius:100px}
+.modal-close{width:32px;height:32px;border:none;background:#F1F5F9;border-radius:8px;cursor:pointer;font-size:15px;color:#6B7280;flex-shrink:0;transition:background .15s;line-height:1;margin-top:-2px}
+.modal-close:hover{background:#E2E8F0;color:#374151}
+.modal-meta{display:flex;flex-wrap:wrap;gap:12px 20px;padding:10px 20px;background:#F8FAFC;border-bottom:1px solid #F1F5F9}
+.modal-meta-item{font-size:12px;color:#6B7280}
+.modal-meta-item b{color:#374151;font-weight:600}
+.modal-body{padding:20px;overflow-y:auto;flex:1;font-size:13px;color:#374151;line-height:1.75;white-space:pre-wrap;word-break:break-word}
+.modal-footer{padding:12px 20px;border-top:1px solid #F1F5F9;display:flex;justify-content:flex-end;gap:8px;background:#FAFBFC}
 </style>
 </head>
 <body>
@@ -150,8 +171,33 @@ if ($action === 'preview') {
 </div>
 
 <?php renderToast(); ?>
+
+<!-- ── Preview Modal ── -->
+<div class="modal-overlay" id="previewModal" onclick="onOverlayClick(event)">
+  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="mSubject">
+    <div class="modal-header">
+      <div class="modal-icon" id="mIcon">📊</div>
+      <div class="modal-title-wrap">
+        <h2 id="mSubject">—</h2>
+        <span class="modal-badge" id="mBadge"></span>
+      </div>
+      <button class="modal-close" onclick="closeModal()" title="Tutup">✕</button>
+    </div>
+    <div class="modal-meta">
+      <div class="modal-meta-item">🕐 <b id="mDate">—</b></div>
+      <div class="modal-meta-item" id="mChannelWrap">📣 <b id="mChannel">—</b></div>
+      <div class="modal-meta-item" id="mReadWrap"></div>
+    </div>
+    <div class="modal-body" id="mBody"></div>
+    <div class="modal-footer">
+      <button class="hl-btn hl-btn-outline hl-btn-sm" onclick="closeModal()">Tutup</button>
+    </div>
+  </div>
+</div>
+
 <script>
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
 const tagMap = {
   daily_report:'tag-daily', daily_report_manual:'tag-daily',
   alert_omset_drop:'tag-alert', alert_kas_tidak_diinput:'tag-alert',
@@ -159,6 +205,21 @@ const tagMap = {
   alert_coin_rendah:'tag-alert',
   invoice_b2b:'tag-invoice', reminder_piutang:'tag-reminder',
 };
+
+const typeConfig = {
+  daily_report:        {cls:'t-daily',   icon:'📊', label:'Daily Report'},
+  daily_report_manual: {cls:'t-daily',   icon:'📊', label:'Daily Report'},
+  alert_omset_drop:    {cls:'t-alert',   icon:'⚠️', label:'Alert Omset'},
+  alert_kas_tidak_diinput:{cls:'t-alert',icon:'⚠️', label:'Alert Kas'},
+  alert_order_menumpuk:{cls:'t-alert',   icon:'⚠️', label:'Alert Order'},
+  alert_absensi_rendah:{cls:'t-alert',   icon:'⚠️', label:'Alert Absensi'},
+  alert_coin_rendah:   {cls:'t-alert',   icon:'⚠️', label:'Alert Koin'},
+  invoice_b2b:         {cls:'t-invoice', icon:'🧾', label:'Invoice B2B'},
+  reminder_piutang:    {cls:'t-reminder',icon:'🔔', label:'Reminder Piutang'},
+};
+const defaultType = {cls:'t-daily', icon:'📨', label:'Notifikasi'};
+
+let feedRows = {};
 
 async function loadFeed(){
   const box = document.getElementById('feedBox');
@@ -176,21 +237,25 @@ async function loadFeed(){
       </div>`;
       return;
     }
+    feedRows = {};
+    d.rows.forEach(r => feedRows[r.id] = r);
     box.innerHTML = d.rows.map(r => {
       const unread = r.channel==='inapp' && !r.read_at;
       const tag = tagMap[r.type] || 'tag-daily';
-      const dt = new Date(r.sent_at).toLocaleString('id-ID',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
+      const tc  = typeConfig[r.type] || defaultType;
+      const dt  = new Date(r.sent_at).toLocaleString('id-ID',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
+      const summary = (r.body_summary||'').split('\n')[0];  // first line only in feed
       return `<div class="feed-item ${unread?'unread':''}" onclick="openItem(${r.id}, ${unread?1:0})">
         <div class="feed-head">
           <div class="feed-subj">
-            <span class="feed-tag ${tag}">${esc(r.type)}</span>
+            <span class="feed-tag ${tag}">${esc(tc.label)}</span>
             ${esc(r.subject || '-')}
           </div>
           <div class="feed-meta">
-            ${r.channel==='email'?'📧 ':'🔔 '}${dt}
+            ${r.channel==='email'?'📧':'🔔'} ${dt}
           </div>
         </div>
-        ${r.body_summary ? `<div class="feed-sum">${esc(r.body_summary)}</div>` : ''}
+        ${summary ? `<div class="feed-sum">${esc(summary)}</div>` : ''}
       </div>`;
     }).join('');
   } catch(e){ box.innerHTML = `<div style="color:#EF4444;text-align:center;padding:30px">⚠️ ${esc(e.message)}</div>`; }
@@ -203,9 +268,74 @@ async function openItem(id, isUnread){
     } catch(e){}
     loadFeed();
   }
-  // Optional: open preview modal (untuk MVP, log saja)
-  window.open('owner_report.php?action=preview&id='+id, '_blank', 'width=600,height=600');
+  if (feedRows[id]) {
+    showPreviewModal(feedRows[id]);
+  } else {
+    // fallback: fetch from server (e.g. after page reload)
+    try {
+      const r = await fetch('owner_report.php?action=preview&id='+id);
+      const d = await r.json();
+      if (d.ok) showPreviewModal(d.row);
+      else showToast('⚠️ Notifikasi tidak ditemukan','error');
+    } catch(e){ showToast('Gagal memuat notifikasi','error'); }
+  }
 }
+
+function showPreviewModal(row){
+  const tc = typeConfig[row.type] || defaultType;
+
+  // icon & badge
+  document.getElementById('mIcon').className  = 'modal-icon ' + tc.cls;
+  document.getElementById('mIcon').textContent = tc.icon;
+  document.getElementById('mBadge').className  = 'modal-badge ' + (tagMap[row.type] || 'tag-daily');
+  document.getElementById('mBadge').textContent = tc.label;
+
+  // subject
+  document.getElementById('mSubject').textContent = row.subject || '(tanpa judul)';
+
+  // meta
+  const dt = row.sent_at
+    ? new Date(row.sent_at).toLocaleString('id-ID',{weekday:'short',day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})
+    : '—';
+  document.getElementById('mDate').textContent = dt;
+  document.getElementById('mChannel').textContent = row.channel === 'email' ? '📧 Email' : '🔔 In-App';
+  document.getElementById('mReadWrap').innerHTML = row.read_at
+    ? `✅ <b>Dibaca</b> ${new Date(row.read_at).toLocaleString('id-ID',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})}`
+    : `<span style="color:#F59E0B">● Belum dibaca</span>`;
+
+  // body — preserve line breaks, render nicely
+  const bodyEl = document.getElementById('mBody');
+  const raw = row.body_summary || '';
+  if (!raw) {
+    bodyEl.innerHTML = '<span style="color:#9CA3AF;font-style:italic">Tidak ada isi pesan.</span>';
+  } else {
+    // Bold lines that look like section headers (ALL CAPS, or ending with ':')
+    const html = raw.split('\n').map(line => {
+      const t = line.trim();
+      if (!t) return '<br>';
+      if (/^[A-Z\sÀ-ÿ]{4,}$/.test(t) || t.endsWith(':')) {
+        return `<strong style="color:#0F1C3A">${esc(t)}</strong>`;
+      }
+      return esc(t);
+    }).join('\n');
+    bodyEl.innerHTML = html;
+  }
+
+  document.getElementById('previewModal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeModal(){
+  document.getElementById('previewModal').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function onOverlayClick(e){
+  if (e.target === document.getElementById('previewModal')) closeModal();
+}
+
+// Close modal on Escape key
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
 
 async function markAllRead(){
   if (!confirm('Tandai semua notifikasi sebagai sudah dibaca?')) return;
