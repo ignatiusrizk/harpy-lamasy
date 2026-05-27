@@ -167,13 +167,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['step3_submit'])) {
                 // 1. Tenant (outlet belum dibuat — dibuat terpisah via add-outlet.php)
                 $db->prepare("
                     INSERT INTO tenants
-                      (slug, db_name, email, nama_outlet, owner_name, owner_wa,
+                      (slug, db_name, email, nama_outlet, nama_perusahaan, owner_name, owner_wa,
                        status, password_hash, registration_source, registered_at,
                        coin_balance, coin_mode, total_outlets)
-                    VALUES (?,?,?,?,?,?,'pending_verification',?,'self_service',NOW(),0,'shared',0)
+                    VALUES (?,?,?,?,?,?,?,'pending_verification',?,'self_service',NOW(),0,'shared',0)
                 ")->execute([
                     $slug, $slug,
                     $d['email'], $d['nama_outlet'],
+                    $d['nama_perusahaan'] ?: null,
                     $d['owner_name'], $d['owner_wa'],
                     $pwHash,
                 ]);
@@ -521,6 +522,12 @@ elseif ($step === 3): ?>
       <span class="rv-label">Nama Outlet</span>
       <span class="rv-val"><?= htmlspecialchars($d['nama_outlet'] ?? '-') ?></span>
     </div>
+    <?php if (!empty($d['nama_perusahaan'])): ?>
+    <div class="review-row">
+      <span class="rv-label">Nama Perusahaan / Brand</span>
+      <span class="rv-val"><?= htmlspecialchars($d['nama_perusahaan']) ?></span>
+    </div>
+    <?php endif; ?>
     <?php if (!empty($d['kota'])): ?>
     <div class="review-row">
       <span class="rv-label">Kota</span>

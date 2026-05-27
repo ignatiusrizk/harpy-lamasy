@@ -122,7 +122,22 @@ if (!$isFirstOutlet) {
 // Wizard state
 if (isset($_GET['reset'])) unset($_SESSION['ao']);
 if (empty($_SESSION['ao'])) {
-    $_SESSION['ao'] = ['step' => 1, 'data' => []];
+    // Pre-fill nama_outlet & kota dari data registrasi tenant (hanya outlet pertama)
+    $prefill = [];
+    if ($isFirstOutlet) {
+        $db = Database::get();
+        $pf = $db->prepare("SELECT nama_outlet FROM tenants WHERE id=? LIMIT 1");
+        $pf->execute([$tid]);
+        $row = $pf->fetch(PDO::FETCH_ASSOC);
+        if ($row) $prefill['nama_outlet'] = $row['nama_outlet'] ?? '';
+
+        // kota tersimpan di registration_requests (tidak di tenants)
+        $pf2 = $db->prepare("SELECT kota FROM registration_requests WHERE tenant_id=? AND kota IS NOT NULL LIMIT 1");
+        $pf2->execute([$tid]);
+        $rr = $pf2->fetch(PDO::FETCH_ASSOC);
+        if ($rr) $prefill['kota'] = $rr['kota'] ?? '';
+    }
+    $_SESSION['ao'] = ['step' => 1, 'data' => $prefill];
 }
 $w    = &$_SESSION['ao'];
 $step = (int)($w['step'] ?? 1);
@@ -399,6 +414,9 @@ renderTopbar('add-outlet', !$hasOutlet);
                    value="<?= htmlspecialchars($d['nama_outlet'] ?? '') ?>"
                    placeholder="cth: Laundry Bersih Jaya – Cabang Utama"
                    autofocus>
+            <?php if ($isFirstOutlet && !empty($d['nama_outlet'])): ?>
+            <div class="hint">Diisi otomatis dari pendaftaran. Bisa kamu ubah jika perlu.</div>
+            <?php endif; ?>
           </div>
           <div class="field">
             <label>Kota <span class="opt">(opsional)</span></label>
