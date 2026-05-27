@@ -720,7 +720,7 @@ $pwError      = $pwError ?? '';
   <?php endforeach; ?>
   <div style="margin-top:16px;text-align:center;font-size:13px;color:#6B7280">
     Masih ada pertanyaan?
-    <a href="https://wa.me/6281234567890?text=Halo%2C+saya+baru+daftar+LAMASY+dan+butuh+bantuan"
+    <a href="https://wa.me/6285121519302?text=Halo+Tim+LAMASY%2C+saya+baru+daftar+dan+ingin+setup+akun+pertama+saya.+Bisa+minta+bantuan%3F"
        style="color:#35E8D5;font-weight:700;text-decoration:none">Chat WhatsApp Kami →</a>
   </div>
 </div>
@@ -729,7 +729,7 @@ $pwError      = $pwError ?? '';
 </div><!-- /no-outlet bg -->
 
 <!-- FLOATING WA BUTTON -->
-<a href="https://wa.me/6281234567890?text=Halo%2C+saya+baru+daftar+LAMASY+dan+butuh+bantuan"
+<a href="https://wa.me/6285121519302?text=Halo+Tim+LAMASY%2C+saya+baru+daftar+dan+ingin+setup+akun+pertama+saya.+Bisa+minta+bantuan%3F"
    target="_blank" rel="noopener"
    style="position:fixed;bottom:24px;right:24px;background:#25D366;color:#fff;
           border-radius:100px;padding:12px 18px 12px 14px;font-size:14px;font-weight:700;

@@ -40,7 +40,7 @@ try {
     $tenant = [];
 }
 
-$ownerWa  = $tenant['owner_wa'] ?? '6281234567890';
+$ownerWa  = $tenant['owner_wa'] ?? '6285121519302';
 $tenantNm = $tenant['nama_outlet'] ?? 'admin Anda';
 $waMsg    = urlencode("Halo, saya $userNama. Akun saya belum ditugaskan ke outlet. Mohon dibantu untuk assignment-nya.");
 ?>

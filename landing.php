@@ -1250,7 +1250,7 @@ img { max-width: 100%; }
   </div>
   <div style="text-align:center;margin-top:32px;font-size:14px;color:rgba(255,255,255,.45)">
     Tidak yakin LAMASY cocok untuk bisnis kamu?
-    <a href="https://wa.me/6281234567890?text=Halo+saya+mau+tanya+soal+LAMASY"
+    <a href="https://wa.me/6285121519302?text=Halo+saya+mau+tanya+soal+LAMASY"
        target="_blank" style="color:#35E8D5;margin-left:4px">Chat kami dulu →</a>
   </div>
 </section>
@@ -1328,7 +1328,7 @@ img { max-width: 100%; }
         <li>Onboarding + training tim (1 jam)</li>
         <li>Dedicated support WA</li>
       </ul>
-      <a href="https://wa.me/6281234567890?text=Halo%2C+saya+tertarik+paket+Growth+LAMASY"
+      <a href="https://wa.me/6285121519302?text=Halo%2C+saya+tertarik+paket+Growth+LAMASY"
          target="_blank" class="btn-pricing btn-pricing-outline"
          style="border-color:rgba(139,92,246,.5);color:#C4B5FD">Hubungi Kami</a>
     </div>
@@ -1337,7 +1337,7 @@ img { max-width: 100%; }
 
   <p style="text-align:center;margin-top:24px;font-size:13px;color:rgba(255,255,255,.4)">
     Butuh lebih dari 5 outlet atau solusi enterprise custom?
-    <a href="https://wa.me/6281234567890" target="_blank" style="color:#35E8D5">Diskusi dengan tim kami →</a>
+    <a href="https://wa.me/6285121519302?text=Halo+Tim+LAMASY%2C+saya+ingin+berdiskusi+tentang+solusi+enterprise+atau+multi-outlet+untuk+bisnis+laundry+saya." target="_blank" style="color:#35E8D5">Diskusi dengan tim kami →</a>
   </p>
 </section>
 
@@ -1403,7 +1403,7 @@ img { max-width: 100%; }
   <div class="section-header">
     <div class="section-tag">FAQ</div>
     <h2>Pertanyaan yang Sering Ditanyakan</h2>
-    <p>Tidak menemukan jawaban yang kamu cari? <a href="https://wa.me/6281234567890" target="_blank" style="color:#35E8D5">Chat langsung dengan tim kami.</a></p>
+    <p>Tidak menemukan jawaban yang kamu cari? <a href="https://wa.me/6285121519302?text=Halo+Tim+LAMASY%2C+saya+ada+pertanyaan+yang+tidak+ada+di+FAQ." target="_blank" style="color:#35E8D5">Chat langsung dengan tim kami.</a></p>
   </div>
   <div style="max-width:720px;margin:0 auto" id="faqList">
     <?php
@@ -1462,7 +1462,7 @@ img { max-width: 100%; }
     <p>Bergabung dengan 500+ outlet laundry yang sudah lebih rapi bersama LAMASY. Daftar gratis, tidak perlu kartu kredit.</p>
     <div class="cta-btns">
       <a href="/register.php" class="btn-primary">&#128640; Mulai Gratis 7 Hari</a>
-      <a href="https://wa.me/6281234567890?text=Halo+saya+ingin+tahu+lebih+lanjut+tentang+LAMASY" target="_blank" class="btn-secondary">&#128172; Chat WhatsApp</a>
+      <a href="https://wa.me/6285121519302?text=Halo+saya+ingin+tahu+lebih+lanjut+tentang+LAMASY" target="_blank" class="btn-secondary">&#128172; Chat WhatsApp</a>
     </div>
   </div>
 </div>
@@ -1497,7 +1497,7 @@ img { max-width: 100%; }
     <div>
       <div class="footer-col-title">Kontak</div>
       <ul class="footer-links">
-        <li><a href="https://wa.me/6281234567890" target="_blank">&#128172; WhatsApp</a></li>
+        <li><a href="https://wa.me/6285121519302?text=Halo+Tim+LAMASY%2C+saya+ingin+tahu+lebih+lanjut+tentang+LAMASY." target="_blank">&#128172; WhatsApp</a></li>
         <li><a href="mailto:halo@harpy.id">&#9993; halo@harpy.id</a></li>
         <li><a href="#">&#127968; Jakarta, Indonesia</a></li>
       </ul>

@@ -48,7 +48,7 @@ $otherStmt = $db->prepare(
 $otherStmt->execute([$tenantId, $outletId]);
 $otherOutlets = $otherStmt->fetchAll();
 
-$supportWa = '6281234567890';
+$supportWa = '6285121519302';
 $waMsg     = urlencode("Halo Tim LAMASY, saya mau aktivasi ulang outlet '" . ($outlet['nama_outlet'] ?? '') . "'.");
 ?>
 <!DOCTYPE html>

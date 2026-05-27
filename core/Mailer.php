@@ -371,7 +371,7 @@ class Mailer
             </div>
             <p style='color:#888;font-size:13px;text-align:center'>
                 Ada pertanyaan? Chat kami di
-                <a href='https://wa.me/6281234567890' style='color:" . self::BRAND_COLOR . "'>WhatsApp</a>
+                <a href='https://wa.me/6285121519302?text=Halo+Tim+LAMASY%2C+saya+ada+pertanyaan+tentang+akun+saya.' style='color:" . self::BRAND_COLOR . "'>WhatsApp</a>
             </p>
         ");
 

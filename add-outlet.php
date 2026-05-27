@@ -330,7 +330,7 @@ renderTopbar('add-outlet', !$hasOutlet);
             kami via WhatsApp. Tim kami akan konfirmasi dalam 1×24 jam.
           </div>
           <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
-            <a href="https://wa.me/6281234567890?text=<?= urlencode('Halo Tim LAMASY, saya sudah buat outlet baru (' . ($outletName ?? '') . ') dan mau selesaikan pembayaran setup fee. Mohon info rekening / prosedurnya. Terima kasih.') ?>"
+            <a href="https://wa.me/6285121519302?text=<?= urlencode('Halo Tim LAMASY, saya sudah buat outlet baru (' . ($outletName ?? '') . ') dan mau selesaikan pembayaran setup fee. Mohon info rekening / prosedurnya. Terima kasih.') ?>"
                target="_blank" rel="noopener"
                class="hl-btn hl-btn-primary" style="padding:13px 28px;background:#25D366;border-color:#25D366">
               💬 Konfirmasi Pembayaran via WA

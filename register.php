@@ -589,7 +589,7 @@ elseif ($step === 3): ?>
 
 <p style="margin-top:24px;font-size:12px;color:rgba(255,255,255,.3);text-align:center">
   Butuh bantuan?
-  <a href="https://wa.me/6281234567890" style="color:rgba(53,232,213,.7)">Chat Tim LAMASY</a>
+  <a href="https://wa.me/6285121519302?text=<?= urlencode('Halo Tim LAMASY, saya butuh bantuan saat proses pendaftaran akun.') ?>" style="color:rgba(53,232,213,.7)">Chat Tim LAMASY</a>
 </p>
 
 </body>

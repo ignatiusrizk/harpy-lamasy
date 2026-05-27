@@ -573,7 +573,7 @@ class TenantResolver
                     : 'sementara tidak bisa diakses karena masa aktif habis.')
               ) . '
           <br>Hubungi tim Harpy untuk informasi lebih lanjut.</p>
-          <a href="https://wa.me/6281234567890" class="btn">💬 Hubungi Support</a>
+          <a href="https://wa.me/6285121519302?text=' . rawurlencode('Halo Tim LAMASY, outlet saya tidak bisa diakses. Mohon bantuannya.') . '" class="btn">💬 Hubungi Support</a>
           <a href="/logout.php" class="btn btn-outline">Keluar</a>
         </div></body></html>';
     }

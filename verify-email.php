@@ -125,7 +125,7 @@ $tenantId    = $result['tenant_id'] ?? 0;
 
   <p style="margin-top:32px;font-size:12px;color:rgba(255,255,255,.3)">
     Butuh bantuan?
-    <a href="https://wa.me/6281234567890" style="color:#35E8D5">Chat Tim LAMASY</a>
+    <a href="https://wa.me/6285121519302?text=<?= urlencode('Halo Tim LAMASY, saya butuh bantuan terkait verifikasi email atau akun saya.') ?>" style="color:#35E8D5">Chat Tim LAMASY</a>
   </p>
 </div>
 </body>

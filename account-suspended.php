@@ -30,7 +30,7 @@ if ($tenantId) {
     }
 }
 
-$supportWa    = '6281234567890';
+$supportWa    = '6285121519302';
 $supportEmail = 'support@harpy.id';
 $waMessage    = urlencode("Halo Tim LAMASY, akun saya ($tenantEmail) statusnya suspended. Mohon bantuan untuk reaktivasi.");
 ?>

@@ -238,7 +238,7 @@ $maskedEmail = $email ? maskEmail($email) : '***';
     </form>
   </div>
 
-  <a href="https://wa.me/6281234567890?text=Halo+Tim+LAMASY%2C+saya+butuh+bantuan+verifikasi+email+untuk+outlet+<?= urlencode($namaOutlet) ?>"
+  <a href="https://wa.me/6285121519302?text=Halo+Tim+LAMASY%2C+saya+butuh+bantuan+verifikasi+email+untuk+outlet+<?= urlencode($namaOutlet) ?>"
      class="btn btn-outline" target="_blank">
     💬 Hubungi Support WhatsApp
   </a>
