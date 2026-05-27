@@ -70,54 +70,9 @@ $outletCount = (int)$cntQ->fetchColumn();
 
 $isFirstOutlet = $outletCount === 0;
 
-// Per brief: outlet ke-2 dst wajib bayar setup fee (tidak ada trial gratis)
-// Payment gateway belum di-integrasikan → tampilkan halaman placeholder
-if (!$isFirstOutlet) {
-    require_once __DIR__ . '/components.php';
-    $hasOutlet = TenantResolver::hasOutlet();
-    ?>
-    <!DOCTYPE html>
-    <html lang="id">
-    <head>
-    <?php renderHead('Tambah Outlet Baru'); ?>
-    </head>
-    <body>
-    <?php renderTopbar('add-outlet', !$hasOutlet); ?>
-    <div style="max-width:560px;margin:48px auto;padding:0 16px">
-      <div style="background:#fff;border-radius:16px;padding:36px 28px;box-shadow:0 4px 24px rgba(0,0,0,.06);text-align:center">
-        <div style="font-size:64px;margin-bottom:16px">💳</div>
-        <h1 style="font-size:1.4rem;font-weight:800;color:#0F1C3A;margin-bottom:10px">
-          Outlet Berbayar
-        </h1>
-        <p style="color:#6B7280;font-size:14px;line-height:1.7;margin-bottom:20px">
-          Outlet pertama mendapat <strong>trial 7 hari gratis</strong>.
-          Outlet berikutnya memerlukan pembayaran <strong>setup fee</strong>
-          (Rp 300rb – 500rb) langsung tanpa periode trial.
-        </p>
-        <div style="background:#FEF3C7;border:1px solid #FCD34D;color:#92400E;padding:12px 16px;
-                    border-radius:10px;font-size:13px;margin-bottom:24px;text-align:left">
-          🚧 <strong>Coming soon</strong> — payment gateway sedang dalam pengembangan.
-          Hubungi tim LAMASY untuk aktivasi outlet tambahan manual.
-        </div>
-        <a href="https://wa.me/6281234567890?text=<?= urlencode('Halo Tim LAMASY, saya mau buka outlet kedua untuk akun saya. Mohon info untuk proses pembayaran setup fee.') ?>"
-           target="_blank" rel="noopener"
-           style="display:inline-block;background:#25D366;color:#fff;font-weight:700;
-                  font-size:14px;padding:13px 28px;border-radius:10px;text-decoration:none;margin-bottom:10px">
-          💬 Chat Tim LAMASY untuk Aktivasi
-        </a>
-        <div>
-          <a href="dashboard.php"
-             style="display:inline-block;font-size:13px;color:#6B7280;text-decoration:none;padding:10px">
-            ← Kembali ke Dashboard
-          </a>
-        </div>
-      </div>
-    </div>
-    </body>
-    </html>
-    <?php
-    exit;
-}
+// Outlet 2+: langsung aktivasi berbayar (tidak ada trial gratis)
+// Variabel ini dipakai di wizard untuk menentukan mode default
+$forcePaid = !$isFirstOutlet;
 
 // Wizard state
 if (isset($_GET['reset'])) unset($_SESSION['ao']);
@@ -152,6 +107,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['step1_submit'])) {
     $kota       = trim($_POST['kota'] ?? '');
     $alamat     = trim($_POST['alamat'] ?? '');
     $telepon    = trim($_POST['telepon'] ?? '');
+    $mode       = $forcePaid ? 'paid' : (($_POST['mode'] ?? 'trial') === 'paid' ? 'paid' : 'trial');
 
     if (strlen($namaOutlet) < 3) {
         $error = 'Nama outlet minimal 3 karakter.';
@@ -162,6 +118,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['step1_submit'])) {
         $d['kota']        = $kota;
         $d['alamat']      = $alamat;
         $d['telepon']     = $telepon;
+        $d['mode']        = $mode;
         $w['step'] = 2; $step = 2;
         $_SESSION['ao_csrf'] = bin2hex(random_bytes(32));
     }
@@ -175,9 +132,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['step2_submit'])) {
     $db->beginTransaction();
     try {
         $outletSlug  = aoUniqueSlug($d['nama_outlet'], $tid);
-        $trialEnds   = date('Y-m-d H:i:s', time() + 7 * 86400);
-        $trialCoins  = $isFirstOutlet ? 1000 : 0;   // hanya outlet 1 dapat trial coins
-        $trialStatus = 'trial'; // semua outlet baru mulai di trial
+        $isPaid      = ($d['mode'] ?? 'trial') === 'paid';
+        $trialStatus = $isPaid ? 'active' : 'trial';
+        $trialEnds   = $isPaid ? null : date('Y-m-d H:i:s', time() + 7 * 86400);
+        $trialCoins  = (!$isPaid && $isFirstOutlet) ? 1000 : 0;
 
         $db->prepare("
             INSERT INTO outlets
@@ -195,7 +153,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['step2_submit'])) {
             $trialStatus,
             $trialEnds,
             $trialCoins,
-            $isFirstOutlet ? 1 : 0,  // is_main hanya untuk outlet pertama
+            $isFirstOutlet ? 1 : 0,
         ]);
         $outletId = (int)$db->lastInsertId();
 
@@ -218,10 +176,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['step2_submit'])) {
         // Refresh TenantResolver
         TenantResolver::reset();
 
+        $successMode = $isPaid ? 'paid' : 'trial';
+        $successName = $d['nama_outlet'];
         unset($_SESSION['ao']);
 
-        $success   = true;
-        $outletName = $d['nama_outlet'];
+        $success    = true;
+        $outletName = $successName;
 
     } catch (Throwable $e) {
         $db->rollBack();
@@ -329,6 +289,18 @@ require_once __DIR__ . '/components.php';
 .ao-success .big-icon { font-size: 72px; margin-bottom: 16px; }
 .ao-success h1 { font-size: 1.5rem; font-weight: 800; color: var(--navy); margin-bottom: 10px; }
 .ao-success p  { font-size: 15px; color: var(--gray); margin-bottom: 28px; line-height: 1.6; }
+
+/* Mode selector */
+.mode-card {
+  display: flex; align-items: flex-start; gap: 12px;
+  border: 2px solid rgba(27,45,90,.12); border-radius: 10px;
+  padding: 14px 16px; margin-bottom: 10px; cursor: pointer;
+  transition: border-color .15s, background .15s;
+}
+.mode-card input[type=radio] { margin-top: 3px; accent-color: var(--teal); flex-shrink: 0; }
+.mode-card.selected { border-color: var(--teal); background: var(--teal-bg); }
+.mode-title { font-size: 14px; font-weight: 700; color: var(--navy); margin-bottom: 4px; }
+.mode-desc  { font-size: 12px; color: var(--gray); line-height: 1.5; }
 </style>
 </head>
 <body>
@@ -344,22 +316,45 @@ renderTopbar('add-outlet', !$hasOutlet);
     <!-- ══ SUCCESS ══ -->
     <div class="hl-card">
       <div class="ao-success">
-        <div class="big-icon">🎉</div>
-        <h1>Outlet Berhasil Ditambahkan!</h1>
-        <p>
-          <strong><?= htmlspecialchars($outletName ?? '') ?></strong> sudah aktif dan siap digunakan.<br>
-          <?php if ($isFirstOutlet): ?>
+        <?php if (($successMode ?? 'trial') === 'paid'): ?>
+          <div class="big-icon">✅</div>
+          <h1>Outlet Berhasil Dibuat!</h1>
+          <p>
+            <strong><?= htmlspecialchars($outletName ?? '') ?></strong> sudah aktif.<br>
+            Selesaikan pembayaran setup fee agar outlet tetap berjalan.
+          </p>
+          <div style="background:#FEF3C7;border:1px solid #FCD34D;color:#92400E;
+                      padding:12px 16px;border-radius:10px;font-size:13px;
+                      margin-bottom:24px;text-align:left">
+            💳 <strong>Cara bayar:</strong> Transfer ke rekening tim LAMASY atau hubungi
+            kami via WhatsApp. Tim kami akan konfirmasi dalam 1×24 jam.
+          </div>
+          <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+            <a href="https://wa.me/6281234567890?text=<?= urlencode('Halo Tim LAMASY, saya sudah buat outlet baru (' . ($outletName ?? '') . ') dan mau selesaikan pembayaran setup fee. Mohon info rekening / prosedurnya. Terima kasih.') ?>"
+               target="_blank" rel="noopener"
+               class="hl-btn hl-btn-primary" style="padding:13px 28px;background:#25D366;border-color:#25D366">
+              💬 Konfirmasi Pembayaran via WA
+            </a>
+            <a href="/dashboard.php" class="hl-btn hl-btn-outline" style="padding:13px 24px">
+              Ke Dashboard
+            </a>
+          </div>
+        <?php else: ?>
+          <div class="big-icon">🎉</div>
+          <h1>Outlet Berhasil Ditambahkan!</h1>
+          <p>
+            <strong><?= htmlspecialchars($outletName ?? '') ?></strong> sudah aktif dan siap digunakan.<br>
             Kamu mendapat <strong>1.000 coin trial</strong> gratis untuk 7 hari ke depan.
-          <?php endif; ?>
-        </p>
-        <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
-          <a href="/dashboard.php" class="hl-btn hl-btn-primary" style="padding:13px 32px">
-            🚀 Mulai Kelola Laundry
-          </a>
-          <a href="/layanan.php" class="hl-btn hl-btn-outline" style="padding:13px 24px">
-            Atur Layanan & Harga
-          </a>
-        </div>
+          </p>
+          <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+            <a href="/dashboard.php" class="hl-btn hl-btn-primary" style="padding:13px 32px">
+              🚀 Mulai Kelola Laundry
+            </a>
+            <a href="/layanan.php" class="hl-btn hl-btn-outline" style="padding:13px 24px">
+              Atur Layanan & Harga
+            </a>
+          </div>
+        <?php endif; ?>
       </div>
     </div>
 
@@ -438,14 +433,35 @@ renderTopbar('add-outlet', !$hasOutlet);
           </div>
 
           <?php if ($isFirstOutlet): ?>
-          <div class="trial-box">
-            <div class="trial-title">🎁 Yang kamu dapatkan gratis:</div>
-            <ul>
-              <li>Trial <strong>7 hari</strong> tanpa biaya</li>
-              <li><strong>1.000 coin</strong> untuk coba fitur AI & WA</li>
-              <li>Akses semua fitur manajemen laundry</li>
-            </ul>
+          <!-- Mode pilihan: trial vs langsung aktivasi (hanya outlet pertama) -->
+          <div style="margin-top:20px">
+            <label style="display:block;font-size:13px;font-weight:600;margin-bottom:10px;color:var(--dark)">Pilih mode aktivasi</label>
+            <label class="mode-card <?= ($d['mode'] ?? 'trial') !== 'paid' ? 'selected' : '' ?>" id="cardTrial">
+              <input type="radio" name="mode" value="trial"
+                     <?= ($d['mode'] ?? 'trial') !== 'paid' ? 'checked' : '' ?>
+                     onchange="switchMode(this.value)">
+              <div class="mode-body">
+                <div class="mode-title">🎁 Trial 7 Hari — Gratis</div>
+                <div class="mode-desc">Coba semua fitur selama 7 hari tanpa biaya. Dapat 1.000 coin gratis.</div>
+              </div>
+            </label>
+            <label class="mode-card <?= ($d['mode'] ?? '') === 'paid' ? 'selected' : '' ?>" id="cardPaid">
+              <input type="radio" name="mode" value="paid"
+                     <?= ($d['mode'] ?? '') === 'paid' ? 'checked' : '' ?>
+                     onchange="switchMode(this.value)">
+              <div class="mode-body">
+                <div class="mode-title">⚡ Aktivasi Langsung</div>
+                <div class="mode-desc">Outlet langsung aktif tanpa trial. Setup fee berlaku sesuai paket.</div>
+              </div>
+            </label>
           </div>
+          <?php else: ?>
+          <div style="background:#FEF3C7;border:1px solid #FCD34D;color:#92400E;
+                      padding:12px 16px;border-radius:10px;font-size:13px;margin-top:20px">
+            ⚡ <strong>Aktivasi Langsung</strong> — outlet ke-<?= $outletCount + 1 ?> tidak bisa trial.
+            Setup fee berlaku sesuai paket yang kamu gunakan.
+          </div>
+          <input type="hidden" name="mode" value="paid">
           <?php endif; ?>
 
           <div class="btn-row">
@@ -486,16 +502,20 @@ renderTopbar('add-outlet', !$hasOutlet);
           </div>
           <?php endif; ?>
           <div class="review-row">
-            <span class="rv-label">Paket</span>
-            <span class="rv-val" style="color:var(--teal-d)">
-              <?= $isFirstOutlet ? '🎁 Trial 7 Hari + 1.000 Coin' : '🧪 Trial 7 Hari' ?>
-            </span>
+            <span class="rv-label">Mode Aktivasi</span>
+            <?php if (($d['mode'] ?? 'trial') === 'paid'): ?>
+              <span class="rv-val" style="color:#F59E0B">⚡ Aktivasi Langsung</span>
+            <?php else: ?>
+              <span class="rv-val" style="color:var(--teal-d)">🎁 Trial 7 Hari + 1.000 Coin</span>
+            <?php endif; ?>
           </div>
           <div class="review-row">
             <span class="rv-label">Biaya</span>
-            <span class="rv-val" style="color:var(--green)">
-              <?= $isFirstOutlet ? 'Gratis' : 'Gratis (trial)' ?>
-            </span>
+            <?php if (($d['mode'] ?? 'trial') === 'paid'): ?>
+              <span class="rv-val" style="color:#DC2626">Setup fee (sesuai paket)</span>
+            <?php else: ?>
+              <span class="rv-val" style="color:var(--green)">Gratis</span>
+            <?php endif; ?>
           </div>
         </div>
 
@@ -518,5 +538,11 @@ renderTopbar('add-outlet', !$hasOutlet);
 </div><!-- /ao-wrap -->
 
 <?php renderToast(); ?>
+<script>
+function switchMode(val) {
+  document.getElementById('cardTrial').classList.toggle('selected', val === 'trial');
+  document.getElementById('cardPaid').classList.toggle('selected', val === 'paid');
+}
+</script>
 </body>
 </html>
