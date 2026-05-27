@@ -319,7 +319,7 @@ function provisionTenant(array $wizard): array
         $waMsg = "Halo *{$wizard['owner_name']}*!\n\n"
             . "Selamat datang di *LaMaSy — Laundry Management System* 🎉\n\n"
             . "Akun Anda telah aktif:\n\n"
-            . "🔗 Login  : https://lamasy.harpy.id/login.php\n"
+            . "🔗 Login  : " . (defined('APP_URL') ? APP_URL : 'https://lamasy.harpy.id') . "/login.php\n"
             . "👤 Username : *{$username}*\n"
             . "🔑 Password : *{$password}*"
             . ($wizard['package_nama'] ? "\n📦 Paket     : " . $wizard['package_nama'] : "")

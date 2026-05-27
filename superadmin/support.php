@@ -198,7 +198,7 @@ if ($action) {
                        . "Tiket  : #{$ticket['id']} — {$ticket['subject']}\n"
                        . "Status : " . ($statusMap[$ticket['status']] ?? $ticket['status']) . "\n\n"
                        . "Balasan:\n{$preview}\n\n"
-                       . "Lihat detail: https://lamasy.harpy.id/support.php\n\n_Tim LaMaSy_";
+                       . "Lihat detail: " . (defined('APP_URL') ? APP_URL : 'https://lamasy.harpy.id') . "/support.php\n\n_Tim LaMaSy_";
                 $waLink = "https://wa.me/{$waNum}?text=" . urlencode($waMsg);
             }
 
@@ -242,7 +242,7 @@ if ($action) {
                 $statusLabel = $status === 'resolved' ? 'Diselesaikan ✅' : 'Ditutup 🔒';
                 $waMsg = "✅ *Tiket kamu sudah $statusLabel*\n\n"
                        . "Tiket : #{$ticket['id']} — {$ticket['subject']}\n\n"
-                       . ($status === 'resolved' ? "Mohon konfirmasi jika masalah sudah teratasi di: https://lamasy.harpy.id/support.php\n\n" : "")
+                       . ($status === 'resolved' ? "Mohon konfirmasi jika masalah sudah teratasi di: " . (defined('APP_URL') ? APP_URL : 'https://lamasy.harpy.id') . "/support.php\n\n" : "")
                        . "Terima kasih telah menggunakan LaMaSy! 🙏\n_Tim LaMaSy_";
                 $waLink = "https://wa.me/{$waNum}?text=" . urlencode($waMsg);
             }

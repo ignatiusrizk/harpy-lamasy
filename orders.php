@@ -565,7 +565,7 @@ if ($action) {
                  . "🔄 *Status:* {$stLabel}\n"
                  . "📅 *Est. Selesai:* {$est}\n"
                  . "🧺 *Layanan:*{$itemList}\n\n"
-                 . "Cek status real-time: https://lamasy.harpy.id/track.php?order={$t['no_order']}\n\n"
+                 . "Cek status real-time: " . (defined('APP_URL') ? APP_URL : 'https://lamasy.harpy.id') . "/track.php?order={$t['no_order']}\n\n"
                  . "Terima kasih 🙏\n_Harpy Laundry | harpy.id_";
         }
 

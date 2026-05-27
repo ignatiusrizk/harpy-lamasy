@@ -23,7 +23,7 @@ class Mailer
     // ── Fallback constants jika config belum di-set ───────
     const DEFAULT_FROM_EMAIL = 'noreply@harpy.id';
     const DEFAULT_FROM_NAME  = 'LAMASY by Harpy';
-    const DEFAULT_APP_URL    = 'https://harpy.id';
+    const DEFAULT_APP_URL    = 'https://lamasy.harpy.id';
     const BRAND_COLOR        = '#35E8D5';
     const BRAND_DARK         = '#0F1C3A';
 
@@ -42,8 +42,17 @@ class Mailer
 
     private static function fromEmail(): string { return defined('SMTP_FROM_EMAIL') ? SMTP_FROM_EMAIL : self::DEFAULT_FROM_EMAIL; }
     private static function fromName():  string { return defined('SMTP_FROM_NAME')  ? SMTP_FROM_NAME  : self::DEFAULT_FROM_NAME; }
-    private static function appUrl():    string { return defined('APP_URL')          ? APP_URL          : self::DEFAULT_APP_URL; }
     private static function driver():    string { return defined('MAILER_DRIVER')    ? MAILER_DRIVER    : 'mail'; }
+
+    private static function appUrl(): string {
+        if (defined('APP_URL') && APP_URL !== '') return rtrim(APP_URL, '/');
+        // Auto-detect dari server jika APP_URL belum dikonfigurasi di master/config/db.php
+        if (!empty($_SERVER['HTTP_HOST'])) {
+            $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+            return $scheme . '://' . $_SERVER['HTTP_HOST'];
+        }
+        return self::DEFAULT_APP_URL;
+    }
 
     // ── Kirim email ──────────────────────────────────────
     // Returns true jika sukses, false jika gagal
