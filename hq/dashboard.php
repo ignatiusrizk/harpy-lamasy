@@ -663,7 +663,7 @@ require __DIR__ . '/_layout_open.php';
       <p>HQ <strong style="color:#35E8D5"><?= htmlspecialchars($tenantNm) ?></strong>
          · <?= $outletCnt ?> outlet aktif · <?= date('l, d F Y') ?></p>
     </div>
-    <?php if ($hqCanManageOutlet): ?><a href="/ERP/harpy/add-outlet.php" class="btn btn-primary">🏪 Tambah Outlet</a><?php endif; ?>
+    <?php if ($hqCanManageOutlet): ?><a href="/lamasy/add-outlet.php" class="btn btn-primary">🏪 Tambah Outlet</a><?php endif; ?>
   </div>
 
   <!-- AI BRIEFING HQ -->
@@ -863,7 +863,7 @@ require __DIR__ . '/_layout_open.php';
   <?php if (empty($outlets)): ?>
   <div class="empty-state">
     <div class="ico">🏪</div>
-    <p>Belum ada outlet aktif. <a href="/ERP/harpy/add-outlet.php" style="color:#0891B2;font-weight:700">Daftarkan outlet pertama →</a></p>
+    <p>Belum ada outlet aktif. <a href="/lamasy/add-outlet.php" style="color:#0891B2;font-weight:700">Daftarkan outlet pertama →</a></p>
   </div>
   <?php else: ?>
   <div class="outlet-grid">
@@ -919,7 +919,7 @@ require __DIR__ . '/_layout_open.php';
         <div class="ocard-coin<?= $coinClass ?>" <?= $coinClass ? 'title="Coin tipis — segera topup"' : '' ?>>
           <?= $coinClass === ' crit' ? '⚠️' : '🪙' ?> <strong><?= $coinShow ?></strong> coin<?= $coinClass === ' crit' ? ' · KRITIS' : ($coinClass === ' low' ? ' · TIPIS' : '') ?>
         </div>
-        <a href="/ERP/harpy/switch-outlet.php?id=<?= (int)$o['id'] ?>" class="btn btn-primary btn-sm">Masuk →</a>
+        <a href="/lamasy/switch-outlet.php?id=<?= (int)$o['id'] ?>" class="btn btn-primary btn-sm">Masuk →</a>
       </div>
     </div>
     <?php endforeach; ?>
@@ -930,19 +930,19 @@ require __DIR__ . '/_layout_open.php';
   <div class="panel" style="margin-top:8px">
     <div class="panel-title">⚡ Aksi Cepat</div>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px">
-      <?php if ($hqCanManageOutlet): ?><a href="/ERP/harpy/add-outlet.php" class="btn btn-light" style="justify-content:center">🏪 Tambah Outlet</a><?php endif; ?>
-      <a href="/ERP/harpy/hq/outlet.php" class="btn btn-light" style="justify-content:center">🏢 Manajemen Outlet</a>
+      <?php if ($hqCanManageOutlet): ?><a href="/lamasy/add-outlet.php" class="btn btn-light" style="justify-content:center">🏪 Tambah Outlet</a><?php endif; ?>
+      <a href="/lamasy/hq/outlet.php" class="btn btn-light" style="justify-content:center">🏢 Manajemen Outlet</a>
       <?php if ($hqCanBilling): ?>
       <button type="button" onclick="openTopupModal()" class="btn btn-light"
               style="justify-content:center;cursor:pointer;font-family:inherit;font-size:13px">
         🪙 Topup Coin Outlet
       </button>
       <?php endif; ?>
-      <a href="/ERP/harpy/hq/karyawan.php" class="btn btn-light" style="justify-content:center">👥 Karyawan Lintas Outlet</a>
-      <a href="/ERP/harpy/hq/pelanggan.php" class="btn btn-light" style="justify-content:center">🧑‍🤝‍🧑 Pelanggan Lintas Outlet</a>
-      <a href="/ERP/harpy/hq/laporan.php" class="btn btn-light" style="justify-content:center">📈 Laporan Konsolidasi</a>
-      <a href="/ERP/harpy/hq/roles.php" class="btn btn-light" style="justify-content:center">🔐 Role & Akses</a>
-      <a href="/ERP/harpy/hq/settings.php" class="btn btn-light" style="justify-content:center">⚙️ Pengaturan Akun</a>
+      <a href="/lamasy/hq/karyawan.php" class="btn btn-light" style="justify-content:center">👥 Karyawan Lintas Outlet</a>
+      <a href="/lamasy/hq/pelanggan.php" class="btn btn-light" style="justify-content:center">🧑‍🤝‍🧑 Pelanggan Lintas Outlet</a>
+      <a href="/lamasy/hq/laporan.php" class="btn btn-light" style="justify-content:center">📈 Laporan Konsolidasi</a>
+      <a href="/lamasy/hq/roles.php" class="btn btn-light" style="justify-content:center">🔐 Role & Akses</a>
+      <a href="/lamasy/hq/settings.php" class="btn btn-light" style="justify-content:center">⚙️ Pengaturan Akun</a>
     </div>
   </div>
 
@@ -1040,7 +1040,7 @@ function setLive(el, val){
 }
 async function pollLive(){
   try {
-    const r = await fetch('/ERP/harpy/hq/dashboard.php?action=live');
+    const r = await fetch('/lamasy/hq/dashboard.php?action=live');
     const d = await r.json();
     if (!d.ok) return;
     setLive(document.getElementById('liveOmset'), fmtRpLive(d.omset_today));
@@ -1062,7 +1062,7 @@ setInterval(pollLive, 30000);
 document.addEventListener('visibilitychange', () => { if (!document.hidden) pollLive(); });
 
 async function loadChart(){
-  const r = await fetch(`/ERP/harpy/hq/dashboard.php?action=chart_data&days=${currentDays}`);
+  const r = await fetch(`/lamasy/hq/dashboard.php?action=chart_data&days=${currentDays}`);
   const d = await r.json();
   if (d.error) return;
 
@@ -1127,7 +1127,7 @@ async function generateBriefing(){
   document.getElementById('aiBriefLoading').style.display = 'block';
 
   try {
-    const r = await fetch('/ERP/harpy/hq/dashboard.php?action=ai_briefing');
+    const r = await fetch('/lamasy/hq/dashboard.php?action=ai_briefing');
     const txt = await r.text();
     let d;
     try { d = JSON.parse(txt); }
@@ -1163,7 +1163,7 @@ async function generateBriefing(){
 // Auto-peek: kalau briefing hari ini sudah ada di cache, tampilkan tanpa charge
 (async function peekBriefing(){
   try {
-    const r = await fetch('/ERP/harpy/hq/dashboard.php?action=ai_briefing&peek=1');
+    const r = await fetch('/lamasy/hq/dashboard.php?action=ai_briefing&peek=1');
     const d = await r.json();
     if (d.ok && d.cached && d.briefing) {
       showBriefing(d.briefing, d.generated_at, true);

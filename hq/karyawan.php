@@ -814,7 +814,7 @@ function escapeHtml(s){
 function roleClass(role){return 'role-'+(role||'staff').replace(/\s/g,'');}
 
 async function loadFilterOptions(){
-  const r = await fetch('/ERP/harpy/hq/karyawan.php?action=filter_options');
+  const r = await fetch('/lamasy/hq/karyawan.php?action=filter_options');
   const d = await r.json();
   const outletSel = document.getElementById('filterOutlet');
   const jabSel = document.getElementById('filterJabatan');
@@ -833,7 +833,7 @@ async function loadList(){
   const fOid  = document.getElementById('filterOutlet').value;
   const fStat = document.getElementById('filterStatus').value;
   const fJab  = document.getElementById('filterJabatan').value;
-  const url = '/ERP/harpy/hq/karyawan.php?action=list&q=' + encodeURIComponent(q)
+  const url = '/lamasy/hq/karyawan.php?action=list&q=' + encodeURIComponent(q)
     + '&outlet_id=' + encodeURIComponent(fOid)
     + '&status=' + encodeURIComponent(fStat)
     + '&jabatan=' + encodeURIComponent(fJab);
@@ -874,7 +874,7 @@ async function loadList(){
 }
 
 async function showDetail(id){
-  const r = await fetch('/ERP/harpy/hq/karyawan.php?action=detail&id=' + id);
+  const r = await fetch('/lamasy/hq/karyawan.php?action=detail&id=' + id);
   const d = await r.json();
   if (d.error) { alert(d.error); return; }
 
@@ -970,7 +970,7 @@ async function loadPerformance(kid){
   const box = document.getElementById('perfBox');
   if (!box) return;
   try {
-    const r = await fetch('/ERP/harpy/hq/karyawan.php?action=performance&id=' + kid);
+    const r = await fetch('/lamasy/hq/karyawan.php?action=performance&id=' + kid);
     const d = await r.json();
     if (d.error) { box.innerHTML = '<span style="color:#9CA3AF">Tidak ada data performa</span>'; return; }
     const abs = d.absensi || [];
@@ -1006,7 +1006,7 @@ async function toggleActive(id, nama, activate){
     ? `Aktifkan kembali "${nama}"?`
     : `Nonaktifkan "${nama}"?\n\nKaryawan tidak bisa login. Semua penugasan outlet akan dicabut.\nHistori data tidak dihapus.`;
   if (!confirm(msg)) return;
-  const r = await fetch('/ERP/harpy/hq/karyawan.php?action=toggle_active', {
+  const r = await fetch('/lamasy/hq/karyawan.php?action=toggle_active', {
     method:'POST',
     headers:{'Content-Type':'application/json','X-CSRF-TOKEN':csrf},
     body: JSON.stringify({karyawan_id: id, activate: activate ? 1 : 0}),
@@ -1051,7 +1051,7 @@ async function submitMutasi(){
   if (!data.from_outlet_id) { alertEl.innerHTML = '<div class="alert error">Pilih outlet asal</div>'; return; }
   if (data.from_outlet_id === data.to_outlet_id) { alertEl.innerHTML = '<div class="alert error">Outlet asal dan tujuan tidak boleh sama</div>'; return; }
 
-  const r = await fetch('/ERP/harpy/hq/karyawan.php?action=mutasi', {
+  const r = await fetch('/lamasy/hq/karyawan.php?action=mutasi', {
     method:'POST',
     headers:{'Content-Type':'application/json','X-CSRF-TOKEN':csrf},
     body: JSON.stringify(data),
@@ -1080,7 +1080,7 @@ async function submitAdd(){
     karyawan_id: document.getElementById('addKaryawanId').value,
     outlet_id: document.getElementById('addOutletId').value,
   };
-  const r = await fetch('/ERP/harpy/hq/karyawan.php?action=add_assignment', {
+  const r = await fetch('/lamasy/hq/karyawan.php?action=add_assignment', {
     method:'POST',
     headers:{'Content-Type':'application/json','X-CSRF-TOKEN':csrf},
     body: JSON.stringify(data),
@@ -1093,7 +1093,7 @@ async function submitAdd(){
 
 async function removeAssignment(kid, oid, outletName){
   if (!confirm(`Cabut penugasan karyawan dari outlet "${outletName}"?`)) return;
-  const r = await fetch('/ERP/harpy/hq/karyawan.php?action=remove_assignment', {
+  const r = await fetch('/lamasy/hq/karyawan.php?action=remove_assignment', {
     method:'POST',
     headers:{'Content-Type':'application/json','X-CSRF-TOKEN':csrf},
     body: JSON.stringify({karyawan_id: kid, outlet_id: oid}),
@@ -1153,7 +1153,7 @@ async function submitCreate(){
   if (!data.username) { alertEl.innerHTML = '<div class="alert error">Username wajib diisi</div>'; return; }
   if (data.password.length < 6) { alertEl.innerHTML = '<div class="alert error">Password minimal 6 karakter</div>'; return; }
 
-  const r = await fetch('/ERP/harpy/hq/karyawan.php?action=create', {
+  const r = await fetch('/lamasy/hq/karyawan.php?action=create', {
     method:'POST',
     headers:{'Content-Type':'application/json','X-CSRF-TOKEN':csrf},
     body: JSON.stringify(data),

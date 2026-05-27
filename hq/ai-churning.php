@@ -254,7 +254,7 @@ async function loadList(){
   listEl.innerHTML = '<div class="loading">⏳ Menganalisa pola order pelanggan…</div>';
 
   try {
-    const r = await fetch(`/ERP/harpy/hq/ai-churning.php?action=list&outlet_id=${outletId}&limit=${limit}`);
+    const r = await fetch(`/lamasy/hq/ai-churning.php?action=list&outlet_id=${outletId}&limit=${limit}`);
     const d = await r.json();
     if (d.error) {
       listEl.innerHTML = `<div class="empty"><div class="ico">⚠️</div><div>${esc(d.error)}</div></div>`;
@@ -337,7 +337,7 @@ async function generateMsg(c) {
   fd.append('total_order', c.total_order);
 
   try {
-    const r = await fetch('/ERP/harpy/hq/ai-churning.php?action=generate', { method:'POST', body: fd });
+    const r = await fetch('/lamasy/hq/ai-churning.php?action=generate', { method:'POST', body: fd });
     const d = await r.json();
     if (d.error) {
       btn.disabled = false;
@@ -378,7 +378,7 @@ async function markStatus(logId, status, card) {
   fd.append('log_id', logId);
   fd.append('status', status);
   try {
-    await fetch('/ERP/harpy/hq/ai-churning.php?action=mark', { method:'POST', body: fd });
+    await fetch('/lamasy/hq/ai-churning.php?action=mark', { method:'POST', body: fd });
   } catch (e) {}
   if (status === 'dismissed' && card) {
     card.style.opacity = '0.4';

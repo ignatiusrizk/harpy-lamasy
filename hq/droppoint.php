@@ -137,7 +137,7 @@ function params(){
 async function loadPerOutlet(){
   const box = document.getElementById('perOutletBox');
   try {
-    const r = await fetch(`/ERP/harpy/hq/droppoint.php?action=per_outlet&${params()}`);
+    const r = await fetch(`/lamasy/hq/droppoint.php?action=per_outlet&${params()}`);
     const d = await r.json();
     if (d.error){ box.innerHTML = `<div class="empty">⚠️ ${esc(d.error)}</div>`; return; }
     if (!d.rows.length){ box.innerHTML = '<div class="empty">Belum ada outlet aktif.</div>'; return; }
@@ -165,7 +165,7 @@ async function loadPerOutlet(){
 async function loadTopMitra(){
   const box = document.getElementById('topMitraBox');
   try {
-    const r = await fetch(`/ERP/harpy/hq/droppoint.php?action=top_mitra&${params()}`);
+    const r = await fetch(`/lamasy/hq/droppoint.php?action=top_mitra&${params()}`);
     const d = await r.json();
     if (d.error){ box.innerHTML = `<div class="empty">⚠️ ${esc(d.error)}</div>`; return; }
     if (!d.rows.length){ box.innerHTML = '<div class="empty">Belum ada mitra aktif.</div>'; return; }

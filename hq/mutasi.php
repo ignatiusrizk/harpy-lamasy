@@ -156,7 +156,7 @@ function fmtDate(s){if(!s)return '-';const d=new Date(s);return d.toLocaleDateSt
 function fmtTime(s){if(!s)return '';const d=new Date(s);return d.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})}
 
 async function loadFilters(){
-  const r = await fetch('/ERP/harpy/hq/mutasi.php?action=filter_options');
+  const r = await fetch('/lamasy/hq/mutasi.php?action=filter_options');
   const d = await r.json();
   document.getElementById('filterOutlet').innerHTML = '<option value="0">📍 Semua Outlet</option>' +
     (d.outlets||[]).map(o => `<option value="${o.id}">📍 ${esc(o.nama_outlet)}</option>`).join('');
@@ -171,7 +171,7 @@ async function loadData(){
     outlet_id: document.getElementById('filterOutlet').value,
     karyawan_id: document.getElementById('filterKaryawan').value,
   });
-  const r = await fetch('/ERP/harpy/hq/mutasi.php?action=data&' + params.toString());
+  const r = await fetch('/lamasy/hq/mutasi.php?action=data&' + params.toString());
   const d = await r.json();
   const entries = d.entries || [];
 

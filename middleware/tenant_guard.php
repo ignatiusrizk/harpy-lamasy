@@ -34,9 +34,9 @@ require_once ROOT . '/core/CoinLedger.php';
 if (empty($_SESSION['user_id']) || empty($_SESSION['tenant_id'])) {
     if (!empty($_GET['action']) || !empty($_SERVER['HTTP_X_REQUESTED_WITH'])) {
         header('Content-Type: application/json');
-        echo json_encode(['error' => 'Sesi habis. Silakan login kembali.', 'redirect' => '/ERP/harpy/login.php']);
+        echo json_encode(['error' => 'Sesi habis. Silakan login kembali.', 'redirect' => '/lamasy/login.php']);
     } else {
-        header('Location: /ERP/harpy/login.php?msg=session_expired');
+        header('Location: /lamasy/login.php?msg=session_expired');
     }
     exit;
 }
@@ -46,9 +46,9 @@ if (empty($_SESSION['user_id']) || empty($_SESSION['tenant_id'])) {
 if (($_SESSION['role'] ?? '') === 'mitra') {
     if (!empty($_GET['action']) || !empty($_SERVER['HTTP_X_REQUESTED_WITH'])) {
         header('Content-Type: application/json');
-        echo json_encode(['error' => 'Akses ditolak — Anda mitra drop point.', 'redirect' => '/ERP/harpy/droppoint/dashboard.php']);
+        echo json_encode(['error' => 'Akses ditolak — Anda mitra drop point.', 'redirect' => '/lamasy/droppoint/dashboard.php']);
     } else {
-        header('Location: /ERP/harpy/droppoint/dashboard.php');
+        header('Location: /lamasy/droppoint/dashboard.php');
     }
     exit;
 }
@@ -63,9 +63,9 @@ if (isset($_SESSION['hl_last_activity'])) {
         session_destroy();
         if (!empty($_GET['action']) || !empty($_SERVER['HTTP_X_REQUESTED_WITH'])) {
             header('Content-Type: application/json');
-            echo json_encode(['error' => 'Sesi habis. Silakan login kembali.', 'redirect' => '/ERP/harpy/login.php']);
+            echo json_encode(['error' => 'Sesi habis. Silakan login kembali.', 'redirect' => '/lamasy/login.php']);
         } else {
-            header('Location: /ERP/harpy/login.php?msg=session_expired');
+            header('Location: /lamasy/login.php?msg=session_expired');
         }
         exit;
     }
@@ -73,7 +73,7 @@ if (isset($_SESSION['hl_last_activity'])) {
 if (isset($_SESSION['hl_login_time'])) {
     if ($_now - $_SESSION['hl_login_time'] > SESSION_LIFETIME) {
         session_destroy();
-        header('Location: /ERP/harpy/login.php?msg=session_expired');
+        header('Location: /lamasy/login.php?msg=session_expired');
         exit;
     }
 }
@@ -161,7 +161,7 @@ function requireNotGrace(string $message = ''): void
         die('<div style="font-family:sans-serif;padding:40px;text-align:center;background:#0F1C3A;color:#fff;min-height:100vh">
             <h2 style="color:#F59E0B">⏰ Grace Period</h2>
             <p style="color:rgba(255,255,255,.6);max-width:380px;margin:0 auto 24px">' . htmlspecialchars($msg) . '</p>
-            <a href="/ERP/harpy/billing.php" style="background:#35E8D5;color:#0F1C3A;padding:12px 28px;border-radius:8px;font-weight:700;text-decoration:none">Aktifkan Outlet</a>
+            <a href="/lamasy/billing.php" style="background:#35E8D5;color:#0F1C3A;padding:12px 28px;border-radius:8px;font-weight:700;text-decoration:none">Aktifkan Outlet</a>
             &nbsp;
             <a href="javascript:history.back()" style="color:#35E8D5;margin-left:12px">← Kembali</a>
         </div>');

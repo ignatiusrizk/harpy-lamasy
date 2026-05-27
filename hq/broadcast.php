@@ -176,7 +176,7 @@ async function previewRecip(){
   const el = document.getElementById('recipPreview');
   if (!ids.length){ el.textContent = 'Pilih minimal 1 outlet.'; return; }
   try {
-    const r = await fetch('/ERP/harpy/hq/broadcast.php?action=preview', {method:'POST', body:JSON.stringify({outlet_ids:ids})});
+    const r = await fetch('/lamasy/hq/broadcast.php?action=preview', {method:'POST', body:JSON.stringify({outlet_ids:ids})});
     const d = await r.json();
     if (d.error){ el.textContent = '⚠️ '+d.error; return; }
     el.innerHTML = `📱 <strong>${d.recipients.length} penerima</strong> dengan nomor WA di outlet terpilih`;
@@ -190,7 +190,7 @@ async function createBroadcast(){
   if (!judul || !pesan){ alert('Judul & pesan wajib diisi'); return; }
   if (!ids.length){ alert('Pilih minimal 1 outlet'); return; }
   try {
-    const r = await fetch('/ERP/harpy/hq/broadcast.php?action=create', {method:'POST',
+    const r = await fetch('/lamasy/hq/broadcast.php?action=create', {method:'POST',
       body:JSON.stringify({judul, pesan, outlet_ids:ids})});
     const d = await r.json();
     if (d.error){ alert('⚠️ '+d.error); return; }
@@ -204,7 +204,7 @@ async function createBroadcast(){
 async function loadHistory(){
   const wrap = document.getElementById('histList');
   try {
-    const r = await fetch('/ERP/harpy/hq/broadcast.php?action=history');
+    const r = await fetch('/lamasy/hq/broadcast.php?action=history');
     const d = await r.json();
     if (d.error){ wrap.innerHTML = `<div class="empty">⚠️ ${esc(d.error)}</div>`; return; }
     if (!d.history.length){ wrap.innerHTML = '<div class="empty">Belum ada broadcast.</div>'; return; }
@@ -221,7 +221,7 @@ async function loadHistory(){
 
 async function openDetail(id){
   try {
-    const r = await fetch(`/ERP/harpy/hq/broadcast.php?action=detail&id=${id}`);
+    const r = await fetch(`/lamasy/hq/broadcast.php?action=detail&id=${id}`);
     const d = await r.json();
     if (d.error){ alert('⚠️ '+d.error); return; }
     const b = d.broadcast;
@@ -249,7 +249,7 @@ function closeDetail(){ document.getElementById('detailModal').classList.remove(
 
 async function markSent(rid, el){
   try {
-    await fetch('/ERP/harpy/hq/broadcast.php?action=mark_sent', {method:'POST', body:JSON.stringify({recipient_id:rid})});
+    await fetch('/lamasy/hq/broadcast.php?action=mark_sent', {method:'POST', body:JSON.stringify({recipient_id:rid})});
     el.outerHTML = '<span class="recip-sent">✓ terkirim</span>';
   } catch(e){}
 }

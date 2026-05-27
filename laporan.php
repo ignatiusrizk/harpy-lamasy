@@ -955,7 +955,7 @@ async function loadAiInsightOutlet(){
   titleEl.textContent = `Periode ${dari} → ${sampai}`;
 
   try {
-    const r = await fetch(`/ERP/harpy/laporan.php?action=ai_insight&dari=${dari}&sampai=${sampai}`);
+    const r = await fetch(`/lamasy/laporan.php?action=ai_insight&dari=${dari}&sampai=${sampai}`);
     const d = await r.json();
     loading.style.display = 'none';
 

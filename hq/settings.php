@@ -814,7 +814,7 @@ require __DIR__ . '/_layout_open.php';
     </div>
 
     <div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap">
-      <a href="/ERP/harpy/add-outlet.php" class="btn btn-primary">🏪 Tambah Outlet Baru</a>
+      <a href="/lamasy/add-outlet.php" class="btn btn-primary">🏪 Tambah Outlet Baru</a>
       <a href="https://wa.me/<?= $supportWa ?>?text=<?= urlencode('Halo Tim LAMASY, saya mau upgrade paket / tambah outlet untuk akun '.($hqTenant['email'] ?? '-').'.') ?>"
          target="_blank" rel="noopener" class="btn btn-wa">💬 Upgrade via WhatsApp</a>
     </div>
@@ -854,7 +854,7 @@ function escapeHtml(s){return String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&am
 function fmt(n){return Number(n||0).toLocaleString('id-ID')}
 
 async function loadCoin(){
-  const r = await fetch('/ERP/harpy/hq/settings.php?action=coin_balance');
+  const r = await fetch('/lamasy/hq/settings.php?action=coin_balance');
   const d = await r.json();
   if (d.error) {
     document.getElementById('outletCoinList').innerHTML = `<div style="color:#EF4444;font-size:12px">Error: ${escapeHtml(d.error)}</div>`;
@@ -893,7 +893,7 @@ async function loadCoin(){
 async function loadTopupHistory(){
   const box = document.getElementById('topupHistory');
   try {
-    const r = await fetch('/ERP/harpy/hq/settings.php?action=topup_history');
+    const r = await fetch('/lamasy/hq/settings.php?action=topup_history');
     const rows = await r.json();
     if (!rows || rows.length === 0) {
       box.innerHTML = '<div style="color:#9CA3AF;font-size:12px;text-align:center;padding:14px">Belum ada histori topup</div>';
@@ -938,7 +938,7 @@ async function loadTopupHistory(){
 async function loadCoinUsage(){
   const box = document.getElementById('coinUsage');
   try {
-    const r = await fetch('/ERP/harpy/hq/settings.php?action=coin_usage');
+    const r = await fetch('/lamasy/hq/settings.php?action=coin_usage');
     const rows = await r.json();
     if (rows.error || !rows.length) {
       box.innerHTML = '<div style="color:#9CA3AF;font-size:12px;text-align:center;padding:14px">Belum ada riwayat pemakaian coin</div>';

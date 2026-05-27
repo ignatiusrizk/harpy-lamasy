@@ -361,7 +361,7 @@ let permsCache = null;
 function escapeHtml(s){return String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
 
 async function loadList(){
-  const r = await fetch('/ERP/harpy/hq/roles.php?action=list');
+  const r = await fetch('/lamasy/hq/roles.php?action=list');
   const rows = await r.json();
   const grid = document.getElementById('roleGrid');
   if (rows.error) { grid.innerHTML = `<div style="grid-column:1/-1" class="alert error">${escapeHtml(rows.error)}</div>`; return; }
@@ -392,7 +392,7 @@ async function loadList(){
 
 async function loadPermsCache(){
   if (permsCache) return permsCache;
-  const r = await fetch('/ERP/harpy/hq/roles.php?action=permissions_grouped');
+  const r = await fetch('/lamasy/hq/roles.php?action=permissions_grouped');
   permsCache = await r.json();
   return permsCache;
 }
@@ -442,7 +442,7 @@ async function openCreate(){
 }
 
 async function openEdit(id){
-  const r = await fetch('/ERP/harpy/hq/roles.php?action=detail&id=' + id);
+  const r = await fetch('/lamasy/hq/roles.php?action=detail&id=' + id);
   const d = await r.json();
   if (d.error) { alert(d.error); return; }
   document.getElementById('formTitle').textContent = '✏️ Edit: ' + d.role.nama;
@@ -461,7 +461,7 @@ async function openEdit(id){
 }
 
 async function showDetail(id){
-  const r = await fetch('/ERP/harpy/hq/roles.php?action=detail&id=' + id);
+  const r = await fetch('/lamasy/hq/roles.php?action=detail&id=' + id);
   const d = await r.json();
   if (d.error) { alert(d.error); return; }
   const usersHtml = d.users.length === 0
@@ -520,7 +520,7 @@ async function submitForm(){
   };
   if (!data.nama && !data.id) { alertEl.innerHTML = '<div class="alert error">Nama wajib diisi</div>'; return; }
 
-  const r = await fetch('/ERP/harpy/hq/roles.php?action=save', {
+  const r = await fetch('/lamasy/hq/roles.php?action=save', {
     method:'POST',
     headers:{'Content-Type':'application/json','X-CSRF-TOKEN':csrf},
     body: JSON.stringify(data),
@@ -537,7 +537,7 @@ async function deleteRole(id, nama, userCount){
     return;
   }
   if (!confirm(`Hapus role "${nama}"?\nSemua permission yang ter-assign akan ikut terhapus.`)) return;
-  const r = await fetch('/ERP/harpy/hq/roles.php?action=delete', {
+  const r = await fetch('/lamasy/hq/roles.php?action=delete', {
     method:'POST',
     headers:{'Content-Type':'application/json','X-CSRF-TOKEN':csrf},
     body: JSON.stringify({id}),

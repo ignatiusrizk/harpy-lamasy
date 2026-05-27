@@ -146,7 +146,7 @@ async function openDetail(id){
       ${o.catatan ? `<div style="background:#FEF3C7;border-left:3px solid #F59E0B;padding:8px 10px;border-radius:6px;font-size:12px;color:#92400E;margin-top:10px">📝 ${escDp(o.catatan)}</div>` : ''}
       <div style="display:grid;gap:8px;margin-top:14px">
         ${o.wa_url ? `<a href="${o.wa_url}" target="_blank" class="btn btn-wa">💬 Hubungi Pelanggan via WA</a>` : ''}
-        <a href="/ERP/harpy/track.php?order=${encodeURIComponent(o.no_order)}" target="_blank" class="btn" style="background:#F3F4F6;color:#374151;width:100%">🔍 Lihat Tracking</a>
+        <a href="/lamasy/track.php?order=${encodeURIComponent(o.no_order)}" target="_blank" class="btn" style="background:#F3F4F6;color:#374151;width:100%">🔍 Lihat Tracking</a>
       </div>`;
   } catch(e) {
     body.innerHTML = '<div class="alert error">Gagal memuat: '+escDp(e.message)+'</div>';

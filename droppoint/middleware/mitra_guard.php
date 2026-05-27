@@ -32,9 +32,9 @@ $oId   = (int)($_SESSION['outlet_id'] ?? 0);
 if ($role !== 'mitra' || !$uId || !$dpId || !$tId) {
     if (!empty($_GET['action']) || !empty($_SERVER['HTTP_X_REQUESTED_WITH'])) {
         header('Content-Type: application/json');
-        echo json_encode(['error'=>'Sesi mitra tidak valid.', 'redirect'=>'/ERP/harpy/login.php']);
+        echo json_encode(['error'=>'Sesi mitra tidak valid.', 'redirect'=>'/lamasy/login.php']);
     } else {
-        header('Location: /ERP/harpy/login.php?error=akses_ditolak');
+        header('Location: /lamasy/login.php?error=akses_ditolak');
     }
     exit;
 }
@@ -43,7 +43,7 @@ if ($role !== 'mitra' || !$uId || !$dpId || !$tId) {
 $_now = time();
 if (isset($_SESSION['hl_last_activity']) && ($_now - $_SESSION['hl_last_activity']) > 1800) {
     session_destroy();
-    header('Location: /ERP/harpy/login.php?msg=session_expired');
+    header('Location: /lamasy/login.php?msg=session_expired');
     exit;
 }
 $_SESSION['hl_last_activity'] = $_now;
@@ -63,7 +63,7 @@ try {
     $dp = $stmt->fetch(PDO::FETCH_ASSOC);
     if (!$dp) {
         session_destroy();
-        header('Location: /ERP/harpy/login.php?error=mitra_nonaktif');
+        header('Location: /lamasy/login.php?error=mitra_nonaktif');
         exit;
     }
 } catch (Throwable $e) {

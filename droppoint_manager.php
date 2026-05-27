@@ -643,11 +643,11 @@ async function genAccount(dpId, nama, wa){
     document.getElementById('credsBox').innerHTML = `
       <strong>Username:</strong> ${esc(d.username)}<br>
       <strong>Password:</strong> ${esc(d.password)}<br>
-      <strong>URL:</strong> /ERP/harpy/login.php
+      <strong>URL:</strong> /lamasy/login.php
     `;
     if (wa){
       const p = (''+wa).replace(/[^0-9]/g,'').replace(/^0/,'62');
-      const txt = `Halo ${nama}, ini akun login portal mitra:\n\nUsername: ${d.username}\nPassword: ${d.password}\nLogin di: https://harpylaundry.id/ERP/harpy/login.php\n\nSilakan login & ganti password kalau perlu. Terima kasih!`;
+      const txt = `Halo ${nama}, ini akun login portal mitra:\n\nUsername: ${d.username}\nPassword: ${d.password}\nLogin di: https://harpylaundry.id/lamasy/login.php\n\nSilakan login & ganti password kalau perlu. Terima kasih!`;
       document.getElementById('credsWa').href = `https://wa.me/${p.startsWith('62')?p:'62'+p}?text=${encodeURIComponent(txt)}`;
       document.getElementById('credsWa').style.display = '';
     } else {

@@ -59,10 +59,10 @@ class FileUpload
         return false;
     }
 
-    /** URL untuk akses public (relative ke web root /ERP/harpy/) */
+    /** URL untuk akses public (relative ke web root /lamasy/) */
     public static function publicUrl(?string $relativePath): string
     {
         if (!$relativePath) return '';
-        return '/ERP/harpy/' . ltrim($relativePath, '/');
+        return '/lamasy/' . ltrim($relativePath, '/');
     }
 }

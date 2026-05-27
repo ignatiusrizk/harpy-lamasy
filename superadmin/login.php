@@ -248,7 +248,7 @@ input::placeholder { color: rgba(255,255,255,.25); }
 
 <div class="login-card">
   <div class="login-logo">
-    <div style="margin-bottom:14px;"><img src="/ERP/harpy/assets/logo.png" alt="LAMASY" style="height:48px;"></div>
+    <div style="margin-bottom:14px;"><img src="/lamasy/assets/logo.png" alt="LAMASY" style="height:48px;"></div>
     <h1>LAMASY <span>Admin</span></h1>
     <p>Super Admin Panel</p>
   </div>
@@ -296,7 +296,7 @@ input::placeholder { color: rgba(255,255,255,.25); }
     </button>
   </form>
 
-  <a href="/ERP/harpy/login.php" class="back-link">← Kembali ke Tenant Login</a>
+  <a href="/lamasy/login.php" class="back-link">← Kembali ke Tenant Login</a>
 
   <div class="login-footer">
     &copy; <?= date('Y') ?> PT Harpy Sinergi Mandiri

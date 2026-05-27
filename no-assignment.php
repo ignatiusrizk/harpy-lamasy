@@ -12,7 +12,7 @@ require_once ROOT . '/core/Database.php';
 
 // Auth check
 if (empty($_SESSION['user_id']) || empty($_SESSION['tenant_id'])) {
-    header('Location: /ERP/harpy/login.php');
+    header('Location: /lamasy/login.php');
     exit;
 }
 
@@ -30,7 +30,7 @@ try {
     );
     $stmt->execute([$tenantId, $_SESSION['user_id']]);
     if ((int)$stmt->fetchColumn() > 0) {
-        header('Location: /ERP/harpy/select-outlet.php');
+        header('Location: /lamasy/select-outlet.php');
         exit;
     }
     $tenantStmt = $db->prepare("SELECT nama_outlet, owner_wa FROM tenants WHERE id=? LIMIT 1");
@@ -96,7 +96,7 @@ $waMsg    = urlencode("Halo, saya $userNama. Akun saya belum ditugaskan ke outle
   </a>
 
   <div>
-    <a href="/ERP/harpy/logout.php" class="btn btn-logout">Logout</a>
+    <a href="/lamasy/logout.php" class="btn btn-logout">Logout</a>
   </div>
 </div>
 </body>

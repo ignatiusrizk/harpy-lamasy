@@ -40,7 +40,7 @@ class TenantResolver
 
         if (!$tenant) {
             session_destroy();
-            header('Location: /ERP/harpy/login.php?error=tenant_not_found');
+            header('Location: /lamasy/login.php?error=tenant_not_found');
             exit;
         }
 
@@ -50,10 +50,10 @@ class TenantResolver
         if ($tenant['status'] === 'pending_verification') {
             // Izinkan akses ke halaman verifikasi saja
             $allowed = [
-                '/ERP/harpy/pending-verify.php',
-                '/ERP/harpy/verify-email.php',
-                '/ERP/harpy/resend-verify.php',
-                '/ERP/harpy/logout.php',
+                '/lamasy/pending-verify.php',
+                '/lamasy/verify-email.php',
+                '/lamasy/resend-verify.php',
+                '/lamasy/logout.php',
             ];
             $currentPath = $_SERVER['PHP_SELF'] ?? '';
             if (!in_array($currentPath, $allowed)) {
@@ -61,11 +61,11 @@ class TenantResolver
                     header('Content-Type: application/json');
                     echo json_encode([
                         'error'    => 'Email belum diverifikasi.',
-                        'redirect' => '/ERP/harpy/pending-verify.php',
+                        'redirect' => '/lamasy/pending-verify.php',
                     ]);
                     exit;
                 }
-                header('Location: /ERP/harpy/pending-verify.php');
+                header('Location: /lamasy/pending-verify.php');
                 exit;
             }
             self::$tenant = $tenant;
@@ -74,10 +74,10 @@ class TenantResolver
 
         // Akun ditutup / suspended → redirect ke halaman info khusus
         if (in_array($tenant['status'], ['suspended', 'closed'])) {
-            $allowed = ['/ERP/harpy/account-suspended.php', '/ERP/harpy/logout.php'];
+            $allowed = ['/lamasy/account-suspended.php', '/lamasy/logout.php'];
             $currentPath = $_SERVER['PHP_SELF'] ?? '';
             if (!in_array($currentPath, $allowed)) {
-                header('Location: /ERP/harpy/account-suspended.php');
+                header('Location: /lamasy/account-suspended.php');
                 exit;
             }
             self::$tenant = $tenant;
@@ -101,9 +101,9 @@ class TenantResolver
                 // Tenant belum punya outlet — arahkan ke wizard tambah outlet
                 // Izinkan halaman: add-outlet.php, dashboard.php (untuk hero empty state), logout
                 $allowed = [
-                    '/ERP/harpy/add-outlet.php',
-                    '/ERP/harpy/dashboard.php',
-                    '/ERP/harpy/logout.php',
+                    '/lamasy/add-outlet.php',
+                    '/lamasy/dashboard.php',
+                    '/lamasy/logout.php',
                 ];
                 $currentPath = $_SERVER['PHP_SELF'] ?? '';
                 if (!in_array($currentPath, $allowed)) {
@@ -111,11 +111,11 @@ class TenantResolver
                         header('Content-Type: application/json');
                         echo json_encode([
                             'error'    => 'Belum ada outlet.',
-                            'redirect' => '/ERP/harpy/add-outlet.php',
+                            'redirect' => '/lamasy/add-outlet.php',
                         ]);
                         exit;
                     }
-                    header('Location: /ERP/harpy/add-outlet.php');
+                    header('Location: /lamasy/add-outlet.php');
                     exit;
                 }
                 // Di halaman yang diizinkan — set flag no-outlet untuk dashboard
@@ -136,7 +136,7 @@ class TenantResolver
                 $_SESSION['outlet_id'] = $outlet['id'];
                 $_SESSION['has_outlet'] = true;
             } else {
-                header('Location: /ERP/harpy/add-outlet.php');
+                header('Location: /lamasy/add-outlet.php');
                 exit;
             }
         }
@@ -155,11 +155,11 @@ class TenantResolver
                 header('Content-Type: application/json');
                 echo json_encode([
                     'error'    => 'Outlet tidak valid.',
-                    'redirect' => '/ERP/harpy/add-outlet.php',
+                    'redirect' => '/lamasy/add-outlet.php',
                 ]);
                 exit;
             }
-            header('Location: /ERP/harpy/add-outlet.php');
+            header('Location: /lamasy/add-outlet.php');
             exit;
         }
 
@@ -176,11 +176,11 @@ class TenantResolver
 
         // Outlet suspended → redirect ke halaman aktivasi
         if ($outlet['status'] === 'suspended') {
-            $allowed = ['/ERP/harpy/outlet-suspended.php', '/ERP/harpy/switch-outlet.php',
-                        '/ERP/harpy/add-outlet.php', '/ERP/harpy/logout.php'];
+            $allowed = ['/lamasy/outlet-suspended.php', '/lamasy/switch-outlet.php',
+                        '/lamasy/add-outlet.php', '/lamasy/logout.php'];
             $currentPath = $_SERVER['PHP_SELF'] ?? '';
             if (!in_array($currentPath, $allowed)) {
-                header('Location: /ERP/harpy/outlet-suspended.php');
+                header('Location: /lamasy/outlet-suspended.php');
                 exit;
             }
             self::$outlet = $outlet;
@@ -515,7 +515,7 @@ class TenantResolver
             $banners[] = [
                 'type'    => 'warning',
                 'message' => "⚠️ Outlet dalam grace period. Sisa <strong>$days hari</strong> sebelum ditangguhkan. "
-                           . "<a href='/ERP/harpy/billing.php'>Aktifkan sekarang →</a>",
+                           . "<a href='/lamasy/billing.php'>Aktifkan sekarang →</a>",
             ];
         } elseif (self::isTrial()) {
             $days      = self::trialDaysLeft();
@@ -524,7 +524,7 @@ class TenantResolver
                 $banners[] = [
                     'type'    => 'warning',
                     'message' => "⏰ Trial berakhir dalam <strong>$days hari</strong>. "
-                               . "<a href='/ERP/harpy/billing.php'>Upgrade sekarang →</a>",
+                               . "<a href='/lamasy/billing.php'>Upgrade sekarang →</a>",
                 ];
             }
             if ($trialCoin < 1000) {
@@ -574,7 +574,7 @@ class TenantResolver
               ) . '
           <br>Hubungi tim Harpy untuk informasi lebih lanjut.</p>
           <a href="https://wa.me/6281234567890" class="btn">💬 Hubungi Support</a>
-          <a href="/ERP/harpy/logout.php" class="btn btn-outline">Keluar</a>
+          <a href="/lamasy/logout.php" class="btn btn-outline">Keluar</a>
         </div></body></html>';
     }
 
@@ -583,6 +583,6 @@ class TenantResolver
         return '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Error — LAMASY</title></head>
         <body style="font-family:sans-serif;text-align:center;padding:60px;background:#0F1C3A;color:#fff">
         <h2>' . htmlspecialchars($msg) . '</h2>
-        <a href="/ERP/harpy/login.php" style="color:#35E8D5">Kembali ke Login</a></body></html>';
+        <a href="/lamasy/login.php" style="color:#35E8D5">Kembali ke Login</a></body></html>';
     }
 }

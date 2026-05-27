@@ -185,7 +185,7 @@ async function loadAbsensi(){
   const box = document.getElementById('absBox');
   box.innerHTML = '<div class="empty">⏳ Memuat…</div>';
   try {
-    const r = await fetch(`/ERP/harpy/hq/sdm.php?action=absensi&${params()}`);
+    const r = await fetch(`/lamasy/hq/sdm.php?action=absensi&${params()}`);
     const d = await r.json();
     if (d.error){ box.innerHTML = `<div class="empty">⚠️ ${esc(d.error)}</div>`; return; }
     if (!d.rows.length){ box.innerHTML = '<div class="empty">Belum ada data absensi.</div>'; return; }
@@ -214,7 +214,7 @@ async function loadProd(){
   const box = document.getElementById('prodBox');
   box.innerHTML = '<div class="empty">⏳ Memuat…</div>';
   try {
-    const r = await fetch(`/ERP/harpy/hq/sdm.php?action=produktivitas&${params()}`);
+    const r = await fetch(`/lamasy/hq/sdm.php?action=produktivitas&${params()}`);
     const d = await r.json();
     if (d.error){ box.innerHTML = `<div class="empty">⚠️ ${esc(d.error)}</div>`; return; }
     if (!d.rows.length){ box.innerHTML = '<div class="empty">Belum ada data.</div>'; return; }

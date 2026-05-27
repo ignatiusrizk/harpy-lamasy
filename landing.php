@@ -834,8 +834,8 @@ img { max-width: 100%; }
 
 <!-- ── NAVBAR ──────────────────────────────────────── -->
 <nav class="navbar" id="navbar">
-  <a href="/ERP/harpy/landing.php" class="nav-logo">
-    <img src="/ERP/harpy/assets/logo.png" alt="LAMASY" style="height:36px; vertical-align:middle; margin-right:8px;">
+  <a href="/lamasy/landing.php" class="nav-logo">
+    <img src="/lamasy/assets/logo.png" alt="LAMASY" style="height:36px; vertical-align:middle; margin-right:8px;">
     LAMASY
   </a>
   <ul class="nav-links">
@@ -846,8 +846,8 @@ img { max-width: 100%; }
     <li><a href="#kontak">Kontak</a></li>
   </ul>
   <div class="nav-actions">
-    <a href="/ERP/harpy/login.php" class="btn-login-nav">Masuk</a>
-    <a href="/ERP/harpy/register.php" class="btn-cta-nav">Mulai Gratis</a>
+    <a href="/lamasy/login.php" class="btn-login-nav">Masuk</a>
+    <a href="/lamasy/register.php" class="btn-cta-nav">Mulai Gratis</a>
   </div>
   <button class="nav-toggle" onclick="toggleMobileMenu()" id="navToggle" aria-label="Menu">&#9776;</button>
 </nav>
@@ -859,8 +859,8 @@ img { max-width: 100%; }
   <a href="#faq" onclick="closeMobileMenu()">FAQ</a>
   <a href="#kontak" onclick="closeMobileMenu()">Kontak</a>
   <div class="nav-mobile-divider"></div>
-  <a href="/ERP/harpy/login.php">Masuk ke Akun</a>
-  <a href="/ERP/harpy/register.php" style="color:var(--teal);font-weight:700;">&#128640; Mulai Gratis</a>
+  <a href="/lamasy/login.php">Masuk ke Akun</a>
+  <a href="/lamasy/register.php" style="color:var(--teal);font-weight:700;">&#128640; Mulai Gratis</a>
 </div>
 
 <!-- ── HERO ────────────────────────────────────────── -->
@@ -879,7 +879,7 @@ img { max-width: 100%; }
   <p class="hero-sub">Kelola order, karyawan, dan keuangan — sekarang diperkuat AI yang menganalisis data bisnis Anda otomatis setiap hari. Setup dalam hitungan menit.</p>
 
   <div class="hero-btns">
-    <a href="/ERP/harpy/register.php" class="btn-primary">&#128640; Coba Gratis 30 Hari</a>
+    <a href="/lamasy/register.php" class="btn-primary">&#128640; Coba Gratis 30 Hari</a>
     <a href="#fitur" class="btn-secondary">&#9654; Lihat Demo</a>
   </div>
 
@@ -889,7 +889,7 @@ img { max-width: 100%; }
       <div class="mockup-dot"></div>
       <div class="mockup-dot"></div>
       <div class="mockup-dot"></div>
-      <div class="mockup-url">harpy.id/ERP/harpy/</div>
+      <div class="mockup-url">harpy.id/lamasy/</div>
     </div>
     <div class="mockup-body">
       <div class="mockup-sidebar">
@@ -1003,7 +1003,7 @@ img { max-width: 100%; }
     <div style="font-size:1.1rem;color:rgba(255,255,255,.7);font-weight:500">
       Semua masalah di atas bisa diselesaikan dengan <strong style="color:#35E8D5">LAMASY</strong> — mulai hari ini.
     </div>
-    <a href="/ERP/harpy/register.php"
+    <a href="/lamasy/register.php"
        style="display:inline-block;margin-top:20px;background:#35E8D5;color:#0F1C3A;
               font-weight:700;padding:13px 32px;border-radius:10px;text-decoration:none;
               font-size:15px;transition:opacity .2s"
@@ -1289,7 +1289,7 @@ img { max-width: 100%; }
         <li style="color:#C4B5FD;">✦ AI Briefing (pakai coin)</li>
         <li>Support via WhatsApp</li>
       </ul>
-      <a href="/ERP/harpy/register.php" class="btn-pricing btn-pricing-outline">Mulai Trial Gratis</a>
+      <a href="/lamasy/register.php" class="btn-pricing btn-pricing-outline">Mulai Trial Gratis</a>
     </div>
 
     <!-- Card 2: Starter (featured) -->
@@ -1309,7 +1309,7 @@ img { max-width: 100%; }
         <li>Onboarding 1-on-1 (30 menit)</li>
         <li>Support prioritas</li>
       </ul>
-      <a href="/ERP/harpy/register.php" class="btn-pricing btn-pricing-primary">Aktivasi Sekarang</a>
+      <a href="/lamasy/register.php" class="btn-pricing btn-pricing-primary">Aktivasi Sekarang</a>
     </div>
 
     <!-- Card 3: Growth -->
@@ -1461,7 +1461,7 @@ img { max-width: 100%; }
     <h2>Siap Digitalisasi Laundry Anda?</h2>
     <p>Bergabung dengan 500+ outlet laundry yang sudah lebih rapi bersama LAMASY. Daftar gratis, tidak perlu kartu kredit.</p>
     <div class="cta-btns">
-      <a href="/ERP/harpy/register.php" class="btn-primary">&#128640; Mulai Gratis 7 Hari</a>
+      <a href="/lamasy/register.php" class="btn-primary">&#128640; Mulai Gratis 7 Hari</a>
       <a href="https://wa.me/6281234567890?text=Halo+saya+ingin+tahu+lebih+lanjut+tentang+LAMASY" target="_blank" class="btn-secondary">&#128172; Chat WhatsApp</a>
     </div>
   </div>
@@ -1472,7 +1472,7 @@ img { max-width: 100%; }
   <div class="footer-grid">
     <div>
       <div class="footer-logo">
-        <img src="/ERP/harpy/assets/logo.png" alt="LAMASY" style="height:40px; vertical-align:middle; margin-right:8px;">
+        <img src="/lamasy/assets/logo.png" alt="LAMASY" style="height:40px; vertical-align:middle; margin-right:8px;">
         LAMASY <span style="font-size:13px;font-weight:500;color:rgba(255,255,255,.45);">by Harpy</span>
       </div>
       <div class="footer-tagline">Platform manajemen laundry modern untuk bisnis yang lebih rapi.</div>
@@ -1483,14 +1483,14 @@ img { max-width: 100%; }
         <li><a href="#fitur">Fitur</a></li>
         <li><a href="#harga">Harga</a></li>
         <li><a href="#faq">FAQ</a></li>
-        <li><a href="/ERP/harpy/register.php">Daftar Gratis</a></li>
+        <li><a href="/lamasy/register.php">Daftar Gratis</a></li>
       </ul>
     </div>
     <div>
       <div class="footer-col-title">Akun</div>
       <ul class="footer-links">
-        <li><a href="/ERP/harpy/login.php">Login</a></li>
-        <li><a href="/ERP/harpy/register.php">Daftar Gratis</a></li>
+        <li><a href="/lamasy/login.php">Login</a></li>
+        <li><a href="/lamasy/register.php">Daftar Gratis</a></li>
         <li><a href="#">Reset Password</a></li>
       </ul>
     </div>
@@ -1509,7 +1509,7 @@ img { max-width: 100%; }
       <a href="#">Privasi</a>
       <a href="#">Syarat & Ketentuan</a>
       <!-- Super admin link - kecil, tidak mencolok -->
-      <a href="/ERP/harpy/superadmin/login.php" style="opacity:.4;font-size:11px;">Admin</a>
+      <a href="/lamasy/superadmin/login.php" style="opacity:.4;font-size:11px;">Admin</a>
     </div>
   </div>
 </footer>

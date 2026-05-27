@@ -494,7 +494,7 @@ $pwError      = $pwError ?? '';
       Akun LAMASY kamu sudah aktif. Daftarkan outlet pertama untuk mulai
       mengelola laundry dengan AI — gratis 7 hari, tanpa kartu kredit.
     </p>
-    <a href="/ERP/harpy/add-outlet.php"
+    <a href="/lamasy/add-outlet.php"
        style="display:inline-block;background:#35E8D5;color:#0F1C3A;font-weight:800;
               font-size:16px;padding:15px 40px;border-radius:12px;text-decoration:none;
               transition:opacity .2s">
@@ -600,7 +600,7 @@ $pwError      = $pwError ?? '';
     $steps = [
       ['done'=>true,        'locked'=>false, 'label'=>'Verifikasi email',           'link'=>null,                        'icon'=>'📧'],
       ['done'=>$profileDone,'locked'=>false, 'label'=>'Lengkapi profil perusahaan', 'link'=>null,                        'icon'=>'👤'],
-      ['done'=>false,       'locked'=>false, 'label'=>'Daftarkan outlet pertama',   'link'=>'/ERP/harpy/add-outlet.php', 'icon'=>'🏪'],
+      ['done'=>false,       'locked'=>false, 'label'=>'Daftarkan outlet pertama',   'link'=>'/lamasy/add-outlet.php', 'icon'=>'🏪'],
       ['done'=>false,       'locked'=>true,  'label'=>'Setup layanan & harga',      'link'=>null,                        'icon'=>'🧺'],
       ['done'=>false,       'locked'=>true,  'label'=>'Tambah karyawan pertama',    'link'=>null,                        'icon'=>'👥'],
       ['done'=>false,       'locked'=>true,  'label'=>'Buat order pertama',         'link'=>null,                        'icon'=>'🛒'],
@@ -674,7 +674,7 @@ $pwError      = $pwError ?? '';
     <?php endforeach; ?>
   </div>
   <div style="text-align:center;margin-top:16px">
-    <a href="/ERP/harpy/add-outlet.php"
+    <a href="/lamasy/add-outlet.php"
        style="font-size:13px;color:#0891B2;text-decoration:none;font-weight:600">
       Daftar outlet untuk akses penuh →
     </a>

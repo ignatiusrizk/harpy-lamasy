@@ -936,7 +936,7 @@ async function uploadFotoMasuk(input) {
     if (d.error) { status.textContent = '❌ ' + d.error; status.style.color = 'var(--red)'; return; }
     document.getElementById('f_foto_path').value = d.path;
     const prev = document.getElementById('fotoPreview');
-    prev.src = '/ERP/harpy/' + d.path;
+    prev.src = '/lamasy/' + d.path;
     prev.style.display = 'block';
     document.getElementById('btnFotoClear').style.display = '';
     status.textContent = '✓ Terunggah';

@@ -13,7 +13,7 @@ require_once __DIR__ . '/core/Mailer.php';
 
 // Harus ada tenant_id di session (dari proses registrasi)
 if (!isset($_SESSION['tenant_id'])) {
-    header('Location: /ERP/harpy/login.php');
+    header('Location: /lamasy/login.php');
     exit;
 }
 
@@ -26,13 +26,13 @@ $tenant = $stmt->fetch();
 
 if (!$tenant) {
     session_destroy();
-    header('Location: /ERP/harpy/login.php?error=tenant_not_found');
+    header('Location: /lamasy/login.php?error=tenant_not_found');
     exit;
 }
 
 // Kalau sudah verified, redirect ke dashboard
 if ($tenant['verified_at'] !== null) {
-    header('Location: /ERP/harpy/dashboard.php');
+    header('Location: /lamasy/dashboard.php');
     exit;
 }
 
@@ -240,7 +240,7 @@ $maskedEmail = $email ? maskEmail($email) : '***';
 
 <div class="logout">
   Daftar dengan email salah?
-  <a href="/ERP/harpy/logout.php">Keluar & daftar ulang</a>
+  <a href="/lamasy/logout.php">Keluar & daftar ulang</a>
 </div>
 
 </body>

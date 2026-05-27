@@ -13,7 +13,7 @@ function renderHead(string $title = 'Harpy'): void {
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/ERP/harpy/harpy-erp.css?v=<?= @filemtime(__DIR__.'/harpy-erp.css') ?: date('Ymd') ?>">
+    <link rel="stylesheet" href="/lamasy/harpy-erp.css?v=<?= @filemtime(__DIR__.'/harpy-erp.css') ?: date('Ymd') ?>">
     <?php
 }
 
@@ -190,7 +190,7 @@ function renderTopbar(string $activePage = '', bool $minimalMode = false): void 
                   'icon'  => '⏰', 'sev' => $sev,
                   'title' => 'Masa Trial',
                   'desc'  => "Sisa <strong>{$trialDays} hari</strong> sebelum akun aktif penuh.",
-                  'cta'   => ['url' => '/ERP/harpy/hq/billing.php', 'label' => 'Top Up'],
+                  'cta'   => ['url' => '/lamasy/hq/billing.php', 'label' => 'Top Up'],
                 ];
               } elseif ($isGrace) {
                 $g = TenantResolver::graceDaysLeft();
@@ -198,7 +198,7 @@ function renderTopbar(string $activePage = '', bool $minimalMode = false): void 
                   'icon'  => '⚠️', 'sev' => 'danger',
                   'title' => 'Grace Period — Bayar Segera',
                   'desc'  => "Layanan terhenti dalam <strong>{$g} hari</strong> kalau tidak bayar.",
-                  'cta'   => ['url' => '/ERP/harpy/hq/billing.php', 'label' => 'Bayar'],
+                  'cta'   => ['url' => '/lamasy/hq/billing.php', 'label' => 'Bayar'],
                 ];
               }
               if ($coin < 500 && !$isTrial) {
@@ -206,7 +206,7 @@ function renderTopbar(string $activePage = '', bool $minimalMode = false): void 
                   'icon'  => '🪙', 'sev' => $coin < 100 ? 'danger' : 'warn',
                   'title' => 'Saldo Coin Rendah',
                   'desc'  => "Tinggal <strong>{$coinFmt}</strong> coin. Top up sebelum habis.",
-                  'cta'   => ['url' => '/ERP/harpy/hq/billing.php', 'label' => 'Top Up'],
+                  'cta'   => ['url' => '/lamasy/hq/billing.php', 'label' => 'Top Up'],
                 ];
               }
               // Unread owner_report (hanya untuk role owner/manager/admin)
@@ -221,7 +221,7 @@ function renderTopbar(string $activePage = '', bool $minimalMode = false): void 
                     'icon'  => '📨', 'sev' => 'info',
                     'title' => "{$unreadOwnerReport} notifikasi baru",
                     'desc'  => "Daily report & alert anomali menanti dibaca.",
-                    'cta'   => ['url' => '/ERP/harpy/owner_report.php', 'label' => 'Lihat'],
+                    'cta'   => ['url' => '/lamasy/owner_report.php', 'label' => 'Lihat'],
                   ];
                 }
               }
@@ -346,7 +346,7 @@ function renderTopbar(string $activePage = '', bool $minimalMode = false): void 
 
             <span class="ol-top-user"><?= htmlspecialchars($user['nama']) ?></span>
             <?php if (!$minimalMode && in_array($user['role'] ?? '', ['owner','manager','superadmin','admin'], true)): ?>
-              <a href="/ERP/harpy/dashboard.php?to=hq" class="ol-top-switch"
+              <a href="/lamasy/dashboard.php?to=hq" class="ol-top-switch"
                  title="Pindah ke HQ konsolidasi">HQ →</a>
             <?php endif; ?>
             <a href="logout.php" class="ol-top-logout"

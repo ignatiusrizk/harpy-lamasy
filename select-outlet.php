@@ -18,7 +18,7 @@ require_once ROOT . '/core/TenantResolver.php';
 if (session_status() === PHP_SESSION_NONE) session_start();
 
 if (empty($_SESSION['user_id']) || empty($_SESSION['tenant_id'])) {
-    header('Location: /ERP/harpy/login.php'); exit;
+    header('Location: /lamasy/login.php'); exit;
 }
 
 $tid  = (int)$_SESSION['tenant_id'];
@@ -32,7 +32,7 @@ $outlets = TenantResolver::getAssignedOutlets();
 
 // Non-owner tanpa assignment → halaman "belum ditugaskan"
 if (empty($outlets) && !$isOwnerOrManager) {
-    header('Location: /ERP/harpy/no-assignment.php');
+    header('Location: /lamasy/no-assignment.php');
     exit;
 }
 
@@ -45,7 +45,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['outlet_id'])) {
         $_SESSION['outlet_id']  = $oid;
         $_SESSION['has_outlet'] = true;
         $_SESSION['hq_mode']    = false;
-        header('Location: /ERP/harpy/dashboard.php'); exit;
+        header('Location: /lamasy/dashboard.php'); exit;
     }
     $postError = 'Outlet tidak valid atau Anda tidak ditugaskan ke outlet ini.';
 }
@@ -64,7 +64,7 @@ if (count($outlets) === 1) {
     $_SESSION['outlet_id']  = $outlets[0]['id'];
     $_SESSION['has_outlet'] = true;
     $_SESSION['hq_mode']    = false;
-    header('Location: /ERP/harpy/dashboard.php'); exit;
+    header('Location: /lamasy/dashboard.php'); exit;
 }
 
 // Nama tenant untuk display
@@ -281,7 +281,7 @@ html, body {
 
   <div class="header">
     <div class="brand">
-      <img src="/ERP/harpy/assets/logo.png" alt="LAMASY" style="height:44px; vertical-align:middle;">
+      <img src="/lamasy/assets/logo.png" alt="LAMASY" style="height:44px; vertical-align:middle;">
       <div class="brand-name">LAMASY</div>
     </div>
     <h1>Pilih Outlet</h1>
@@ -342,7 +342,7 @@ html, body {
   <?php endif; ?>
 
   <div class="footer-link">
-    <a href="/ERP/harpy/logout.php" onclick="return confirm('Yakin ingin logout?')">
+    <a href="/lamasy/logout.php" onclick="return confirm('Yakin ingin logout?')">
       &#x2190; Logout
     </a>
   </div>

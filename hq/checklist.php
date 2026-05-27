@@ -168,7 +168,7 @@ function switchTab(t){
 async function loadTemplates(){
   const wrap = document.getElementById('tplList');
   try {
-    const r = await fetch('/ERP/harpy/hq/checklist.php?action=templates');
+    const r = await fetch('/lamasy/hq/checklist.php?action=templates');
     const d = await r.json();
     if (d.error){ wrap.innerHTML = `<div class="empty">⚠️ ${esc(d.error)}</div>`; return; }
     if (!d.templates.length){ wrap.innerHTML = `<div class="panel empty">Belum ada template checklist.${CAN_EDIT?'<br><button class="btn btn-primary" style="margin-top:10px" onclick="openTpl()">+ Buat Template</button>':''}</div>`; return; }
@@ -220,7 +220,7 @@ async function saveTpl(){
     items, is_active: 1,
   };
   try {
-    const r = await fetch('/ERP/harpy/hq/checklist.php?action=save', {method:'POST', body:JSON.stringify(body)});
+    const r = await fetch('/lamasy/hq/checklist.php?action=save', {method:'POST', body:JSON.stringify(body)});
     const d = await r.json();
     if (d.error){ alert('⚠️ '+d.error); return; }
     closeTpl(); loadTemplates();
@@ -228,7 +228,7 @@ async function saveTpl(){
 }
 async function delTpl(id){
   if (!confirm('Nonaktifkan template ini?')) return;
-  const r = await fetch('/ERP/harpy/hq/checklist.php?action=delete', {method:'POST', body:JSON.stringify({id})});
+  const r = await fetch('/lamasy/hq/checklist.php?action=delete', {method:'POST', body:JSON.stringify({id})});
   const d = await r.json();
   if (d.error){ alert('⚠️ '+d.error); return; }
   loadTemplates();
@@ -240,7 +240,7 @@ async function loadCompliance(){
   const wrap = document.getElementById('cmpContent');
   wrap.innerHTML = '<div class="empty">⏳ Memuat…</div>';
   try {
-    const r = await fetch(`/ERP/harpy/hq/checklist.php?action=compliance&tanggal=${tgl}`);
+    const r = await fetch(`/lamasy/hq/checklist.php?action=compliance&tanggal=${tgl}`);
     const d = await r.json();
     if (d.error){ wrap.innerHTML = `<div class="empty">⚠️ ${esc(d.error)}</div>`; return; }
     const {templates, outlets, matrix} = d.data;

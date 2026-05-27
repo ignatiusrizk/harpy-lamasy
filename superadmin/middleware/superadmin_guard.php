@@ -13,9 +13,9 @@ if (session_status() === PHP_SESSION_NONE) session_start();
 if (!isset($_SESSION['superadmin_id'])) {
     if (!empty($_GET['action']) || !empty($_SERVER['HTTP_X_REQUESTED_WITH'])) {
         header('Content-Type: application/json');
-        echo json_encode(['error' => 'Sesi habis.', 'redirect' => '/ERP/harpy/superadmin/login.php']);
+        echo json_encode(['error' => 'Sesi habis.', 'redirect' => '/lamasy/superadmin/login.php']);
     } else {
-        header('Location: /ERP/harpy/superadmin/login.php');
+        header('Location: /lamasy/superadmin/login.php');
     }
     exit;
 }

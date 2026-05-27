@@ -860,7 +860,7 @@ async function loadAiInsight(){
   titleEl.textContent = `Periode ${start} → ${end} · ${oidName}`;
 
   try {
-    const r = await fetch(`/ERP/harpy/hq/laporan.php?action=ai_insight&start=${start}&end=${end}&outlet_id=${oid}`);
+    const r = await fetch(`/lamasy/hq/laporan.php?action=ai_insight&start=${start}&end=${end}&outlet_id=${oid}`);
     const d = await r.json();
     loading.style.display = 'none';
 
@@ -981,9 +981,9 @@ async function loadData(){
   const oid   = document.getElementById('dOutlet').value;
   const params = `start=${start}&end=${end}&outlet_id=${oid}`;
 
-  document.getElementById('exportBtn').href = '/ERP/harpy/hq/laporan.php?action=export&' + params;
+  document.getElementById('exportBtn').href = '/lamasy/hq/laporan.php?action=export&' + params;
 
-  const r = await fetch('/ERP/harpy/hq/laporan.php?action=data&' + params);
+  const r = await fetch('/lamasy/hq/laporan.php?action=data&' + params);
   const d = await r.json();
 
   document.getElementById('mOmset').textContent = fmtRp(d.summary.omset);
