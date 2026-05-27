@@ -1,7 +1,33 @@
 DirectoryIndex index.php
 Options -Indexes
 
-# Force HTTPS
+# ── Force HTTPS ─────────────────────────────────────
 RewriteEngine On
 RewriteCond %{HTTPS} off
 RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
+
+# ── Block sensitive file types from web access ──────
+<FilesMatch "\.(sql|md|yml|yaml|log|bak|env|ini|conf|sh)$">
+  Require all denied
+</FilesMatch>
+
+# ── Block dotfiles (.git, .env, .htaccess content) ──
+<FilesMatch "^\.">
+  Require all denied
+</FilesMatch>
+
+# ── Block sensitive directories entirely ────────────
+RedirectMatch 403 ^/master/(config|sql)/
+RedirectMatch 403 ^/tenant/(migrations|seeds)/
+RedirectMatch 403 ^/superadmin/sql/
+RedirectMatch 403 ^/cron/
+RedirectMatch 403 ^/scripts/
+RedirectMatch 403 ^/middleware/
+RedirectMatch 403 ^/core/
+
+# ── Security headers ────────────────────────────────
+<IfModule mod_headers.c>
+  Header set X-Content-Type-Options "nosniff"
+  Header set X-Frame-Options "SAMEORIGIN"
+  Header set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
