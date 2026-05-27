@@ -247,6 +247,41 @@ if ($action) {
         echo json_encode(['success' => true]); exit;
     }
 
+    // ── GET: tickets for this tenant ─────────────────────
+    if ($action === 'get_tickets') {
+        $id = (int)($_GET['id'] ?? 0);
+
+        $statsS = $db->prepare(
+            "SELECT
+               COUNT(*) AS total,
+               SUM(CASE WHEN status IN ('open','in_progress','waiting_tenant') THEN 1 ELSE 0 END) AS open_count,
+               SUM(CASE WHEN status='resolved' AND MONTH(resolved_at)=MONTH(NOW()) AND YEAR(resolved_at)=YEAR(NOW()) THEN 1 ELSE 0 END) AS resolved_month,
+               ROUND(AVG(CASE WHEN first_response_at IS NOT NULL THEN TIMESTAMPDIFF(MINUTE, created_at, first_response_at) END), 0) AS avg_resp_min
+             FROM support_tickets WHERE tenant_id=?"
+        );
+        $statsS->execute([$id]);
+        $tStats = $statsS->fetch(PDO::FETCH_ASSOC);
+
+        $rowsS = $db->prepare(
+            "SELECT t.id, t.subject, t.status, t.priority, t.category,
+                    t.created_at, t.updated_at, t.resolved_at,
+                    sa.name AS assigned_nama,
+                    (SELECT COUNT(*) FROM support_ticket_replies r WHERE r.ticket_id=t.id AND r.is_internal=0) AS reply_count
+             FROM support_tickets t
+             LEFT JOIN super_admins sa ON sa.id = t.assigned_to
+             WHERE t.tenant_id = ?
+             ORDER BY t.updated_at DESC, t.created_at DESC
+             LIMIT 30"
+        );
+        $rowsS->execute([$id]);
+
+        echo json_encode([
+            'stats' => $tStats,
+            'rows'  => $rowsS->fetchAll(PDO::FETCH_ASSOC),
+        ]);
+        exit;
+    }
+
     echo json_encode(['error' => 'Action tidak dikenal.']); exit;
 }
 
@@ -364,6 +399,7 @@ $billingStat = $bsSt->fetch(PDO::FETCH_ASSOC);
   <button class="sa-tab" onclick="showTab('stats')">📊 Stats</button>
   <button class="sa-tab" onclick="showTab('coins')">🪙 Coin History</button>
   <button class="sa-tab" onclick="showTab('billing')">💳 Billing</button>
+  <button class="sa-tab" onclick="showTab('tickets')">🎧 Tiket</button>
   <button class="sa-tab" onclick="showTab('notes')">📝 Notes</button>
   <button class="sa-tab" onclick="showTab('comms')">💬 Komunikasi</button>
   <button class="sa-tab" onclick="showTab('aksi')">⚙️ Aksi Manual</button>
@@ -577,6 +613,57 @@ $billingStat = $bsSt->fetch(PDO::FETCH_ASSOC);
   </div>
 </div>
 
+<!-- Tab: Tiket Support -->
+<div class="sa-tab-panel" id="tab-tickets">
+
+  <!-- Stats row -->
+  <div class="sa-grid-4" style="margin-bottom:20px;" id="ticketStatsRow">
+    <div class="sa-stat-card indigo">
+      <div class="label">Total Tiket</div>
+      <div class="value" id="tkTotal">—</div>
+      <span class="icon-bg">🎧</span>
+    </div>
+    <div class="sa-stat-card red">
+      <div class="label">Tiket Open</div>
+      <div class="value" id="tkOpen">—</div>
+      <span class="icon-bg">🔴</span>
+    </div>
+    <div class="sa-stat-card green">
+      <div class="label">Resolved Bulan Ini</div>
+      <div class="value" id="tkResolvedMonth">—</div>
+      <span class="icon-bg">✅</span>
+    </div>
+    <div class="sa-stat-card blue">
+      <div class="label">Avg First Response</div>
+      <div class="value" id="tkAvgResp" style="font-size:18px;">—</div>
+      <span class="icon-bg">⏱️</span>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="sa-card">
+    <div class="sa-card-header">
+      <h3>Tiket Support (30 terakhir)</h3>
+      <a href="/superadmin/support.php?tenant_id=<?= $tenantId ?>" target="_blank" class="sa-btn sa-btn-primary sa-btn-sm">
+        ＋ Buat Tiket Manual
+      </a>
+    </div>
+    <div class="sa-table-wrap">
+      <table class="sa-table">
+        <thead>
+          <tr>
+            <th>#</th><th>Subjek</th><th>Kategori</th><th>Prioritas</th>
+            <th>Status</th><th>Assigned</th><th>Balasan</th><th>Terakhir Update</th>
+          </tr>
+        </thead>
+        <tbody id="ticketsBody">
+          <tr><td colspan="8" style="text-align:center;padding:20px;color:rgba(255,255,255,.35);">Memuat...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
 <!-- Tab: Notes -->
 <div class="sa-tab-panel" id="tab-notes">
   <div class="sa-card" style="margin-bottom:16px;">
@@ -749,7 +836,7 @@ const TENANT_ID = <?= $tenantId ?>;
 
 function showTab(name) {
   document.querySelectorAll('.sa-tab').forEach((t, i) => {
-    const tabs = ['profil','health','stats','coins','billing','notes','comms','aksi'];
+    const tabs = ['profil','health','stats','coins','billing','tickets','notes','comms','aksi'];
     t.classList.toggle('active', tabs[i] === name);
   });
   document.querySelectorAll('.sa-tab-panel').forEach(p => p.classList.remove('active'));
@@ -757,6 +844,7 @@ function showTab(name) {
 
   if (name === 'coins')   loadCoinHistory();
   if (name === 'billing') loadBilling();
+  if (name === 'tickets') loadTickets();
   if (name === 'notes')   loadNotes();
   if (name === 'comms')   loadComms();
 }
@@ -941,6 +1029,51 @@ function addComm() {
       document.getElementById('commMessage').value = '';
       saShowToast('Komunikasi dicatat.', 'success');
       loadComms();
+    });
+}
+
+// Tickets
+const tkStatusLabel = {open:'Open', in_progress:'In Progress', waiting_tenant:'Menunggu Tenant', resolved:'Resolved', closed:'Closed'};
+const tkStatusCls   = {open:'sa-badge-red', in_progress:'sa-badge-indigo', waiting_tenant:'sa-badge-yellow', resolved:'sa-badge-active', closed:'sa-badge-indigo'};
+const tkPriorCls    = {low:'sa-badge-indigo', medium:'sa-badge-yellow', high:'sa-badge-red', urgent:'sa-badge-red'};
+
+function loadTickets() {
+  fetch(`client_detail.php?action=get_tickets&id=${TENANT_ID}`, {headers:{'X-Requested-With':'XMLHttpRequest'}})
+    .then(r => r.json()).then(d => {
+      const st = d.stats || {};
+      document.getElementById('tkTotal').textContent        = (st.total ?? '0').toLocaleString('id-ID');
+      document.getElementById('tkOpen').textContent         = (st.open_count ?? '0').toLocaleString('id-ID');
+      document.getElementById('tkResolvedMonth').textContent= (st.resolved_month ?? '0').toLocaleString('id-ID');
+
+      const avgMin = parseInt(st.avg_resp_min ?? 0);
+      if (!avgMin) {
+        document.getElementById('tkAvgResp').textContent = '—';
+      } else if (avgMin < 60) {
+        document.getElementById('tkAvgResp').textContent = avgMin + ' mnt';
+      } else {
+        document.getElementById('tkAvgResp').textContent = (avgMin / 60).toFixed(1) + ' jam';
+      }
+
+      const tbody = document.getElementById('ticketsBody');
+      if (!d.rows || !d.rows.length) {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:20px;color:rgba(255,255,255,.35);">Belum ada tiket.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = d.rows.map(t => `<tr>
+        <td style="font-family:var(--mono);font-size:11px;color:rgba(255,255,255,.4);">#${t.id}</td>
+        <td style="max-width:220px;">
+          <a href="/superadmin/support.php?ticket_id=${t.id}" target="_blank" style="color:#A5B4FC;text-decoration:none;font-size:13px;">${esc(t.subject||'(tanpa subjek)')}</a>
+        </td>
+        <td><span class="sa-badge sa-badge-indigo" style="font-size:10px;">${esc(t.category||'—')}</span></td>
+        <td><span class="sa-badge ${tkPriorCls[t.priority]||'sa-badge-indigo'}" style="font-size:10px;">${esc(t.priority||'—')}</span></td>
+        <td><span class="sa-badge ${tkStatusCls[t.status]||'sa-badge-indigo'}" style="font-size:10px;">${tkStatusLabel[t.status]||t.status}</span></td>
+        <td style="font-size:12px;color:rgba(255,255,255,.45);">${esc(t.assigned_nama||'—')}</td>
+        <td style="font-family:var(--mono);font-size:12px;color:rgba(255,255,255,.5);">${t.reply_count||0}</td>
+        <td style="font-size:11px;color:rgba(255,255,255,.35);">${fmtDate(t.updated_at||t.created_at)}</td>
+      </tr>`).join('');
+    }).catch(() => {
+      document.getElementById('ticketsBody').innerHTML =
+        '<tr><td colspan="8" style="text-align:center;padding:20px;color:rgba(255,255,255,.35);">Gagal memuat tiket.</td></tr>';
     });
 }
 

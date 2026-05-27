@@ -163,6 +163,24 @@ if ($action) {
         exit;
     }
 
+    // ── dismiss_banner (mark announcement as read) ──
+    if ($action === 'dismiss_banner' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+        verifyCsrf();
+        $annId = (int)($_POST['announcement_id'] ?? 0);
+        if ($annId) {
+            try {
+                $db->prepare(
+                    "INSERT IGNORE INTO saas_announcement_reads (announcement_id, tenant_id) VALUES (?,?)"
+                )->execute([$annId, $tenantId]);
+                $db->prepare(
+                    "UPDATE saas_announcements SET total_reads=total_reads+1 WHERE id=?"
+                )->execute([$annId]);
+            } catch (Throwable) {}
+        }
+        echo json_encode(['success' => true]);
+        exit;
+    }
+
     echo json_encode(['error' => 'Action tidak dikenal.']);
     exit;
 }

@@ -1037,6 +1037,60 @@ if ($_dashRole === 'kasir'):
 
   <!-- ══ FULL DASHBOARD (owner/manager/admin/superadmin) ══ -->
 
+  <!-- ── Announcement Banners ─────────────────────── -->
+  <?php
+  try {
+    $annDb = Database::get();
+    $annTid = TenantResolver::id();
+    $annOutletStatus = TenantResolver::outletStatus() ?? 'active';
+    $annBannerSt = $annDb->prepare(
+      "SELECT a.* FROM saas_announcements a
+       LEFT JOIN saas_announcement_reads ar
+         ON ar.announcement_id = a.id AND ar.tenant_id = ?
+       WHERE a.status = 'published'
+         AND a.show_as_banner = 1
+         AND (a.expires_at IS NULL OR a.expires_at > NOW())
+         AND (a.target_audience = 'semua' OR a.target_audience = ?)
+         AND ar.announcement_id IS NULL
+       ORDER BY a.is_pinned DESC, a.published_at DESC
+       LIMIT 3"
+    );
+    $annBannerSt->execute([$annTid, $annOutletStatus]);
+    $annBanners = $annBannerSt->fetchAll(PDO::FETCH_ASSOC);
+    $annBannerColors = [
+      'blue'  => ['bg'=>'#EFF6FF','color'=>'#1D4ED8','border'=>'#BFDBFE'],
+      'green' => ['bg'=>'#F0FDF4','color'=>'#166534','border'=>'#BBF7D0'],
+      'amber' => ['bg'=>'#FFFBEB','color'=>'#92400E','border'=>'#FDE68A'],
+      'red'   => ['bg'=>'#FEF2F2','color'=>'#991B1B','border'=>'#FECACA'],
+    ];
+    $annTypeIcon = ['fitur_baru'=>'✨','maintenance'=>'🔧','penting'=>'⚠️','promo'=>'🎁','umum'=>'🔔'];
+    foreach ($annBanners as $banner):
+      $bc = $annBannerColors[$banner['banner_color']] ?? $annBannerColors['blue'];
+  ?>
+  <div id="annBanner<?= $banner['id'] ?>"
+       style="background:<?= $bc['bg'] ?>;border:1px solid <?= $bc['border'] ?>;border-radius:10px;
+              padding:11px 16px;margin-bottom:10px;display:flex;align-items:center;gap:10px;
+              color:<?= $bc['color'] ?>;font-size:13.5px;font-weight:600;">
+    <span style="font-size:16px;flex-shrink:0;"><?= $annTypeIcon[$banner['type']] ?? '📢' ?></span>
+    <span style="flex:1;"><?= htmlspecialchars($banner['title']) ?></span>
+    <button type="button"
+            onclick="dismissBanner(<?= $banner['id'] ?>, this.closest('div'))"
+            style="background:none;border:none;font-size:18px;color:<?= $bc['color'] ?>;
+                   opacity:.5;cursor:pointer;padding:0 2px;line-height:1;flex-shrink:0;">✕</button>
+  </div>
+  <?php endforeach;
+  } catch (Throwable) {} ?>
+  <script>
+  function dismissBanner(annId, el) {
+    el.style.display = 'none';
+    fetch('/support.php?action=dismiss_banner', {
+      method: 'POST',
+      headers: {'Content-Type':'application/x-www-form-urlencoded','X-Requested-With':'XMLHttpRequest'},
+      body: '_csrf=' + encodeURIComponent(csrfToken()) + '&announcement_id=' + annId,
+    });
+  }
+  </script>
+
   <!-- GREETING -->
   <div style="margin-bottom:20px;display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap">
     <div>

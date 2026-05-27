@@ -232,6 +232,65 @@ function renderTopbar(string $activePage = '', bool $minimalMode = false): void 
                   ];
                 }
               }
+
+              // ── Tiket support dengan balasan baru dari superadmin ─────────
+              try {
+                $mDb = Database::get();
+                // Tiket yang ada reply superadmin lebih baru dari reply terakhir tenant
+                $ticketNotifSt = $mDb->prepare(
+                  "SELECT COUNT(DISTINCT st.id) AS cnt
+                   FROM support_tickets st
+                   INNER JOIN support_ticket_replies r
+                     ON r.ticket_id = st.id
+                     AND r.superadmin_id IS NOT NULL
+                     AND r.is_internal = 0
+                   WHERE st.tenant_id = ?
+                     AND st.status NOT IN ('closed')
+                     AND r.created_at > COALESCE(
+                       (SELECT MAX(r2.created_at) FROM support_ticket_replies r2
+                        WHERE r2.ticket_id = st.id AND r2.user_id IS NOT NULL),
+                       st.created_at
+                     )"
+                );
+                $ticketNotifSt->execute([(int)TenantResolver::id()]);
+                $unreadTicketReplies = (int)$ticketNotifSt->fetchColumn();
+                if ($unreadTicketReplies > 0) {
+                  $notifItems[] = [
+                    'icon'  => '🎧', 'sev' => 'info',
+                    'title' => "Balasan tiket support ({$unreadTicketReplies})",
+                    'desc'  => "Tim LaMaSy sudah membalas tiket kamu.",
+                    'cta'   => ['url' => '/support.php', 'label' => 'Lihat Tiket'],
+                  ];
+                }
+              } catch (Throwable) {}
+
+              // ── Announcement baru yang belum dibaca ───────────────────────
+              try {
+                $tenantStatus = TenantResolver::outletStatus() ?? 'active';
+                $annSt = $mDb->prepare(
+                  "SELECT a.id, a.title, a.type
+                   FROM saas_announcements a
+                   LEFT JOIN saas_announcement_reads ar
+                     ON ar.announcement_id = a.id AND ar.tenant_id = ?
+                   WHERE a.status = 'published'
+                     AND (a.expires_at IS NULL OR a.expires_at > NOW())
+                     AND (a.target_audience = 'semua' OR a.target_audience = ?)
+                     AND ar.announcement_id IS NULL
+                   ORDER BY a.is_pinned DESC, a.published_at DESC
+                   LIMIT 3"
+                );
+                $annSt->execute([(int)TenantResolver::id(), $tenantStatus]);
+                $unreadAnns = $annSt->fetchAll(PDO::FETCH_ASSOC);
+                $annTypeIcon = ['fitur_baru'=>'✨','maintenance'=>'🔧','penting'=>'⚠️','promo'=>'🎁','umum'=>'🔔'];
+                foreach ($unreadAnns as $ann) {
+                  $notifItems[] = [
+                    'icon'  => $annTypeIcon[$ann['type']] ?? '📢', 'sev' => 'info',
+                    'title' => htmlspecialchars($ann['title']),
+                    'desc'  => 'Tap untuk baca pengumuman terbaru.',
+                    'cta'   => ['url' => '/support.php?ann=' . $ann['id'], 'label' => 'Baca'],
+                  ];
+                }
+              } catch (Throwable) {}
             endif;
 
             $notifCount = count($notifItems);

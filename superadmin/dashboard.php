@@ -159,6 +159,47 @@ if ($action) {
         exit;
     }
 
+    if ($action === 'support_widget') {
+        $tkSt = $db->query(
+            "SELECT
+               SUM(status='open')         AS open_count,
+               SUM(status='in_progress')  AS in_progress,
+               SUM(status='waiting_tenant') AS waiting,
+               SUM(status IN ('resolved','closed') AND DATE(COALESCE(resolved_at, updated_at))=CURDATE()) AS resolved_today,
+               ROUND(AVG(CASE WHEN first_response_at IS NOT NULL
+                         THEN TIMESTAMPDIFF(MINUTE, created_at, first_response_at) END), 0) AS avg_resp_min,
+               ROUND(AVG(CASE WHEN rating IS NOT NULL THEN rating END), 1) AS avg_rating,
+               SUM(CASE WHEN status IN ('open','in_progress')
+                        AND created_at < DATE_SUB(NOW(), INTERVAL 24 HOUR) THEN 1 ELSE 0 END) AS sla_breached
+             FROM support_tickets"
+        )->fetch(PDO::FETCH_ASSOC);
+
+        $slaItems = $db->query(
+            "SELECT t.id, t.subject, t.status, t.priority, tn.nama_outlet, t.created_at,
+                    TIMESTAMPDIFF(HOUR, t.created_at, NOW()) AS age_hours
+             FROM support_tickets t
+             JOIN tenants tn ON tn.id = t.tenant_id
+             WHERE t.status IN ('open','in_progress')
+               AND t.created_at < DATE_SUB(NOW(), INTERVAL 6 HOUR)
+             ORDER BY t.created_at ASC LIMIT 5"
+        )->fetchAll(PDO::FETCH_ASSOC);
+
+        $annSt = $db->query(
+            "SELECT
+               SUM(status='published' AND (expires_at IS NULL OR expires_at > NOW())) AS published,
+               SUM(status='draft') AS draft,
+               COUNT(*) AS total
+             FROM saas_announcements"
+        )->fetch(PDO::FETCH_ASSOC);
+
+        echo json_encode([
+            'tickets'       => $tkSt,
+            'sla_items'     => $slaItems,
+            'announcements' => $annSt,
+        ]);
+        exit;
+    }
+
     echo json_encode(['error' => 'Action tidak dikenal.']);
     exit;
 
@@ -229,6 +270,70 @@ if ($action) {
       <div style="color:rgba(255,255,255,.4);font-size:13px;">Memuat...</div>
     </div>
   </div>
+</div>
+
+<!-- Support & Announcement Widget Row -->
+<div class="sa-grid-2" style="margin-top:24px;">
+
+  <!-- Support Overview -->
+  <div class="sa-card">
+    <div class="sa-card-header">
+      <h3>🎧 Support Overview</h3>
+      <a href="/superadmin/support.php" class="sa-btn sa-btn-sm sa-btn-outline">Kelola Tiket →</a>
+    </div>
+    <div class="sa-card-body">
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px;">
+        <div style="text-align:center;">
+          <div id="sw-open" style="font-size:28px;font-weight:800;color:#F87171;font-family:var(--mono);">—</div>
+          <div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:2px;">Open</div>
+        </div>
+        <div style="text-align:center;">
+          <div id="sw-inprogress" style="font-size:28px;font-weight:800;color:#818CF8;font-family:var(--mono);">—</div>
+          <div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:2px;">In Progress</div>
+        </div>
+        <div style="text-align:center;">
+          <div id="sw-resolved-today" style="font-size:28px;font-weight:800;color:#6EE7B7;font-family:var(--mono);">—</div>
+          <div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:2px;">Resolved Hari Ini</div>
+        </div>
+        <div style="text-align:center;">
+          <div id="sw-rating" style="font-size:24px;font-weight:800;color:#FCD34D;font-family:var(--mono);">—</div>
+          <div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:2px;">Avg Rating</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:14px;padding:10px 0;border-top:1px solid rgba(255,255,255,.07);flex-wrap:wrap;">
+        <div>
+          <span style="font-size:11px;color:rgba(255,255,255,.35);">Avg First Response</span>
+          <span id="sw-avgResp" style="margin-left:8px;font-family:var(--mono);color:#A5B4FC;font-size:13px;">—</span>
+        </div>
+        <span class="sa-badge sa-badge-red" id="sw-sla-badge" style="display:none;"></span>
+      </div>
+      <div id="sw-sla-list"></div>
+    </div>
+  </div>
+
+  <!-- Announcement Overview -->
+  <div class="sa-card">
+    <div class="sa-card-header">
+      <h3>📢 Announcements</h3>
+      <a href="/superadmin/announcements.php" class="sa-btn sa-btn-sm sa-btn-outline">Kelola →</a>
+    </div>
+    <div class="sa-card-body">
+      <div class="sa-grid-2" style="margin-bottom:18px;gap:12px;">
+        <div style="text-align:center;padding:18px 12px;background:rgba(99,102,241,.12);border-radius:10px;border:1px solid rgba(99,102,241,.25);">
+          <div id="aw-published" style="font-size:36px;font-weight:800;color:#818CF8;font-family:var(--mono);">—</div>
+          <div style="font-size:12px;color:rgba(255,255,255,.45);margin-top:4px;">Published Aktif</div>
+        </div>
+        <div style="text-align:center;padding:18px 12px;background:rgba(255,255,255,.04);border-radius:10px;">
+          <div id="aw-draft" style="font-size:36px;font-weight:800;color:rgba(255,255,255,.45);font-family:var(--mono);">—</div>
+          <div style="font-size:12px;color:rgba(255,255,255,.35);margin-top:4px;">Draft</div>
+        </div>
+      </div>
+      <a href="/superadmin/announcements.php" class="sa-btn sa-btn-primary" style="width:100%;text-align:center;display:block;box-sizing:border-box;">
+        ＋ Buat Announcement Baru
+      </a>
+    </div>
+  </div>
+
 </div>
 
 <?php saRenderNavClose(); ?>
@@ -364,6 +469,52 @@ function switchAlertTab(tab) {
 function esc(s) {
   const d = document.createElement('div'); d.textContent = s; return d.innerHTML;
 }
+
+// Support & Announcement widget
+fetch('dashboard.php?action=support_widget', { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+  .then(r => r.json()).then(d => {
+    const t = d.tickets || {};
+    document.getElementById('sw-open').textContent           = parseInt(t.open_count ?? 0).toLocaleString('id-ID');
+    document.getElementById('sw-inprogress').textContent     = parseInt(t.in_progress ?? 0).toLocaleString('id-ID');
+    document.getElementById('sw-resolved-today').textContent = parseInt(t.resolved_today ?? 0).toLocaleString('id-ID');
+    document.getElementById('sw-rating').textContent         = t.avg_rating ? parseFloat(t.avg_rating).toFixed(1) + ' ⭐' : '—';
+
+    const avgMin = parseInt(t.avg_resp_min ?? 0);
+    document.getElementById('sw-avgResp').textContent = avgMin
+      ? (avgMin < 60 ? avgMin + ' mnt' : (avgMin / 60).toFixed(1) + ' jam')
+      : '—';
+
+    const slaCount = parseInt(t.sla_breached ?? 0);
+    if (slaCount > 0) {
+      const badge = document.getElementById('sw-sla-badge');
+      badge.textContent = '⚠️ ' + slaCount + ' SLA breach';
+      badge.style.display = '';
+    }
+
+    // Announcements
+    const ann = d.announcements || {};
+    document.getElementById('aw-published').textContent = parseInt(ann.published ?? 0).toLocaleString('id-ID');
+    document.getElementById('aw-draft').textContent     = parseInt(ann.draft ?? 0).toLocaleString('id-ID');
+
+    // SLA items list
+    const slaList = document.getElementById('sw-sla-list');
+    if (d.sla_items && d.sla_items.length) {
+      slaList.innerHTML = `<div style="margin-top:12px;border-top:1px solid rgba(255,255,255,.07);padding-top:12px;">
+        <div style="font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:8px;">Tiket Overdue</div>
+        ${d.sla_items.map(tk => {
+          const col = tk.age_hours >= 24 ? '#F87171' : tk.age_hours >= 6 ? '#FBBF24' : '#FCD34D';
+          return `<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.04);">
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:12.5px;color:rgba(255,255,255,.8);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(tk.subject||'(tanpa subjek)')}</div>
+              <div style="font-size:11px;color:rgba(255,255,255,.35);">${esc(tk.nama_outlet||'')}</div>
+            </div>
+            <span style="color:${col};font-family:var(--mono);font-size:12px;margin-left:10px;white-space:nowrap;">${tk.age_hours}j</span>
+            <a href="/superadmin/support.php?ticket_id=${tk.id}" class="sa-btn sa-btn-sm sa-btn-outline" style="margin-left:8px;flex-shrink:0;">Buka</a>
+          </div>`;
+        }).join('')}
+      </div>`;
+    }
+  }).catch(() => {});
 </script>
 </body>
 </html>
