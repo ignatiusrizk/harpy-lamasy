@@ -231,8 +231,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['step3_submit'])) {
             } catch (Throwable $e) {
                 $db->rollBack();
                 error_log('[register.php] Error: ' . $e->getMessage());
-                // TODO: ganti ke pesan generic sebelum production
-                $error = '[DEBUG] ' . $e->getMessage();
+                $error = 'Terjadi kesalahan teknis saat membuat akun. Silakan coba beberapa saat lagi atau hubungi support.';
             }
         }
     }

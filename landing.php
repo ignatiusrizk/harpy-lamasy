@@ -879,7 +879,7 @@ img { max-width: 100%; }
   <p class="hero-sub">Kelola order, karyawan, dan keuangan — sekarang diperkuat AI yang menganalisis data bisnis Anda otomatis setiap hari. Setup dalam hitungan menit.</p>
 
   <div class="hero-btns">
-    <a href="/register.php" class="btn-primary">&#128640; Coba Gratis 30 Hari</a>
+    <a href="/register.php" class="btn-primary">&#128640; Coba Gratis 7 Hari</a>
     <a href="#fitur" class="btn-secondary">&#9654; Lihat Demo</a>
   </div>
 
@@ -1205,7 +1205,7 @@ img { max-width: 100%; }
       <div class="step-card">
         <div class="step-num-wrap">1</div>
         <h3>Daftar Akun</h3>
-        <p>Isi form registrasi sederhana. Akun trial 30 hari langsung aktif. Tidak perlu kartu kredit, tidak ada komitmen.</p>
+        <p>Isi form registrasi sederhana. Akun trial 7 hari langsung aktif. Tidak perlu kartu kredit, tidak ada komitmen.</p>
       </div>
       <div class="step-card">
         <div class="step-num-wrap">2</div>

@@ -40,8 +40,14 @@ $email      = $tenant['email'] ?? '';
 $ownerName  = $tenant['owner_name'] ?? 'Pengguna';
 $namaOutlet = $tenant['nama_outlet'] ?? '';
 
-// ── Handle resend request ─────────────────────────
+// ── Handle flash dari resend-verify.php ──────────
 $flash = '';
+if (!empty($_SESSION['resend_flash'])) {
+    $flash = $_SESSION['resend_flash'];
+    unset($_SESSION['resend_flash']);
+}
+
+// ── Handle resend request ─────────────────────────
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'resend') {
     $result = EmailVerification::resend($tenantId, $email);
     if ($result['ok']) {
