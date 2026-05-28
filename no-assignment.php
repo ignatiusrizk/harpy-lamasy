@@ -33,7 +33,7 @@ try {
         header('Location: /select-outlet.php');
         exit;
     }
-    $tenantStmt = $db->prepare("SELECT nama_outlet, owner_wa FROM tenants WHERE id=? LIMIT 1");
+    $tenantStmt = $db->prepare("SELECT nama_perusahaan, owner_wa FROM tenants WHERE id=? LIMIT 1");
     $tenantStmt->execute([$tenantId]);
     $tenant = $tenantStmt->fetch() ?: [];
 } catch (Throwable) {
@@ -41,7 +41,7 @@ try {
 }
 
 $ownerWa  = $tenant['owner_wa'] ?? '6285121519302';
-$tenantNm = $tenant['nama_outlet'] ?? 'admin Anda';
+$tenantNm = $tenant['nama_perusahaan'] ?? 'admin Anda';
 $waMsg    = urlencode("Halo, saya $userNama. Akun saya belum ditugaskan ke outlet. Mohon dibantu untuk assignment-nya.");
 ?>
 <!DOCTYPE html>

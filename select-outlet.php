@@ -68,7 +68,7 @@ if (count($outlets) === 1) {
 }
 
 // Nama tenant untuk display
-$tenantRow = Database::get()->prepare("SELECT nama_outlet FROM tenants WHERE id=? LIMIT 1");
+$tenantRow = Database::get()->prepare("SELECT nama_perusahaan FROM tenants WHERE id=? LIMIT 1");
 $tenantRow->execute([$tid]);
 $tenantNama = $tenantRow->fetchColumn() ?: 'Akun Anda';
 

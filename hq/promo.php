@@ -316,7 +316,7 @@ if ($action) {
 }
 
 $ownerNama  = $hqUser['nama'] ?? 'Owner';
-$tenantNama = $hqTenant['nama_outlet'] ?? 'HQ';
+$tenantNama = $hqTenant['nama_perusahaan'] ?? 'HQ';
 $csrf       = getCsrfToken();
 
 // Cek apakah tabel hl_promo_outlets sudah ada

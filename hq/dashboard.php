@@ -538,7 +538,7 @@ foreach ($outlets as $o) {
 
 $tenantCoin = (int)($hqTenant['coin_balance'] ?? 0);
 $ownerNama  = $hqUser['nama'] ?? 'Owner';
-$tenantNm   = $hqTenant['nama_outlet'] ?? 'HQ';
+$tenantNm   = $hqTenant['nama_perusahaan'] ?? 'HQ';
 $greeting   = (date('H') < 11 ? 'Selamat pagi' : (date('H') < 15 ? 'Selamat siang' : (date('H') < 19 ? 'Selamat sore' : 'Selamat malam')));
 ?>
 <?php

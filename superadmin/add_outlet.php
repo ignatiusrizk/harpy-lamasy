@@ -148,7 +148,7 @@ function provisionOutlet(array $wiz, array $tenant): array
         }
 
         logSuperAdminAction('add_outlet', $tenantId,
-            "Tambah outlet: {$wiz['nama_outlet']} ke tenant {$tenant['nama_outlet']} (slug: {$slug})"
+            "Tambah outlet: {$wiz['nama_outlet']} ke tenant {$tenant['nama_perusahaan']} (slug: {$slug})"
         );
 
         $db->commit();
@@ -259,7 +259,7 @@ $csrf = saGetCsrf();
     <a href="client_detail.php?id=<?= $tenantId ?>" class="sa-btn sa-btn-outline sa-btn-sm">&#x2190; Kembali</a>
     <div>
       <h1>Tambah Outlet</h1>
-      <p>Tenant: <strong><?= htmlspecialchars($tenant['nama_outlet']) ?></strong> &mdash; <?= count($existingOutlets) ?> outlet aktif</p>
+      <p>Tenant: <strong><?= htmlspecialchars($tenant['nama_perusahaan'] ?: $tenant['slug']) ?></strong> &mdash; <?= count($existingOutlets) ?> outlet aktif</p>
     </div>
   </div>
 

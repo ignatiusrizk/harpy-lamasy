@@ -95,7 +95,7 @@ if ($action === 'generate' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         'total_order'     => (int)($_POST['total_order'] ?? 0),
     ];
 
-    $outletNama = $hqTenant['nama_outlet'] ?? 'Outlet kami';
+    $outletNama = $hqTenant['nama_perusahaan'] ?? 'Outlet kami';
 
     try {
         $gen = AIChurnDetector::generateMessage($customer, $outletNama);

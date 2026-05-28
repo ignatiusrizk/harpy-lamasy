@@ -30,7 +30,7 @@ if ($action) {
 
         // Sort column mapping
         $sortMap = [
-            'nama_outlet'   => 't.nama_outlet',
+            'nama_outlet'   => 't.nama_perusahaan',
             'coin_balance'  => 't.coin_balance',
             'created_at'    => 't.created_at',
             'last_login'    => 'last_login',
@@ -41,7 +41,7 @@ if ($action) {
         $params = [];
 
         if ($q) {
-            $where[] = '(t.nama_outlet LIKE ? OR t.owner_name LIKE ? OR t.owner_wa LIKE ? OR t.slug LIKE ?)';
+            $where[] = '(t.nama_perusahaan LIKE ? OR t.owner_name LIKE ? OR t.owner_wa LIKE ? OR t.slug LIKE ?)';
             $like = "%$q%";
             array_push($params, $like, $like, $like, $like);
         }
@@ -350,7 +350,7 @@ function renderRows(rows) {
     const statusBtnLabel = t.status === 'suspended' ? 'Aktifkan' : 'Suspend';
     const statusBtnClass = t.status === 'suspended' ? 'sa-btn-green' : 'sa-btn-danger';
     return `<tr>
-      <td><strong>${esc(t.nama_outlet)}</strong><br><small style="color:rgba(255,255,255,.35);font-family:var(--mono);font-size:10px;">${esc(t.slug)}</small></td>
+      <td><strong>${esc(t.nama_perusahaan)}</strong><br><small style="color:rgba(255,255,255,.35);font-family:var(--mono);font-size:10px;">${esc(t.slug)}</small></td>
       <td>${esc(t.owner_name)}</td>
       <td><a href="https://wa.me/${esc(t.owner_wa)}" target="_blank" style="color:#86efac;text-decoration:none;font-family:var(--mono);font-size:12px;">${esc(t.owner_wa)}</a></td>
       <td>${statusBadge(t.status)}</td>
@@ -365,8 +365,8 @@ function renderRows(rows) {
       <td>
         <a href="client_detail.php?id=${t.id}" class="sa-btn sa-btn-sm sa-btn-outline">Detail</a>
         <a href="https://wa.me/${esc(t.owner_wa)}" target="_blank" class="sa-btn sa-btn-sm sa-btn-wa" style="margin-left:3px;">WA</a>
-        <button class="sa-btn sa-btn-sm sa-btn-primary" style="margin-left:3px;" onclick="openTopup(${t.id}, '${esc(t.nama_outlet)}')">Topup</button>
-        <button class="sa-btn sa-btn-sm ${statusBtnClass}" style="margin-left:3px;" onclick="toggleStatus(${t.id}, '${statusOpp}', '${esc(t.nama_outlet)}')">${statusBtnLabel}</button>
+        <button class="sa-btn sa-btn-sm sa-btn-primary" style="margin-left:3px;" onclick="openTopup(${t.id}, '${esc(t.nama_perusahaan)}')">Topup</button>
+        <button class="sa-btn sa-btn-sm ${statusBtnClass}" style="margin-left:3px;" onclick="toggleStatus(${t.id}, '${statusOpp}', '${esc(t.nama_perusahaan)}')">${statusBtnLabel}</button>
       </td>
     </tr>`;
   }).join('');

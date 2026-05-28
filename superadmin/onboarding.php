@@ -18,7 +18,7 @@ if ($action) {
     if ($action === 'list') {
         // Get tenants: new (last 30 days) + any tenant not fully onboarded
         $tenants = $db->query(
-            "SELECT t.id, t.nama_outlet, t.owner_name, t.owner_wa, t.status, t.created_at, t.provisioned_at
+            "SELECT t.id, t.nama_perusahaan AS nama_outlet, t.owner_name, t.owner_wa, t.status, t.created_at, t.provisioned_at
              FROM tenants t
              WHERE t.provisioned_at >= NOW() - INTERVAL 90 DAY
                 OR t.id IN (

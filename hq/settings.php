@@ -92,7 +92,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_profile'])) {
     if (!hash_equals(getCsrfToken(), $_POST['_csrf'] ?? '')) {
         $profileError = 'CSRF mismatch';
     } else {
-        $namaOutlet = substr(trim(strip_tags($_POST['nama_outlet'] ?? '')), 0, 100);
+        $namaOutlet = substr(trim(strip_tags($_POST['nama_perusahaan'] ?? '')), 0, 100);
         $ownerName  = substr(trim(strip_tags($_POST['owner_name'] ?? '')), 0, 100);
         $ownerWa    = preg_replace('/\D/', '', $_POST['owner_wa'] ?? '');
         if (substr($ownerWa, 0, 2) === '08') $ownerWa = '628' . substr($ownerWa, 2);
@@ -113,10 +113,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_profile'])) {
                 }
                 if (!$profileError) {
                     if ($hasDeskripsi) {
-                        $db->prepare("UPDATE tenants SET nama_outlet=?, owner_name=?, owner_wa=?, kota=?, deskripsi=? WHERE id=?")
+                        $db->prepare("UPDATE tenants SET nama_perusahaan=?, owner_name=?, owner_wa=?, kota=?, deskripsi=? WHERE id=?")
                            ->execute([$namaOutlet, $ownerName ?: null, $ownerWa ?: null, $kota ?: null, $deskripsi ?: null, $tid]);
                     } else {
-                        $db->prepare("UPDATE tenants SET nama_outlet=?, owner_name=?, owner_wa=?, kota=? WHERE id=?")
+                        $db->prepare("UPDATE tenants SET nama_perusahaan=?, owner_name=?, owner_wa=?, kota=? WHERE id=?")
                            ->execute([$namaOutlet, $ownerName ?: null, $ownerWa ?: null, $kota ?: null, $tid]);
                     }
                     logAcc($db, $tid, $uid, "profile updated");
@@ -300,7 +300,7 @@ $r->execute([$tid]);
 $hqTenant = $r->fetch();
 
 $ownerNama  = $hqUser['nama'] ?? 'Owner';
-$tenantNm   = $hqTenant['nama_outlet'] ?? '-';
+$tenantNm   = $hqTenant['nama_perusahaan'] ?? '-';
 $ownerWaFmt = preg_replace('/^628/', '08', $hqTenant['owner_wa'] ?? '');
 
 // Hitung jumlah outlet aktif
@@ -437,8 +437,8 @@ require __DIR__ . '/_layout_open.php';
 
       <div>
         <label>Nama Brand / Perusahaan <span style="color:#EF4444">*</span></label>
-        <input type="text" name="nama_outlet" maxlength="100"
-               value="<?= htmlspecialchars($hqTenant['nama_outlet'] ?? '') ?>" required>
+        <input type="text" name="nama_perusahaan" maxlength="100"
+               value="<?= htmlspecialchars($hqTenant['nama_perusahaan'] ?? '') ?>" required>
       </div>
 
       <div class="grid-2">

@@ -159,7 +159,7 @@ if ($action) {
     echo json_encode(['error'=>'Unknown action']); exit;
 }
 
-$tenantNm   = $hqTenant['nama_outlet'] ?? '-';
+$tenantNm   = $hqTenant['nama_perusahaan'] ?? '-';
 $ownerNama  = $hqUser['nama'] ?? 'Owner';
 $coinMode   = $hqTenant['coin_mode'] ?? 'shared';
 $tenantCoin = (int)($hqTenant['coin_balance'] ?? 0);

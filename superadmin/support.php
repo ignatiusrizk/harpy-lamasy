@@ -63,7 +63,7 @@ if ($action) {
         if ($assigned === 'me')  { $where[] = 'st.assigned_to=?'; $params[] = $saId; }
         elseif ($assigned === 'unassigned') { $where[] = 'st.assigned_to IS NULL'; }
         if ($search) {
-            $where[] = '(t.nama_outlet LIKE ? OR t.owner_name LIKE ? OR st.subject LIKE ?)';
+            $where[] = '(t.nama_perusahaan LIKE ? OR t.owner_name LIKE ? OR st.subject LIKE ?)';
             $like = "%$search%";
             array_push($params, $like, $like, $like);
         }
@@ -75,7 +75,7 @@ if ($action) {
 
         $rows = $db->prepare(
             "SELECT st.*,
-                    t.nama_outlet, t.owner_name, t.owner_wa,
+                    t.nama_perusahaan AS nama_outlet, t.owner_name, t.owner_wa,
                     sa.name AS assigned_nama,
                     TIMESTAMPDIFF(HOUR, st.created_at, NOW()) AS age_hours,
                     (SELECT COUNT(*) FROM support_ticket_replies r WHERE r.ticket_id=st.id) AS reply_count
@@ -105,7 +105,7 @@ if ($action) {
         $tid = (int)($_GET['id'] ?? 0);
 
         $ts = $db->prepare(
-            "SELECT st.*, t.nama_outlet, t.owner_name, t.owner_wa,
+            "SELECT st.*, t.nama_perusahaan AS nama_outlet, t.owner_name, t.owner_wa,
                     sa.name AS assigned_nama
              FROM support_tickets st
              LEFT JOIN tenants t ON t.id=st.tenant_id

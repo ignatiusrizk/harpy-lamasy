@@ -402,7 +402,7 @@ $billingStat = $bsSt->fetch(PDO::FETCH_ASSOC);
 <!DOCTYPE html>
 <html lang="id">
 <head>
-<?php saRenderHead('Detail: ' . htmlspecialchars($tenant['nama_outlet'])); ?>
+<?php saRenderHead('Detail: ' . htmlspecialchars($tenant['nama_perusahaan'] ?? $tenant['slug'])); ?>
 </head>
 <body>
 <div class="sa-layout">
@@ -411,7 +411,7 @@ $billingStat = $bsSt->fetch(PDO::FETCH_ASSOC);
 <div class="sa-page-header" style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;">
   <div>
     <a href="clients.php" style="font-size:12.5px;color:rgba(255,255,255,.4);text-decoration:none;margin-bottom:6px;display:block;">← Kembali ke Clients</a>
-    <h1><?= htmlspecialchars($tenant['nama_outlet']) ?></h1>
+    <h1><?= htmlspecialchars($tenant['nama_perusahaan'] ?: $tenant['slug']) ?></h1>
     <p>
       <span class="sa-badge sa-badge-<?= $tenant['status'] === 'active' ? 'active' : ($tenant['status'] === 'pending_verification' ? 'trial' : 'suspended') ?>">
         <?= ucfirst(str_replace('_',' ',$tenant['status'])) ?>
@@ -455,7 +455,7 @@ $billingStat = $bsSt->fetch(PDO::FETCH_ASSOC);
       <div class="sa-card-body">
         <table style="width:100%;font-size:13.5px;border-collapse:collapse;">
           <?php $rows = [
-            ['Nama Outlet', $tenant['nama_outlet']],
+            ['Nama Perusahaan', $tenant['nama_perusahaan'] ?: '-'],
             ['Slug / ID', $tenant['slug'] . ' (#' . $tenant['id'] . ')'],
             ['Owner', $tenant['owner_name']],
             ['WA Owner', $tenant['owner_wa']],
@@ -999,7 +999,7 @@ $billingStat = $bsSt->fetch(PDO::FETCH_ASSOC);
   <div class="sa-modal" style="max-width:460px;">
     <h3>🔍 Observasi Tenant</h3>
     <p style="font-size:13px;color:rgba(255,255,255,.55);line-height:1.6;margin-bottom:20px;">
-      Anda akan masuk ke dashboard tenant <strong><?= htmlspecialchars($tenant['nama_perusahaan'] ?: $tenant['nama_outlet']) ?></strong>
+      Anda akan masuk ke dashboard tenant <strong><?= htmlspecialchars($tenant['nama_perusahaan'] ?: $tenant['slug']) ?></strong>
       dalam <strong>mode read-only</strong>. Semua aksi tulis akan diblokir.<br><br>
       Sesi ini akan dicatat di audit log.
     </p>

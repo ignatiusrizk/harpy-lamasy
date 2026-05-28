@@ -131,7 +131,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Cari user by email ATAU username (email = self-registered owner, username = staff)
         $isEmail = filter_var($username, FILTER_VALIDATE_EMAIL);
         $stmt = Database::get()->prepare(
-            "SELECT u.*, t.slug AS tenant_slug, t.nama_outlet,
+            "SELECT u.*, t.slug AS tenant_slug, t.nama_perusahaan,
                     t.status AS tenant_status, t.coin_balance,
                     t.verified_at,
                     COALESCE(r.nama, u.role) AS role_nama
@@ -179,7 +179,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'role'       => $user['role'],
                     'role_id'    => $user['role_id'],
                     'role_nama'  => $user['role_nama'],
-                    'nama_outlet'=> $user['nama_outlet'],
+                    'nama_outlet'=> $user['nama_perusahaan'],
                 ];
 
                 // Load permissions

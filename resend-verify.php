@@ -32,7 +32,7 @@ if (!$tenantId) {
 
 // Ambil data tenant
 $db   = Database::get();
-$stmt = $db->prepare("SELECT email, nama_outlet, owner_name, verified_at FROM tenants WHERE id = ? LIMIT 1");
+$stmt = $db->prepare("SELECT email, nama_perusahaan, owner_name, verified_at FROM tenants WHERE id = ? LIMIT 1");
 $stmt->execute([$tenantId]);
 $tenant = $stmt->fetch();
 

@@ -167,7 +167,7 @@ try {
     } else {
         Database::master()->prepare("
             INSERT INTO tenants
-              (slug, db_name, nama_outlet, status, coin_balance, provisioned_at)
+              (slug, db_name, nama_perusahaan, status, coin_balance, provisioned_at)
             VALUES (?, ?, 'Harpy Johar', 'active', 50000, NOW())
         ")->execute([$TENANT_SLUG, $TARGET_DB]);
         out("   ✅ Tenant harpy_johar terdaftar di harpy_master");

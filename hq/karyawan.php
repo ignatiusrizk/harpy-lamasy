@@ -487,7 +487,7 @@ $outletAll->execute([$tid]);
 $outletList = $outletAll->fetchAll();
 
 $ownerNama  = $hqUser['nama'] ?? 'Owner';
-$tenantNama = $hqTenant['nama_outlet'] ?? 'HQ';
+$tenantNama = $hqTenant['nama_perusahaan'] ?? 'HQ';
 $csrf       = getCsrfToken();
 ?>
 <?php

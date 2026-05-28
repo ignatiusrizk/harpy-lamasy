@@ -17,11 +17,11 @@ $tenantEmail = '';
 
 if ($tenantId) {
     $db   = Database::get();
-    $stmt = $db->prepare("SELECT nama_outlet, email FROM tenants WHERE id=? AND status IN ('suspended','closed') LIMIT 1");
+    $stmt = $db->prepare("SELECT nama_perusahaan, email FROM tenants WHERE id=? AND status IN ('suspended','closed') LIMIT 1");
     $stmt->execute([$tenantId]);
     $t = $stmt->fetch();
     if ($t) {
-        $tenantNama  = $t['nama_outlet'] ?? '';
+        $tenantNama  = $t['nama_perusahaan'] ?? '';
         $tenantEmail = $t['email'] ?? '';
     } else {
         // Tidak suspended → kembalikan ke dashboard

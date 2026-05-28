@@ -104,7 +104,7 @@ if ($action) {
     // ── top_tenants: 5 terbesar (all time) ───────────────────────────────
     if ($action === 'top_tenants') {
         $rows = $db->query(
-            "SELECT t.id, t.nama_outlet, t.owner_name,
+            "SELECT t.id, t.nama_perusahaan AS nama_outlet, t.owner_name,
                     COALESCE(SUM(p.nominal_dibayar),0) AS total_spent,
                     COUNT(*) AS txn_count,
                     t.coin_balance
@@ -167,7 +167,7 @@ if ($action) {
         if ($type)   { $where[] = 'p.type=?';   $params[] = $type; }
         if ($status) { $where[] = 'p.status=?'; $params[] = $status; }
         if ($search) {
-            $where[] = '(t.nama_outlet LIKE ? OR t.owner_name LIKE ? OR p.ref_transfer LIKE ?)';
+            $where[] = '(t.nama_perusahaan LIKE ? OR t.owner_name LIKE ? OR p.ref_transfer LIKE ?)';
             $like = "%$search%";
             array_push($params, $like, $like, $like);
         }
@@ -180,7 +180,7 @@ if ($action) {
 
         $stm = $db->prepare(
             "SELECT p.*,
-                    t.nama_outlet, t.owner_name,
+                    t.nama_perusahaan AS nama_outlet, t.owner_name,
                     pk.nama AS package_nama,
                     cb.nama AS bundle_nama,
                     sa.name AS superadmin_nama

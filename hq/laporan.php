@@ -43,7 +43,7 @@ if ($action === 'export') {
 
     fputcsv($out, ["Laporan Konsolidasi LAMASY"]);
     fputcsv($out, ["Periode", "$start s.d. $end"]);
-    fputcsv($out, ["Tenant", $hqTenant['nama_outlet'] ?? '-']);
+    fputcsv($out, ["Tenant", $hqTenant['nama_perusahaan'] ?? '-']);
     fputcsv($out, []);
     fputcsv($out, ["RINGKASAN PER OUTLET"]);
     fputcsv($out, ["Outlet","Status","Omset","Order","Biaya Gaji","Kas Keluar","Profit Estimasi","Karyawan Aktif","Coin Terpakai"]);
@@ -522,7 +522,7 @@ $allOutlets->execute([$tid]);
 $outletOptions = $allOutlets->fetchAll();
 
 $ownerNama  = $hqUser['nama'] ?? 'Owner';
-$tenantNama = $hqTenant['nama_outlet'] ?? 'HQ';
+$tenantNama = $hqTenant['nama_perusahaan'] ?? 'HQ';
 ?>
 <?php
 $pageTitle  = 'Laporan Konsolidasi';

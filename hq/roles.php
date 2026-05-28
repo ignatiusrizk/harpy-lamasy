@@ -214,7 +214,7 @@ if ($action) {
     echo json_encode(['error'=>'Unknown action']); exit;
 }
 
-$tenantNm  = $hqTenant['nama_outlet'] ?? 'HQ';
+$tenantNm  = $hqTenant['nama_perusahaan'] ?? 'HQ';
 $ownerNama = $hqUser['nama'] ?? 'Owner';
 $csrf      = getCsrfToken();
 ?>

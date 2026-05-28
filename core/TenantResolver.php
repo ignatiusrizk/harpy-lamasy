@@ -322,7 +322,20 @@ class TenantResolver
     /** Nama OUTLET (bukan tenant) */
     public static function namaOutlet(): string
     {
-        return self::$outlet['nama_outlet'] ?? self::$tenant['nama_outlet'] ?? '';
+        if (isset(self::$outlet['nama_outlet'])) {
+            return self::$outlet['nama_outlet'];
+        }
+        // HQ context: no outlet loaded — query main outlet from outlets table
+        static $cached = null;
+        if ($cached === null && isset(self::$tenant['id'])) {
+            $stmt = Database::get()->prepare(
+                "SELECT nama_outlet FROM outlets WHERE tenant_id=? ORDER BY is_main DESC, id ASC LIMIT 1"
+            );
+            $stmt->execute([self::$tenant['id']]);
+            $row = $stmt->fetch();
+            $cached = $row ? $row['nama_outlet'] : (self::$tenant['nama_perusahaan'] ?? '');
+        }
+        return $cached ?? '';
     }
 
     public static function status(): string
@@ -571,7 +584,7 @@ class TenantResolver
     // ── Halaman suspended ─────────────────────────────
     private static function showSuspendedPage(array $tenant, ?array $outlet = null): void
     {
-        $name     = $outlet['nama_outlet'] ?? $tenant['nama_outlet'] ?? 'Outlet';
+        $name     = $outlet['nama_outlet'] ?? $tenant['nama_perusahaan'] ?? 'Outlet';
         $isGrace  = ($outlet['status'] ?? '') === 'grace';
         $isClosed = in_array($tenant['status'] ?? '', ['closed']) ||
                     in_array($outlet['status'] ?? '', ['closed']);

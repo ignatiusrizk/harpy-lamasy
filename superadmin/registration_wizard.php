@@ -150,7 +150,7 @@ function provisionTenant(array $wizard): array
         // 2. Insert tenant (coin_balance = 0; will topup via ledger if paid)
         $db->prepare(
             "INSERT INTO tenants
-               (slug, db_name, nama_outlet, owner_name, owner_wa, status, coin_balance, coin_mode,
+               (slug, db_name, nama_perusahaan, owner_name, owner_wa, status, coin_balance, coin_mode,
                 total_outlets, trial_ends_at, package_id, package_assigned_at, max_outlets, provisioned_at)
              VALUES (?,?,?,?,?,?,0,?,0,?,?,?,?,NOW())"
         )->execute([

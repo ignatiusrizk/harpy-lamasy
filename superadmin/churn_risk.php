@@ -18,7 +18,7 @@ if ($action) {
     if ($action === 'list') {
         // Trial diambil dari outlet (MIN trial_ends_at = outlet trial pertama yang habis)
         $tenants = $db->query(
-            "SELECT t.id, t.nama_outlet, t.owner_name, t.owner_wa, t.status,
+            "SELECT t.id, t.nama_perusahaan AS nama_outlet, t.owner_name, t.owner_wa, t.status,
                     t.coin_balance, t.provisioned_at,
                     (SELECT MIN(o.trial_ends_at) FROM outlets o
                        WHERE o.tenant_id = t.id AND o.status = 'trial') as trial_ends_at,
@@ -30,7 +30,7 @@ if ($action) {
                     (SELECT COUNT(*) FROM hl_transaksi tx WHERE tx.tenant_id = t.id AND tx.tanggal >= NOW() - INTERVAL 30 DAY AND tx.tanggal < NOW() - INTERVAL 7 DAY) as orders_last_month_approx
              FROM tenants t
              WHERE t.status = 'active'
-             ORDER BY t.nama_outlet"
+             ORDER BY t.nama_perusahaan"
         )->fetchAll();
 
         $result = [];

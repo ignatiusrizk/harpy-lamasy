@@ -38,7 +38,7 @@ if ($action) {
             $where[] = 'p.status = ?'; $params[] = $status;
         }
         if ($q) {
-            $where[] = '(t.nama_outlet LIKE ? OR t.owner_name LIKE ? OR p.ref_transfer LIKE ?)';
+            $where[] = '(t.nama_perusahaan LIKE ? OR t.owner_name LIKE ? OR p.ref_transfer LIKE ?)';
             $like = "%$q%"; array_push($params, $like, $like, $like);
         }
         if ($from) { $where[] = 'p.tanggal_bayar >= ?'; $params[] = $from; }
@@ -53,7 +53,7 @@ if ($action) {
 
         $stmt = $db->prepare(
             "SELECT p.*,
-                    t.nama_outlet, t.owner_name, t.owner_wa,
+                    t.nama_perusahaan AS nama_outlet, t.owner_name, t.owner_wa,
                     pkg.nama AS package_nama,
                     bdl.nama AS bundle_nama,
                     sa.name  AS superadmin_nama
@@ -96,9 +96,9 @@ if ($action) {
         $q = trim($_GET['q'] ?? '');
         if (strlen($q) < 2) { echo json_encode([]); exit; }
         $stmt = $db->prepare(
-            "SELECT id, nama_outlet, owner_name, owner_wa, coin_balance, status, package_id
-             FROM tenants WHERE nama_outlet LIKE ? OR owner_name LIKE ? OR owner_wa LIKE ?
-             ORDER BY nama_outlet LIMIT 10"
+            "SELECT id, nama_perusahaan AS nama_outlet, owner_name, owner_wa, coin_balance, status, package_id
+             FROM tenants WHERE nama_perusahaan LIKE ? OR owner_name LIKE ? OR owner_wa LIKE ?
+             ORDER BY nama_perusahaan LIMIT 10"
         );
         $like = "%$q%";
         $stmt->execute([$like, $like, $like]);

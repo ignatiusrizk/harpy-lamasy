@@ -153,7 +153,7 @@ if ($action) {
 
         // Top 5 tenant by burn (30d)
         $topBurn = $db->query("
-            SELECT t.nama_perusahaan, t.nama_outlet, cl.tenant_id,
+            SELECT t.nama_perusahaan, cl.tenant_id,
                    SUM(cl.amount) AS burned
             FROM coin_ledger cl
             JOIN tenants t ON t.id = cl.tenant_id
@@ -211,7 +211,7 @@ if ($action) {
 
         $rowsQ = $db->prepare("
             SELECT el.*,
-                   t.nama_outlet,
+                   t.nama_perusahaan AS nama_outlet,
                    sa.name AS resolved_by_name
             FROM saas_error_log el
             LEFT JOIN tenants     t  ON t.id  = el.tenant_id

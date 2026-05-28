@@ -33,7 +33,7 @@ if (!$tenantId) {
 }
 
 // Validasi tenant exist + aktif/trial
-$tenant = $db->prepare("SELECT id, nama_outlet, nama_perusahaan, status FROM tenants WHERE id = ? LIMIT 1");
+$tenant = $db->prepare("SELECT id, slug, nama_perusahaan, status FROM tenants WHERE id = ? LIMIT 1");
 $tenant->execute([$tenantId]);
 $t = $tenant->fetch(PDO::FETCH_ASSOC);
 
@@ -70,14 +70,14 @@ $impersonationId = (int)$db->lastInsertId();
 logSuperAdminAction(
     'impersonate_start',
     $tenantId,
-    "Mulai observasi tenant: " . ($t['nama_perusahaan'] ?: $t['nama_outlet'])
+    "Mulai observasi tenant: " . ($t['nama_perusahaan'] ?: $t['slug'])
 );
 
 // Set session flags
 $_SESSION['impersonating_tenant_id']   = $tenantId;
 $_SESSION['impersonation_log_id']      = $impersonationId;
 $_SESSION['impersonation_admin_name']  = $admin['name'] ?? 'Superadmin';
-$_SESSION['impersonation_tenant_name'] = $t['nama_perusahaan'] ?: $t['nama_outlet'];
+$_SESSION['impersonation_tenant_name'] = $t['nama_perusahaan'] ?: $t['slug'];
 
 // Redirect ke dashboard tenant
 header('Location: /dashboard.php?tenant_id=' . $tenantId . '&observer=1');

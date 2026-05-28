@@ -18,20 +18,20 @@ if ($action) {
     // Helper to get tenants by target filter
     function getTargetTenants(PDO $db, string $target, array $customIds = []): array {
         if ($target === 'semua') {
-            return $db->query("SELECT id, nama_outlet, owner_name, owner_wa, coin_balance FROM tenants WHERE status IN ('active','trial') ORDER BY nama_outlet")->fetchAll();
+            return $db->query("SELECT id, nama_perusahaan AS nama_outlet, owner_name, owner_wa, coin_balance FROM tenants WHERE status IN ('active','trial') ORDER BY nama_perusahaan")->fetchAll();
         }
         if ($target === 'active') {
-            return $db->query("SELECT id, nama_outlet, owner_name, owner_wa, coin_balance FROM tenants WHERE status='active' ORDER BY nama_outlet")->fetchAll();
+            return $db->query("SELECT id, nama_perusahaan AS nama_outlet, owner_name, owner_wa, coin_balance FROM tenants WHERE status='active' ORDER BY nama_perusahaan")->fetchAll();
         }
         if ($target === 'trial') {
-            return $db->query("SELECT id, nama_outlet, owner_name, owner_wa, coin_balance FROM tenants WHERE status='trial' ORDER BY nama_outlet")->fetchAll();
+            return $db->query("SELECT id, nama_perusahaan AS nama_outlet, owner_name, owner_wa, coin_balance FROM tenants WHERE status='trial' ORDER BY nama_perusahaan")->fetchAll();
         }
         if ($target === 'coin_rendah') {
-            return $db->query("SELECT id, nama_outlet, owner_name, owner_wa, coin_balance FROM tenants WHERE coin_balance < 10000 AND status='active' ORDER BY coin_balance ASC")->fetchAll();
+            return $db->query("SELECT id, nama_perusahaan AS nama_outlet, owner_name, owner_wa, coin_balance FROM tenants WHERE coin_balance < 10000 AND status='active' ORDER BY coin_balance ASC")->fetchAll();
         }
         if ($target === 'custom' && !empty($customIds)) {
             $ids = implode(',', array_map('intval', $customIds));
-            return $db->query("SELECT id, nama_outlet, owner_name, owner_wa, coin_balance FROM tenants WHERE id IN ($ids) ORDER BY nama_outlet")->fetchAll();
+            return $db->query("SELECT id, nama_perusahaan AS nama_outlet, owner_name, owner_wa, coin_balance FROM tenants WHERE id IN ($ids) ORDER BY nama_perusahaan")->fetchAll();
         }
         return [];
     }
@@ -45,7 +45,7 @@ if ($action) {
     }
 
     if ($action === 'all_tenants') {
-        $rows = $db->query("SELECT id, nama_outlet, owner_name FROM tenants WHERE status IN ('active','trial') ORDER BY nama_outlet")->fetchAll();
+        $rows = $db->query("SELECT id, nama_perusahaan AS nama_outlet, owner_name FROM tenants WHERE status IN ('active','trial') ORDER BY nama_perusahaan")->fetchAll();
         echo json_encode($rows); exit;
     }
 

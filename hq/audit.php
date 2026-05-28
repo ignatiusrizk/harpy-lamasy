@@ -157,7 +157,7 @@ if ($action === 'filter_options') {
 }
 
 $ownerNama = $hqUser['nama'] ?? 'Owner';
-$tenantNm  = $hqTenant['nama_outlet'] ?? 'HQ';
+$tenantNm  = $hqTenant['nama_perusahaan'] ?? 'HQ';
 ?>
 <?php
 $pageTitle  = 'Audit Log';

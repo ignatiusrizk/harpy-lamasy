@@ -84,14 +84,14 @@ if ($action) {
 
     if ($action === 'alerts') {
         $coinAlert = $db->query(
-            "SELECT id, nama_outlet, owner_name, owner_wa, coin_balance
+            "SELECT id, nama_perusahaan AS nama_outlet, owner_name, owner_wa, coin_balance
              FROM tenants WHERE coin_balance < 10000 AND status='active'
              ORDER BY coin_balance ASC LIMIT 10"
         )->fetchAll();
 
         // Trial alert: outlet (bukan tenant) yang trial-nya hampir habis
         $trialAlert = $db->query(
-            "SELECT t.id, t.nama_outlet, t.owner_name, t.owner_wa,
+            "SELECT t.id, t.nama_perusahaan AS nama_outlet, t.owner_name, t.owner_wa,
                     o.trial_ends_at,
                     DATEDIFF(o.trial_ends_at, NOW()) as days_left
              FROM tenants t
@@ -104,7 +104,7 @@ if ($action) {
         // JOIN hl_users — aman walau tenant_id belum ada (LEFT JOIN)
         try {
             $inactiveAlert = $db->query(
-                "SELECT t.id, t.nama_outlet, t.owner_name, t.owner_wa,
+                "SELECT t.id, t.nama_perusahaan AS nama_outlet, t.owner_name, t.owner_wa,
                         MAX(u.last_login) as last_login,
                         DATEDIFF(NOW(), MAX(u.last_login)) as days_inactive
                  FROM tenants t
@@ -175,7 +175,7 @@ if ($action) {
         )->fetch(PDO::FETCH_ASSOC);
 
         $slaItems = $db->query(
-            "SELECT t.id, t.subject, t.status, t.priority, tn.nama_outlet, t.created_at,
+            "SELECT t.id, t.subject, t.status, t.priority, tn.nama_perusahaan AS nama_outlet, t.created_at,
                     TIMESTAMPDIFF(HOUR, t.created_at, NOW()) AS age_hours
              FROM support_tickets t
              JOIN tenants tn ON tn.id = t.tenant_id

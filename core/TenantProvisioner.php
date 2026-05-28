@@ -21,12 +21,12 @@ class TenantProvisioner
             $trialEnd = date('Y-m-d H:i:s', strtotime('+7 days'));
             $db->prepare("
                 INSERT INTO tenants
-                  (slug, nama_outlet, owner_name, owner_wa,
+                  (slug, nama_perusahaan, owner_name, owner_wa,
                    status, coin_balance, trial_ends_at, provisioned_at)
                 VALUES (?, ?, ?, ?, 'trial', 50000, ?, NOW())
             ")->execute([
                 $slug,
-                $data['nama_outlet'],
+                $data['nama_perusahaan'] ?? $data['nama_outlet'] ?? '',
                 $data['owner_name'] ?? '',
                 $data['owner_wa']   ?? '',
                 $trialEnd,

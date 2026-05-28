@@ -38,7 +38,7 @@ if ($tenant['verified_at'] !== null) {
 
 $email      = $tenant['email'] ?? '';
 $ownerName  = $tenant['owner_name'] ?? 'Pengguna';
-$namaOutlet = $tenant['nama_outlet'] ?? '';
+$namaOutlet = $tenant['nama_perusahaan'] ?? '';
 
 // ── Handle flash dari resend-verify.php ──────────
 $flash = '';

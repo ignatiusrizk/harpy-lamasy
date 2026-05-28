@@ -175,7 +175,7 @@ function renderTopbar(string $activePage = '', bool $minimalMode = false): void 
     // ════════════════════════════════════════════════════════
     // Sidebar brand: prioritas nama_perusahaan (brand), fallback ke nama_outlet
     // Badge "📍 OUTLET" pakai nama outlet aktif dari TenantResolver
-    $brandNama        = $tenant['nama_perusahaan'] ?: ($tenant['nama_outlet'] ?? 'Outlet');
+    $brandNama        = $tenant['nama_perusahaan'] ?: TenantResolver::namaOutlet() ?: 'Outlet';
     $outletNama       = $brandNama; // backward compat untuk kode lain yang pakai $outletNama
     $activeOutletNama = TenantResolver::namaOutlet() ?: $brandNama;
     $emphasisKeys = ['pos','orders']; // nav yang ditandai (POS/Order)

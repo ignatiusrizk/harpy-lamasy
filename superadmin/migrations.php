@@ -72,7 +72,7 @@ if ($action) {
 
         $rowsQ = $db->prepare("
             SELECT j.*,
-                   t.nama_outlet, t.nama_perusahaan, t.slug,
+                   t.nama_perusahaan, t.slug,
                    u.nama AS user_nama,
                    sa.name AS admin_nama
             FROM hl_migration_jobs j
@@ -261,7 +261,7 @@ if ($action) {
 
 // ── PAGE RENDER ───────────────────────────────────────
 // Get outlets for assisted migration form
-$allTenants = $db->query("SELECT id, nama_outlet, nama_perusahaan FROM tenants WHERE status IN ('active','trial') ORDER BY nama_outlet LIMIT 300")->fetchAll(PDO::FETCH_ASSOC);
+$allTenants = $db->query("SELECT id, nama_perusahaan, nama_perusahaan AS nama_outlet FROM tenants WHERE status IN ('active','trial') ORDER BY nama_perusahaan LIMIT 300")->fetchAll(PDO::FETCH_ASSOC);
 ?>
 <!DOCTYPE html>
 <html lang="id">

@@ -13,7 +13,7 @@
 $_aPage      = $activePage ?? '';
 $_pageTitle  = $pageTitle ?? 'HQ';
 $_ownerNama  = $hqUser['nama'] ?? ($ownerNama ?? 'Owner');
-$_tenantNama = $hqTenant['nama_perusahaan'] ?? ($hqTenant['nama_outlet'] ?? 'Kantor Pusat');
+$_tenantNama = $hqTenant['nama_perusahaan'] ?? 'Kantor Pusat';
 
 // Group active state
 $_inTim = in_array($_aPage, ['hq-karyawan','hq-mutasi','hq-sdm','hq-penggajian','hq-roles'], true);

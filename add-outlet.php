@@ -77,20 +77,19 @@ $forcePaid = !$isFirstOutlet;
 // Wizard state
 if (isset($_GET['reset'])) unset($_SESSION['ao']);
 if (empty($_SESSION['ao'])) {
-    // Pre-fill nama_outlet & kota dari data registrasi tenant (hanya outlet pertama)
+    // Pre-fill nama_outlet & kota dari data registrasi (hanya outlet pertama)
     $prefill = [];
     if ($isFirstOutlet) {
         $db = Database::get();
-        $pf = $db->prepare("SELECT nama_outlet FROM tenants WHERE id=? LIMIT 1");
+        $pf = $db->prepare(
+            "SELECT nama_outlet, kota FROM registration_requests WHERE tenant_id=? ORDER BY id DESC LIMIT 1"
+        );
         $pf->execute([$tid]);
-        $row = $pf->fetch(PDO::FETCH_ASSOC);
-        if ($row) $prefill['nama_outlet'] = $row['nama_outlet'] ?? '';
-
-        // kota tersimpan di registration_requests (tidak di tenants)
-        $pf2 = $db->prepare("SELECT kota FROM registration_requests WHERE tenant_id=? AND kota IS NOT NULL LIMIT 1");
-        $pf2->execute([$tid]);
-        $rr = $pf2->fetch(PDO::FETCH_ASSOC);
-        if ($rr) $prefill['kota'] = $rr['kota'] ?? '';
+        $rr = $pf->fetch(PDO::FETCH_ASSOC);
+        if ($rr) {
+            if (!empty($rr['nama_outlet'])) $prefill['nama_outlet'] = $rr['nama_outlet'];
+            if (!empty($rr['kota']))        $prefill['kota']        = $rr['kota'];
+        }
     }
     $_SESSION['ao'] = ['step' => 1, 'data' => $prefill];
 }

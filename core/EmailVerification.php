@@ -142,7 +142,7 @@ class EmailVerification
         ")->execute([$row['tenant_id'], $row['email']]);
 
         // Fetch nama outlet untuk welcome email
-        $tenantStmt = $db->prepare("SELECT nama_outlet, owner_name FROM tenants WHERE id = ? LIMIT 1");
+        $tenantStmt = $db->prepare("SELECT nama_perusahaan, owner_name FROM tenants WHERE id = ? LIMIT 1");
         $tenantStmt->execute([$row['tenant_id']]);
         $tenant = $tenantStmt->fetch();
 
@@ -151,7 +151,7 @@ class EmailVerification
             Mailer::sendWelcome(
                 $row['email'],
                 $tenant['owner_name'] ?? 'Pelanggan',
-                $tenant['nama_outlet'] ?? ''
+                $tenant['nama_perusahaan'] ?? ''
             );
         }
 
@@ -171,7 +171,7 @@ class EmailVerification
         $db = Database::get();
 
         // Ambil data tenant untuk nama
-        $stmt = $db->prepare("SELECT nama_outlet, owner_name FROM tenants WHERE id = ? AND email = ? LIMIT 1");
+        $stmt = $db->prepare("SELECT nama_perusahaan, owner_name FROM tenants WHERE id = ? AND email = ? LIMIT 1");
         $stmt->execute([$tenantId, $email]);
         $tenant = $stmt->fetch();
 
@@ -182,8 +182,8 @@ class EmailVerification
         return self::create(
             $tenantId,
             $email,
-            $tenant['nama_outlet'] ?? '',
-            $tenant['owner_name']  ?? '',
+            $tenant['nama_perusahaan'] ?? '',
+            $tenant['owner_name']      ?? '',
             'registration'
         );
     }
