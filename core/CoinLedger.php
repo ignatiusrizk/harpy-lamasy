@@ -35,6 +35,9 @@ class CoinLedger
         'generate_invoice'   => 200,
         'wa_blast'           => 100,
         'export_pdf'         => 500,
+        // Migration (self-service) — 1.000 coin per AI mapping
+        // Jika assisted (Rp 200.000) atau mapping dari cache → 0 coin
+        'ai_migration_mapping' => 1000,
     ];
 
     // ── Cek saldo (dari cache, tanpa query DB) ─────────

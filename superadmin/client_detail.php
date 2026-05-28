@@ -282,6 +282,35 @@ if ($action) {
         exit;
     }
 
+    // ── GET: outlet list untuk modal migrations ──────
+    if ($action === 'get_outlets') {
+        $id    = (int)($_GET['id'] ?? 0);
+        $oRows = $db->prepare("SELECT id, nama_outlet, status FROM outlets WHERE tenant_id=? ORDER BY id");
+        $oRows->execute([$id]);
+        echo json_encode($oRows->fetchAll(PDO::FETCH_ASSOC));
+        exit;
+    }
+
+    // ── GET: migration history untuk tenant ini ──────
+    if ($action === 'get_migrations') {
+        $id    = (int)($_GET['id'] ?? 0);
+        $limit = 10;
+        $mjQ   = $db->prepare("
+            SELECT j.id, j.entity_type, j.file_name, j.status,
+                   j.total_rows, j.success_rows, j.failed_rows, j.skipped_rows,
+                   j.is_assisted, j.assisted_paid, j.created_at, j.completed_at,
+                   sa.name AS admin_nama
+            FROM hl_migration_jobs j
+            LEFT JOIN super_admins sa ON sa.id = j.imported_by_admin
+            WHERE j.tenant_id = ?
+            ORDER BY j.created_at DESC
+            LIMIT $limit
+        ");
+        $mjQ->execute([$id]);
+        echo json_encode($mjQ->fetchAll(PDO::FETCH_ASSOC));
+        exit;
+    }
+
     echo json_encode(['error' => 'Action tidak dikenal.']); exit;
 }
 
@@ -405,6 +434,7 @@ $billingStat = $bsSt->fetch(PDO::FETCH_ASSOC);
   <button class="sa-tab" onclick="showTab('comms')">💬 Komunikasi</button>
   <button class="sa-tab" onclick="showTab('aktivitas')">📅 Aktivitas</button>
   <button class="sa-tab" onclick="showTab('tenant_errors');loadTenantErrors(1)">🚨 Errors</button>
+  <button class="sa-tab" onclick="showTab('migrations');loadMigrations()">📦 Migrations</button>
   <button class="sa-tab" onclick="showTab('aksi')">⚙️ Aksi Manual</button>
 </div>
 
@@ -715,6 +745,29 @@ $billingStat = $bsSt->fetch(PDO::FETCH_ASSOC);
   </div>
   <div id="commsTimeline"></div>
 </div>
+
+<!-- Tab: Migrations -->
+<div class="sa-tab-panel" id="tab-migrations">
+  <div class="sa-card">
+    <div class="sa-card-header">
+      <h3>📦 Riwayat Migration</h3>
+      <div style="display:flex;gap:8px;">
+        <button class="sa-btn sa-btn-outline sa-btn-sm" onclick="loadMigrations()">⟳ Refresh</button>
+        <a href="/superadmin/migrations.php" class="sa-btn sa-btn-outline sa-btn-sm">Kelola semua →</a>
+      </div>
+    </div>
+    <div class="sa-table-wrap">
+      <table class="sa-table">
+        <thead>
+          <tr><th>ID</th><th>Entitas</th><th>File</th><th>Progress</th><th>Tipe</th><th>Status</th><th>Waktu</th><th>Aksi</th></tr>
+        </thead>
+        <tbody id="migTbody">
+          <tr><td colspan="8" style="text-align:center;color:rgba(255,255,255,.3);padding:24px;">Klik tab untuk memuat...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div><!-- /#tab-migrations -->
 
 <!-- Tab: Aksi Manual -->
 <div class="sa-tab-panel" id="tab-aksi">
@@ -1231,6 +1284,42 @@ function doResetPassword() {
       saShowToast('Password berhasil direset.', 'success');
       document.getElementById('newPassword').value = '';
     });
+}
+
+// ── Migration history ─────────────────────────────
+const MIG_ENTITY = { layanan:'Layanan', pelanggan:'Pelanggan', karyawan:'Karyawan', transaksi:'Transaksi', poin_pelanggan:'Poin' };
+const MIG_STATUS = { completed:'✅', partial:'⚠️', failed:'❌', importing:'⏳', mapped:'🔍', uploaded:'📁' };
+
+async function loadMigrations() {
+    const tbody = document.getElementById('migTbody');
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:rgba(255,255,255,.3);padding:24px;">Memuat...</td></tr>';
+    try {
+        const resp = await fetch(`client_detail.php?action=get_migrations&id=${TENANT_ID}`);
+        const rows = await resp.json();
+        if (!rows.length) {
+            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:rgba(255,255,255,.3);padding:24px;">Belum ada migration job.</td></tr>';
+            return;
+        }
+        tbody.innerHTML = rows.map(r => {
+            const pct = r.total_rows > 0 ? Math.round(r.success_rows/r.total_rows*100) : 0;
+            const c   = pct>=95?'#10B981':pct>=60?'#F59E0B':'#EF4444';
+            return `<tr>
+                <td style="font-size:11px;font-family:var(--mono);color:rgba(255,255,255,.4);">#${r.id}</td>
+                <td><span class="sa-badge sa-badge-indigo" style="font-size:10px;">${MIG_ENTITY[r.entity_type]||r.entity_type}</span></td>
+                <td style="font-size:11.5px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${r.file_name}">${r.file_name}</td>
+                <td style="min-width:110px;">
+                    <div style="font-size:11.5px;color:rgba(255,255,255,.6);margin-bottom:3px;">${r.success_rows}/${r.total_rows}</div>
+                    <div style="height:4px;background:rgba(255,255,255,.07);border-radius:2px;overflow:hidden;"><div style="height:100%;background:${c};width:${pct}%;"></div></div>
+                </td>
+                <td style="font-size:11.5px;">${r.is_assisted?'<span class="sa-badge sa-badge-yellow" style="font-size:10px;">Assisted</span>':'<span style="font-size:11px;color:rgba(255,255,255,.35);">Self</span>'}</td>
+                <td>${MIG_STATUS[r.status]||'?'} <span style="font-size:11.5px;">${r.status}</span></td>
+                <td style="font-size:11px;color:rgba(255,255,255,.3);">${(r.created_at||'').substring(0,16)}</td>
+                <td>${r.failed_rows>0?`<a href="/superadmin/migrations.php?action=error_report&job_id=${r.id}" class="sa-btn sa-btn-sm sa-btn-danger">⬇</a>`:''}</td>
+            </tr>`;
+        }).join('');
+    } catch(e) {
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:#FCA5A5;padding:24px;">Gagal: ${e.message}</td></tr>`;
+    }
 }
 
 // ── Impersonate modal ──────────────────────────────

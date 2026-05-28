@@ -137,6 +137,7 @@ function renderTopbar(string $activePage = '', bool $minimalMode = false): void 
         'bantuan' => [
             'label' => 'Bantuan',
             'items' => [
+                'import'  => ['label'=>'Import Data',    'url'=>'import.php',  'perm'=>'settings.roles'],
                 'support' => ['label'=>'Support & Tiket','url'=>'support.php','perm'=>'bantuan.view'],
             ],
         ],
@@ -179,7 +180,7 @@ function renderTopbar(string $activePage = '', bool $minimalMode = false): void 
       'laporan'=>'📊','layanan'=>'🧺','promo'=>'🎟️','customer'=>'👥',
       'karyawan'=>'👤','absensi'=>'📅','settings'=>'⚙️','audit'=>'🔍',
       'checklist'=>'✅','droppoint'=>'📦','owner_report'=>'📨','piutang'=>'💼','kanban'=>'🗂️',
-      'loyalty'=>'⭐','retention'=>'😴','support'=>'🎧',
+      'loyalty'=>'⭐','retention'=>'😴','support'=>'🎧','import'=>'📥',
     ];
     ?>
     <div class="ol-shell" id="olShell">

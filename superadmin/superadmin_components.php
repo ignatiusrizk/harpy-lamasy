@@ -401,6 +401,10 @@ function saRenderNav(string $activePage = '', string $pageTitle = ''): void {
           <span class="icon">📣</span> Broadcast
         </a>
 
+        <a href="/superadmin/migrations.php" class="sa-nav-link <?= $activePage === 'migrations' ? 'active' : '' ?>">
+          <span class="icon">📦</span> Migrations
+        </a>
+
         <div class="sa-nav-section">Finance</div>
         <a href="/superadmin/billing.php" class="sa-nav-link <?= $activePage === 'billing' ? 'active' : '' ?>">
           <span class="icon">💳</span> Billing
