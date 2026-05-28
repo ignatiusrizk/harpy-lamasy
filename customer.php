@@ -594,7 +594,7 @@ async function openDetail(id) {
     <div style="background:#fff;border:1px solid rgba(27,45,90,.08);border-radius:12px;padding:14px 16px;margin-bottom:14px" id="prefBox">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
         <div style="font-size:11px;color:var(--gray);font-weight:700;text-transform:uppercase;letter-spacing:.06em">🌸 Preferensi</div>
-        <button class="hl-btn hl-btn-outline hl-btn-sm" onclick="togglePrefEdit()" id="prefEditBtn">✏️ Edit</button>
+        ${CAN_EDIT_CUST ? `<button class="hl-btn hl-btn-outline hl-btn-sm" onclick="togglePrefEdit()" id="prefEditBtn">✏️ Edit</button>` : ''}
       </div>
       <div id="prefDisplay">
         <div style="font-size:13px;line-height:1.7">
