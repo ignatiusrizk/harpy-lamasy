@@ -133,7 +133,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['step2_submit'])) {
     try {
         $outletSlug  = aoUniqueSlug($d['nama_outlet'], $tid);
         $isPaid      = ($d['mode'] ?? 'trial') === 'paid';
-        $trialStatus = $isPaid ? 'active' : 'trial';
+        // Paid outlet = pending (menunggu konfirmasi pembayaran superadmin)
+        // Trial outlet = trial (langsung aktif dengan masa trial 7 hari)
+        $trialStatus = $isPaid ? 'pending' : 'trial';
         $trialEnds   = $isPaid ? null : date('Y-m-d H:i:s', time() + 7 * 86400);
         $trialCoins  = (!$isPaid && $isFirstOutlet) ? 1000 : 0;
 
@@ -167,16 +169,46 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['step2_submit'])) {
             $db->prepare("UPDATE outlets SET is_main=1 WHERE id=?")->execute([$outletId]);
         }
 
+        // Untuk outlet berbayar: buat permintaan verifikasi pembayaran di superadmin
+        if ($isPaid) {
+            // Ambil data owner dari tenants
+            $ownerRow = $db->prepare(
+                "SELECT owner_name, owner_wa FROM tenants WHERE id=? LIMIT 1"
+            );
+            $ownerRow->execute([$tid]);
+            $ownerRow = $ownerRow->fetch(PDO::FETCH_ASSOC) ?: [];
+
+            $db->prepare("
+                INSERT INTO registration_requests
+                    (source, request_type, nama_outlet, owner_name, owner_wa, kota,
+                     status, tenant_id, outlet_id, created_at)
+                VALUES (?, 'add_outlet', ?, ?, ?, ?, 'payment_pending', ?, ?, NOW())
+            ")->execute([
+                'self_service',
+                $d['nama_outlet'],
+                $ownerRow['owner_name'] ?? '-',
+                $ownerRow['owner_wa']   ?? '-',
+                $d['kota'] ?: null,
+                $tid,
+                $outletId,
+            ]);
+        }
+
         $db->commit();
 
-        // Set outlet ke session
-        $_SESSION['outlet_id'] = $outletId;
-        $_SESSION['has_outlet'] = true;
+        if ($isPaid) {
+            // Paid/pending outlet: JANGAN switch session ke outlet baru
+            // Tenant tetap di outlet yang sedang aktif
+            // (sesi tidak berubah, TenantResolver tidak perlu di-reset)
+            $successMode = 'pending_payment';
+        } else {
+            // Trial outlet: switch ke outlet baru langsung
+            $_SESSION['outlet_id'] = $outletId;
+            $_SESSION['has_outlet'] = true;
+            TenantResolver::reset();
+            $successMode = 'trial';
+        }
 
-        // Refresh TenantResolver
-        TenantResolver::reset();
-
-        $successMode = $isPaid ? 'paid' : 'trial';
         $successName = $d['nama_outlet'];
         unset($_SESSION['ao']);
 
@@ -316,27 +348,32 @@ renderTopbar('add-outlet', !$hasOutlet);
     <!-- ══ SUCCESS ══ -->
     <div class="hl-card">
       <div class="ao-success">
-        <?php if (($successMode ?? 'trial') === 'paid'): ?>
-          <div class="big-icon">✅</div>
-          <h1>Outlet Berhasil Dibuat!</h1>
+        <?php if (($successMode ?? 'trial') === 'pending_payment'): ?>
+          <!-- Outlet berbayar: menunggu konfirmasi pembayaran superadmin -->
+          <div class="big-icon">⏳</div>
+          <h1>Outlet Menunggu Konfirmasi</h1>
           <p>
-            <strong><?= htmlspecialchars($outletName ?? '') ?></strong> sudah aktif.<br>
-            Selesaikan pembayaran setup fee agar outlet tetap berjalan.
+            <strong><?= htmlspecialchars($outletName ?? '') ?></strong> berhasil didaftarkan.<br>
+            Outlet akan aktif setelah tim LAMASY mengkonfirmasi pembayaran setup fee kamu.
           </p>
           <div style="background:#FEF3C7;border:1px solid #FCD34D;color:#92400E;
-                      padding:12px 16px;border-radius:10px;font-size:13px;
+                      padding:14px 16px;border-radius:10px;font-size:13px;
                       margin-bottom:24px;text-align:left">
-            💳 <strong>Cara bayar:</strong> Transfer ke rekening tim LAMASY atau hubungi
-            kami via WhatsApp. Tim kami akan konfirmasi dalam 1×24 jam.
+            <div style="font-weight:700;margin-bottom:8px">💳 Langkah selanjutnya:</div>
+            <ol style="margin:0;padding-left:18px;line-height:2">
+              <li>Hubungi tim LAMASY via WhatsApp di bawah</li>
+              <li>Transfer setup fee sesuai paket yang dipilih</li>
+              <li>Tim kami akan konfirmasi &amp; aktifkan outlet dalam 1×24 jam</li>
+            </ol>
           </div>
           <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
-            <a href="https://wa.me/6285121519302?text=<?= urlencode('Halo Tim LAMASY, saya sudah buat outlet baru (' . ($outletName ?? '') . ') dan mau selesaikan pembayaran setup fee. Mohon info rekening / prosedurnya. Terima kasih.') ?>"
+            <a href="https://wa.me/6285121519302?text=<?= urlencode('Halo Tim LAMASY, saya baru mendaftarkan outlet baru bernama "' . ($outletName ?? '') . '" dan ingin melakukan pembayaran setup fee. Mohon info rekening / prosedurnya. Terima kasih.') ?>"
                target="_blank" rel="noopener"
                class="hl-btn hl-btn-primary" style="padding:13px 28px;background:#25D366;border-color:#25D366">
-              💬 Konfirmasi Pembayaran via WA
+              💬 Hubungi LAMASY via WA
             </a>
             <a href="/dashboard.php" class="hl-btn hl-btn-outline" style="padding:13px 24px">
-              Ke Dashboard
+              Kembali ke Dashboard
             </a>
           </div>
         <?php else: ?>

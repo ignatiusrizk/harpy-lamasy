@@ -95,6 +95,72 @@ if ($action) {
         exit;
     }
 
+    // CONFIRM_OUTLET: Konfirmasi pembayaran & aktifkan outlet existing tenant
+    if ($action === 'confirm_outlet' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+        saVerifyCsrf();
+        $regId = (int)($_POST['id'] ?? 0);
+        $notes = substr(trim($_POST['notes'] ?? ''), 0, 300);
+
+        $reg = $db->prepare(
+            "SELECT * FROM registration_requests WHERE id=? AND status='payment_pending' LIMIT 1"
+        );
+        $reg->execute([$regId]);
+        $reg = $reg->fetch(PDO::FETCH_ASSOC);
+
+        if (!$reg) {
+            echo json_encode(['error' => 'Permintaan tidak ditemukan atau sudah diproses']); exit;
+        }
+        if (!$reg['outlet_id']) {
+            echo json_encode(['error' => 'outlet_id kosong — gunakan wizard provisioning untuk new tenant']); exit;
+        }
+
+        $db->beginTransaction();
+        try {
+            // Aktifkan outlet
+            $affected = $db->prepare(
+                "UPDATE outlets SET status='active', activated_at=NOW() WHERE id=? AND status='pending'"
+            );
+            $affected->execute([$reg['outlet_id']]);
+
+            // Tandai request selesai
+            $db->prepare(
+                "UPDATE registration_requests
+                 SET status='completed', handled_by=?, updated_at=NOW()
+                 WHERE id=?"
+            )->execute([(int)$_SESSION['superadmin_id'], $regId]);
+
+            // Catat pembayaran di saas_manual_payments (jika tabel ada)
+            try {
+                $db->prepare("
+                    INSERT INTO saas_manual_payments
+                        (tenant_id, type, amount, status, notes, recorded_by, created_at)
+                    VALUES (?, 'outlet_activation', 0, 'confirmed', ?, ?, NOW())
+                ")->execute([
+                    (int)$reg['tenant_id'],
+                    $notes ?: 'Konfirmasi aktivasi outlet: ' . ($reg['nama_outlet'] ?? ''),
+                    (int)$_SESSION['superadmin_id'],
+                ]);
+            } catch (Throwable) {
+                // saas_manual_payments mungkin belum ada — tidak blocking
+            }
+
+            $db->commit();
+
+            logSuperAdminAction(
+                'confirm_outlet_payment',
+                (int)$reg['tenant_id'],
+                "Aktifkan outlet #{$reg['outlet_id']}: {$reg['nama_outlet']}"
+            );
+
+            echo json_encode(['success' => true, 'outlet_id' => $reg['outlet_id']]);
+        } catch (Throwable $e) {
+            $db->rollBack();
+            error_log('[confirm_outlet] ' . $e->getMessage());
+            echo json_encode(['error' => 'Terjadi kesalahan teknis. Coba lagi.']);
+        }
+        exit;
+    }
+
     // STATUS COUNTS
     if ($action === 'counts') {
         $counts = [];
@@ -286,6 +352,33 @@ if ($action) {
   </div>
 </div>
 
+<!-- CONFIRM OUTLET MODAL -->
+<div class="sa-modal-overlay" id="confirmOutletModal">
+  <div class="sa-modal" style="max-width:460px;">
+    <h3>✅ Konfirmasi Pembayaran Outlet</h3>
+    <p style="color:rgba(255,255,255,.55);font-size:13px;margin-bottom:16px;">
+      Outlet <strong id="confirmOutletName"></strong> akan segera diaktifkan setelah kamu konfirmasi
+      bahwa pembayaran setup fee sudah diterima.
+    </p>
+    <div class="form-row-1">
+      <div class="form-group">
+        <label>Catatan (opsional)</label>
+        <textarea id="confirmOutletNotes" rows="2"
+                  placeholder="cth: Sudah transfer via BCA tgl 28 Mei, ref TXN123..."></textarea>
+      </div>
+    </div>
+    <p style="font-size:11px;color:rgba(255,255,255,.3);margin-bottom:16px;">
+      ⚠️ Pastikan pembayaran sudah benar-benar diterima sebelum mengaktifkan outlet.
+    </p>
+    <div class="sa-modal-footer">
+      <button class="sa-btn sa-btn-outline" onclick="closeConfirmOutlet()">Batal</button>
+      <button class="sa-btn sa-btn-primary" onclick="submitConfirmOutlet()" id="confirmOutletBtn">
+        Konfirmasi &amp; Aktifkan
+      </button>
+    </div>
+  </div>
+</div>
+
 <div class="sa-toast" id="toast"></div>
 
 </div></div><!-- close sa-main + sa-content -->
@@ -338,13 +431,38 @@ function renderTable(j) {
     failed: 'Gagal', cancelled: 'Dibatalkan'
   };
 
-  tb.innerHTML = j.data.map(r => `
+  tb.innerHTML = j.data.map(r => {
+    // Outlet payment record: tenant_id & outlet_id sudah ada saat payment_pending
+    // (dibuat dari add-outlet.php untuk existing tenant yang tambah outlet baru)
+    const isOutletPayment = r.status === 'payment_pending' && r.outlet_id && r.tenant_id;
+
+    let actions = '';
+    if (r.status === 'payment_pending' && isOutletPayment) {
+      // Konfirmasi pembayaran + aktifkan outlet — tidak perlu wizard provisioning
+      actions += `<button class="sa-btn sa-btn-primary sa-btn-sm" onclick="confirmOutlet(${r.id}, '${esc(r.nama_outlet)}')">✅ Konfirmasi Bayar</button> `;
+      actions += `<a href="client_detail.php?id=${r.tenant_id}" class="sa-btn sa-btn-outline sa-btn-sm">Detail Klien</a>`;
+    } else if (r.status !== 'completed' && r.status !== 'cancelled') {
+      actions += `<a href="registration_wizard.php?id=${r.id}" class="sa-btn sa-btn-primary sa-btn-sm">Proses</a> `;
+    }
+    if (r.status === 'completed' && r.tenant_id) {
+      actions += `<a href="client_detail.php?id=${r.tenant_id}" class="sa-btn sa-btn-outline sa-btn-sm">Detail</a>`;
+    }
+    if (r.status === 'pending') {
+      actions += ` <button class="sa-btn sa-btn-danger sa-btn-sm" onclick="cancelReg(${r.id})">Batal</button>`;
+    }
+
+    const reqTypeBadge = r.request_type === 'add_outlet'
+      ? `<span class="src-badge" style="background:rgba(16,185,129,.15);color:#6EE7B7">+Outlet</span>`
+      : '';
+
+    return `
     <tr>
       <td style="font-family:var(--mono);font-size:12px;color:rgba(255,255,255,.35)">#${r.id}</td>
       <td>
         <div style="font-weight:700;color:var(--white)">${esc(r.nama_outlet)}</div>
         ${r.nama_perusahaan ? `<div style="font-size:11px;color:rgba(255,255,255,.35)">${esc(r.nama_perusahaan)}</div>` : ''}
         ${r.kota ? `<div style="font-size:11px;color:rgba(255,255,255,.3)">${esc(r.kota)}</div>` : ''}
+        ${reqTypeBadge}
       </td>
       <td>${esc(r.owner_name)}</td>
       <td>
@@ -355,19 +473,9 @@ function renderTable(j) {
       <td><span class="src-badge src-${r.source}">${r.source === 'assisted' ? 'Assisted' : 'Self'}</span></td>
       <td><span class="status-badge s-${r.status}">${statusLabels[r.status] || r.status}</span></td>
       <td style="font-size:12px;color:rgba(255,255,255,.4)">${fmtDate(r.created_at)}</td>
-      <td>
-        ${r.status !== 'completed' && r.status !== 'cancelled' ? `
-          <a href="registration_wizard.php?id=${r.id}" class="sa-btn sa-btn-primary sa-btn-sm">Proses</a>
-        ` : ''}
-        ${r.status === 'completed' && r.tenant_id ? `
-          <a href="client_detail.php?id=${r.tenant_id}" class="sa-btn sa-btn-outline sa-btn-sm">Detail</a>
-        ` : ''}
-        ${r.status === 'pending' ? `
-          <button class="sa-btn sa-btn-danger sa-btn-sm" onclick="cancelReg(${r.id})">Batal</button>
-        ` : ''}
-      </td>
-    </tr>
-  `).join('');
+      <td>${actions}</td>
+    </tr>`;
+  }).join('');
 
   // Pagination
   renderPagination(j);
@@ -440,6 +548,42 @@ async function cancelReg(id) {
   else showToast(j.error || 'Gagal', 'error');
 }
 
+// ── Konfirmasi pembayaran outlet (add_outlet flow) ────
+let pendingConfirmId = null;
+function confirmOutlet(id, namaOutlet) {
+  pendingConfirmId = id;
+  document.getElementById('confirmOutletName').textContent = namaOutlet;
+  document.getElementById('confirmOutletNotes').value = '';
+  document.getElementById('confirmOutletModal').classList.add('open');
+}
+function closeConfirmOutlet() {
+  document.getElementById('confirmOutletModal').classList.remove('open');
+  pendingConfirmId = null;
+}
+async function submitConfirmOutlet() {
+  if (!pendingConfirmId) return;
+  const btn   = document.getElementById('confirmOutletBtn');
+  const notes = document.getElementById('confirmOutletNotes').value.trim();
+  const fd    = new FormData();
+  fd.append('id', pendingConfirmId);
+  fd.append('notes', notes);
+  fd.append('_csrf', CSRF);
+  btn.disabled = true; btn.textContent = 'Memproses...';
+  try {
+    const res = await fetch('?action=confirm_outlet', { method: 'POST', body: fd });
+    const j   = await res.json();
+    if (j.success) {
+      closeConfirmOutlet();
+      showToast('Outlet berhasil diaktifkan! 🎉', 'success');
+      loadList(); loadCounts();
+    } else {
+      showToast(j.error || 'Gagal mengaktifkan outlet', 'error');
+    }
+  } finally {
+    btn.disabled = false; btn.textContent = 'Konfirmasi & Aktifkan';
+  }
+}
+
 function showToast(msg, type='success') {
   const t = document.getElementById('toast');
   t.textContent = msg;
@@ -461,6 +605,9 @@ function fmtDate(s) {
 // Close modal on backdrop click
 document.getElementById('createModal').addEventListener('click', function(e) {
   if (e.target === this) closeCreate();
+});
+document.getElementById('confirmOutletModal').addEventListener('click', function(e) {
+  if (e.target === this) closeConfirmOutlet();
 });
 
 // Close sidebar on mobile

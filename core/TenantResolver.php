@@ -5,7 +5,7 @@
 // tenant_id DAN outlet_id di session.
 //
 // Status tenant: pending_verification | trial | active | suspended | closed
-// Status outlet: trial | grace | active | suspended | closed
+// Status outlet: pending | trial | grace | active | suspended | closed
 //
 // Special flows:
 //   outlet_id=0   → tenant belum punya outlet, arahkan ke add-outlet.php
@@ -92,7 +92,7 @@ class TenantResolver
         if (!isset($_SESSION['outlet_id']) || (int)$_SESSION['outlet_id'] === 0) {
             // Cek apakah tenant punya outlet sama sekali
             $cntStmt = $db->prepare(
-                "SELECT COUNT(*) FROM outlets WHERE tenant_id = ? AND status != 'closed'"
+                "SELECT COUNT(*) FROM outlets WHERE tenant_id = ? AND status NOT IN ('closed','pending')"
             );
             $cntStmt->execute([$tenant['id']]);
             $outletCount = (int)$cntStmt->fetchColumn();
@@ -124,9 +124,9 @@ class TenantResolver
                 return;
             }
 
-            // Ada outlet tapi belum dipilih — pilih outlet pertama aktif
+            // Ada outlet tapi belum dipilih — pilih outlet pertama aktif (exclude pending)
             $firstOutlet = $db->prepare(
-                "SELECT * FROM outlets WHERE tenant_id = ? AND status != 'closed'
+                "SELECT * FROM outlets WHERE tenant_id = ? AND status NOT IN ('closed','pending')
                  ORDER BY is_main DESC, created_at ASC LIMIT 1"
             );
             $firstOutlet->execute([$tenant['id']]);
@@ -171,6 +171,35 @@ class TenantResolver
             unset($_SESSION['outlet_id']);
             $_SESSION['has_outlet'] = false;
             self::$outlet = null;
+            return;
+        }
+
+        // Outlet pending → menunggu konfirmasi pembayaran superadmin
+        // Jangan izinkan akses — cari outlet aktif lain, atau redirect ke add-outlet
+        if ($outlet['status'] === 'pending') {
+            unset($_SESSION['outlet_id']);
+            // Coba temukan outlet aktif lain milik tenant ini
+            $activeOtherStmt = $db->prepare(
+                "SELECT * FROM outlets WHERE tenant_id = ? AND status NOT IN ('closed','pending')
+                 ORDER BY is_main DESC, created_at ASC LIMIT 1"
+            );
+            $activeOtherStmt->execute([$tenant['id']]);
+            $activeOther = $activeOtherStmt->fetch();
+            if ($activeOther) {
+                // Switch ke outlet aktif yang ditemukan, redirect agar TenantResolver resolve ulang
+                $_SESSION['outlet_id'] = $activeOther['id'];
+                $_SESSION['has_outlet'] = true;
+                header('Location: ' . ($_SERVER['PHP_SELF'] ?? '/dashboard.php'));
+                exit;
+            }
+            // Tidak ada outlet aktif — arahkan ke add-outlet.php
+            $_SESSION['has_outlet'] = false;
+            self::$outlet = null;
+            $currentPath = $_SERVER['PHP_SELF'] ?? '';
+            if ($currentPath !== '/add-outlet.php') {
+                header('Location: /add-outlet.php');
+                exit;
+            }
             return;
         }
 
