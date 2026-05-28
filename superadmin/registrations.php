@@ -116,11 +116,25 @@ if ($action) {
 
         $db->beginTransaction();
         try {
-            // Aktifkan outlet
+            // Aktifkan outlet — UPDATE juga tangani outlet yang sudah active (idempotent)
             $affected = $db->prepare(
-                "UPDATE outlets SET status='active', activated_at=NOW() WHERE id=? AND status='pending'"
+                "UPDATE outlets SET status='active', activated_at=COALESCE(activated_at,NOW())
+                 WHERE id=? AND status IN ('pending','trial')"
             );
             $affected->execute([$reg['outlet_id']]);
+
+            if ($affected->rowCount() === 0) {
+                // Outlet mungkin sudah active — cek statusnya
+                $chk = $db->prepare("SELECT status FROM outlets WHERE id=? LIMIT 1");
+                $chk->execute([$reg['outlet_id']]);
+                $curStatus = $chk->fetchColumn();
+                if ($curStatus !== 'active') {
+                    // Outlet ada tapi status aneh (grace/suspended/closed) — tetap aktifkan
+                    $db->prepare("UPDATE outlets SET status='active', activated_at=COALESCE(activated_at,NOW()) WHERE id=?")
+                       ->execute([$reg['outlet_id']]);
+                }
+                // Kalau memang sudah active, lanjut saja (idempotent ok)
+            }
 
             // Tandai request selesai
             $db->prepare(
