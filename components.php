@@ -173,10 +173,11 @@ function renderTopbar(string $activePage = '', bool $minimalMode = false): void 
     // ════════════════════════════════════════════════════════
     // Outlet Shell — sidebar + topbar tipis (Section 11.3)
     // ════════════════════════════════════════════════════════
-    // $outletNama dipakai untuk sidebar brand (tetap nama tenant/brand bisnis)
+    // Sidebar brand: prioritas nama_perusahaan (brand), fallback ke nama_outlet
     // Badge "📍 OUTLET" pakai nama outlet aktif dari TenantResolver
-    $outletNama       = $tenant['nama_outlet'] ?? 'Outlet';
-    $activeOutletNama = TenantResolver::namaOutlet() ?: $outletNama;
+    $brandNama        = $tenant['nama_perusahaan'] ?: ($tenant['nama_outlet'] ?? 'Outlet');
+    $outletNama       = $brandNama; // backward compat untuk kode lain yang pakai $outletNama
+    $activeOutletNama = TenantResolver::namaOutlet() ?: $brandNama;
     $emphasisKeys = ['pos','orders']; // nav yang ditandai (POS/Order)
     $iconMap = [
       'dashboard'=>'🏠','pos'=>'🛒','orders'=>'📋','kas'=>'💰',
