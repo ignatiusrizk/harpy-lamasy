@@ -653,6 +653,13 @@ body { font-family: var(--font); background: var(--off); color: var(--dark); min
   margin-top: 4px;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
+.ol-side-outlet {
+  font-size: 10px; font-weight: 600;
+  color: var(--teal-d);
+  margin-top: 3px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  opacity: .8;
+}
 
 .ol-side-nav {
   padding: 12px 10px 20px;

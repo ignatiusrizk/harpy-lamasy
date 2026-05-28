@@ -194,9 +194,14 @@ function renderTopbar(string $activePage = '', bool $minimalMode = false): void 
       <aside class="ol-side">
         <div class="ol-side-brand">
           <div class="ol-side-logo">LAMASY</div>
-          <div class="ol-side-sub" title="<?= htmlspecialchars($outletNama) ?>">
-            <?= htmlspecialchars($outletNama) ?>
+          <div class="ol-side-sub" title="<?= htmlspecialchars($brandNama) ?>">
+            <?= htmlspecialchars($brandNama) ?>
           </div>
+          <?php if ($activeOutletNama !== $brandNama): ?>
+          <div class="ol-side-outlet" title="<?= htmlspecialchars($activeOutletNama) ?>">
+            📍 <?= htmlspecialchars($activeOutletNama) ?>
+          </div>
+          <?php endif; ?>
         </div>
 
         <?php if (!$minimalMode): ?>
