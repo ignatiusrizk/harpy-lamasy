@@ -105,24 +105,35 @@ if (($_GET['action'] ?? '') === 'ai_briefing') {
         exit;
     }
 
-    // HQ adalah tenant-level, bukan outlet-level → query coin langsung dari tabel tenants
+    // HQ adalah tenant-level → cek effective coin (shared pool + trial coins dari outlet trial)
     $costBriefing = CoinLedger::COSTS['ai_briefing_hq'] ?? 80;
-    $tenantCoin = (int)($hqTenant['coin_balance'] ?? 0);
-    if ($tenantCoin < $costBriefing) {
-        echo json_encode(['error' => "Coin tenant tidak cukup. Butuh $costBriefing coin, saldo: $tenantCoin"]);
+    $tenantCoin   = (int)($hqTenant['coin_balance'] ?? 0);
+
+    // Hitung trial coin pool dari semua outlet yang masih trial
+    $trialCoinQ = $db->prepare(
+        "SELECT COALESCE(SUM(trial_coin_balance), 0) FROM outlets WHERE tenant_id=? AND status='trial'"
+    );
+    $trialCoinQ->execute([$tid]);
+    $trialCoinPool = (int)$trialCoinQ->fetchColumn();
+    $effectiveCoin = $tenantCoin + $trialCoinPool;
+
+    if ($effectiveCoin < $costBriefing) {
+        echo json_encode(['error' => "Coin tidak cukup. Butuh $costBriefing coin, saldo: " . number_format($effectiveCoin)]);
         exit;
     }
 
     try {
         $b = AIInsight::briefingHQ($aiData, $tid);
         if (empty($b['from_cache'])) {
-            // Deduct tenant-scoped: update tenants.coin_balance + catat ledger
+            // Deduct dengan prioritas: tenants.coin_balance dulu, fallback ke trial_coin_balance outlet
             try {
                 $db->beginTransaction();
                 $st = $db->prepare("SELECT coin_balance FROM tenants WHERE id=? FOR UPDATE");
                 $st->execute([$tid]);
                 $cur = (int)$st->fetchColumn();
+
                 if ($cur >= $costBriefing) {
+                    // Cukup dari shared pool
                     $newBal = $cur - $costBriefing;
                     $db->prepare("UPDATE tenants SET coin_balance=? WHERE id=?")
                        ->execute([$newBal, $tid]);
@@ -131,10 +142,29 @@ if (($_GET['action'] ?? '') === 'ai_briefing') {
                         VALUES (?, NULL, 'deduct', ?, ?, ?, ?, ?)")
                        ->execute([$tid, $costBriefing, 'ai_briefing_hq',
                                   'AI Briefing HQ ' . date('Y-m-d'), $newBal, 'briefing_hq_'.date('Y-m-d')]);
-                    $db->commit();
                 } else {
-                    $db->rollBack();
+                    // Shared pool kurang → potong dari trial_coin_balance outlet utama
+                    $trialOutletQ = $db->prepare(
+                        "SELECT id, trial_coin_balance FROM outlets
+                          WHERE tenant_id=? AND status='trial' AND trial_coin_balance >= ?
+                          ORDER BY is_main DESC, created_at ASC LIMIT 1 FOR UPDATE"
+                    );
+                    $trialOutletQ->execute([$tid, $costBriefing]);
+                    $trialOutlet = $trialOutletQ->fetch();
+
+                    if ($trialOutlet) {
+                        $newTrialBal = (int)$trialOutlet['trial_coin_balance'] - $costBriefing;
+                        $db->prepare("UPDATE outlets SET trial_coin_balance=? WHERE id=?")
+                           ->execute([$newTrialBal, $trialOutlet['id']]);
+                        $db->prepare("INSERT INTO coin_ledger
+                            (tenant_id, outlet_id, type, amount, feature_used, description, balance_after, ref_id)
+                            VALUES (?, ?, 'deduct', ?, ?, ?, ?, ?)")
+                           ->execute([$tid, $trialOutlet['id'], $costBriefing, 'ai_briefing_hq',
+                                      '[TRIAL] AI Briefing HQ ' . date('Y-m-d'), $newTrialBal,
+                                      'briefing_hq_'.date('Y-m-d')]);
+                    }
                 }
+                $db->commit();
             } catch (Throwable $e) {
                 if ($db->inTransaction()) $db->rollBack();
                 error_log('[hq/ai_briefing] deduct gagal: ' . $e->getMessage());
