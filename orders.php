@@ -1311,13 +1311,13 @@ async function openDetail(id) {
         <tbody id="editItemsBody"></tbody>
       </table>
     </div>
-    <button class="btn btn-teal-sm btn-sm" onclick="addEditRow()" style="margin-bottom:12px">+ Tambah Item</button>
+    ${CAN_EDIT_ORDER ? '<button class="btn btn-teal-sm btn-sm" onclick="addEditRow()" style="margin-bottom:12px">+ Tambah Item</button>' : ''}
 
-    <div style="margin-bottom:12px">
+    ${CAN_EDIT_ORDER ? `<div style="margin-bottom:12px">
       <input type="text" placeholder="🔍 Cari & tambah layanan..." oninput="filterEditLayanan(this.value)" id="editLayananSearch"
         style="margin-bottom:6px;font-size:13px;padding:7px 10px"/>
       <div id="editLayananGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:5px;max-height:150px;overflow-y:auto"></div>
-    </div>
+    </div>` : ''}
 
     <div class="total-box" id="editTotalBox">
       <div class="tb-row"><span class="tb-label">Subtotal</span><span class="tb-value" id="etSubtotal">-</span></div>
@@ -1456,8 +1456,8 @@ function renderEditItems() {
       <td><select class="item-input" style="width:52px" onchange="editItems[${i}].satuan=this.value">
         ${['kg','pcs','set','pasang'].map(s=>`<option value="${s}" ${item.satuan===s?'selected':''}>${s}</option>`).join('')}
       </select></td>
-      <td><input class="item-input" type="number" value="${item.jumlah}" step="0.1" min="0" style="width:52px" oninput="editItems[${i}].jumlah=parseFloat(this.value)||0;recalcEdit()"/></td>
-      <td><input class="item-input" type="number" value="${item.harga_satuan}" step="500" min="0" style="width:80px" oninput="editItems[${i}].harga_satuan=parseFloat(this.value)||0;recalcEdit()"/></td>
+      <td>${CAN_EDIT_ORDER ? `<input class="item-input" type="number" value="${item.jumlah}" step="0.1" min="0" style="width:52px" oninput="editItems[${i}].jumlah=parseFloat(this.value)||0;recalcEdit()"/>` : `<span style="font-family:var(--mono);font-size:13px">${item.jumlah}</span>`}</td>
+      <td>${CAN_EDIT_ORDER ? `<input class="item-input" type="number" value="${item.harga_satuan}" step="500" min="0" style="width:80px" oninput="editItems[${i}].harga_satuan=parseFloat(this.value)||0;recalcEdit()"/>` : `<span style="font-family:var(--mono);font-size:13px">Rp ${item.harga_satuan.toLocaleString('id-ID')}</span>`}</td>
       <td class="item-sub">Rp ${(item.jumlah*item.harga_satuan).toLocaleString('id-ID')}</td>
       <td><input class="item-input" value="${esc(item.catatan_item||'')}" placeholder="..." style="width:60px" oninput="editItems[${i}].catatan_item=this.value"/></td>
       <td><button class="btn-remove" onclick="removeEditItem(${i})">✕</button></td>
