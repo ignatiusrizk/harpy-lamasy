@@ -29,7 +29,12 @@ $tenantId    = $result['tenant_id'] ?? 0;
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title><?= $ok ? 'Email Terverifikasi' : 'Verifikasi Gagal' ?> — LAMASY</title>
+<title><?php
+    if ($ok) echo 'Email Terverifikasi';
+    elseif ($alreadyUsed) echo 'Link Sudah Digunakan';
+    elseif ($expired) echo 'Link Kadaluarsa';
+    else echo 'Verifikasi Gagal';
+?> — LAMASY</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {

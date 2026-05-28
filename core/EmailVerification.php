@@ -121,7 +121,12 @@ class EmailVerification
         }
 
         if (strtotime($row['expires_at']) < time()) {
-            return ['ok' => false, 'message' => 'Link verifikasi sudah kadaluarsa. Minta kirim ulang.', 'expired' => true];
+            return [
+                'ok'        => false,
+                'message'   => 'Link verifikasi sudah kadaluarsa. Minta kirim ulang.',
+                'expired'   => true,
+                'tenant_id' => (int)$row['tenant_id'],
+            ];
         }
 
         // Tandai sebagai sudah digunakan

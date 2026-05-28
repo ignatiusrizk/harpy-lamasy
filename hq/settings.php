@@ -880,7 +880,17 @@ async function loadCoin(){
     return;
   }
   const isShared = d.coin_mode === 'shared';
-  document.getElementById('outletCoinList').innerHTML = d.outlets.map(o => `
+  let html = '';
+  // Di mode shared: tampilkan info pool bersama di atas daftar outlet
+  if (isShared) {
+    html += `<div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:9px;padding:10px 14px;margin-bottom:12px;font-size:13px;color:#1D4ED8;display:flex;align-items:center;gap:8px;">
+      <span style="font-size:18px">🔗</span>
+      <span>Mode <strong>Shared</strong> — semua outlet memakai pool bersama:
+        <strong>${fmt(d.tenant_coin)} coin</strong>
+      </span>
+    </div>`;
+  }
+  html += d.outlets.map(o => `
     <div class="outlet-coin-row">
       <div>
         <span class="outlet-name">📍 ${escapeHtml(o.nama_outlet)}</span>
@@ -890,7 +900,9 @@ async function loadCoin(){
         ${fmt(o.trial_coin_balance || 0)}<small>Coin Trial</small>
       </div>
       <div class="coin-num">
-        ${isShared ? '<span style="color:#9CA3AF;font-style:italic;font-size:11px">(shared)</span>' : fmt(o.coin_balance || 0)}
+        ${isShared
+          ? `<span style="color:#9CA3AF;font-style:italic;font-size:11px">(shared)</span>`
+          : fmt(o.coin_balance || 0)}
         <small>Coin Real</small>
       </div>
       <div>
@@ -902,6 +914,7 @@ async function loadCoin(){
       </div>
     </div>
   `).join('');
+  document.getElementById('outletCoinList').innerHTML = html;
 }
 
 async function loadTopupHistory(){

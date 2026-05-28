@@ -52,10 +52,15 @@ if ($action === 'monitor') {
 if ($action === 'set_budget' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     header('Content-Type: application/json');
     if (!$canManage) { echo json_encode(['error'=>'Akses ditolak']); exit; }
+    // CSRF: token dikirim via header X-CSRF-Token
+    $csrfGiven = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
+    if (!$csrfGiven || !hash_equals(getCsrfToken(), $csrfGiven)) {
+        http_response_code(403);
+        echo json_encode(['error'=>'CSRF mismatch']); exit;
+    }
     $d = json_decode(file_get_contents('php://input'), true) ?: [];
     try {
         CoinLedger::setBudget($tid, (int)($d['outlet_id'] ?? 0), (int)($d['budget'] ?? 0));
-        try { logAudit('set_budget', 'billing', 'Set budget coin outlet #'.($d['outlet_id']??''), (string)($d['outlet_id']??'')); } catch (Throwable) {}
         echo json_encode(['ok'=>true]);
     } catch (Throwable $e) { echo json_encode(['error'=>$e->getMessage()]); }
     exit;
@@ -65,11 +70,16 @@ if ($action === 'set_budget' && $_SERVER['REQUEST_METHOD'] === 'POST') {
 if ($action === 'transfer' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     header('Content-Type: application/json');
     if (!$canManage) { echo json_encode(['error'=>'Akses ditolak']); exit; }
+    // CSRF: token dikirim via header X-CSRF-Token
+    $csrfGiven = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
+    if (!$csrfGiven || !hash_equals(getCsrfToken(), $csrfGiven)) {
+        http_response_code(403);
+        echo json_encode(['error'=>'CSRF mismatch']); exit;
+    }
     $d = json_decode(file_get_contents('php://input'), true) ?: [];
     try {
         CoinLedger::transferBetweenOutlets($tid,
             (int)($d['from'] ?? 0), (int)($d['to'] ?? 0), (int)($d['amount'] ?? 0), $d['desc'] ?? '');
-        try { logAudit('transfer', 'billing', "Transfer {$d['amount']} coin outlet {$d['from']}→{$d['to']}"); } catch (Throwable) {}
         echo json_encode(['ok'=>true]);
     } catch (Throwable $e) { echo json_encode(['error'=>$e->getMessage()]); }
     exit;
@@ -200,6 +210,15 @@ const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;
 const fmt = n => Number(n||0).toLocaleString('id-ID');
 const CAN_MANAGE = <?= $canManage ? 'true':'false' ?>;
 const COIN_MODE = '<?= $coinMode ?>';
+const CSRF_TOKEN = <?= json_encode(getCsrfToken()) ?>;
+
+function apiFetch(url, body) {
+  return fetch(url, {
+    method: 'POST',
+    headers: {'Content-Type':'application/json', 'X-CSRF-Token': CSRF_TOKEN},
+    body: JSON.stringify(body),
+  });
+}
 const FEATURE_LABEL = {
   generate_nota:'🧾 Nota', send_wa_notif:'💬 WA Notif', send_wa_nota:'💬 WA Nota',
   ai_briefing:'✨ AI Briefing', ai_briefing_hq:'✨ AI Briefing HQ', ai_insight_laporan:'✨ AI Insight',
@@ -215,15 +234,20 @@ async function loadMonitor(){
     const r = await fetch(`/hq/billing.php?action=monitor&start=${start}&end=${end}`);
     const d = await r.json();
     if (d.error){ document.getElementById('outletBox').innerHTML = `<div class="empty">⚠️ ${esc(d.error)}</div>`; return; }
-    renderOutlets(d.by_outlet);
+    renderOutlets(d.by_outlet, d.tenant_balance);
     renderFeatures(d.by_feature);
   } catch(e){ document.getElementById('outletBox').innerHTML = `<div class="empty">⚠️ ${esc(e.message)}</div>`; }
 }
 
-function renderOutlets(rows){
+// Simpan tenant_balance dari response monitor untuk dipakai di renderOutlets
+let _tenantBalance = 0;
+
+function renderOutlets(rows, tenantBalance){
+  _tenantBalance = tenantBalance || 0;
   const box = document.getElementById('outletBox');
   if (!rows.length){ box.innerHTML = '<div class="empty">Belum ada data.</div>'; return; }
   const maxUsed = Math.max(...rows.map(r=>Number(r.used)), 1);
+  const isShared = COIN_MODE === 'shared';
   let html = '<table class="tbl"><thead><tr><th>Outlet</th><th style="text-align:right">Saldo</th><th style="text-align:right">Terpakai</th><th>Budget/bln</th>'+(CAN_MANAGE?'<th></th>':'')+'</tr></thead><tbody>';
   rows.forEach(o => {
     const used = Number(o.used), budget = Number(o.coin_budget_monthly||0);
@@ -233,15 +257,25 @@ function renderOutlets(rows){
       ? `<div style="font-size:12px">${fmt(budget)}${overBudget?' <span class="budget-warn">⚠ lewat</span>':''}</div>
          <div class="bar"><div class="bar-fill ${overBudget?'over':''}" style="width:${Math.min(100,Math.round(used/budget*100))}%"></div></div>`
       : '<span style="color:#9CA3AF;font-size:12px">unlimited</span>';
+    // Di mode shared: saldo ditampilkan dari pool bersama (tenants.coin_balance)
+    // Di mode per_outlet: saldo outlet masing-masing
+    const saldoCell = isShared
+      ? `<span style="color:#9CA3AF;font-size:11px;font-style:italic">(shared)</span>`
+      : fmt(o.coin_balance);
     html += `<tr>
       <td><strong>${esc(o.nama_outlet)}</strong></td>
-      <td class="num">${fmt(o.coin_balance)}</td>
+      <td class="num">${saldoCell}</td>
       <td class="num">${fmt(used)}<div class="bar"><div class="bar-fill" style="width:${pct}%"></div></div></td>
       <td>${budgetTxt}</td>
       ${CAN_MANAGE?`<td><button class="btn btn-light btn-sm" onclick="openBudget(${o.outlet_id}, ${JSON.stringify(o.nama_outlet)}, ${budget})">🎯</button></td>`:''}
     </tr>`;
   });
   html += '</tbody></table>';
+  if (isShared) {
+    html += `<div style="margin-top:8px;font-size:12px;color:#6B7280;text-align:right">
+      Pool bersama: <strong style="color:#0F1C3A">${fmt(_tenantBalance)} coin</strong>
+    </div>`;
+  }
   box.innerHTML = html;
 }
 
@@ -270,7 +304,7 @@ function openBudget(oid, nama, cur){
 }
 async function saveBudget(){
   const body = {outlet_id: document.getElementById('bdOutlet').value, budget: document.getElementById('bdBudget').value};
-  const r = await fetch('/hq/billing.php?action=set_budget', {method:'POST', body:JSON.stringify(body)});
+  const r = await apiFetch('/hq/billing.php?action=set_budget', body);
   const d = await r.json();
   if (d.error){ alert('⚠️ '+d.error); return; }
   closeModal('budgetModal'); loadMonitor();
@@ -283,7 +317,7 @@ async function doTransfer(){
     from: document.getElementById('trFrom').value, to: document.getElementById('trTo').value,
     amount: document.getElementById('trAmount').value, desc: document.getElementById('trDesc').value,
   };
-  const r = await fetch('/hq/billing.php?action=transfer', {method:'POST', body:JSON.stringify(body)});
+  const r = await apiFetch('/hq/billing.php?action=transfer', body);
   const d = await r.json();
   if (d.error){ alert('⚠️ '+d.error); return; }
   alert('✅ Transfer berhasil!');

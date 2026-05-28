@@ -189,23 +189,64 @@ if ($action) {
 
     if ($action === 'topup') {
         saVerifyCsrf();
-        $id     = (int)($_POST['tenant_id'] ?? 0);
-        $amount = (int)($_POST['amount'] ?? 0);
-        $note   = trim($_POST['note'] ?? '');
+        $id       = (int)($_POST['tenant_id'] ?? 0);
+        $amount   = (int)($_POST['amount'] ?? 0);
+        $note     = trim($_POST['note'] ?? '');
+        $outletId = (int)($_POST['outlet_id'] ?? 0);
         if ($amount <= 0) { echo json_encode(['error' => 'Jumlah tidak valid.']); exit; }
         try {
             $db->beginTransaction();
-            $stm = $db->prepare("SELECT coin_balance FROM tenants WHERE id=?");
-            $stm->execute([$id]);
-            $bal    = (int)$stm->fetchColumn();
-            $newBal = $bal + $amount;
-            $db->prepare("UPDATE tenants SET coin_balance=? WHERE id=?")->execute([$newBal, $id]);
-            $db->prepare("INSERT INTO coin_ledger (tenant_id,type,amount,feature_used,description,balance_after) VALUES (?,'topup',?,'manual_topup',?,?)")
-               ->execute([$id, $amount, $note ?: 'Manual topup by super admin', $newBal]);
-            $db->commit();
-            logSuperAdminAction('topup_coin', $id, "Topup $amount coin");
-            echo json_encode(['success' => true, 'new_balance' => $newBal]);
+            // Tentukan mode: per_outlet → topup ke outlets.coin_balance jika outlet_id diberikan
+            $modeRow = $db->prepare("SELECT coin_mode FROM tenants WHERE id=? LIMIT 1");
+            $modeRow->execute([$id]);
+            $coinMode = $modeRow->fetchColumn() ?: 'shared';
+
+            if ($coinMode === 'per_outlet' && $outletId > 0) {
+                // Validasi outlet milik tenant ini
+                $oVal = $db->prepare("SELECT coin_balance FROM outlets WHERE id=? AND tenant_id=? FOR UPDATE");
+                $oVal->execute([$outletId, $id]);
+                $oRow = $oVal->fetch();
+                if (!$oRow) {
+                    $db->rollBack();
+                    echo json_encode(['error' => 'Outlet tidak valid.']); exit;
+                }
+                $newBal = (int)$oRow['coin_balance'] + $amount;
+                $db->prepare("UPDATE outlets SET coin_balance=? WHERE id=? AND tenant_id=?")->execute([$newBal, $outletId, $id]);
+                $db->prepare("INSERT INTO coin_ledger (tenant_id, outlet_id, type, amount, feature_used, description, balance_after)
+                              VALUES (?, ?, 'topup', ?, 'manual_topup', ?, ?)")
+                   ->execute([$id, $outletId, $amount, $note ?: 'Manual topup (per-outlet) by super admin', $newBal]);
+                $db->commit();
+                logSuperAdminAction('topup_coin', $id, "Topup $amount coin → outlet #$outletId");
+                echo json_encode(['success' => true, 'new_balance' => $newBal, 'mode' => 'per_outlet']);
+            } else {
+                // Shared mode → topup ke tenants.coin_balance
+                $stm = $db->prepare("SELECT coin_balance FROM tenants WHERE id=? FOR UPDATE");
+                $stm->execute([$id]);
+                $bal    = (int)$stm->fetchColumn();
+                $newBal = $bal + $amount;
+                $db->prepare("UPDATE tenants SET coin_balance=? WHERE id=?")->execute([$newBal, $id]);
+                $db->prepare("INSERT INTO coin_ledger (tenant_id, type, amount, feature_used, description, balance_after)
+                              VALUES (?, 'topup', ?, 'manual_topup', ?, ?)")
+                   ->execute([$id, $amount, $note ?: 'Manual topup by super admin', $newBal]);
+                $db->commit();
+                logSuperAdminAction('topup_coin', $id, "Topup $amount coin (shared)");
+                echo json_encode(['success' => true, 'new_balance' => $newBal, 'mode' => 'shared']);
+            }
         } catch (Throwable $e) { $db->rollBack(); echo json_encode(['error' => $e->getMessage()]); }
+        exit;
+    }
+
+    if ($action === 'set_coin_mode') {
+        saVerifyCsrf();
+        $id   = (int)($_POST['tenant_id'] ?? 0);
+        $mode = ($_POST['mode'] ?? '') === 'per_outlet' ? 'per_outlet' : 'shared';
+        try {
+            $db->prepare("UPDATE tenants SET coin_mode=? WHERE id=?")->execute([$mode, $id]);
+            logSuperAdminAction('set_coin_mode', $id, "Coin mode diubah ke: $mode");
+            echo json_encode(['success' => true, 'mode' => $mode]);
+        } catch (Throwable $e) {
+            echo json_encode(['error' => $e->getMessage()]);
+        }
         exit;
     }
 
@@ -388,6 +429,16 @@ if (!empty($tenant['package_id'])) {
     $pkgSt->execute([$tenant['package_id']]);
     $packageInfo = $pkgSt->fetch(PDO::FETCH_ASSOC);
 }
+
+// Coin mode & outlet list (untuk topup per-outlet)
+$coinMode = $tenant['coin_mode'] ?? 'shared';
+$outletListQ = $db->prepare(
+    "SELECT id, nama_outlet, status, coin_balance, trial_coin_balance
+       FROM outlets WHERE tenant_id=? AND status NOT IN ('closed')
+      ORDER BY is_main DESC, nama_outlet ASC"
+);
+$outletListQ->execute([$tenantId]);
+$outletList = $outletListQ->fetchAll(PDO::FETCH_ASSOC);
 
 // Billing stats (lifetime)
 $bsSt = $db->prepare(
@@ -790,16 +841,36 @@ $billingStat = $bsSt->fetch(PDO::FETCH_ASSOC);
   <div class="sa-grid-2">
     <!-- Topup Coin -->
     <div class="sa-card" id="topupSection">
-      <div class="sa-card-header"><h3>🪙 Topup Coin</h3></div>
+      <div class="sa-card-header">
+        <h3>🪙 Topup Coin</h3>
+        <span style="font-size:11px;background:<?= $coinMode === 'per_outlet' ? '#7C3AED' : '#0369A1' ?>;color:#fff;padding:3px 10px;border-radius:100px;font-weight:700;letter-spacing:.04em;">
+          <?= $coinMode === 'per_outlet' ? 'PER-OUTLET' : 'SHARED' ?>
+        </span>
+      </div>
       <div class="sa-card-body">
         <p style="font-size:13px;color:rgba(255,255,255,.5);margin-bottom:14px;">
-          Saldo saat ini: <strong style="color:#FCD34D;"><?= number_format($effectiveCoin) ?> coin</strong>
+          Saldo shared: <strong style="color:#FCD34D;"><?= number_format($tenant['coin_balance']) ?> coin</strong>
           <?php if ($trialCoinTotal > 0): ?>
             <span style="font-size:11px;background:#FEF3C7;color:#92400E;border-radius:4px;padding:1px 6px;margin-left:4px;">
               🎁 <?= number_format($trialCoinTotal) ?> trial
             </span>
           <?php endif; ?>
         </p>
+        <?php if ($coinMode === 'per_outlet'): ?>
+        <div class="form-group" style="margin-bottom:12px;">
+          <label style="font-size:11px;color:rgba(255,255,255,.4);font-weight:600;letter-spacing:.06em;text-transform:uppercase;">Outlet Tujuan</label>
+          <select id="topupOutletId" style="width:100%;margin-top:6px;padding:10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:8px;color:#fff;font-family:var(--font);font-size:13px;">
+            <?php foreach ($outletList as $o): ?>
+              <option value="<?= (int)$o['id'] ?>">
+                <?= htmlspecialchars($o['nama_outlet']) ?>
+                (<?= ucfirst($o['status']) ?>, <?= number_format((int)$o['coin_balance']) ?> coin)
+              </option>
+            <?php endforeach; ?>
+          </select>
+        </div>
+        <?php else: ?>
+        <input type="hidden" id="topupOutletId" value="0">
+        <?php endif; ?>
         <div class="form-group" style="margin-bottom:12px;">
           <label style="font-size:11px;color:rgba(255,255,255,.4);font-weight:600;letter-spacing:.06em;text-transform:uppercase;">Jumlah Coin</label>
           <input type="number" id="topupAmt" placeholder="Contoh: 50000" style="width:100%;margin-top:6px;padding:10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:8px;color:#fff;font-family:var(--font);font-size:14px;"/>
@@ -809,6 +880,33 @@ $billingStat = $bsSt->fetch(PDO::FETCH_ASSOC);
           <input type="text" id="topupNoteAksi" placeholder="Alasan topup..." style="width:100%;margin-top:6px;padding:10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:8px;color:#fff;font-family:var(--font);font-size:14px;"/>
         </div>
         <button class="sa-btn sa-btn-primary" onclick="doTopup()">Topup Sekarang</button>
+      </div>
+    </div>
+
+    <!-- Coin Mode Toggle -->
+    <div class="sa-card">
+      <div class="sa-card-header"><h3>⚙️ Mode Coin</h3></div>
+      <div class="sa-card-body">
+        <p style="font-size:13px;color:rgba(255,255,255,.5);margin-bottom:14px;">
+          Mode aktif saat ini: <strong style="color:#FCD34D;"><?= $coinMode === 'per_outlet' ? 'Per-Outlet' : 'Shared' ?></strong>
+        </p>
+        <p style="font-size:12px;color:rgba(255,255,255,.35);margin-bottom:14px;line-height:1.5;">
+          <strong style="color:rgba(255,255,255,.5)">Shared</strong>: semua outlet pakai 1 pool coin bersama (tenants.coin_balance).<br>
+          <strong style="color:rgba(255,255,255,.5)">Per-Outlet</strong>: setiap outlet punya saldo sendiri (outlets.coin_balance). Topup harus per outlet.
+        </p>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          <button class="sa-btn <?= $coinMode === 'shared' ? 'sa-btn-primary' : 'sa-btn-outline' ?>"
+                  onclick="setCoinMode('shared')" <?= $coinMode === 'shared' ? 'disabled' : '' ?>>
+            🔗 Shared
+          </button>
+          <button class="sa-btn <?= $coinMode === 'per_outlet' ? 'sa-btn-primary' : 'sa-btn-outline' ?>"
+                  onclick="setCoinMode('per_outlet')" <?= $coinMode === 'per_outlet' ? 'disabled' : '' ?>>
+            📍 Per-Outlet
+          </button>
+        </div>
+        <p style="font-size:11px;color:rgba(255,255,255,.25);margin-top:10px;">
+          ⚠️ Mengubah mode tidak memindahkan saldo secara otomatis. Pastikan saldo outlet sudah benar setelah mengganti mode.
+        </p>
       </div>
     </div>
 
@@ -1278,14 +1376,27 @@ function doAction(act) {
 }
 
 function doTopup() {
-  const amt  = document.getElementById('topupAmt').value;
-  const note = document.getElementById('topupNoteAksi').value;
+  const amt      = document.getElementById('topupAmt').value;
+  const note     = document.getElementById('topupNoteAksi').value;
+  const outletEl = document.getElementById('topupOutletId');
+  const outlet_id = outletEl ? outletEl.value : 0;
   if (!amt || amt < 1) { saShowToast('Jumlah harus > 0', 'error'); return; }
-  saPost(`client_detail.php?action=topup`, { tenant_id: TENANT_ID, amount: amt, note })
+  saPost(`client_detail.php?action=topup`, { tenant_id: TENANT_ID, amount: amt, note, outlet_id })
     .then(r=>r.json()).then(d => {
       if (d.error) { saShowToast(d.error, 'error'); return; }
-      saShowToast('Topup berhasil! Saldo baru: ' + parseInt(d.new_balance).toLocaleString('id-ID'), 'success');
+      const label = d.mode === 'per_outlet' ? 'Outlet saldo baru' : 'Pool saldo baru';
+      saShowToast('Topup berhasil! ' + label + ': ' + parseInt(d.new_balance).toLocaleString('id-ID'), 'success');
       setTimeout(() => location.reload(), 1500);
+    });
+}
+
+function setCoinMode(mode) {
+  if (!confirm('Ubah coin mode ke "' + mode + '"?\n\n⚠️ Saldo tidak dipindahkan otomatis. Pastikan saldo outlet sudah benar.')) return;
+  saPost(`client_detail.php?action=set_coin_mode`, { tenant_id: TENANT_ID, mode })
+    .then(r=>r.json()).then(d => {
+      if (d.error) { saShowToast(d.error, 'error'); return; }
+      saShowToast('Mode coin diubah ke: ' + d.mode, 'success');
+      setTimeout(() => location.reload(), 1200);
     });
 }
 
