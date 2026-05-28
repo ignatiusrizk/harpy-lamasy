@@ -75,7 +75,7 @@ if ($action === 'transfer' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     exit;
 }
 
-$outlets = $db->prepare("SELECT id, nama_outlet, coin_balance FROM outlets WHERE tenant_id=? AND status IN ('trial','grace','active') ORDER BY is_main DESC, nama_outlet");
+$outlets = $db->prepare("SELECT id, nama_outlet, status, coin_balance, trial_coin_balance FROM outlets WHERE tenant_id=? AND status IN ('trial','grace','active') ORDER BY is_main DESC, nama_outlet");
 $outlets->execute([$tid]);
 $outletList = $outlets->fetchAll(PDO::FETCH_ASSOC);
 
@@ -149,7 +149,15 @@ require __DIR__ . '/_layout_open.php';
     <h3>🔄 Transfer Coin Antar Outlet</h3>
     <div class="fld">
       <label>Dari Outlet</label>
-      <select id="trFrom"><?php foreach ($outletList as $o): ?><option value="<?= (int)$o['id'] ?>"><?= htmlspecialchars($o['nama_outlet']) ?> (<?= number_format((int)$o['coin_balance']) ?> coin)</option><?php endforeach; ?></select>
+      <select id="trFrom"><?php foreach ($outletList as $o): ?>
+        <?php
+          // Trial outlet: tampilkan trial_coin_balance; outlet aktif: coin_balance
+          $oCoinShow = ($o['status'] === 'trial')
+            ? number_format((int)$o['trial_coin_balance']) . ' (trial)'
+            : number_format((int)$o['coin_balance']);
+        ?>
+        <option value="<?= (int)$o['id'] ?>"><?= htmlspecialchars($o['nama_outlet']) ?> — <?= $oCoinShow ?> coin</option>
+      <?php endforeach; ?></select>
     </div>
     <div class="fld">
       <label>Ke Outlet</label>

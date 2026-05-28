@@ -322,6 +322,15 @@ $stm->execute([$tenantId]);
 $tenant = $stm->fetch();
 if (!$tenant) { header('Location: clients.php'); exit; }
 
+// Effective coin = tenants.coin_balance (shared pool) + trial_coin_balance dari outlet trial
+// Trial coins disimpan terpisah di outlets.trial_coin_balance, bukan di tenants.coin_balance
+$trialCoinQ = $db->prepare(
+    "SELECT COALESCE(SUM(trial_coin_balance),0) FROM outlets WHERE tenant_id=? AND status='trial'"
+);
+$trialCoinQ->execute([$tenantId]);
+$trialCoinTotal = (int)$trialCoinQ->fetchColumn();
+$effectiveCoin  = (int)$tenant['coin_balance'] + $trialCoinTotal;
+
 $stm2 = $db->prepare("SELECT MAX(last_login) FROM hl_users WHERE tenant_id=?");
 $stm2->execute([$tenantId]);
 $lastLogin = $stm2->fetchColumn();
@@ -359,7 +368,7 @@ $txWeek    = (int)$db->prepare("SELECT COUNT(*) FROM hl_transaksi WHERE tenant_i
 $txStm     = $db->prepare("SELECT COUNT(*) FROM hl_transaksi WHERE tenant_id=? AND tanggal >= NOW()-INTERVAL 7 DAY");
 $txStm->execute([$tenantId]);
 $txWeek    = (int)$txStm->fetchColumn();
-$coinOk    = (int)$tenant['coin_balance'] > 20000;
+$coinOk    = $effectiveCoin > 20000;
 $layCount  = (int)$db->prepare("SELECT COUNT(*) FROM hl_layanan WHERE tenant_id=?")->execute([$tenantId]) ? 0 : 0;
 $laySt     = $db->prepare("SELECT COUNT(*) FROM hl_layanan WHERE tenant_id=?");
 $laySt->execute([$tenantId]);
@@ -451,7 +460,7 @@ $billingStat = $bsSt->fetch(PDO::FETCH_ASSOC);
             ['Owner', $tenant['owner_name']],
             ['WA Owner', $tenant['owner_wa']],
             ['Status', ucfirst($tenant['status'])],
-            ['Coin Balance', number_format($tenant['coin_balance']) . ' coin'],
+            ['Coin Balance', number_format($effectiveCoin) . ' coin' . ($trialCoinTotal > 0 ? ' (incl. ' . number_format($trialCoinTotal) . ' trial)' : '')],
             ['Trial Ends', $tenant['trial_ends_at'] ?: '-'],
             ['Provisioned', $tenant['provisioned_at'] ?: '-'],
             ['Bergabung', $tenant['created_at']],
@@ -495,7 +504,7 @@ $billingStat = $bsSt->fetch(PDO::FETCH_ASSOC);
     $healthCards = [
       ['Login 7 Hari', $loginOk, $loginOk ? 'Login: ' . ($lastLogin ? date('d M', strtotime($lastLogin)) : '-') : 'Belum login 7 hari', '🔐'],
       ['Transaksi Aktif', $txWeek > 0, "$txWeek transaksi minggu ini", '📋'],
-      ['Coin Cukup', $coinOk, number_format($tenant['coin_balance']) . ' coin', '🪙'],
+      ['Coin Cukup', $coinOk, number_format($effectiveCoin) . ' coin', '🪙'],
       ['Onboarding Done', $onboardOk, $layCount . ' layanan, ' . $orderStats['total_orders'] . ' order', '🚀'],
     ];
     foreach ($healthCards as [$label, $ok, $sub, $icon]):
@@ -602,9 +611,16 @@ $billingStat = $bsSt->fetch(PDO::FETCH_ASSOC);
         <div>
           <div style="font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:rgba(255,255,255,.35);margin-bottom:6px;">Saldo Coin</div>
           <div style="font-size:22px;font-weight:800;font-family:var(--mono);color:#FCD34D;">
-            <?= number_format($tenant['coin_balance']) ?>
+            <?= number_format($effectiveCoin) ?>
           </div>
-          <div style="font-size:11px;color:rgba(255,255,255,.35);">coin tersedia</div>
+          <div style="font-size:11px;color:rgba(255,255,255,.35);">
+            coin tersedia
+            <?php if ($trialCoinTotal > 0): ?>
+              <span style="color:#92400E;background:#FEF3C7;border-radius:3px;padding:1px 5px;margin-left:4px;">
+                🎁 <?= number_format($trialCoinTotal) ?> trial
+              </span>
+            <?php endif; ?>
+          </div>
         </div>
         <div>
           <div style="font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:rgba(255,255,255,.35);margin-bottom:6px;">Total Topup</div>
@@ -776,7 +792,14 @@ $billingStat = $bsSt->fetch(PDO::FETCH_ASSOC);
     <div class="sa-card" id="topupSection">
       <div class="sa-card-header"><h3>🪙 Topup Coin</h3></div>
       <div class="sa-card-body">
-        <p style="font-size:13px;color:rgba(255,255,255,.5);margin-bottom:14px;">Saldo saat ini: <strong style="color:#FCD34D;"><?= number_format($tenant['coin_balance']) ?> coin</strong></p>
+        <p style="font-size:13px;color:rgba(255,255,255,.5);margin-bottom:14px;">
+          Saldo saat ini: <strong style="color:#FCD34D;"><?= number_format($effectiveCoin) ?> coin</strong>
+          <?php if ($trialCoinTotal > 0): ?>
+            <span style="font-size:11px;background:#FEF3C7;color:#92400E;border-radius:4px;padding:1px 6px;margin-left:4px;">
+              🎁 <?= number_format($trialCoinTotal) ?> trial
+            </span>
+          <?php endif; ?>
+        </p>
         <div class="form-group" style="margin-bottom:12px;">
           <label style="font-size:11px;color:rgba(255,255,255,.4);font-weight:600;letter-spacing:.06em;text-transform:uppercase;">Jumlah Coin</label>
           <input type="number" id="topupAmt" placeholder="Contoh: 50000" style="width:100%;margin-top:6px;padding:10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:8px;color:#fff;font-family:var(--font);font-size:14px;"/>
@@ -837,9 +860,13 @@ $billingStat = $bsSt->fetch(PDO::FETCH_ASSOC);
 <div class="sa-modal-overlay" id="adjustModal">
   <div class="sa-modal" style="max-width:420px;">
     <h3>⚖️ Adjustment Coin</h3>
-    <p style="font-size:13px;color:rgba(255,255,255,.45);margin-bottom:18px;">
+    <p style="font-size:13px;color:rgba(255,255,255,.45);margin-bottom:4px;">
       Saldo saat ini: <strong style="color:#FCD34D;" id="adjCurrentBal"><?= number_format($tenant['coin_balance']) ?> coin</strong>
+      <?php if ($trialCoinTotal > 0): ?>
+        <span style="font-size:11px;background:#FEF3C7;color:#92400E;border-radius:4px;padding:1px 6px;margin-left:4px;">+ <?= number_format($trialCoinTotal) ?> trial (tidak terpengaruh)</span>
+      <?php endif; ?>
     </p>
+    <p style="font-size:11px;color:rgba(255,255,255,.25);margin-bottom:14px;">Adjustment hanya mengubah saldo shared pool (bukan coin trial).</p>
 
     <div style="display:flex;flex-direction:column;gap:14px;">
       <div>

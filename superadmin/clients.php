@@ -99,9 +99,13 @@ if ($action) {
         $cntStmt->execute($params);
         $total = (int)$cntStmt->fetchColumn();
 
-        // Data
+        // Data — effective_coin = tenants.coin_balance + SUM trial_coin dari outlet trial
         $stmt = $db->prepare(
-            "SELECT t.*, MAX(u.last_login) as last_login
+            "SELECT t.*, MAX(u.last_login) as last_login,
+               (t.coin_balance + COALESCE(
+                 (SELECT SUM(o2.trial_coin_balance) FROM outlets o2
+                  WHERE o2.tenant_id = t.id AND o2.status = 'trial'), 0
+               )) AS effective_coin
              FROM tenants t
              LEFT JOIN hl_users u ON u.tenant_id = t.id
              WHERE $whereStr
@@ -350,7 +354,12 @@ function renderRows(rows) {
       <td>${esc(t.owner_name)}</td>
       <td><a href="https://wa.me/${esc(t.owner_wa)}" target="_blank" style="color:#86efac;text-decoration:none;font-family:var(--mono);font-size:12px;">${esc(t.owner_wa)}</a></td>
       <td>${statusBadge(t.status)}</td>
-      <td>${coinHtml(t.coin_balance)}</td>
+      <td>
+        ${coinHtml(t.effective_coin ?? t.coin_balance)}
+        ${(parseInt(t.effective_coin||0) > parseInt(t.coin_balance||0))
+          ? `<div style="font-size:10px;color:#92400E;background:#FEF3C7;border-radius:3px;padding:1px 5px;margin-top:2px;display:inline-block;">🎁 incl. trial</div>`
+          : ''}
+      </td>
       <td style="font-size:12px;">${relTime(t.last_login)}</td>
       <td style="font-size:12px;color:rgba(255,255,255,.4);">${t.provisioned_at ? new Date(t.provisioned_at).toLocaleDateString('id-ID') : '-'}</td>
       <td>

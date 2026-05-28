@@ -306,8 +306,15 @@ $ownerWaFmt = preg_replace('/^628/', '08', $hqTenant['owner_wa'] ?? '');
 // Hitung jumlah outlet aktif
 $outletCnt = (int)$db->query("SELECT COUNT(*) FROM outlets WHERE tenant_id=$tid AND status IN ('trial','grace','active')")->fetchColumn();
 
-// Saldo tenant
+// Saldo tenant — effective coin = shared pool + trial coins dari semua outlet trial
+// trial_coin_balance disimpan per-outlet terpisah dari tenants.coin_balance
 $tenantCoin = (int)($hqTenant['coin_balance'] ?? 0);
+$trialCoinQ = $db->prepare(
+    "SELECT COALESCE(SUM(trial_coin_balance),0) FROM outlets WHERE tenant_id=? AND status='trial'"
+);
+$trialCoinQ->execute([$tid]);
+$trialCoinPool = (int)$trialCoinQ->fetchColumn();
+$effectiveCoin = $tenantCoin + $trialCoinPool; // total yang bisa dipakai sekarang
 $coinMode   = $hqTenant['coin_mode'] ?? 'shared';
 
 // Parse notif preferences
@@ -579,8 +586,15 @@ require __DIR__ . '/_layout_open.php';
 
     <div class="info-grid">
       <div class="info-card">
-        <div class="info-num"><?= number_format($tenantCoin) ?></div>
-        <div class="info-label">Saldo Tenant (Shared)</div>
+        <div class="info-num"><?= number_format($effectiveCoin) ?></div>
+        <div class="info-label">
+          Total Coin Tersedia
+          <?php if ($trialCoinPool > 0): ?>
+            <span style="display:block;font-size:10px;color:#92400E;background:#FEF3C7;border-radius:4px;padding:1px 6px;margin-top:3px;">
+              🎁 <?= number_format($trialCoinPool) ?> coin trial termasuk
+            </span>
+          <?php endif; ?>
+        </div>
       </div>
       <div class="info-card" style="border-color:rgba(245,158,11,.3);background:linear-gradient(135deg,#FFFBEB,#fff)">
         <div class="info-num"><?= $outletCnt ?></div>
