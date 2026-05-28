@@ -63,8 +63,8 @@ function aoUniqueSlug(string $base, int $tenantId): string {
     }
 }
 
-// Hitung outlet yang sudah ada
-$cntQ = Database::get()->prepare("SELECT COUNT(*) FROM outlets WHERE tenant_id=? AND status!='closed'");
+// Hitung outlet aktif yang sudah ada (exclude closed dan pending — pending belum dikonfirmasi)
+$cntQ = Database::get()->prepare("SELECT COUNT(*) FROM outlets WHERE tenant_id=? AND status NOT IN ('closed','pending')");
 $cntQ->execute([$tid]);
 $outletCount = (int)$cntQ->fetchColumn();
 
