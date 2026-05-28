@@ -365,6 +365,7 @@ async function loadAllPerms() {
 // ── SELECT ROLE → tampilkan permission matrix ─────────
 async function selectRole(id) {
   currentRoleId = id;
+  currentRolePerms = {}; // reset dulu sebelum fetch agar tidak ada race condition
   renderRoles();
 
   const role = allRoles.find(r=>r.id==id);
@@ -374,6 +375,8 @@ async function selectRole(id) {
   document.getElementById('permMatrix').innerHTML = '<div class="hl-loading">⏳ Memuat...</div>';
 
   const r = await fetch('settings.php?action=get_role_perms&role_id='+id);
+  // Hanya update jika ID masih sama (user belum pindah ke role lain saat loading)
+  if (currentRoleId !== id) return;
   currentRolePerms = await r.json();
 
   renderPermMatrix();
