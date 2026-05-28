@@ -173,7 +173,10 @@ function renderTopbar(string $activePage = '', bool $minimalMode = false): void 
     // ════════════════════════════════════════════════════════
     // Outlet Shell — sidebar + topbar tipis (Section 11.3)
     // ════════════════════════════════════════════════════════
-    $outletNama = $tenant['nama_outlet'] ?? 'Outlet';
+    // $outletNama dipakai untuk sidebar brand (tetap nama tenant/brand bisnis)
+    // Badge "📍 OUTLET" pakai nama outlet aktif dari TenantResolver
+    $outletNama       = $tenant['nama_outlet'] ?? 'Outlet';
+    $activeOutletNama = TenantResolver::namaOutlet() ?: $outletNama;
     $emphasisKeys = ['pos','orders']; // nav yang ditandai (POS/Order)
     $iconMap = [
       'dashboard'=>'🏠','pos'=>'🛒','orders'=>'📋','kas'=>'💰',
@@ -227,7 +230,7 @@ function renderTopbar(string $activePage = '', bool $minimalMode = false): void 
                     onclick="document.getElementById('olShell').classList.toggle('open')">☰</button>
             <?php endif; ?>
             <span class="ol-top-badge">📍 OUTLET</span>
-            <span class="ol-top-title"><?= htmlspecialchars($outletNama) ?></span>
+            <span class="ol-top-title"><?= htmlspecialchars($activeOutletNama) ?></span>
           </div>
           <div class="ol-top-right">
             <?php
