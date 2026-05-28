@@ -389,6 +389,7 @@ $billingStat = $bsSt->fetch(PDO::FETCH_ASSOC);
     <button class="sa-btn sa-btn-green" onclick="doAction('activate')">✅ Aktifkan</button>
     <?php endif; ?>
     <button class="sa-btn sa-btn-primary" onclick="openSection('topup')">🪙 Topup Coin</button>
+    <button class="sa-btn sa-btn-outline" onclick="openImpersonateModal()" title="Observasi tenant sebagai read-only">🔍 Observasi</button>
   </div>
 </div>
 
@@ -402,6 +403,8 @@ $billingStat = $bsSt->fetch(PDO::FETCH_ASSOC);
   <button class="sa-tab" onclick="showTab('tickets')">🎧 Tiket</button>
   <button class="sa-tab" onclick="showTab('notes')">📝 Notes</button>
   <button class="sa-tab" onclick="showTab('comms')">💬 Komunikasi</button>
+  <button class="sa-tab" onclick="showTab('aktivitas')">📅 Aktivitas</button>
+  <button class="sa-tab" onclick="showTab('tenant_errors');loadTenantErrors(1)">🚨 Errors</button>
   <button class="sa-tab" onclick="showTab('aksi')">⚙️ Aksi Manual</button>
 </div>
 
@@ -829,6 +832,111 @@ $billingStat = $bsSt->fetch(PDO::FETCH_ASSOC);
   </div>
 </div>
 
+<!-- Tab: Aktivitas -->
+<div class="sa-tab-panel" id="tab-aktivitas">
+  <div class="sa-card">
+    <div class="sa-card-header">
+      <h3>📅 Aktivitas Terakhir (30 Hari)</h3>
+      <span style="font-size:12px;color:rgba(255,255,255,.35);">Dari hl_audit_log</span>
+    </div>
+    <div class="sa-card-body">
+      <?php
+      try {
+          $actQ = Database::get()->prepare("
+              SELECT al.action, al.outlet_id, al.created_at,
+                     o.nama_outlet AS outlet_nama
+              FROM hl_audit_log al
+              LEFT JOIN outlets o ON o.id = al.outlet_id
+              WHERE al.tenant_id = ?
+                AND al.created_at >= NOW() - INTERVAL 30 DAY
+              ORDER BY al.created_at DESC
+              LIMIT 50
+          ");
+          $actQ->execute([$tenantId]);
+          $acts = $actQ->fetchAll(PDO::FETCH_ASSOC);
+          if ($acts): ?>
+          <div class="sa-table-wrap">
+            <table class="sa-table">
+              <thead><tr><th>Waktu</th><th>Aksi</th><th>Outlet</th></tr></thead>
+              <tbody>
+              <?php foreach ($acts as $a): ?>
+              <tr>
+                <td style="font-size:12px;font-family:var(--mono);color:rgba(255,255,255,.45);"><?= htmlspecialchars(substr($a['created_at'],0,16)) ?></td>
+                <td style="font-size:13px;"><?= htmlspecialchars($a['action']) ?></td>
+                <td style="font-size:12px;color:rgba(255,255,255,.5);"><?= htmlspecialchars($a['outlet_nama'] ?? '#'.$a['outlet_id']) ?></td>
+              </tr>
+              <?php endforeach; ?>
+              </tbody>
+            </table>
+          </div>
+          <?php else: ?>
+          <div style="color:rgba(255,255,255,.3);font-size:13px;padding:16px 0;">Belum ada aktivitas yang tercatat.</div>
+          <?php endif;
+      } catch (Throwable $e) {
+          echo '<div style="color:#FCA5A5;font-size:13px;">Gagal memuat aktivitas: ' . htmlspecialchars($e->getMessage()) . '</div>';
+      } ?>
+    </div>
+  </div>
+</div><!-- /#tab-aktivitas -->
+
+<!-- Tab: Errors -->
+<div class="sa-tab-panel" id="tab-tenant_errors">
+  <div class="sa-card">
+    <div class="sa-filter-bar">
+      <select id="tenantErrType" onchange="loadTenantErrors(1)">
+        <option value="">Semua Tipe</option>
+        <option value="php_error">php_error</option>
+        <option value="wa_error">wa_error</option>
+        <option value="ai_error">ai_error</option>
+        <option value="db_error">db_error</option>
+      </select>
+      <select id="tenantErrStatus" onchange="loadTenantErrors(1)">
+        <option value="new">New</option>
+        <option value="acknowledged">Acknowledged</option>
+        <option value="resolved">Resolved</option>
+        <option value="">Semua</option>
+      </select>
+      <button class="sa-btn sa-btn-outline sa-btn-sm" onclick="loadTenantErrors(1)">⟳ Refresh</button>
+    </div>
+    <div class="sa-table-wrap">
+      <table class="sa-table" id="tenantErrTable">
+        <thead>
+          <tr>
+            <th>Tipe</th><th>Pesan</th><th>Occurrences</th><th>Terakhir</th><th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="tenantErrTbody">
+          <tr><td colspan="5" style="text-align:center;color:rgba(255,255,255,.3);padding:32px;">Klik tab untuk memuat...</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div id="tenantErrPagination" class="sa-pagination"></div>
+  </div>
+</div><!-- /#tab-tenant_errors -->
+
+<!-- Impersonate modal -->
+<div class="sa-modal-overlay" id="impersonateModal">
+  <div class="sa-modal" style="max-width:460px;">
+    <h3>🔍 Observasi Tenant</h3>
+    <p style="font-size:13px;color:rgba(255,255,255,.55);line-height:1.6;margin-bottom:20px;">
+      Anda akan masuk ke dashboard tenant <strong><?= htmlspecialchars($tenant['nama_perusahaan'] ?: $tenant['nama_outlet']) ?></strong>
+      dalam <strong>mode read-only</strong>. Semua aksi tulis akan diblokir.<br><br>
+      Sesi ini akan dicatat di audit log.
+    </p>
+    <div style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:10px;padding:12px 16px;margin-bottom:20px;font-size:12.5px;color:#FCD34D;">
+      ⚠️ Jangan gunakan fitur ini untuk mengakses data sensitif tenant tanpa keperluan yang jelas.
+    </div>
+    <form method="POST" action="/superadmin/impersonate.php">
+      <input type="hidden" name="_csrf" value="<?= saGetCsrf() ?>">
+      <input type="hidden" name="tenant_id" value="<?= $tenantId ?>">
+      <div class="sa-modal-footer">
+        <button type="button" class="sa-btn sa-btn-outline" onclick="document.getElementById('impersonateModal').classList.remove('open')">Batal</button>
+        <button type="submit" class="sa-btn sa-btn-primary">🔍 Mulai Observasi</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <?php saRenderNavClose(); ?>
 
 <script>
@@ -1123,6 +1231,57 @@ function doResetPassword() {
       saShowToast('Password berhasil direset.', 'success');
       document.getElementById('newPassword').value = '';
     });
+}
+
+// ── Impersonate modal ──────────────────────────────
+function openImpersonateModal() {
+    document.getElementById('impersonateModal').classList.add('open');
+}
+
+// ── Tenant error log ──────────────────────────────
+let tenantErrPage = 1;
+async function loadTenantErrors(page) {
+    tenantErrPage = page;
+    const tbody  = document.getElementById('tenantErrTbody');
+    const type   = document.getElementById('tenantErrType').value;
+    const status = document.getElementById('tenantErrStatus').value;
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:rgba(255,255,255,.3);padding:24px;">Memuat...</td></tr>';
+
+    try {
+        const url = `/superadmin/health.php?action=errors&page=${page}&type=${encodeURIComponent(type)}&status=${encodeURIComponent(status)}&tenant_id=${TENANT_ID}`;
+        const resp = await fetch(url);
+        const d    = await resp.json();
+
+        if (!d.rows || !d.rows.length) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:rgba(255,255,255,.3);padding:24px;">Tidak ada error untuk tenant ini.</td></tr>';
+            document.getElementById('tenantErrPagination').innerHTML = '';
+            return;
+        }
+
+        const ETC = { php_error:'sa-badge-red', wa_error:'sa-badge-yellow', ai_error:'sa-badge-indigo', db_error:'sa-badge-red' };
+        tbody.innerHTML = d.rows.map(r => {
+            const badge = ETC[r.error_type] || 'sa-badge-yellow';
+            const sta = r.status === 'resolved' ? '✅ Resolved' : r.status === 'acknowledged' ? '👁 Acked' : '🔴 New';
+            return `<tr>
+              <td><span class="sa-badge ${badge}">${r.error_type}</span></td>
+              <td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${r.error_message}">${r.error_message.substring(0,80)}${r.error_message.length>80?'…':''}</td>
+              <td style="text-align:center;font-family:var(--mono);">${r.occurrence_count}</td>
+              <td style="font-size:11.5px;color:rgba(255,255,255,.4);">${(r.last_seen||'').substring(0,16)}</td>
+              <td>${sta}</td>
+            </tr>`;
+        }).join('');
+
+        // Pagination
+        const pg = document.getElementById('tenantErrPagination');
+        if (d.pages <= 1) { pg.innerHTML=''; return; }
+        let html = `<span style="font-size:12px;color:rgba(255,255,255,.35);">Hal ${d.page} / ${d.pages}</span>`;
+        if (d.page > 1)     html += `<button class="sa-btn sa-btn-sm sa-btn-outline" onclick="loadTenantErrors(${d.page-1})">← Prev</button>`;
+        if (d.page < d.pages) html += `<button class="sa-btn sa-btn-sm sa-btn-outline" onclick="loadTenantErrors(${d.page+1})">Next →</button>`;
+        pg.innerHTML = html;
+
+    } catch(e) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:#FCA5A5;padding:24px;">Gagal: ${e.message}</td></tr>`;
+    }
 }
 </script>
 </body>

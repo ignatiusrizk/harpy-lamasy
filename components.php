@@ -4,6 +4,59 @@
 // Pastikan tenant_guard.php sudah di-include sebelum file ini.
 // ══════════════════════════════════════════════════════
 
+// ════════════════════════════════════════
+// OBSERVER / IMPERSONATION HELPERS
+// ════════════════════════════════════════
+
+/**
+ * True jika superadmin sedang mengobservasi tenant ini.
+ */
+function isObserverMode(): bool
+{
+    return !empty($_SESSION['impersonating_tenant_id']);
+}
+
+/**
+ * Render banner observer yang selalu muncul di atas halaman.
+ * Panggil tepat setelah <body> atau setelah topbar.
+ */
+function renderObserverBanner(): void
+{
+    if (!isObserverMode()) return;
+
+    $adminName  = htmlspecialchars($_SESSION['impersonation_admin_name']  ?? 'Superadmin');
+    $tenantName = htmlspecialchars($_SESSION['impersonation_tenant_name'] ?? 'Tenant');
+    ?>
+    <div id="observerBanner" style="
+        position: sticky; top: 0; z-index: 9999;
+        background: linear-gradient(90deg, #4338CA, #6366F1);
+        color: #fff; padding: 10px 20px;
+        display: flex; align-items: center; justify-content: space-between; gap: 12px;
+        font-family: 'Plus Jakarta Sans', sans-serif; font-size: 13px;
+        box-shadow: 0 2px 12px rgba(99,102,241,.5);
+    ">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="background:rgba(255,255,255,.2);border-radius:6px;padding:3px 8px;font-size:11px;font-weight:700;letter-spacing:.06em;">
+          🔍 OBSERVER MODE
+        </span>
+        <span>
+          <strong><?= $adminName ?></strong> sedang mengobservasi tenant
+          <strong><?= $tenantName ?></strong> — <em>read-only</em>, tidak ada aksi yang berefek.
+        </span>
+      </div>
+      <a href="/superadmin/stop_impersonate.php"
+         style="background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);
+                color:#fff;padding:6px 14px;border-radius:7px;font-weight:700;
+                text-decoration:none;font-size:12px;white-space:nowrap;transition:background .15s;"
+         onmouseover="this.style.background='rgba(255,255,255,.25)'"
+         onmouseout="this.style.background='rgba(255,255,255,.15)'"
+         onclick="return confirm('Akhiri sesi observasi?')">
+        🚪 Akhiri Observasi
+      </a>
+    </div>
+    <?php
+}
+
 function renderHead(string $title = 'Harpy'): void {
     $csrf = getCsrfToken(); ?>
     <meta charset="UTF-8"/>
@@ -165,6 +218,7 @@ function renderTopbar(string $activePage = '', bool $minimalMode = false): void 
 
       <!-- ── MAIN AREA ── -->
       <div class="ol-main">
+        <?php renderObserverBanner(); ?>
         <header class="ol-top">
           <div class="ol-top-left">
             <?php if (!$minimalMode): ?>

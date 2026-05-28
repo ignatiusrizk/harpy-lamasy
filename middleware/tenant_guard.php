@@ -142,6 +142,34 @@ function requirePermission(string $kode): void
     }
 }
 
+// ── Observer / Impersonation mode ────────────────────
+// Blokir semua POST ketika superadmin sedang mengobservasi (read-only).
+// Dipanggil otomatis di sini sehingga seluruh halaman tenants terlindungi.
+if (!empty($_SESSION['impersonating_tenant_id'])
+    && $_SERVER['REQUEST_METHOD'] === 'POST'
+    && empty($_GET['action'] === '__bypass__')) // tidak ada bypass — ini hanya dokumentasi
+{
+    // Izinkan hanya request JSON agar halaman AJAX mendapat pesan jelas
+    if (!empty($_GET['action']) || !empty($_SERVER['HTTP_X_REQUESTED_WITH'])) {
+        header('Content-Type: application/json');
+        echo json_encode(['error' => 'Observer mode: operasi tulis tidak diizinkan.', 'observer' => true]);
+    } else {
+        http_response_code(403);
+        $adminName = htmlspecialchars($_SESSION['impersonation_admin_name'] ?? 'Superadmin');
+        die('<div style="font-family:sans-serif;padding:40px;text-align:center;background:#0F1C3A;color:#fff;min-height:100vh">
+            <h2 style="color:#F59E0B">🔍 Observer Mode</h2>
+            <p style="color:rgba(255,255,255,.6);max-width:380px;margin:0 auto 24px">
+              Sesi ini diobservasi oleh <strong>' . $adminName . '</strong>.<br>
+              Operasi tulis tidak diizinkan selama mode observasi.
+            </p>
+            <a href="/superadmin/stop_impersonate.php" style="background:#6366F1;color:#fff;padding:12px 28px;border-radius:8px;font-weight:700;text-decoration:none">
+              🚪 Akhiri Observasi
+            </a>
+        </div>');
+    }
+    exit;
+}
+
 // ── Grace mode: blokir operasi tulis ─────────────────
 // Dipanggil di action handler yang memodifikasi data.
 // Di grace period, user hanya boleh baca (view), tidak bisa create/update/delete.

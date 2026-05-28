@@ -7,8 +7,14 @@
 if (!defined('SA_ROOT')) define('SA_ROOT', dirname(__DIR__));
 require_once SA_ROOT . '/../master/config/db.php';
 require_once SA_ROOT . '/../core/Database.php';
+require_once SA_ROOT . '/../core/ErrorLogger.php';
+require_once SA_ROOT . '/../core/WaLogger.php';
+require_once SA_ROOT . '/../core/PlatformHealthRecorder.php';
 
 if (session_status() === PHP_SESSION_NONE) session_start();
+
+// Rekam snapshot harian (best-effort, sekali per hari)
+PlatformHealthRecorder::recordYesterdayIfNeeded();
 
 if (!isset($_SESSION['superadmin_id'])) {
     if (!empty($_GET['action']) || !empty($_SERVER['HTTP_X_REQUESTED_WITH'])) {

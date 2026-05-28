@@ -89,17 +89,23 @@ class AnthropicClient
         curl_close($ch);
 
         if ($raw === false) {
-            throw new RuntimeException("Anthropic API error: $err");
+            $msg = "Anthropic API cURL error: $err";
+            if (class_exists('ErrorLogger')) ErrorLogger::log('ai_error', $msg);
+            throw new RuntimeException($msg);
         }
         if ($http !== 200) {
             $errBody = json_decode($raw, true);
             $errMsg  = $errBody['error']['message'] ?? "HTTP $http";
-            throw new RuntimeException("Anthropic API error ($http): $errMsg");
+            $msg     = "Anthropic API error ($http): $errMsg";
+            if (class_exists('ErrorLogger')) ErrorLogger::log('ai_error', $msg, null, null, null, null, (string)$http);
+            throw new RuntimeException($msg);
         }
 
         $data = json_decode($raw, true);
         if (!is_array($data) || empty($data['content'])) {
-            throw new RuntimeException('Anthropic API returned invalid format.');
+            $msg = 'Anthropic API returned invalid format.';
+            if (class_exists('ErrorLogger')) ErrorLogger::log('ai_error', $msg);
+            throw new RuntimeException($msg);
         }
 
         // Extract text dari content blocks

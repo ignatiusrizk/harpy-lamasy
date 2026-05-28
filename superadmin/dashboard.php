@@ -336,6 +336,32 @@ if ($action) {
 
 </div>
 
+<!-- Platform Health Widget -->
+<div class="sa-card" style="margin-top:24px;">
+  <div class="sa-card-header">
+    <h3>🩺 Platform Health — Hari Ini</h3>
+    <a href="/superadmin/health.php" class="sa-btn sa-btn-sm sa-btn-outline">Detail →</a>
+  </div>
+  <div class="sa-card-body">
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;" id="healthWidget">
+      <div style="text-align:center;"><div id="hw-login" style="font-size:24px;font-weight:800;font-family:var(--mono);">—</div><div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:3px;">Login Hari Ini</div></div>
+      <div style="text-align:center;"><div id="hw-tx" style="font-size:24px;font-weight:800;font-family:var(--mono);">—</div><div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:3px;">Transaksi</div></div>
+      <div style="text-align:center;"><div id="hw-wa" style="font-size:24px;font-weight:800;font-family:var(--mono);">—</div><div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:3px;">WA Terkirim</div></div>
+      <div style="text-align:center;"><div id="hw-wa-rate" style="font-size:24px;font-weight:800;font-family:var(--mono);">—</div><div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:3px;">WA Rate</div></div>
+      <div style="text-align:center;"><div id="hw-ai" style="font-size:24px;font-weight:800;font-family:var(--mono);">—</div><div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:3px;">AI Calls</div></div>
+      <div style="text-align:center;"><div id="hw-coin" style="font-size:24px;font-weight:800;font-family:var(--mono);color:#FCD34D;">—</div><div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:3px;">Coin Dipakai</div></div>
+      <div style="text-align:center;"><div id="hw-rev" style="font-size:24px;font-weight:800;font-family:var(--mono);color:#6EE7B7;">—</div><div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:3px;">Revenue</div></div>
+      <div style="text-align:center;"><div id="hw-err" style="font-size:24px;font-weight:800;font-family:var(--mono);">—</div><div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:3px;">Errors</div></div>
+    </div>
+    <div id="hw-wa-alert" style="display:none;margin-top:14px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);border-radius:8px;padding:10px 14px;font-size:12.5px;color:#FCA5A5;">
+      ⚠️ WA delivery rate di bawah 95%! <a href="/superadmin/health.php" style="color:#FCA5A5;font-weight:700;">Cek di Health dashboard →</a>
+    </div>
+    <div id="hw-err-alert" style="display:none;margin-top:8px;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:8px;padding:10px 14px;font-size:12.5px;color:#FCD34D;">
+      ⚠️ Ada error baru hari ini. <a href="/superadmin/health.php#errors" style="color:#FCD34D;font-weight:700;">Lihat error log →</a>
+    </div>
+  </div>
+</div>
+
 <?php saRenderNavClose(); ?>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -515,6 +541,42 @@ fetch('dashboard.php?action=support_widget', { headers: { 'X-Requested-With': 'X
       </div>`;
     }
   }).catch(() => {});
+
+// ── Platform Health Widget ──────────────────────────
+async function loadHealthWidget() {
+    try {
+        const resp = await fetch('/superadmin/health.php?action=today');
+        if (!resp.ok) return;
+        const d = await resp.json();
+
+        const fmt = n => (n === null || n === undefined) ? '—' : Number(n).toLocaleString('id-ID');
+
+        document.getElementById('hw-login').textContent = fmt(d.login_today);
+        document.getElementById('hw-tx').textContent    = fmt(d.total_tx);
+        document.getElementById('hw-wa').textContent    = fmt(d.wa_sent);
+        document.getElementById('hw-ai').textContent    = fmt(d.ai_calls);
+        document.getElementById('hw-coin').textContent  = fmt(d.coin_burned);
+        document.getElementById('hw-rev').textContent   = 'Rp ' + fmt(d.revenue);
+        document.getElementById('hw-err').textContent   = fmt(d.error_count);
+
+        const rate = d.wa_rate;
+        const rateEl = document.getElementById('hw-wa-rate');
+        if (rate === null) {
+            rateEl.textContent = 'N/A';
+        } else {
+            rateEl.textContent = rate + '%';
+            rateEl.style.color = rate < 90 ? '#F87171' : rate < 95 ? '#FBBF24' : '#6EE7B7';
+        }
+
+        // Anomaly alerts
+        document.getElementById('hw-wa-alert').style.display = (rate !== null && rate < 95) ? '' : 'none';
+        document.getElementById('hw-err-alert').style.display = (d.error_count > 0) ? '' : 'none';
+
+    } catch(e) {
+        // Gagal silent — widget tidak kritis
+    }
+}
+loadHealthWidget();
 </script>
 </body>
 </html>

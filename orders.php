@@ -3,6 +3,8 @@ $activePage = 'orders';
 define('ROOT', __DIR__);
 require_once ROOT . '/middleware/tenant_guard.php';
 require_once ROOT . '/core/Loyalty.php';
+require_once ROOT . '/core/ErrorLogger.php';
+require_once ROOT . '/core/WaLogger.php';
 require_once __DIR__ . '/components.php';
 $user = currentUser();
 
@@ -571,6 +573,9 @@ if ($action) {
 
         $phone = preg_replace('/[^0-9]/', '', $t['telepon'] ?? '');
         if (substr($phone, 0, 1) === '0') $phone = '62' . substr($phone, 1);
+
+        // Log WA pengiriman ke platform tracker
+        WaLogger::log('order_notif', $phone, mb_substr($msg, 0, 200), $tid, $oid);
 
         echo json_encode(['success'=>true, 'message'=>$msg, 'phone'=>$phone, 'no_order'=>$t['no_order']]); exit;
     }
