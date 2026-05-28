@@ -12,12 +12,23 @@ define('SA_ROOT', __DIR__);
 require_once SA_ROOT . '/../master/config/db.php';
 require_once SA_ROOT . '/../core/Database.php';
 
+ini_set('session.cookie_httponly', 1);
+ini_set('session.cookie_secure',   1);
+ini_set('session.cookie_samesite', 'Strict');
 if (session_status() === PHP_SESSION_NONE) session_start();
 
 // Harus ada sesi superadmin aktif
 if (empty($_SESSION['superadmin_id'])) {
     header('Location: /superadmin/login.php');
     exit;
+}
+
+// CSRF: validasi token dari URL (dibuat saat impersonate dimulai)
+$expectedToken = $_SESSION['stop_impersonate_token'] ?? '';
+$givenToken    = $_GET['t'] ?? '';
+if (!$expectedToken || !hash_equals($expectedToken, $givenToken)) {
+    http_response_code(403);
+    die('Request tidak valid.');
 }
 
 $tenantId        = (int)($_SESSION['impersonating_tenant_id']  ?? 0);

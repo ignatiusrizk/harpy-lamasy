@@ -11,7 +11,21 @@ require_once SA_ROOT . '/../core/ErrorLogger.php';
 require_once SA_ROOT . '/../core/WaLogger.php';
 require_once SA_ROOT . '/../core/PlatformHealthRecorder.php';
 
+// ── Session security ──────────────────────────────────
+ini_set('session.cookie_httponly', 1);
+ini_set('session.cookie_secure',   1);
+ini_set('session.cookie_samesite', 'Strict');
+ini_set('session.use_strict_mode', 1);
+
 if (session_status() === PHP_SESSION_NONE) session_start();
+
+// ── Security headers ──────────────────────────────────
+if (!headers_sent()) {
+    header('X-Content-Type-Options: nosniff');
+    header('X-Frame-Options: DENY');
+    header('X-XSS-Protection: 1; mode=block');
+    header('Referrer-Policy: strict-origin-when-cross-origin');
+}
 
 // Rekam snapshot harian (best-effort, sekali per hari)
 PlatformHealthRecorder::recordYesterdayIfNeeded();

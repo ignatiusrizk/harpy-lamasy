@@ -318,18 +318,28 @@ if ($action) {
         }
         $new_status = $new_sisa <= 0 ? 'lunas' : ($new_dp > 0 ? 'dp' : 'belum_bayar');
 
-        // Upload bukti bayar
+        // Upload bukti bayar — validasi MIME type (bukan hanya ekstensi)
         $bukti_path = null;
-        if (!empty($_FILES['bukti']['tmp_name'])) {
-            $ext     = strtolower(pathinfo($_FILES['bukti']['name'], PATHINFO_EXTENSION));
-            $allowed = ['jpg','jpeg','png','gif','webp'];
-            if (!in_array($ext, $allowed)) {
-                echo json_encode(['error'=>'Format file tidak didukung. Gunakan JPG/PNG.']); exit;
+        if (!empty($_FILES['bukti']['tmp_name']) && $_FILES['bukti']['error'] === UPLOAD_ERR_OK) {
+            $f = $_FILES['bukti'];
+            // Cek ukuran (max 5MB)
+            if ($f['size'] > 5 * 1024 * 1024) {
+                echo json_encode(['error'=>'Ukuran file maksimal 5 MB.']); exit;
             }
-            $dir = __DIR__ . '/uploads/bukti_bayar/';
+            // Validasi MIME via finfo (bukan dari nama file — tidak bisa dimanipulasi)
+            $allowedMime = ['image/jpeg','image/png','image/gif','image/webp'];
+            $mimeMap     = ['image/jpeg'=>'jpg','image/png'=>'png','image/gif'=>'gif','image/webp'=>'webp'];
+            $finfo = finfo_open(FILEINFO_MIME_TYPE);
+            $mime  = $finfo ? finfo_file($finfo, $f['tmp_name']) : null;
+            if ($finfo) finfo_close($finfo);
+            if (!$mime || !in_array($mime, $allowedMime, true)) {
+                echo json_encode(['error'=>'Format tidak didukung. Gunakan JPG, PNG, atau WebP.']); exit;
+            }
+            $ext      = $mimeMap[$mime];
+            $dir      = __DIR__ . '/uploads/bukti_bayar/';
             if (!is_dir($dir)) mkdir($dir, 0755, true);
-            $filename = 'bukti_' . $id . '_' . time() . '.' . $ext;
-            if (move_uploaded_file($_FILES['bukti']['tmp_name'], $dir . $filename)) {
+            $filename = 'bukti_' . $id . '_' . time() . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
+            if (move_uploaded_file($f['tmp_name'], $dir . $filename)) {
                 $bukti_path = 'uploads/bukti_bayar/' . $filename;
             }
         }

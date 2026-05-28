@@ -78,6 +78,8 @@ $_SESSION['impersonating_tenant_id']   = $tenantId;
 $_SESSION['impersonation_log_id']      = $impersonationId;
 $_SESSION['impersonation_admin_name']  = $admin['name'] ?? 'Superadmin';
 $_SESSION['impersonation_tenant_name'] = $t['nama_perusahaan'] ?: $t['slug'];
+// Token CSRF untuk stop_impersonate.php (GET → perlu token agar tidak bisa di-trigger sembarangan)
+$_SESSION['stop_impersonate_token']    = bin2hex(random_bytes(16));
 
 // Redirect ke dashboard tenant
 header('Location: /dashboard.php?tenant_id=' . $tenantId . '&observer=1');

@@ -40,14 +40,42 @@ if (isset($_GET['msg'])) {
     if ($_GET['msg'] === 'logout') $msg = 'Anda berhasil logout.';
 }
 
+// ── Brute-force protection ────────────────────────────
+// Max 5 gagal per IP per 15 menit (file-based, no schema change needed)
+define('SA_MAX_ATTEMPTS',   5);
+define('SA_LOCKOUT_SEC',  900); // 15 menit
+
+function saRateLimitKey(string $ip): string {
+    return sys_get_temp_dir() . '/sa_rl_' . md5($ip);
+}
+function saIsLocked(string $ip): bool {
+    $f = saRateLimitKey($ip);
+    if (!file_exists($f)) return false;
+    $d = json_decode(@file_get_contents($f), true) ?? [];
+    if ((time() - ($d['t'] ?? 0)) > SA_LOCKOUT_SEC) { @unlink($f); return false; }
+    return ($d['n'] ?? 0) >= SA_MAX_ATTEMPTS;
+}
+function saRecordFail(string $ip): void {
+    $f = saRateLimitKey($ip);
+    $d = file_exists($f) ? (json_decode(@file_get_contents($f), true) ?? []) : [];
+    if ((time() - ($d['t'] ?? 0)) > SA_LOCKOUT_SEC) $d = ['n'=>0,'t'=>time()];
+    $d['n'] = ($d['n'] ?? 0) + 1;
+    if (empty($d['t'])) $d['t'] = time();
+    @file_put_contents($f, json_encode($d), LOCK_EX);
+}
+function saClearFail(string $ip): void { @unlink(saRateLimitKey($ip)); }
+
 // ── PROSES LOGIN ──────────────────────────────────────
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $username = trim($_POST['username'] ?? '');
     $password = $_POST['password'] ?? '';
     $csrfPost = $_POST['_csrf'] ?? '';
+    $ip       = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
 
     if (!hash_equals(saLoginCsrf(), $csrfPost)) {
         $error = 'Request tidak valid. Silakan coba lagi.';
+    } elseif (saIsLocked($ip)) {
+        $error = 'Terlalu banyak percobaan gagal. Coba lagi dalam 15 menit.';
     } elseif (empty($username) || empty($password)) {
         $error = 'Username dan password wajib diisi.';
     } else {
@@ -59,6 +87,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $admin = $stmt->fetch();
 
             if ($admin && password_verify($password, $admin['password'])) {
+                saClearFail($ip);
+
                 // Update last_login
                 Database::get()->prepare(
                     "UPDATE super_admins SET last_login = NOW() WHERE id = ?"
@@ -77,13 +107,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     Database::get()->prepare(
                         "INSERT INTO superadmin_logs (superadmin_id, action, description, ip_address)
                          VALUES (?, 'login', 'Super admin login berhasil', ?)"
-                    )->execute([$admin['id'], $_SERVER['REMOTE_ADDR'] ?? '-']);
+                    )->execute([$admin['id'], $ip]);
                 } catch (Throwable) {}
 
                 session_regenerate_id(true);
                 header('Location: dashboard.php');
                 exit;
             } else {
+                saRecordFail($ip);
                 sleep(1);
                 $error = 'Username atau password salah.';
             }

@@ -44,7 +44,7 @@ function renderObserverBanner(): void
           <strong><?= $tenantName ?></strong> — <em>read-only</em>, tidak ada aksi yang berefek.
         </span>
       </div>
-      <a href="/superadmin/stop_impersonate.php"
+      <a href="/superadmin/stop_impersonate.php?t=<?= htmlspecialchars($_SESSION['stop_impersonate_token'] ?? '') ?>"
          style="background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);
                 color:#fff;padding:6px 14px;border-radius:7px;font-weight:700;
                 text-decoration:none;font-size:12px;white-space:nowrap;transition:background .15s;"
@@ -434,10 +434,15 @@ function renderTopbar(string $activePage = '', bool $minimalMode = false): void 
                             text-transform:uppercase;letter-spacing:.06em">
                   <?= $hasMulti ? 'Pilih Outlet' : 'Outlet Aktif' ?>
                 </div>
+                <?php
+                  // Secret sama dengan switch-outlet.php
+                  $swSecret = hash('sha256', session_id() . ($user['id'] ?? '') . 'switch_outlet_v1');
+                ?>
                 <?php foreach ($allOutlets as $o):
                   $isActive = (int)$o['id'] === $currentOutletId;
+                  $swToken  = substr(hash_hmac('sha256', 'so:' . ($user['id'] ?? '') . ':' . (int)$o['id'], $swSecret), 0, 16);
                 ?>
-                <a href="switch-outlet.php?id=<?= (int)$o['id'] ?>"
+                <a href="switch-outlet.php?id=<?= (int)$o['id'] ?>&t=<?= $swToken ?>"
                    style="display:block;padding:8px 12px;border-radius:6px;text-decoration:none;
                           color:<?= $isActive ? 'var(--navy)' : 'var(--dark)' ?>;font-size:13px;
                           font-weight:<?= $isActive ? '700' : '500' ?>;

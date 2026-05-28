@@ -19,13 +19,17 @@ define('ROOT', __DIR__);
 require_once ROOT . '/master/config/db.php';
 require_once ROOT . '/core/Database.php';
 
-// ── Security: token check jika dijalankan via browser ─
+// ── Security: hanya CLI atau superadmin yang login ────
 $isCli = (php_sapi_name() === 'cli');
 if (!$isCli) {
-    $token = $_GET['token'] ?? '';
-    if ($token !== 'GANTI_TOKEN_INI_SEBELUM_DEPLOY') {
+    if (session_status() === PHP_SESSION_NONE) session_start();
+    if (empty($_SESSION['superadmin_id'])) {
         http_response_code(403);
-        die('Akses ditolak. Jalankan via CLI atau gunakan token yang benar.');
+        die('Akses ditolak. Script ini hanya bisa dijalankan via CLI atau oleh super admin yang login.');
+    }
+    // Konfirmasi eksplisit via GET param agar tidak tidak sengaja dieksekusi
+    if (($_GET['confirm'] ?? '') !== 'yes') {
+        die('Tambahkan ?confirm=yes di URL untuk mengeksekusi. Pastikan sudah backup DB terlebih dahulu.');
     }
 }
 

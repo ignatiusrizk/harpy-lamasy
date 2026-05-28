@@ -16,8 +16,22 @@
 //   hasPermission('orders.edit')  // cek permission
 // ══════════════════════════════════════════════════════
 
+// ── Session security (sebelum session_start) ──────────
+ini_set('session.cookie_httponly', 1);
+ini_set('session.cookie_secure',   1);
+ini_set('session.cookie_samesite', 'Strict');
+ini_set('session.use_strict_mode', 1);
+
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
+}
+
+// ── Security headers ──────────────────────────────────
+if (!headers_sent()) {
+    header('X-Content-Type-Options: nosniff');
+    header('X-Frame-Options: SAMEORIGIN');
+    header('X-XSS-Protection: 1; mode=block');
+    header('Referrer-Policy: strict-origin-when-cross-origin');
 }
 
 // ── Load config & core ────────────────────────────────

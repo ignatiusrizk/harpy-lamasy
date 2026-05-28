@@ -30,6 +30,19 @@ if (!$tenantId) {
     exit;
 }
 
+// Rate limit: max 3x per 10 menit per session — cegah spam email
+$rlKey  = 'resend_verify_rl';
+$rlData = $_SESSION[$rlKey] ?? ['n' => 0, 't' => 0];
+if ((time() - $rlData['t']) > 600) $rlData = ['n' => 0, 't' => time()];
+if ($rlData['n'] >= 3) {
+    $_SESSION['resend_flash'] = 'error:Terlalu banyak permintaan. Tunggu 10 menit sebelum kirim ulang.';
+    header('Location: /pending-verify.php');
+    exit;
+}
+$rlData['n']++;
+if (empty($rlData['t'])) $rlData['t'] = time();
+$_SESSION[$rlKey] = $rlData;
+
 // Ambil data tenant
 $db   = Database::get();
 $stmt = $db->prepare("SELECT email, nama_perusahaan, owner_name, verified_at FROM tenants WHERE id = ? LIMIT 1");
