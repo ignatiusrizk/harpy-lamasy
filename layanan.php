@@ -162,7 +162,11 @@ input:checked + .toggle-slider::before{transform:translateX(18px)}
     <div class="hl-stat-card navy"><div class="hl-stat-num" id="sKat">-</div><div class="hl-stat-label">📂 Kategori</div></div>
     <div class="hl-stat-card green"><div class="hl-stat-num" id="sTerlaris" style="font-size:1rem">-</div><div class="hl-stat-label">🏆 Terlaris</div></div>
     <div class="hl-stat-card purple">
+      <?php if (hasPermission('layanan.create')): ?>
       <button class="hl-btn hl-btn-primary hl-btn-full" onclick="openModal()" style="margin-top:4px">+ Tambah Layanan</button>
+      <?php else: ?>
+      <span style="font-size:12px;color:rgba(255,255,255,.55)">View Only</span>
+      <?php endif; ?>
     </div>
   </div>
 
@@ -247,6 +251,9 @@ input:checked + .toggle-slider::before{transform:translateX(18px)}
 <?php renderToast(); ?>
 <script>
 let allLayanan = [];
+const CAN_CREATE = <?= hasPermission('layanan.create') ? 'true' : 'false' ?>;
+const CAN_EDIT   = <?= hasPermission('layanan.edit')   ? 'true' : 'false' ?>;
+const CAN_DELETE = <?= hasPermission('layanan.delete') ? 'true' : 'false' ?>;
 
 document.addEventListener('DOMContentLoaded', () => { loadLayanan(); loadStats(); });
 
@@ -306,9 +313,10 @@ function renderLayanan() {
         ? `<button class="hl-btn hl-btn-outline hl-btn-sm" onclick='openAdjust(${JSON.stringify(l)})'>💲 Adjust Harga</button>`
         : `<span style="font-size:11px;color:var(--gray)">dikelola HQ</span>`;
     } else {
-      actions = `
-        <button class="hl-btn hl-btn-outline hl-btn-sm" onclick="editLayanan(${l.id})">✏️ Edit</button>
-        <button class="hl-btn hl-btn-danger hl-btn-sm" onclick="deleteLayanan(${l.id})">🗑️</button>`;
+      actions = '';
+      if (CAN_EDIT)   actions += `<button class="hl-btn hl-btn-outline hl-btn-sm" onclick="editLayanan(${l.id})">✏️ Edit</button>`;
+      if (CAN_DELETE) actions += `<button class="hl-btn hl-btn-danger hl-btn-sm" onclick="deleteLayanan(${l.id})">🗑️</button>`;
+      if (!actions)   actions  = `<span style="font-size:11px;color:var(--gray)">view only</span>`;
     }
 
     return `

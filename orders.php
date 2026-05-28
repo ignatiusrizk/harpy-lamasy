@@ -1010,8 +1010,12 @@ textarea{resize:vertical;min-height:64px}
     </div>
     <div class="modal-footer">
       <button class="btn btn-outline btn-sm" onclick="closeModal()">Tutup</button>
+      <?php if (hasPermission('orders.bayar')): ?>
       <button class="btn btn-teal-sm btn-sm" id="btnBayarDariDetail" onclick="openBayarFromDetail()">💰 Update Bayar</button>
+      <?php endif; ?>
+      <?php if (hasPermission('orders.edit')): ?>
       <button class="btn btn-primary btn-sm" id="btnSaveEdit" onclick="saveEdit()">💾 Simpan Perubahan</button>
+      <?php endif; ?>
     </div>
   </div>
 </div>
@@ -1066,6 +1070,9 @@ let searchTimer = null;
 let currentEditId = null;
 let editItems = [];
 let layananAll = [];
+const CAN_BAYAR      = <?= hasPermission('orders.bayar')         ? 'true' : 'false' ?>;
+const CAN_EDIT_ORDER = <?= hasPermission('orders.edit')           ? 'true' : 'false' ?>;
+const CAN_DEL_ORDER  = <?= hasPermission('orders.delete')         ? 'true' : 'false' ?>;
 
 document.addEventListener('DOMContentLoaded', () => {
   initFilter('orderFilter');
@@ -1194,9 +1201,9 @@ async function loadOrders(page=1) {
     const sisaText  = parseFloat(row.sisa_bayar) > 0 ? 'Rp ' + parseFloat(row.sisa_bayar).toLocaleString('id-ID') : '&#10003;';
     const telp      = row.telepon ? '<div style="font-size:11px;color:var(--gray)">' + row.telepon + '</div>' : '';
     const est       = row.estimasi_selesai ? fmtDate(row.estimasi_selesai) : '-';
-    const bayarBtn  = parseFloat(row.sisa_bayar) > 0
+    const bayarBtn  = CAN_BAYAR && parseFloat(row.sisa_bayar) > 0
       ? `<button class="btn btn-teal-sm" onclick="openBayarById(${row.id})">&#128176; Bayar</button>`
-      : '<span style="font-size:11px;color:var(--green);padding:4px">&#10003; Lunas</span>';
+      : (parseFloat(row.sisa_bayar) > 0 ? '' : '<span style="font-size:11px;color:var(--green);padding:4px">&#10003; Lunas</span>');
 
     return '<tr onclick="openDetail(' + row.id + ')">'
       + '<td onclick="event.stopPropagation()" style="text-align:center">'

@@ -225,7 +225,11 @@ if ($action) {
     <div class="hl-stat-card navy"><div class="hl-stat-num" id="sB2B">-</div><div class="hl-stat-label">🏢 B2B / Korporat</div></div>
     <div class="hl-stat-card green"><div class="hl-stat-num" id="sBaru">-</div><div class="hl-stat-label">✨ Baru Bulan Ini</div></div>
     <div class="hl-stat-card purple">
+      <?php if (hasPermission('pelanggan.create')): ?>
       <button class="hl-btn hl-btn-primary hl-btn-full" onclick="openModal()" style="margin-top:4px">+ Tambah Customer</button>
+      <?php else: ?>
+      <span style="font-size:12px;color:rgba(255,255,255,.55)">View Only</span>
+      <?php endif; ?>
     </div>
   </div>
 
@@ -350,7 +354,9 @@ if ($action) {
     <div class="hl-modal-body" id="detailBody"></div>
     <div class="hl-modal-footer">
       <button class="hl-btn hl-btn-outline" onclick="closeDetail()">Tutup</button>
+      <?php if (hasPermission('pelanggan.edit')): ?>
       <button class="hl-btn hl-btn-primary" id="btnEditFromDetail" onclick="editFromDetail()">✏️ Edit</button>
+      <?php endif; ?>
     </div>
   </div>
 </div>
@@ -360,6 +366,8 @@ if ($action) {
 let allCustomer = [];
 let searchTimer = null;
 let currentDetailId = null;
+const CAN_CREATE_CUST = <?= hasPermission('pelanggan.create') ? 'true' : 'false' ?>;
+const CAN_EDIT_CUST   = <?= hasPermission('pelanggan.edit')   ? 'true' : 'false' ?>;
 
 document.addEventListener('DOMContentLoaded', () => { initFilter('custFilter'); loadCustomer(); loadStats(); loadSegmenStats(); });
 
@@ -480,7 +488,7 @@ function renderCustomer() {
       <div class="e-icon">👥</div>
       <div class="e-title">Belum ada customer</div>
       <div class="e-sub">Tambahkan customer pertamamu atau cek filter pencarian</div>
-      <button class="hl-btn hl-btn-primary hl-btn-sm" onclick="openModal()">+ Tambah Customer</button>
+      ${CAN_CREATE_CUST ? `<button class="hl-btn hl-btn-primary hl-btn-sm" onclick="openModal()">+ Tambah Customer</button>` : ''}
     </div></div>`;
     return;
   }
