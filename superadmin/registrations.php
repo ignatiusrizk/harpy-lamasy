@@ -178,7 +178,7 @@ if ($action) {
     // STATUS COUNTS
     if ($action === 'counts') {
         $counts = [];
-        $statuses = ['pending', 'payment_pending', 'provisioning', 'completed', 'failed', 'cancelled'];
+        $statuses = ['pending', 'payment_pending', 'completed', 'cancelled'];
         foreach ($statuses as $s) {
             $r = $db->prepare("SELECT COUNT(*) FROM registration_requests WHERE status=?");
             $r->execute([$s]);
@@ -276,9 +276,6 @@ if ($action) {
     </button>
     <button class="reg-tab" data-status="payment_pending" onclick="setTab(this,'payment_pending')">
       Menunggu Bayar <span class="badge" id="cnt-payment_pending">0</span>
-    </button>
-    <button class="reg-tab" data-status="provisioning" onclick="setTab(this,'provisioning')">
-      Provisioning <span class="badge" id="cnt-provisioning">0</span>
     </button>
     <button class="reg-tab" data-status="completed" onclick="setTab(this,'completed')">
       Selesai <span class="badge" id="cnt-completed">0</span>
@@ -441,8 +438,7 @@ function renderTable(j) {
 
   const statusLabels = {
     pending: 'Pending', payment_pending: 'Menunggu Bayar',
-    provisioning: 'Provisioning', completed: 'Selesai',
-    failed: 'Gagal', cancelled: 'Dibatalkan'
+    completed: 'Selesai', cancelled: 'Dibatalkan'
   };
 
   tb.innerHTML = j.data.map(r => {
