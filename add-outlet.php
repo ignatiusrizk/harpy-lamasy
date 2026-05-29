@@ -20,7 +20,8 @@ if (empty($_SESSION['user_id']) || empty($_SESSION['tenant_id'])) {
 require_once ROOT . '/middleware/tenant_guard.php';
 
 $tid  = TenantResolver::id();
-$user = currentUser() ?? [];
+$user     = currentUser() ?? [];
+$isHqMode = !empty($_SESSION['hq_mode']);
 
 // Hanya owner yang boleh tambah outlet
 if (($user['role'] ?? '') !== 'owner') {
@@ -231,11 +232,26 @@ if (isset($_POST['go_back'])) {
 $csrf = aoCsrf();
 
 require_once __DIR__ . '/components.php';
-?>
-<!DOCTYPE html>
-<html lang="id">
-<head>
-<?php renderHead('Tambah Outlet'); ?>
+
+if ($isHqMode) {
+    // ── HQ mode: gunakan HQ sidebar + topbar ──────────────
+    $tenantSt = Database::get()->prepare("SELECT * FROM tenants WHERE id=? LIMIT 1");
+    $tenantSt->execute([$tid]);
+    $hqTenant    = $tenantSt->fetch(PDO::FETCH_ASSOC) ?: [];
+    $hqUser      = $user;
+    $hqIsOwner   = ($user['role'] ?? '') === 'owner';
+    $hqIsManager = ($user['role'] ?? '') === 'manager';
+    $pageTitle   = 'Tambah Outlet';
+    $activePage  = 'hq-outlet';
+    require __DIR__ . '/hq/_layout_open.php';
+} else {
+    // ── Standalone mode: minimal outlet shell ─────────────
+    ?>
+    <!DOCTYPE html>
+    <html lang="id">
+    <head>
+    <?php renderHead('Tambah Outlet'); ?>
+<?php } ?>
 <style>
 .ao-wrap {
   max-width: 560px;
@@ -333,14 +349,14 @@ require_once __DIR__ . '/components.php';
 .mode-title { font-size: 14px; font-weight: 700; color: var(--navy); margin-bottom: 4px; }
 .mode-desc  { font-size: 12px; color: var(--gray); line-height: 1.5; }
 </style>
+<?php if (!$isHqMode): ?>
 </head>
 <body>
 <?php
-// Halaman ini selalu dalam konteks no-outlet (atau menambah outlet baru).
-// Sembunyikan nav jika tenant belum punya outlet aktif.
-$hasOutlet = TenantResolver::hasOutlet();
-renderTopbar('add-outlet', !$hasOutlet);
+    // Standalone: minimal mode (tanpa sidebar nav) ─ wizard tidak butuh nav lengkap
+    renderTopbar('add-outlet', true);
 ?>
+<?php endif; ?>
 <div class="ao-wrap">
 
   <?php if ($success): ?>
@@ -573,12 +589,16 @@ renderTopbar('add-outlet', !$hasOutlet);
 
 </div><!-- /ao-wrap -->
 
-<?php renderToast(); ?>
 <script>
 function switchMode(val) {
   document.getElementById('cardTrial').classList.toggle('selected', val === 'trial');
   document.getElementById('cardPaid').classList.toggle('selected', val === 'paid');
 }
 </script>
+<?php if ($isHqMode):
+    require __DIR__ . '/hq/_layout_close.php';
+else: ?>
+<?php renderToast(); ?>
 </body>
 </html>
+<?php endif; ?>
