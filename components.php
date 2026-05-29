@@ -453,14 +453,6 @@ function renderTopbar(string $activePage = '', bool $minimalMode = false): void 
                   </span>
                 </a>
                 <?php endforeach; ?>
-                <div style="border-top:1px solid #F3F4F6;margin:6px 0 4px"></div>
-                <?php if (in_array($user['role'] ?? '', ['owner','superadmin'], true)): ?>
-                <a href="/add-outlet"
-                   style="display:block;padding:8px 12px;border-radius:6px;text-decoration:none;
-                          color:var(--teal-d);font-size:13px;font-weight:700">
-                  + Tambah Outlet Baru
-                </a>
-                <?php endif; ?>
               </div>
               <script>
               document.addEventListener('click',function(e){
