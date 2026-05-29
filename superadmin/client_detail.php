@@ -430,10 +430,11 @@ if (!empty($tenant['package_id'])) {
     $packageInfo = $pkgSt->fetch(PDO::FETCH_ASSOC);
 }
 
-// Coin mode & outlet list (untuk topup per-outlet)
+// Coin mode & outlet list (untuk topup per-outlet + tab Outlets)
 $coinMode = $tenant['coin_mode'] ?? 'shared';
 $outletListQ = $db->prepare(
-    "SELECT id, nama_outlet, status, coin_balance, trial_coin_balance
+    "SELECT id, nama_outlet, slug, alamat, kota, telepon, status,
+            coin_balance, trial_coin_balance, is_main, setup_done, created_at
        FROM outlets WHERE tenant_id=? AND status NOT IN ('closed')
       ORDER BY is_main DESC, nama_outlet ASC"
 );
@@ -485,6 +486,7 @@ $billingStat = $bsSt->fetch(PDO::FETCH_ASSOC);
 <!-- Tabs -->
 <div class="sa-tabs">
   <button class="sa-tab active" onclick="showTab('profil')">👤 Profil</button>
+  <button class="sa-tab" onclick="showTab('outlets')">🏪 Outlets <span style="font-size:10px;background:rgba(255,255,255,.12);padding:1px 6px;border-radius:10px;margin-left:3px;"><?= count($outletList) ?></span></button>
   <button class="sa-tab" onclick="showTab('health')">💊 Health</button>
   <button class="sa-tab" onclick="showTab('stats')">📊 Stats</button>
   <button class="sa-tab" onclick="showTab('coins')">🪙 Coin History</button>
@@ -547,6 +549,132 @@ $billingStat = $bsSt->fetch(PDO::FETCH_ASSOC);
     </div>
   </div>
 </div>
+
+<!-- Tab: Outlets -->
+<div class="sa-tab-panel" id="tab-outlets">
+  <?php
+  $outletActive    = count(array_filter($outletList, fn($o) => $o['status'] === 'active'));
+  $outletInactive  = count(array_filter($outletList, fn($o) => $o['status'] === 'inactive'));
+  $outletSuspended = count(array_filter($outletList, fn($o) => $o['status'] === 'suspended'));
+  $outletTrial     = count(array_filter($outletList, fn($o) => $o['status'] === 'trial'));
+  ?>
+  <!-- Summary stats -->
+  <div class="sa-grid-4" style="margin-bottom:20px;">
+    <div class="sa-stat-card indigo">
+      <div class="label">Total Outlet</div>
+      <div class="value"><?= count($outletList) ?></div>
+      <span class="icon-bg">🏪</span>
+    </div>
+    <div class="sa-stat-card green">
+      <div class="label">Aktif</div>
+      <div class="value"><?= $outletActive ?></div>
+      <span class="icon-bg">✅</span>
+    </div>
+    <?php if ($outletTrial > 0): ?>
+    <div class="sa-stat-card blue">
+      <div class="label">Trial</div>
+      <div class="value"><?= $outletTrial ?></div>
+      <span class="icon-bg">🔬</span>
+    </div>
+    <?php else: ?>
+    <div class="sa-stat-card" style="opacity:.4;">
+      <div class="label">Trial</div>
+      <div class="value">0</div>
+      <span class="icon-bg">🔬</span>
+    </div>
+    <?php endif; ?>
+    <?php if ($outletSuspended + $outletInactive > 0): ?>
+    <div class="sa-stat-card red">
+      <div class="label">Non-aktif</div>
+      <div class="value"><?= $outletSuspended + $outletInactive ?></div>
+      <span class="icon-bg">⛔</span>
+    </div>
+    <?php else: ?>
+    <div class="sa-stat-card" style="opacity:.4;">
+      <div class="label">Non-aktif</div>
+      <div class="value">0</div>
+      <span class="icon-bg">⛔</span>
+    </div>
+    <?php endif; ?>
+  </div>
+
+  <!-- Outlet table -->
+  <div class="sa-card">
+    <div class="sa-card-header">
+      <h3>Daftar Outlet</h3>
+      <span style="font-size:12px;color:rgba(255,255,255,.35);">Coin mode: <strong style="color:<?= $coinMode === 'per_outlet' ? '#7DD3FC' : 'rgba(255,255,255,.6)' ?>"><?= $coinMode ?></strong></span>
+    </div>
+    <?php if (empty($outletList)): ?>
+    <div class="sa-card-body" style="text-align:center;padding:40px;color:rgba(255,255,255,.3);">
+      Belum ada outlet yang terdaftar.
+    </div>
+    <?php else: ?>
+    <div class="sa-table-wrap">
+      <table class="sa-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Nama Outlet</th>
+            <th>Slug</th>
+            <th>Kota</th>
+            <th>Telepon</th>
+            <th>Status</th>
+            <th>Main</th>
+            <th>Setup</th>
+            <th>Coin</th>
+            <th>Dibuat</th>
+          </tr>
+        </thead>
+        <tbody>
+          <?php foreach ($outletList as $o):
+            $statusColor = match($o['status']) {
+                'active'    => 'active',
+                'trial'     => 'trial',
+                'suspended' => 'suspended',
+                default     => 'suspended',
+            };
+            $coinBal = $coinMode === 'per_outlet'
+                ? (int)$o['coin_balance'] + (int)$o['trial_coin_balance']
+                : null; // shared mode — coin di tenants, bukan per outlet
+          ?>
+          <tr>
+            <td style="font-family:var(--mono);font-size:11px;color:rgba(255,255,255,.3);"><?= $o['id'] ?></td>
+            <td>
+              <span style="font-weight:600;color:var(--white);"><?= htmlspecialchars($o['nama_outlet']) ?></span>
+              <?php if ($o['is_main']): ?>
+              <span style="font-size:9px;background:rgba(139,92,246,.25);color:#C4B5FD;padding:1px 5px;border-radius:6px;margin-left:5px;vertical-align:middle;">MAIN</span>
+              <?php endif; ?>
+            </td>
+            <td style="font-family:var(--mono);font-size:11px;color:rgba(255,255,255,.4);"><?= htmlspecialchars($o['slug']) ?></td>
+            <td style="font-size:13px;color:rgba(255,255,255,.6);"><?= htmlspecialchars($o['kota'] ?: '—') ?></td>
+            <td style="font-size:12px;color:rgba(255,255,255,.5);"><?= htmlspecialchars($o['telepon'] ?: '—') ?></td>
+            <td><span class="sa-badge sa-badge-<?= $statusColor ?>"><?= ucfirst($o['status']) ?></span></td>
+            <td style="text-align:center;"><?= $o['is_main'] ? '⭐' : '' ?></td>
+            <td style="text-align:center;"><?= $o['setup_done'] ? '<span style="color:#4ADE80;">✓</span>' : '<span style="color:rgba(255,255,255,.25);">—</span>' ?></td>
+            <td style="font-family:var(--mono);font-size:12px;">
+              <?php if ($coinMode === 'per_outlet'): ?>
+                <?= number_format($coinBal) ?>
+              <?php else: ?>
+                <span style="color:rgba(255,255,255,.25);font-size:11px;">shared</span>
+              <?php endif; ?>
+            </td>
+            <td style="font-size:11px;color:rgba(255,255,255,.35);font-family:var(--mono);"><?= substr($o['created_at'], 0, 10) ?></td>
+          </tr>
+          <?php endforeach; ?>
+        </tbody>
+      </table>
+    </div>
+    <?php if (!empty($outletList)): ?>
+    <div style="padding:10px 16px 14px;font-size:11.5px;color:rgba(255,255,255,.25);">
+      * Outlet dengan status <em>closed</em> tidak ditampilkan.
+      <?php if ($coinMode === 'shared'): ?>
+      Coin ditampilkan sebagai "shared" karena tenant menggunakan mode coin bersama.
+      <?php endif; ?>
+    </div>
+    <?php endif; ?>
+    <?php endif; ?>
+  </div>
+</div><!-- /#tab-outlets -->
 
 <!-- Tab: Health -->
 <div class="sa-tab-panel" id="tab-health">
@@ -1122,7 +1250,7 @@ const TENANT_ID = <?= $tenantId ?>;
 
 function showTab(name) {
   document.querySelectorAll('.sa-tab').forEach((t, i) => {
-    const tabs = ['profil','health','stats','coins','billing','tickets','notes','comms','aksi'];
+    const tabs = ['profil','outlets','health','stats','coins','billing','tickets','notes','comms','aksi'];
     t.classList.toggle('active', tabs[i] === name);
   });
   document.querySelectorAll('.sa-tab-panel').forEach(p => p.classList.remove('active'));
