@@ -63,12 +63,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     elseif ($pStep === '2') {
-        $rawFee              = max(0, (int)($_POST['setup_fee'] ?? 0));
+        $rawFee              = max(0, (int)preg_replace('/\D/', '', $_POST['setup_fee'] ?? '0'));
         $discount            = max(0, min(100, (float)($_POST['discount_pct'] ?? 0)));
         $wiz['setup_fee']    = (int)round($rawFee * (1 - $discount / 100));
         $wiz['setup_fee_ori']= $rawFee;
         $wiz['discount_pct'] = $discount;
-        $wiz['coin_awal']    = max(0, (int)($_POST['coin_awal'] ?? 0));
+        $wiz['coin_awal']    = max(0, (int)preg_replace('/\D/', '', $_POST['coin_awal'] ?? '0'));
         $wiz['trial_days']   = 0; // tidak ada trial — bayar dulu baru aktif
         $wiz['coin_mode']    = in_array($_POST['coin_mode'] ?? '', ['shared','per_outlet']) ? $_POST['coin_mode'] : 'shared';
         $wiz['package_id']   = null;
@@ -625,9 +625,9 @@ $csrf = saGetCsrf();
       <div class="field-grid-2">
         <div class="wiz-field">
           <label class="wiz-label">Biaya Aktivasi Outlet (Rp)</label>
-          <input type="number" name="setup_fee" id="wiz_fee" class="wiz-input" min="0" step="10000"
-                 value="<?= (int)($wiz['setup_fee_ori'] ?? $wiz['setup_fee'] ?? 300000) ?>"
-                 placeholder="300000" oninput="wizPreviewFee()"/>
+          <input type="text" name="setup_fee" id="wiz_fee" class="wiz-input" inputmode="numeric"
+                 value="<?= number_format((int)($wiz['setup_fee_ori'] ?? $wiz['setup_fee'] ?? 300000), 0, ',', '.') ?>"
+                 placeholder="300.000" oninput="wizRibuan(this);wizPreviewFee()" autocomplete="off"/>
           <div style="font-size:11px;color:rgba(255,255,255,.3);margin-top:4px;">0 = gratis / promo</div>
         </div>
         <div class="wiz-field">
@@ -642,8 +642,9 @@ $csrf = saGetCsrf();
       <div class="field-grid-2">
         <div class="wiz-field">
           <label class="wiz-label">Coin Awal Dikreditkan</label>
-          <input type="number" name="coin_awal" class="wiz-input" min="0"
-                 value="<?= (int)($wiz['coin_awal'] ?? 50000) ?>" placeholder="50000"/>
+          <input type="text" name="coin_awal" class="wiz-input" inputmode="numeric"
+                 value="<?= number_format((int)($wiz['coin_awal'] ?? 50000), 0, ',', '.') ?>"
+                 placeholder="50.000" oninput="wizRibuan(this)" autocomplete="off"/>
           <div style="font-size:11px;color:rgba(255,255,255,.3);margin-top:4px;">Dikreditkan saat aktivasi</div>
         </div>
       </div>
@@ -954,9 +955,19 @@ function selectRadio(label, name, val) {
   if (inp) inp.checked = true;
 }
 
-// ── Preview harga setelah diskon (Step 2) ──────────
+// ── Thousand-separator formatter (wizard) ───────────
+function wizRibuan(el) {
+  const pos = el.selectionStart;
+  const raw = el.value.replace(/\D/g, '');
+  const fmt = raw ? parseInt(raw).toLocaleString('id-ID') : '';
+  el.value  = fmt;
+  // Pertahankan posisi cursor setelah format
+  try { el.setSelectionRange(fmt.length, fmt.length); } catch(e) {}
+}
+
+// ── Preview harga setelah diskon (Step 2) ───────────
 function wizPreviewFee() {
-  const fee  = parseInt(document.getElementById('wiz_fee')?.value)  || 0;
+  const fee  = parseInt((document.getElementById('wiz_fee')?.value || '').replace(/\D/g,''))  || 0;
   const disc = parseFloat(document.getElementById('wiz_disc')?.value) || 0;
   const el   = document.getElementById('wiz_fee_preview');
   if (!el) return;

@@ -239,7 +239,8 @@ if ($action) {
     <div class="fg-row">
       <div class="fg">
         <label>Biaya Aktivasi Outlet (Rp)</label>
-        <input type="number" id="defFee" min="0" step="10000" placeholder="300000" oninput="previewDiscount()"/>
+        <input type="text" id="defFee" inputmode="numeric" placeholder="300.000"
+               oninput="ribuan(this);previewDiscount()" autocomplete="off"/>
       </div>
       <div class="fg">
         <label>Diskon (%)</label>
@@ -249,7 +250,8 @@ if ($action) {
     </div>
     <div class="fg">
       <label>Coin Awal Dikreditkan</label>
-      <input type="number" id="defCoin" min="0" placeholder="50000"/>
+      <input type="text" id="defCoin" inputmode="numeric" placeholder="50.000"
+             oninput="ribuan(this)" autocomplete="off"/>
     </div>
 
     <div class="sa-modal-footer">
@@ -317,6 +319,17 @@ const rp   = n => 'Rp ' + parseInt(n||0).toLocaleString('id-ID');
 const coin = n => parseInt(n||0).toLocaleString('id-ID');
 function esc(s){ const d=document.createElement('div'); d.textContent=String(s??''); return d.innerHTML; }
 
+// ── Thousand-separator formatter ──────────────────────
+function ribuan(el) {
+  const raw    = el.value.replace(/\D/g, '');
+  el.dataset.raw = raw;
+  el.value = raw ? parseInt(raw).toLocaleString('id-ID') : '';
+}
+function rawInt(id) {
+  const el = document.getElementById(id);
+  return parseInt((el?.dataset.raw ?? el?.value ?? '').replace(/\D/g, '') || '0') || 0;
+}
+
 // ── Defaults (stored in localStorage for now) ─────────
 const DEF_KEY = 'sa_activation_defaults';
 function loadDefaults() {
@@ -328,8 +341,8 @@ function saveDefaultsToStorage(fee, discount, coinAwal) {
 
 function refreshActivationCard() {
   const d        = loadDefaults();
-  const fee      = d.fee      ?? 300000;
-  const discount = d.discount ?? 0;
+  const fee      = parseInt(d.fee)      || 0;
+  const discount = parseFloat(d.discount) || 0;
   const final    = Math.round(fee * (1 - discount / 100));
   let display    = fee > 0 ? 'Rp ' + parseInt(fee).toLocaleString('id-ID') : 'Gratis';
   if (discount > 0 && fee > 0) {
@@ -345,16 +358,20 @@ function refreshActivationCard() {
 }
 
 function openDefaultModal() {
-  const d = loadDefaults();
-  document.getElementById('defFee').value      = d.fee      ?? 300000;
+  const d   = loadDefaults();
+  const fee = parseInt(d.fee) || 300000;
+  const coi = parseInt(d.coinAwal) || 50000;
+  const feeEl = document.getElementById('defFee');
+  const coiEl = document.getElementById('defCoin');
+  feeEl.value = fee.toLocaleString('id-ID'); feeEl.dataset.raw = fee;
+  coiEl.value = coi.toLocaleString('id-ID'); coiEl.dataset.raw = coi;
   document.getElementById('defDiscount').value = d.discount ?? 0;
-  document.getElementById('defCoin').value     = d.coinAwal ?? 50000;
   document.getElementById('defDiscountPreview').textContent = '';
   document.getElementById('defaultModal').classList.add('open');
 }
 
 function previewDiscount() {
-  const fee      = parseInt(document.getElementById('defFee').value)      || 0;
+  const fee      = rawInt('defFee');
   const discount = parseFloat(document.getElementById('defDiscount').value) || 0;
   const hint     = document.getElementById('defDiscountPreview');
   if (fee > 0 && discount > 0) {
@@ -367,9 +384,9 @@ function previewDiscount() {
 }
 
 function saveDefaults() {
-  const fee      = parseInt(document.getElementById('defFee').value)        || 0;
+  const fee      = rawInt('defFee');
   const discount = parseFloat(document.getElementById('defDiscount').value) || 0;
-  const coinA    = parseInt(document.getElementById('defCoin').value)       || 0;
+  const coinA    = rawInt('defCoin');
   saveDefaultsToStorage(fee, discount, coinA);
   refreshActivationCard();
   closeModal('defaultModal');
