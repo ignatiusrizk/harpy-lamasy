@@ -255,7 +255,11 @@ function localMonthStr() {
     <div class="hl-stat-card green"><div class="hl-stat-num" id="sHadir">-</div><div class="hl-stat-label">✅ Hadir Hari Ini</div></div>
     <div class="hl-stat-card navy"><div class="hl-stat-num" id="sGaji" style="font-size:1rem">-</div><div class="hl-stat-label">💰 Gaji Belum Dibayar</div></div>
     <div class="hl-stat-card purple">
+      <?php if (hasPermission('karyawan.create')): ?>
       <button class="hl-btn hl-btn-primary hl-btn-full" onclick="openModal()" style="margin-top:4px">+ Tambah Karyawan</button>
+      <?php else: ?>
+      <span style="font-size:12px;color:rgba(255,255,255,.55)">View Only</span>
+      <?php endif; ?>
     </div>
   </div>
 
@@ -279,7 +283,9 @@ function localMonthStr() {
         <span class="hl-filter-label">Bulan</span>
         <input type="month" id="gajiBulan" class="hl-input" style="width:auto"/>
         <button class="hl-btn hl-btn-primary hl-btn-sm" onclick="loadGaji()">🔍 Tampilkan</button>
+        <?php if (hasPermission('karyawan.gaji')): ?>
         <button class="hl-btn hl-btn-outline hl-btn-sm" onclick="generateGaji()">⚡ Generate Slip Gaji</button>
+        <?php endif; ?>
       </div>
     </div>
     <div class="hl-card">
@@ -422,6 +428,9 @@ function localMonthStr() {
 
 <?php renderToast(); ?>
 <script>
+const CAN_CREATE_KARY = <?= hasPermission('karyawan.create') ? 'true' : 'false' ?>;
+const CAN_EDIT_KARY   = <?= hasPermission('karyawan.edit')   ? 'true' : 'false' ?>;
+const CAN_GAJI        = <?= hasPermission('karyawan.gaji')   ? 'true' : 'false' ?>;
 let allKaryawan = [];
 
 function localMonthStr() {
@@ -468,7 +477,7 @@ function renderKaryawan() {
       </div>
       ${k.gaji_pokok>0?`<div style="font-size:12px;color:var(--gray);margin-bottom:10px">💰 Gaji: <strong style="color:var(--navy);font-family:var(--mono)">Rp ${parseFloat(k.gaji_pokok).toLocaleString('id-ID')}</strong></div>`:''}
       <div style="display:flex;gap:6px;align-items:center">
-        <button class="hl-btn hl-btn-outline hl-btn-sm" style="flex:1" onclick="editKaryawan(${k.id})">✏️ Edit</button>
+        ${CAN_EDIT_KARY ? `<button class="hl-btn hl-btn-outline hl-btn-sm" style="flex:1" onclick="editKaryawan(${k.id})">✏️ Edit</button>` : ''}
         ${k.tgl_masuk?`<span style="font-size:10px;color:var(--gray)">Bergabung ${fmtDate(k.tgl_masuk)}</span>`:''}
       </div>
     </div>`).join('');
@@ -566,8 +575,8 @@ async function loadGaji() {
       <td data-lbl="Status"><span class="hl-badge ${g.status==='dibayar'?'hl-badge-lunas':'hl-badge-dp'}">${g.status==='dibayar'?'✅ Dibayar':'⏳ Pending'}</span></td>
       <td>
         <div style="display:flex;gap:4px">
-          <button class="hl-btn hl-btn-outline hl-btn-sm" onclick='editGaji(${JSON.stringify(g)})'>✏️ Edit</button>
-          ${g.status==='pending'?`<button class="hl-btn hl-btn-sm hl-btn-green" onclick="bayarGaji(${g.id})">💰 Bayar</button>`:''}
+          ${CAN_GAJI ? `<button class="hl-btn hl-btn-outline hl-btn-sm" onclick='editGaji(${JSON.stringify(g)})'>✏️ Edit</button>` : ''}
+          ${CAN_GAJI && g.status==='pending' ? `<button class="hl-btn hl-btn-sm hl-btn-green" onclick="bayarGaji(${g.id})">💰 Bayar</button>` : ''}
         </div>
       </td>
     </tr>`;

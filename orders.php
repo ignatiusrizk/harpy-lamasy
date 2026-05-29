@@ -875,7 +875,9 @@ textarea{resize:vertical;min-height:64px}
         style="width:auto;padding:9px 10px;border:1.5px solid rgba(27,45,90,.14);border-radius:var(--r);font-family:var(--font);font-size:13px;background:var(--white);outline:none"/>
       <button class="btn btn-outline btn-sm" onclick="resetFilter()" title="Reset filter">✕ Reset</button>
       <button class="btn btn-teal-sm" onclick="loadOrders(1)">↻</button>
+      <?php if (hasPermission('pos.view')): ?>
       <a href="pos.php" class="btn btn-teal-sm">+ Order Baru</a>
+      <?php endif; ?>
     </div>
   </div>
 
@@ -1452,15 +1454,13 @@ function renderEditItems() {
   if (!tbody) return;
   tbody.innerHTML = editItems.map((item, i) => `
     <tr>
-      <td><input class="item-input" value="${esc(item.nama_layanan)}" style="width:110px" oninput="editItems[${i}].nama_layanan=this.value;recalcEdit()"/></td>
-      <td><select class="item-input" style="width:52px" onchange="editItems[${i}].satuan=this.value">
-        ${['kg','pcs','set','pasang'].map(s=>`<option value="${s}" ${item.satuan===s?'selected':''}>${s}</option>`).join('')}
-      </select></td>
+      <td>${CAN_EDIT_ORDER ? `<input class="item-input" value="${esc(item.nama_layanan)}" style="width:110px" oninput="editItems[${i}].nama_layanan=this.value;recalcEdit()"/>` : `<span style="font-size:13px">${esc(item.nama_layanan)}</span>`}</td>
+      <td>${CAN_EDIT_ORDER ? `<select class="item-input" style="width:52px" onchange="editItems[${i}].satuan=this.value">${['kg','pcs','set','pasang'].map(s=>`<option value="${s}" ${item.satuan===s?'selected':''}>${s}</option>`).join('')}</select>` : `<span style="font-size:13px">${item.satuan}</span>`}</td>
       <td>${CAN_EDIT_ORDER ? `<input class="item-input" type="number" value="${item.jumlah}" step="0.1" min="0" style="width:52px" oninput="editItems[${i}].jumlah=parseFloat(this.value)||0;recalcEdit()"/>` : `<span style="font-family:var(--mono);font-size:13px">${item.jumlah}</span>`}</td>
       <td>${CAN_EDIT_ORDER ? `<input class="item-input" type="number" value="${item.harga_satuan}" step="500" min="0" style="width:80px" oninput="editItems[${i}].harga_satuan=parseFloat(this.value)||0;recalcEdit()"/>` : `<span style="font-family:var(--mono);font-size:13px">Rp ${item.harga_satuan.toLocaleString('id-ID')}</span>`}</td>
       <td class="item-sub">Rp ${(item.jumlah*item.harga_satuan).toLocaleString('id-ID')}</td>
-      <td><input class="item-input" value="${esc(item.catatan_item||'')}" placeholder="..." style="width:60px" oninput="editItems[${i}].catatan_item=this.value"/></td>
-      <td><button class="btn-remove" onclick="removeEditItem(${i})">✕</button></td>
+      <td>${CAN_EDIT_ORDER ? `<input class="item-input" value="${esc(item.catatan_item||'')}" placeholder="..." style="width:60px" oninput="editItems[${i}].catatan_item=this.value"/>` : `<span style="font-size:12px;color:var(--gray)">${esc(item.catatan_item||'-')}</span>`}</td>
+      <td>${CAN_EDIT_ORDER ? `<button class="btn-remove" onclick="removeEditItem(${i})">✕</button>` : ''}</td>
     </tr>`).join('');
 }
 
