@@ -1,7 +1,6 @@
 <?php
 // ══════════════════════════════════════════════════════
-// superadmin/packages.php — Kelola Paket & Coin Bundle
-// CRUD: saas_packages + saas_coin_bundles
+// superadmin/packages.php — Biaya Aktivasi & Coin Bundle
 // ══════════════════════════════════════════════════════
 
 if (!defined('SA_ROOT')) define('SA_ROOT', __DIR__);
@@ -16,19 +15,6 @@ $action = $_GET['action'] ?? '';
 if ($action) {
     header('Content-Type: application/json');
     $db = Database::get();
-
-    // ── GET: list packages ────────────────────────────
-    if ($action === 'list_packages') {
-        $rows = $db->query(
-            "SELECT p.*,
-                    (SELECT COUNT(*) FROM saas_manual_payments WHERE package_id = p.id) AS used_payments,
-                    (SELECT COUNT(*) FROM tenants WHERE package_id = p.id)              AS used_tenants
-             FROM saas_packages p
-             ORDER BY p.urutan ASC, p.id ASC"
-        )->fetchAll(PDO::FETCH_ASSOC);
-        echo json_encode(['ok' => true, 'rows' => $rows]);
-        exit;
-    }
 
     // ── GET: list bundles ─────────────────────────────
     if ($action === 'list_bundles') {
@@ -45,70 +31,19 @@ if ($action) {
     // ── POST actions — CSRF required ──────────────────
     saVerifyCsrf();
 
-    // ── SAVE PACKAGE (insert or update) ──────────────
-    if ($action === 'save_package') {
-        $d          = json_decode(file_get_contents('php://input'), true) ?: [];
-        $id         = (int)($d['id'] ?? 0);
-        $nama       = substr(trim($d['nama'] ?? ''), 0, 100);
-        $rawSlug    = strtolower(preg_replace('/[^a-z0-9_-]/', '', str_replace([' ', '.'], '_', $d['slug'] ?? $nama)));
-        $slug       = substr($rawSlug, 0, 50);
-        $deskripsi  = trim($d['deskripsi'] ?? '');
-        $setup_fee  = max(0, (int)($d['setup_fee'] ?? 0));
-        $coin_awal  = max(0, (int)($d['coin_awal'] ?? 50000));
-        $trial_hari = max(1, (int)($d['trial_hari'] ?? 30));
-        $max_outlets = max(0, (int)($d['max_outlets'] ?? 1));
-        $is_custom  = empty($d['is_custom']) ? 0 : 1;
-        $urutan     = (int)($d['urutan'] ?? 0);
-
-        if (!$nama)  { echo json_encode(['error' => 'Nama paket wajib diisi.']); exit; }
-        if (!$slug)  { echo json_encode(['error' => 'Slug tidak valid.']); exit; }
-
-        try {
-            if ($id > 0) {
-                $db->prepare(
-                    "UPDATE saas_packages
-                        SET nama=?, slug=?, deskripsi=?, setup_fee=?, coin_awal=?,
-                            trial_hari=?, max_outlets=?, is_custom=?, urutan=?
-                      WHERE id=?"
-                )->execute([$nama, $slug, $deskripsi, $setup_fee, $coin_awal,
-                             $trial_hari, $max_outlets, $is_custom, $urutan, $id]);
-                logSuperAdminAction('update_package', null, "Update paket #$id: $nama");
-                echo json_encode(['ok' => true, 'msg' => "Paket \"$nama\" berhasil diperbarui."]);
-            } else {
-                $db->prepare(
-                    "INSERT INTO saas_packages
-                        (nama, slug, deskripsi, setup_fee, coin_awal, trial_hari, max_outlets, is_custom, urutan)
-                     VALUES (?,?,?,?,?,?,?,?,?)"
-                )->execute([$nama, $slug, $deskripsi, $setup_fee, $coin_awal,
-                             $trial_hari, $max_outlets, $is_custom, $urutan]);
-                $newId = (int)$db->lastInsertId();
-                logSuperAdminAction('create_package', null, "Buat paket baru #$newId: $nama");
-                echo json_encode(['ok' => true, 'msg' => "Paket \"$nama\" berhasil ditambahkan."]);
-            }
-        } catch (Throwable $e) {
-            // Slug duplicate?
-            if (str_contains($e->getMessage(), 'Duplicate entry')) {
-                echo json_encode(['error' => "Slug \"$slug\" sudah digunakan. Ganti nama atau ubah slug."]);
-            } else {
-                echo json_encode(['error' => $e->getMessage()]);
-            }
-        }
-        exit;
-    }
-
     // ── SAVE BUNDLE (insert or update) ───────────────
     if ($action === 'save_bundle') {
-        $d           = json_decode(file_get_contents('php://input'), true) ?: [];
-        $id          = (int)($d['id'] ?? 0);
-        $nama        = substr(trim($d['nama'] ?? ''), 0, 100);
-        $harga       = max(1, (int)($d['harga'] ?? 0));
+        $d            = json_decode(file_get_contents('php://input'), true) ?: [];
+        $id           = (int)($d['id'] ?? 0);
+        $nama         = substr(trim($d['nama'] ?? ''), 0, 100);
+        $harga        = max(1, (int)($d['harga'] ?? 0));
         $coin_didapat = max(1, (int)($d['coin_didapat'] ?? 0));
-        $bonus_pct   = max(0.0, min(100.0, (float)($d['bonus_pct'] ?? 0)));
-        $is_featured = empty($d['is_featured']) ? 0 : 1;
-        $urutan      = (int)($d['urutan'] ?? 0);
+        $bonus_pct    = max(0.0, min(100.0, (float)($d['bonus_pct'] ?? 0)));
+        $is_featured  = empty($d['is_featured']) ? 0 : 1;
+        $urutan       = (int)($d['urutan'] ?? 0);
 
-        if (!$nama)   { echo json_encode(['error' => 'Nama bundle wajib diisi.']); exit; }
-        if ($harga < 1) { echo json_encode(['error' => 'Harga harus lebih dari 0.']); exit; }
+        if (!$nama)         { echo json_encode(['error' => 'Nama bundle wajib diisi.']); exit; }
+        if ($harga < 1)     { echo json_encode(['error' => 'Harga harus lebih dari 0.']); exit; }
         if ($coin_didapat < 1) { echo json_encode(['error' => 'Coin harus lebih dari 0.']); exit; }
 
         try {
@@ -135,17 +70,6 @@ if ($action) {
         exit;
     }
 
-    // ── TOGGLE PACKAGE is_active ──────────────────────
-    if ($action === 'toggle_package') {
-        $d   = json_decode(file_get_contents('php://input'), true) ?: [];
-        $id  = (int)($d['id'] ?? 0);
-        $val = (int)(!empty($d['value']));
-        $db->prepare("UPDATE saas_packages SET is_active=? WHERE id=?")->execute([$val, $id]);
-        logSuperAdminAction('toggle_package', null, "Paket #$id is_active → $val");
-        echo json_encode(['ok' => true]);
-        exit;
-    }
-
     // ── TOGGLE BUNDLE (is_active atau is_featured) ────
     if ($action === 'toggle_bundle') {
         $d     = json_decode(file_get_contents('php://input'), true) ?: [];
@@ -161,36 +85,6 @@ if ($action) {
         exit;
     }
 
-    // ── DELETE PACKAGE ────────────────────────────────
-    if ($action === 'delete_package') {
-        $d  = json_decode(file_get_contents('php://input'), true) ?: [];
-        $id = (int)($d['id'] ?? 0);
-        if (!$id) { echo json_encode(['error' => 'ID tidak valid.']); exit; }
-
-        $stmtP = $db->prepare("SELECT COUNT(*) FROM saas_manual_payments WHERE package_id=?");
-        $stmtP->execute([$id]);
-        $usedP = (int)$stmtP->fetchColumn();
-
-        $stmtT = $db->prepare("SELECT COUNT(*) FROM tenants WHERE package_id=?");
-        $stmtT->execute([$id]);
-        $usedT = (int)$stmtT->fetchColumn();
-
-        if ($usedP > 0 || $usedT > 0) {
-            $detail = [];
-            if ($usedT > 0) $detail[] = "$usedT tenant";
-            if ($usedP > 0) $detail[] = "$usedP pembayaran";
-            echo json_encode([
-                'error' => 'Tidak bisa dihapus — sudah dipakai oleh ' . implode(' dan ', $detail) . '. Nonaktifkan saja.'
-            ]);
-            exit;
-        }
-
-        $db->prepare("DELETE FROM saas_packages WHERE id=?")->execute([$id]);
-        logSuperAdminAction('delete_package', null, "Hapus paket #$id");
-        echo json_encode(['ok' => true, 'msg' => 'Paket berhasil dihapus.']);
-        exit;
-    }
-
     // ── DELETE BUNDLE ─────────────────────────────────
     if ($action === 'delete_bundle') {
         $d  = json_decode(file_get_contents('php://input'), true) ?: [];
@@ -199,12 +93,8 @@ if ($action) {
 
         $stmtP = $db->prepare("SELECT COUNT(*) FROM saas_manual_payments WHERE bundle_id=?");
         $stmtP->execute([$id]);
-        $usedP = (int)$stmtP->fetchColumn();
-
-        if ($usedP > 0) {
-            echo json_encode([
-                'error' => "Tidak bisa dihapus — sudah dipakai di $usedP transaksi. Nonaktifkan saja."
-            ]);
+        if ((int)$stmtP->fetchColumn() > 0) {
+            echo json_encode(['error' => 'Tidak bisa dihapus — sudah dipakai dalam transaksi. Nonaktifkan saja.']);
             exit;
         }
 
@@ -221,28 +111,8 @@ if ($action) {
 <!DOCTYPE html>
 <html lang="id">
 <head>
-<?php saRenderHead('Paket & Bundle'); ?>
+<?php saRenderHead('Coin & Aktivasi'); ?>
 <style>
-/* ── Extra styles for packages page ── */
-.pkg-badge-custom {
-  background: rgba(245,158,11,.15); color: #FCD34D;
-  border: 1px solid rgba(245,158,11,.25);
-  font-size: 10px; font-weight: 700; padding: 1px 7px;
-  border-radius: 20px; margin-left: 6px;
-}
-.bundle-featured {
-  background: rgba(99,102,241,.15); color: #A5B4FC;
-  border: 1px solid rgba(99,102,241,.25);
-  font-size: 10px; font-weight: 700; padding: 1px 7px;
-  border-radius: 20px;
-}
-.pkg-setup-fee { font-family: var(--mono); font-size: 13px; color: #6EE7B7; font-weight: 600; }
-.pkg-setup-free { font-family: var(--mono); font-size: 11px; color: rgba(255,255,255,.3); }
-.pkg-coin { font-family: var(--mono); color: #FCD34D; }
-.pkg-max-outlet { font-size: 12px; color: rgba(255,255,255,.6); }
-.bonus-pct { font-size: 11px; font-weight: 700; color: #6EE7B7; margin-left: 4px; }
-.bonus-zero { color: rgba(255,255,255,.3); }
-
 /* ── Toggle switch ── */
 .sw { position: relative; display: inline-block; width: 36px; height: 20px; }
 .sw input { opacity: 0; width: 0; height: 0; }
@@ -270,163 +140,125 @@ if ($action) {
 .fg input:focus, .fg textarea:focus, .fg select:focus {
   border-color: var(--sa); box-shadow: 0 0 0 3px rgba(99,102,241,.12);
 }
-.fg textarea { resize: vertical; min-height: 72px; }
 .fg select option { background: var(--navy); }
 .fg-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .fg-hint { font-size: 11px; color: rgba(255,255,255,.3); margin-top: 3px; }
 .fg-check { display: flex; align-items: center; gap: 10px; }
 .fg-check input[type=checkbox] { width: 16px; height: 16px; cursor: pointer; accent-color: var(--sa); }
 .fg-check label { font-size: 13px; color: rgba(255,255,255,.7); text-transform: none; letter-spacing: 0; font-weight: 500; }
+
+.bundle-featured {
+  background: rgba(99,102,241,.15); color: #A5B4FC;
+  border: 1px solid rgba(99,102,241,.25);
+  font-size: 10px; font-weight: 700; padding: 1px 7px; border-radius: 20px;
+}
+.bonus-pct  { font-size: 11px; font-weight: 700; color: #6EE7B7; margin-left: 4px; }
+.bonus-zero { color: rgba(255,255,255,.3); }
+.pkg-fee    { font-family: var(--mono); font-size: 13px; color: #6EE7B7; font-weight: 600; }
+.pkg-coin   { font-family: var(--mono); color: #FCD34D; }
+
+/* ── Activation fee card ── */
+.activation-card {
+  background: rgba(16,185,129,.04);
+  border: 1px solid rgba(16,185,129,.15);
+  border-radius: 14px; padding: 22px 24px;
+  margin-bottom: 24px;
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;
+}
+.activation-card .ac-label {
+  font-size: 11px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase;
+  color: rgba(255,255,255,.4); margin-bottom: 4px;
+}
+.activation-card .ac-value {
+  font-size: 28px; font-weight: 800; font-family: var(--mono); color: #6EE7B7;
+}
+.activation-card .ac-sub {
+  font-size: 12px; color: rgba(255,255,255,.35); margin-top: 4px;
+}
 </style>
 </head>
 <body>
 <div class="sa-layout">
-<?php saRenderNav('packages', 'Paket & Coin Bundle'); ?>
+<?php saRenderNav('packages', 'Coin & Aktivasi'); ?>
 
 <div class="sa-page-header">
-  <h1>📦 Paket & Coin Bundle</h1>
-  <p>Kelola struktur paket berlangganan dan paket topup coin untuk tenant</p>
+  <h1>🪙 Coin &amp; Aktivasi</h1>
+  <p>Kelola biaya aktivasi outlet dan paket topup coin</p>
 </div>
 
-<!-- Tabs -->
-<div class="sa-tabs" id="mainTabs">
-  <button class="sa-tab active" onclick="switchTab('packages')">📦 Paket LaMaSy</button>
-  <button class="sa-tab"       onclick="switchTab('bundles')">🪙 Coin Bundle</button>
-</div>
-
-<!-- ══ TAB: PACKAGES ══════════════════════════════════ -->
-<div id="tabPackages">
-  <div class="sa-card">
-    <div class="sa-card-header">
-      <h3>Paket LaMaSy</h3>
-      <button class="sa-btn sa-btn-primary sa-btn-sm" onclick="openPackageModal()">＋ Tambah Paket</button>
-    </div>
-    <div class="sa-table-wrap">
-      <table class="sa-table">
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Nama Paket</th>
-            <th>Setup Fee</th>
-            <th>Coin Awal</th>
-            <th>Trial</th>
-            <th>Max Outlet</th>
-            <th>Dipakai</th>
-            <th>Aktif</th>
-            <th>Aksi</th>
-          </tr>
-        </thead>
-        <tbody id="packagesBody">
-          <tr><td colspan="9" style="text-align:center;padding:32px;color:rgba(255,255,255,.3);">Memuat...</td></tr>
-        </tbody>
-      </table>
-    </div>
+<!-- ── Biaya Aktivasi Outlet ──────────────────────────── -->
+<div class="activation-card">
+  <div>
+    <div class="ac-label">Biaya Aktivasi Outlet</div>
+    <div class="ac-value" id="activationFeeDisplay">—</div>
+    <div class="ac-sub">Diinput langsung saat provisioning di wizard registrasi</div>
+  </div>
+  <div style="text-align:right;">
+    <div style="font-size:12px;color:rgba(255,255,255,.3);margin-bottom:8px;">Nilai default untuk wizard</div>
+    <button class="sa-btn sa-btn-outline sa-btn-sm" onclick="openDefaultModal()">✏️ Edit Default</button>
   </div>
 </div>
 
-<!-- ══ TAB: BUNDLES ═══════════════════════════════════ -->
-<div id="tabBundles" style="display:none">
-  <div class="sa-card">
-    <div class="sa-card-header">
-      <h3>Coin Bundle</h3>
-      <button class="sa-btn sa-btn-primary sa-btn-sm" onclick="openBundleModal()">＋ Tambah Bundle</button>
-    </div>
-    <div class="sa-table-wrap">
-      <table class="sa-table">
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Nama Bundle</th>
-            <th>Harga</th>
-            <th>Coin Didapat</th>
-            <th>Bonus</th>
-            <th>Dipakai</th>
-            <th>Featured</th>
-            <th>Aktif</th>
-            <th>Aksi</th>
-          </tr>
-        </thead>
-        <tbody id="bundlesBody">
-          <tr><td colspan="9" style="text-align:center;padding:32px;color:rgba(255,255,255,.3);">Memuat...</td></tr>
-        </tbody>
-      </table>
-    </div>
+<!-- ── Coin Bundle ────────────────────────────────────── -->
+<div class="sa-card">
+  <div class="sa-card-header">
+    <h3>Paket Topup Coin</h3>
+    <button class="sa-btn sa-btn-primary sa-btn-sm" onclick="openBundleModal()">＋ Tambah Bundle</button>
+  </div>
+  <div class="sa-table-wrap">
+    <table class="sa-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Nama Bundle</th>
+          <th>Harga</th>
+          <th>Coin Didapat</th>
+          <th>Bonus</th>
+          <th>Dipakai</th>
+          <th>Featured</th>
+          <th>Aktif</th>
+          <th>Aksi</th>
+        </tr>
+      </thead>
+      <tbody id="bundlesBody">
+        <tr><td colspan="9" style="text-align:center;padding:32px;color:rgba(255,255,255,.3);">Memuat...</td></tr>
+      </tbody>
+    </table>
   </div>
 </div>
 
-<!-- ══ MODAL: PACKAGE ═════════════════════════════════ -->
-<div class="sa-modal-overlay" id="packageModal">
-  <div class="sa-modal" style="max-width:560px;">
-    <h3 id="packageModalTitle">📦 Tambah Paket</h3>
-    <input type="hidden" id="pkgId" value="0"/>
-
-    <div class="fg-row">
-      <div class="fg">
-        <label>Nama Paket *</label>
-        <input type="text" id="pkgNama" placeholder="Starter, Pro, Enterprise..." maxlength="100"
-               oninput="autoSlug()"/>
-      </div>
-      <div class="fg">
-        <label>Slug *</label>
-        <input type="text" id="pkgSlug" placeholder="starter" maxlength="50"
-               style="font-family:var(--mono);font-size:12px;"/>
-        <span class="fg-hint">Huruf kecil, angka, underscore saja</span>
-      </div>
-    </div>
+<!-- ══ MODAL: EDIT DEFAULT AKTIVASI ══════════════════════ -->
+<div class="sa-modal-overlay" id="defaultModal">
+  <div class="sa-modal" style="max-width:420px;">
+    <h3>✏️ Edit Default Aktivasi</h3>
+    <p style="font-size:12.5px;color:rgba(255,255,255,.4);margin-bottom:18px;line-height:1.6;">
+      Nilai ini akan muncul sebagai <em>default</em> di Step 2 wizard registrasi.
+      Bisa diubah per-klien saat provisioning.
+    </p>
 
     <div class="fg">
-      <label>Deskripsi</label>
-      <textarea id="pkgDeskripsi" placeholder="Jelaskan fitur & keunggulan paket ini..."></textarea>
+      <label>Biaya Aktivasi Outlet (Rp)</label>
+      <input type="number" id="defFee" min="0" step="10000" placeholder="300000"/>
     </div>
-
     <div class="fg-row">
       <div class="fg">
-        <label>Setup Fee (Rp)</label>
-        <input type="number" id="pkgSetupFee" placeholder="300000" min="0" step="1000"/>
-        <span class="fg-hint" id="pkgSetupFeeHint">Kosongkan / isi 0 jika gratis</span>
+        <label>Coin Awal Dikreditkan</label>
+        <input type="number" id="defCoin" min="0" placeholder="50000"/>
       </div>
-      <div class="fg">
-        <label>Coin Awal</label>
-        <input type="number" id="pkgCoinAwal" placeholder="50000" min="0"/>
-        <span class="fg-hint">Dikreditkan saat aktivasi</span>
-      </div>
-    </div>
-
-    <div class="fg-row">
       <div class="fg">
         <label>Durasi Trial (hari)</label>
-        <input type="number" id="pkgTrialHari" value="30" min="1" max="365"/>
-      </div>
-      <div class="fg">
-        <label>Max Outlet</label>
-        <input type="number" id="pkgMaxOutlets" value="1" min="0"/>
-        <span class="fg-hint">0 = unlimited</span>
-      </div>
-    </div>
-
-    <div class="fg-row" style="align-items:end">
-      <div class="fg">
-        <label>Urutan Tampil</label>
-        <input type="number" id="pkgUrutan" value="0" min="0"/>
-        <span class="fg-hint">Angka kecil tampil duluan</span>
-      </div>
-      <div class="fg" style="padding-bottom:12px;">
-        <div class="fg-check">
-          <input type="checkbox" id="pkgIsCustom" onchange="onCustomChange()"/>
-          <label for="pkgIsCustom">Harga custom (Enterprise)</label>
-        </div>
-        <span class="fg-hint">Setup fee tidak dihitung — nego langsung</span>
+        <input type="number" id="defTrial" min="0" max="365" placeholder="30"/>
       </div>
     </div>
 
     <div class="sa-modal-footer">
-      <button class="sa-btn sa-btn-outline" onclick="closeModal('packageModal')">Batal</button>
-      <button class="sa-btn sa-btn-primary" onclick="submitPackage()">💾 Simpan Paket</button>
+      <button class="sa-btn sa-btn-outline" onclick="closeModal('defaultModal')">Batal</button>
+      <button class="sa-btn sa-btn-primary" onclick="saveDefaults()">💾 Simpan</button>
     </div>
   </div>
 </div>
 
-<!-- ══ MODAL: BUNDLE ══════════════════════════════════ -->
+<!-- ══ MODAL: BUNDLE ══════════════════════════════════════ -->
 <div class="sa-modal-overlay" id="bundleModal">
   <div class="sa-modal" style="max-width:480px;">
     <h3 id="bundleModalTitle">🪙 Tambah Coin Bundle</h3>
@@ -480,72 +312,42 @@ if ($action) {
 <?php saRenderNavClose(); ?>
 
 <script>
-const rp  = n => 'Rp ' + parseInt(n||0).toLocaleString('id-ID');
+const rp   = n => 'Rp ' + parseInt(n||0).toLocaleString('id-ID');
 const coin = n => parseInt(n||0).toLocaleString('id-ID');
 function esc(s){ const d=document.createElement('div'); d.textContent=String(s??''); return d.innerHTML; }
 
-// ── Tab switching ─────────────────────────────────────
-function switchTab(tab) {
-  document.getElementById('tabPackages').style.display = tab === 'packages' ? '' : 'none';
-  document.getElementById('tabBundles').style.display  = tab === 'bundles'  ? '' : 'none';
-  document.querySelectorAll('#mainTabs .sa-tab').forEach((el, i) => {
-    el.classList.toggle('active', (i === 0 && tab === 'packages') || (i === 1 && tab === 'bundles'));
-  });
-  if (tab === 'packages') loadPackages();
-  else loadBundles();
+// ── Defaults (stored in localStorage for now) ─────────
+const DEF_KEY = 'sa_activation_defaults';
+function loadDefaults() {
+  try { return JSON.parse(localStorage.getItem(DEF_KEY)) || {}; } catch { return {}; }
+}
+function saveDefaultsToStorage(fee, coinAwal, trial) {
+  localStorage.setItem(DEF_KEY, JSON.stringify({ fee, coinAwal, trial }));
 }
 
-// ── Load packages ─────────────────────────────────────
-function loadPackages() {
-  saFetch('packages.php?action=list_packages')
-    .then(r => r.json()).then(d => {
-      if (d.error) { saShowToast(d.error, 'error'); return; }
-      renderPackages(d.rows);
-    });
+function refreshActivationCard() {
+  const d = loadDefaults();
+  const fee = d.fee ?? 300000;
+  document.getElementById('activationFeeDisplay').textContent =
+    fee > 0 ? 'Rp ' + parseInt(fee).toLocaleString('id-ID') : 'Gratis';
 }
 
-function renderPackages(rows) {
-  const tb = document.getElementById('packagesBody');
-  if (!rows.length) {
-    tb.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:32px;color:rgba(255,255,255,.3);">Belum ada paket.</td></tr>';
-    return;
-  }
-  tb.innerHTML = rows.map((p, i) => `
-    <tr>
-      <td style="color:rgba(255,255,255,.3);font-size:12px;">${i+1}</td>
-      <td>
-        <strong>${esc(p.nama)}</strong>
-        ${p.is_custom ? '<span class="pkg-badge-custom">Custom</span>' : ''}
-        ${p.slug ? `<br><small style="font-family:var(--mono);font-size:10px;color:rgba(255,255,255,.25);">${esc(p.slug)}</small>` : ''}
-      </td>
-      <td>
-        ${p.is_custom
-          ? '<span style="font-size:11px;color:rgba(255,255,255,.35);">Nego</span>'
-          : (p.setup_fee > 0
-              ? `<span class="pkg-setup-fee">${rp(p.setup_fee)}</span>`
-              : '<span class="pkg-setup-free">Gratis</span>')}
-      </td>
-      <td><span class="pkg-coin">${coin(p.coin_awal)}</span></td>
-      <td style="font-size:12px;color:rgba(255,255,255,.6);">${esc(p.trial_hari)} hari</td>
-      <td class="pkg-max-outlet">${p.max_outlets == 0 ? '∞ Unlimited' : p.max_outlets}</td>
-      <td style="font-size:12px;">
-        ${p.used_tenants > 0 ? `<span style="color:#93C5FD;">${p.used_tenants} tenant</span>` : ''}
-        ${p.used_payments > 0 ? `<span style="color:rgba(255,255,255,.35);margin-left:4px;">${p.used_payments} txn</span>` : ''}
-        ${(p.used_tenants == 0 && p.used_payments == 0) ? '<span style="color:rgba(255,255,255,.2);">—</span>' : ''}
-      </td>
-      <td>
-        <label class="sw" title="${p.is_active ? 'Nonaktifkan' : 'Aktifkan'}">
-          <input type="checkbox" ${p.is_active ? 'checked' : ''}
-            onchange="togglePackage(${p.id}, this.checked)"/>
-          <span class="sw-track"></span>
-        </label>
-      </td>
-      <td>
-        <button class="sa-btn sa-btn-sm sa-btn-outline" onclick="editPackage(${p.id})">Edit</button>
-        <button class="sa-btn sa-btn-sm sa-btn-danger" style="margin-left:4px;"
-                onclick="deletePackage(${p.id}, '${esc(p.nama)}')">Hapus</button>
-      </td>
-    </tr>`).join('');
+function openDefaultModal() {
+  const d = loadDefaults();
+  document.getElementById('defFee').value   = d.fee   ?? 300000;
+  document.getElementById('defCoin').value  = d.coinAwal ?? 50000;
+  document.getElementById('defTrial').value = d.trial ?? 30;
+  document.getElementById('defaultModal').classList.add('open');
+}
+
+function saveDefaults() {
+  const fee   = parseInt(document.getElementById('defFee').value)   || 0;
+  const coinA = parseInt(document.getElementById('defCoin').value)  || 0;
+  const trial = parseInt(document.getElementById('defTrial').value) || 30;
+  saveDefaultsToStorage(fee, coinA, trial);
+  refreshActivationCard();
+  closeModal('defaultModal');
+  saShowToast('Default aktivasi disimpan.', 'success');
 }
 
 // ── Load bundles ──────────────────────────────────────
@@ -560,7 +362,7 @@ function loadBundles() {
 function renderBundles(rows) {
   const tb = document.getElementById('bundlesBody');
   if (!rows.length) {
-    tb.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:32px;color:rgba(255,255,255,.3);">Belum ada bundle.</td></tr>';
+    tb.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:32px;color:rgba(255,255,255,.3);">Belum ada bundle. Klik ＋ Tambah Bundle.</td></tr>';
     return;
   }
   tb.innerHTML = rows.map((b, i) => {
@@ -574,7 +376,7 @@ function renderBundles(rows) {
         <strong>${esc(b.nama)}</strong>
         ${b.is_featured ? ' <span class="bundle-featured">⭐ Featured</span>' : ''}
       </td>
-      <td><span class="pkg-setup-fee">${rp(b.harga)}</span></td>
+      <td><span class="pkg-fee">${rp(b.harga)}</span></td>
       <td><span class="pkg-coin">${coin(b.coin_didapat)}</span></td>
       <td>${bonusHtml}</td>
       <td style="font-size:12px;color:rgba(255,255,255,.35);">
@@ -603,110 +405,15 @@ function renderBundles(rows) {
   }).join('');
 }
 
-// ── Package modal ─────────────────────────────────────
-let _pkgRows = [];
-
-function openPackageModal(pkg = null) {
-  document.getElementById('packageModalTitle').textContent = pkg ? '✏️ Edit Paket' : '📦 Tambah Paket';
-  document.getElementById('pkgId').value         = pkg?.id    ?? 0;
-  document.getElementById('pkgNama').value        = pkg?.nama  ?? '';
-  document.getElementById('pkgSlug').value        = pkg?.slug  ?? '';
-  document.getElementById('pkgDeskripsi').value   = pkg?.deskripsi ?? '';
-  document.getElementById('pkgSetupFee').value    = pkg?.setup_fee ?? '';
-  document.getElementById('pkgCoinAwal').value    = pkg?.coin_awal ?? 50000;
-  document.getElementById('pkgTrialHari').value   = pkg?.trial_hari ?? 30;
-  document.getElementById('pkgMaxOutlets').value  = pkg?.max_outlets ?? 1;
-  document.getElementById('pkgUrutan').value      = pkg?.urutan ?? 0;
-  document.getElementById('pkgIsCustom').checked  = !!parseInt(pkg?.is_custom ?? 0);
-  onCustomChange();
-  document.getElementById('packageModal').classList.add('open');
-  setTimeout(() => document.getElementById('pkgNama').focus(), 100);
-}
-
-function editPackage(id) {
-  saFetch('packages.php?action=list_packages')
-    .then(r => r.json()).then(d => {
-      const pkg = (d.rows || []).find(p => p.id == id);
-      if (pkg) openPackageModal(pkg);
-    });
-}
-
-function autoSlug() {
-  const n = document.getElementById('pkgNama').value;
-  document.getElementById('pkgSlug').value =
-    n.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
-}
-
-function onCustomChange() {
-  const isCustom = document.getElementById('pkgIsCustom').checked;
-  const feeInput = document.getElementById('pkgSetupFee');
-  feeInput.disabled = isCustom;
-  feeInput.style.opacity = isCustom ? '.35' : '1';
-  document.getElementById('pkgSetupFeeHint').textContent =
-    isCustom ? 'Harga dinegosiasikan langsung' : 'Kosongkan / isi 0 jika gratis';
-}
-
-function submitPackage() {
-  const id = parseInt(document.getElementById('pkgId').value);
-  const payload = {
-    id,
-    nama:        document.getElementById('pkgNama').value.trim(),
-    slug:        document.getElementById('pkgSlug').value.trim(),
-    deskripsi:   document.getElementById('pkgDeskripsi').value.trim(),
-    setup_fee:   document.getElementById('pkgSetupFee').value || 0,
-    coin_awal:   document.getElementById('pkgCoinAwal').value || 0,
-    trial_hari:  document.getElementById('pkgTrialHari').value || 30,
-    max_outlets: document.getElementById('pkgMaxOutlets').value || 1,
-    urutan:      document.getElementById('pkgUrutan').value || 0,
-    is_custom:   document.getElementById('pkgIsCustom').checked ? 1 : 0,
-  };
-  if (!payload.nama) { saShowToast('Nama paket wajib diisi.', 'error'); return; }
-
-  saFetch('packages.php?action=save_package', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  }).then(r => r.json()).then(d => {
-    if (d.error) { saShowToast(d.error, 'error'); return; }
-    saShowToast(d.msg, 'success');
-    closeModal('packageModal');
-    loadPackages();
-  });
-}
-
-function togglePackage(id, active) {
-  saFetch('packages.php?action=toggle_package', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ id, value: active ? 1 : 0 }),
-  }).then(r => r.json()).then(d => {
-    if (d.error) { saShowToast(d.error, 'error'); loadPackages(); }
-    else saShowToast(active ? 'Paket diaktifkan.' : 'Paket dinonaktifkan.', 'info');
-  });
-}
-
-function deletePackage(id, nama) {
-  if (!confirm(`Hapus paket "${nama}"?\n\nPaket yang sudah dipakai tenant tidak bisa dihapus.`)) return;
-  saFetch('packages.php?action=delete_package', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ id }),
-  }).then(r => r.json()).then(d => {
-    if (d.error) { saShowToast(d.error, 'error'); return; }
-    saShowToast(d.msg, 'success');
-    loadPackages();
-  });
-}
-
 // ── Bundle modal ──────────────────────────────────────
 function openBundleModal(bdl = null) {
   document.getElementById('bundleModalTitle').textContent = bdl ? '✏️ Edit Bundle' : '🪙 Tambah Coin Bundle';
-  document.getElementById('bdlId').value         = bdl?.id ?? 0;
-  document.getElementById('bdlNama').value        = bdl?.nama ?? '';
-  document.getElementById('bdlHarga').value       = bdl?.harga ?? '';
-  document.getElementById('bdlBonusPct').value    = bdl?.bonus_pct ?? 0;
-  document.getElementById('bdlCoinDidapat').value = bdl?.coin_didapat ?? '';
-  document.getElementById('bdlUrutan').value      = bdl?.urutan ?? 0;
+  document.getElementById('bdlId').value          = bdl?.id ?? 0;
+  document.getElementById('bdlNama').value         = bdl?.nama ?? '';
+  document.getElementById('bdlHarga').value        = bdl?.harga ?? '';
+  document.getElementById('bdlBonusPct').value     = bdl?.bonus_pct ?? 0;
+  document.getElementById('bdlCoinDidapat').value  = bdl?.coin_didapat ?? '';
+  document.getElementById('bdlUrutan').value       = bdl?.urutan ?? 0;
   document.getElementById('bdlIsFeatured').checked = !!parseInt(bdl?.is_featured ?? 0);
   document.getElementById('bdlCoinHint').textContent = '';
   document.getElementById('bundleModal').classList.add('open');
@@ -722,16 +429,15 @@ function editBundle(id) {
 }
 
 function autoCalcCoin() {
-  const harga   = parseInt(document.getElementById('bdlHarga').value) || 0;
-  const bonus   = parseFloat(document.getElementById('bdlBonusPct').value) || 0;
+  const harga  = parseInt(document.getElementById('bdlHarga').value) || 0;
+  const bonus  = parseFloat(document.getElementById('bdlBonusPct').value) || 0;
   if (!harga) { document.getElementById('bdlCoinHint').textContent = ''; return; }
-  const baseCoin   = harga;            // 1 Rp = 1 coin (base)
-  const bonusCoin  = Math.round(baseCoin * bonus / 100);
-  const totalCoin  = baseCoin + bonusCoin;
-  document.getElementById('bdlCoinDidapat').value = totalCoin;
+  const bonusCoin = Math.round(harga * bonus / 100);
+  const total     = harga + bonusCoin;
+  document.getElementById('bdlCoinDidapat').value = total;
   document.getElementById('bdlCoinHint').textContent =
     bonus > 0
-      ? `Base ${harga.toLocaleString('id-ID')} + bonus ${bonusCoin.toLocaleString('id-ID')} = ${totalCoin.toLocaleString('id-ID')} coin`
+      ? `${harga.toLocaleString('id-ID')} + bonus ${bonusCoin.toLocaleString('id-ID')} = ${total.toLocaleString('id-ID')} coin`
       : `1 Rp = 1 coin`;
 }
 
@@ -788,19 +494,17 @@ function closeModal(id) {
   document.getElementById(id).classList.remove('open');
 }
 
-// Close modals on backdrop click
 document.querySelectorAll('.sa-modal-overlay').forEach(el => {
   el.addEventListener('click', e => { if (e.target === el) el.classList.remove('open'); });
 });
-
-// Close modals on Escape
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') document.querySelectorAll('.sa-modal-overlay.open')
     .forEach(el => el.classList.remove('open'));
 });
 
-// Initial load
-loadPackages();
+// Init
+refreshActivationCard();
+loadBundles();
 </script>
 </body>
 </html>

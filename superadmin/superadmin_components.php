@@ -412,6 +412,9 @@ function saRenderNav(string $activePage = '', string $pageTitle = ''): void {
         <a href="/superadmin/payments.php" class="sa-nav-link <?= $activePage === 'payments' ? 'active' : '' ?>">
           <span class="icon">💰</span> Pembayaran
         </a>
+        <a href="/superadmin/packages.php" class="sa-nav-link <?= $activePage === 'packages' ? 'active' : '' ?>">
+          <span class="icon">🪙</span> Coin &amp; Aktivasi
+        </a>
         <div class="sa-nav-section">Support</div>
         <a href="/superadmin/support.php" class="sa-nav-link <?= $activePage === 'support' ? 'active' : '' ?>">
           <span class="icon">🎧</span> Tiket Support
