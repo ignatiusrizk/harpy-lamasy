@@ -827,7 +827,7 @@ $csrf = saGetCsrf();
       <input type="hidden" name="step" value="4"/>
       <div class="wiz-footer">
         <button type="button" class="sa-btn sa-btn-outline" onclick="goBack(3)">&larr; Kembali</button>
-        <button type="submit" class="sa-btn sa-btn-primary" id="provBtn" onclick="startProvision()">
+        <button type="button" class="sa-btn sa-btn-primary" id="provBtn" onclick="startProvision()">
           🚀 Proses Sekarang
         </button>
       </div>
@@ -957,8 +957,11 @@ function togglePayMode(mode) {
 }
 
 function startProvision() {
-  const btn = document.getElementById('provBtn');
+  const btn  = document.getElementById('provBtn');
+  const form = document.getElementById('provisionForm');
+  if (!form) return;
   if (btn) { btn.disabled = true; btn.textContent = '⏳ Memproses…'; }
+  form.submit();
 }
 
 async function copyWa() {
