@@ -13,7 +13,7 @@ require_once __DIR__ . '/core/Mailer.php';
 
 // Harus ada tenant_id di session (dari proses registrasi)
 if (!isset($_SESSION['tenant_id'])) {
-    header('Location: /login.php');
+    header('Location: /login');
     exit;
 }
 
@@ -26,13 +26,13 @@ $tenant = $stmt->fetch();
 
 if (!$tenant) {
     session_destroy();
-    header('Location: /login.php?error=tenant_not_found');
+    header('Location: /login?error=tenant_not_found');
     exit;
 }
 
 // Kalau sudah verified, redirect ke dashboard
 if ($tenant['verified_at'] !== null) {
-    header('Location: /dashboard.php');
+    header('Location: /dashboard');
     exit;
 }
 
@@ -246,7 +246,7 @@ $maskedEmail = $email ? maskEmail($email) : '***';
 
 <div class="logout">
   Daftar dengan email salah?
-  <a href="/logout.php">Keluar & daftar ulang</a>
+  <a href="/logout">Keluar & daftar ulang</a>
 </div>
 
 </body>

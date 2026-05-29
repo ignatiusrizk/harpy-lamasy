@@ -16,9 +16,9 @@ require_once __DIR__ . '/core/Mailer.php';
 // GET tanpa tenant_id → arahkan ke pending-verify atau login
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     if (isset($_SESSION['tenant_id'])) {
-        header('Location: /pending-verify.php');
+        header('Location: /pending-verify');
     } else {
-        header('Location: /login.php');
+        header('Location: /login');
     }
     exit;
 }
@@ -26,7 +26,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 $tenantId = (int)($_POST['tenant_id'] ?? $_SESSION['tenant_id'] ?? 0);
 
 if (!$tenantId) {
-    header('Location: /login.php?error=no_tenant');
+    header('Location: /login?error=no_tenant');
     exit;
 }
 
@@ -36,7 +36,7 @@ $rlData = $_SESSION[$rlKey] ?? ['n' => 0, 't' => 0];
 if ((time() - $rlData['t']) > 600) $rlData = ['n' => 0, 't' => time()];
 if ($rlData['n'] >= 3) {
     $_SESSION['resend_flash'] = 'error:Terlalu banyak permintaan. Tunggu 10 menit sebelum kirim ulang.';
-    header('Location: /pending-verify.php');
+    header('Location: /pending-verify');
     exit;
 }
 $rlData['n']++;
@@ -51,11 +51,11 @@ $tenant = $stmt->fetch();
 
 // Kalau tidak ditemukan atau sudah verified → login
 if (!$tenant) {
-    header('Location: /login.php?error=tenant_not_found');
+    header('Location: /login?error=tenant_not_found');
     exit;
 }
 if ($tenant['verified_at'] !== null) {
-    header('Location: /login.php?msg=already_verified');
+    header('Location: /login?msg=already_verified');
     exit;
 }
 
@@ -73,5 +73,5 @@ if ($result['ok']) {
     $_SESSION['resend_flash'] = 'error:' . htmlspecialchars($result['message']);
 }
 
-header('Location: /pending-verify.php');
+header('Location: /pending-verify');
 exit;

@@ -876,7 +876,7 @@ textarea{resize:vertical;min-height:64px}
       <button class="btn btn-outline btn-sm" onclick="resetFilter()" title="Reset filter">✕ Reset</button>
       <button class="btn btn-teal-sm" onclick="loadOrders(1)">↻</button>
       <?php if (hasPermission('pos.view')): ?>
-      <a href="pos.php" class="btn btn-teal-sm">+ Order Baru</a>
+      <a href="/pos" class="btn btn-teal-sm">+ Order Baru</a>
       <?php endif; ?>
     </div>
   </div>

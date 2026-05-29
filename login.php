@@ -28,7 +28,7 @@ if (!headers_sent()) {
 
 // Sudah login → langsung ke dashboard
 if (!empty($_SESSION['user_id']) && !empty($_SESSION['tenant_id'])) {
-    header('Location: dashboard.php');
+    header('Location: /dashboard');
     exit;
 }
 
@@ -155,7 +155,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 session_regenerate_id(true);
                 $_SESSION['tenant_id']      = $user['tenant_id'];
                 $_SESSION['pending_verify'] = true;
-                header('Location: pending-verify.php');
+                header('Location: /pending-verify');
                 exit;
             } else {
                 clearLoginAttempts($username, $clientIp);
@@ -225,7 +225,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         // no-outlet onboarding state (hero CTA daftar outlet)
                         $_SESSION['outlet_id'] = 0;
                         $_SESSION['hq_mode']   = false;
-                        $redirectTo = 'dashboard.php';
+                        $redirectTo = '/dashboard';
                     } else {
                         // Sudah punya outlet → masuk HQ. Set juga outlet_id default
                         // (main outlet) supaya kalau switch ke outlet view tidak perlu pilih.
@@ -237,7 +237,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $outletRow->execute([$user['tenant_id']]);
                         $_SESSION['outlet_id'] = (int)$outletRow->fetchColumn();
                         $_SESSION['hq_mode']   = true;
-                        $redirectTo = 'dashboard.php'; // dashboard.php route ke HQ via hq_mode
+                        $redirectTo = '/dashboard'; // dashboard.php route ke HQ via hq_mode
                     }
                 } else {
                     // KASIR / STAFF / KURIR: scope ke hl_karyawan_outlet
@@ -257,13 +257,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                     if (count($assignedIds) === 0) {
                         // Belum ditugaskan → halaman info
-                        $redirectTo = 'no-assignment.php';
+                        $redirectTo = '/no-assignment';
                     } elseif (count($assignedIds) === 1) {
                         $_SESSION['outlet_id'] = (int)$assignedIds[0];
-                        $redirectTo = 'dashboard.php';
+                        $redirectTo = '/dashboard';
                     } else {
                         // Multi-assignment → select-outlet (scoped sesuai assignment)
-                        $redirectTo = 'select-outlet.php';
+                        $redirectTo = '/select-outlet';
                     }
                     $_SESSION['hq_mode'] = false; // non-owner selalu outlet view
                 }

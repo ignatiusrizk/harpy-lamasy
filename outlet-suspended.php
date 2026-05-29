@@ -15,7 +15,7 @@ $tenantId = (int)($_SESSION['tenant_id'] ?? 0);
 $outletId = (int)($_SESSION['outlet_id'] ?? 0);
 
 if (!$tenantId || !$outletId) {
-    header('Location: /login.php');
+    header('Location: /login');
     exit;
 }
 
@@ -29,7 +29,7 @@ $outlet = $stmt->fetch();
 
 if (!$outlet || $outlet['status'] !== 'suspended') {
     // Outlet tidak suspended → balik ke dashboard
-    header('Location: /dashboard.php');
+    header('Location: /dashboard');
     exit;
 }
 
@@ -136,17 +136,17 @@ $waMsg     = urlencode("Halo Tim LAMASY, saya mau aktivasi ulang outlet '" . ($o
   <hr>
   <div class="label">Atau pindah ke outlet lain</div>
   <?php foreach ($otherOutlets as $o): ?>
-  <a href="switch-outlet.php?id=<?= (int)$o['id'] ?>" class="other-outlet">
+  <a href="/switch-outlet?id=<?= (int)$o['id'] ?>" class="other-outlet">
     <span>📍 <?= htmlspecialchars($o['nama_outlet']) ?></span>
     <span class="badge badge-<?= $o['status'] ?>"><?= $o['status'] ?></span>
   </a>
   <?php endforeach; ?>
   <?php endif; ?>
 
-  <a href="add-outlet.php" class="btn btn-secondary" style="margin-top:14px">
+  <a href="/add-outlet" class="btn btn-secondary" style="margin-top:14px">
     🏪 Buat Outlet Baru
   </a>
-  <a href="/logout.php" class="btn btn-link">Logout</a>
+  <a href="/logout" class="btn btn-link">Logout</a>
 </div>
 </body>
 </html>

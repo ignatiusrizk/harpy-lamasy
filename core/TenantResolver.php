@@ -40,7 +40,7 @@ class TenantResolver
 
         if (!$tenant) {
             session_destroy();
-            header('Location: /login.php?error=tenant_not_found');
+            header('Location: /login?error=tenant_not_found');
             exit;
         }
 
@@ -61,11 +61,11 @@ class TenantResolver
                     header('Content-Type: application/json');
                     echo json_encode([
                         'error'    => 'Email belum diverifikasi.',
-                        'redirect' => '/pending-verify.php',
+                        'redirect' => '/pending-verify',
                     ]);
                     exit;
                 }
-                header('Location: /pending-verify.php');
+                header('Location: /pending-verify');
                 exit;
             }
             self::$tenant = $tenant;
@@ -77,7 +77,7 @@ class TenantResolver
             $allowed = ['/account-suspended.php', '/logout.php'];
             $currentPath = $_SERVER['PHP_SELF'] ?? '';
             if (!in_array($currentPath, $allowed)) {
-                header('Location: /account-suspended.php');
+                header('Location: /account-suspended');
                 exit;
             }
             self::$tenant = $tenant;
@@ -111,11 +111,11 @@ class TenantResolver
                         header('Content-Type: application/json');
                         echo json_encode([
                             'error'    => 'Belum ada outlet.',
-                            'redirect' => '/add-outlet.php',
+                            'redirect' => '/add-outlet',
                         ]);
                         exit;
                     }
-                    header('Location: /add-outlet.php');
+                    header('Location: /add-outlet');
                     exit;
                 }
                 // Di halaman yang diizinkan — set flag no-outlet untuk dashboard
@@ -136,7 +136,7 @@ class TenantResolver
                 $_SESSION['outlet_id'] = $outlet['id'];
                 $_SESSION['has_outlet'] = true;
             } else {
-                header('Location: /add-outlet.php');
+                header('Location: /add-outlet');
                 exit;
             }
         }
@@ -155,11 +155,11 @@ class TenantResolver
                 header('Content-Type: application/json');
                 echo json_encode([
                     'error'    => 'Outlet tidak valid.',
-                    'redirect' => '/add-outlet.php',
+                    'redirect' => '/add-outlet',
                 ]);
                 exit;
             }
-            header('Location: /add-outlet.php');
+            header('Location: /add-outlet');
             exit;
         }
 
@@ -189,15 +189,15 @@ class TenantResolver
                 // Switch ke outlet aktif yang ditemukan, redirect agar TenantResolver resolve ulang
                 $_SESSION['outlet_id'] = $activeOther['id'];
                 $_SESSION['has_outlet'] = true;
-                header('Location: ' . ($_SERVER['PHP_SELF'] ?? '/dashboard.php'));
+                header('Location: ' . ($_SERVER['REQUEST_URI'] ?? '/dashboard'));
                 exit;
             }
-            // Tidak ada outlet aktif — arahkan ke add-outlet.php
+            // Tidak ada outlet aktif — arahkan ke add-outlet
             $_SESSION['has_outlet'] = false;
             self::$outlet = null;
-            $currentPath = $_SERVER['PHP_SELF'] ?? '';
-            if ($currentPath !== '/add-outlet.php') {
-                header('Location: /add-outlet.php');
+            $currentPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?? '';
+            if ($currentPath !== '/add-outlet') {
+                header('Location: /add-outlet');
                 exit;
             }
             return;
@@ -209,7 +209,7 @@ class TenantResolver
                         '/add-outlet.php', '/logout.php'];
             $currentPath = $_SERVER['PHP_SELF'] ?? '';
             if (!in_array($currentPath, $allowed)) {
-                header('Location: /outlet-suspended.php');
+                header('Location: /outlet-suspended');
                 exit;
             }
             self::$outlet = $outlet;
@@ -616,7 +616,7 @@ class TenantResolver
               ) . '
           <br>Hubungi tim Harpy untuk informasi lebih lanjut.</p>
           <a href="https://wa.me/6285121519302?text=' . rawurlencode('Halo Tim LAMASY, outlet saya tidak bisa diakses. Mohon bantuannya.') . '" class="btn">💬 Hubungi Support</a>
-          <a href="/logout.php" class="btn btn-outline">Keluar</a>
+          <a href="/logout" class="btn btn-outline">Keluar</a>
         </div></body></html>';
     }
 
@@ -625,6 +625,6 @@ class TenantResolver
         return '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Error — LAMASY</title></head>
         <body style="font-family:sans-serif;text-align:center;padding:60px;background:#0F1C3A;color:#fff">
         <h2>' . htmlspecialchars($msg) . '</h2>
-        <a href="/login.php" style="color:#35E8D5">Kembali ke Login</a></body></html>';
+        <a href="/login" style="color:#35E8D5">Kembali ke Login</a></body></html>';
     }
 }

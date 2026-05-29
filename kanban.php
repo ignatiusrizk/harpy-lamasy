@@ -232,7 +232,7 @@ if ($action) {
       <span class="kb-live"><span class="dot"></span>live · <span id="kbTs">—</span></span>
       <button class="hl-btn hl-btn-outline hl-btn-sm" onclick="loadKanban()">↻ Refresh</button>
       <?php if (hasPermission('pos.view')): ?>
-      <a href="pos.php" class="hl-btn hl-btn-primary hl-btn-sm">+ Order Baru</a>
+      <a href="/pos" class="hl-btn hl-btn-primary hl-btn-sm">+ Order Baru</a>
       <?php endif; ?>
     </div>
   </div>

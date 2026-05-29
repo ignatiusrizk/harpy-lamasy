@@ -18,7 +18,7 @@ require_once ROOT . '/core/TenantResolver.php';
 if (session_status() === PHP_SESSION_NONE) session_start();
 
 if (empty($_SESSION['user_id']) || empty($_SESSION['tenant_id'])) {
-    header('Location: /login.php'); exit;
+    header('Location: /login'); exit;
 }
 
 $tid  = (int)$_SESSION['tenant_id'];
@@ -32,7 +32,7 @@ $outlets = TenantResolver::getAssignedOutlets();
 
 // Non-owner tanpa assignment → halaman "belum ditugaskan"
 if (empty($outlets) && !$isOwnerOrManager) {
-    header('Location: /no-assignment.php');
+    header('Location: /no-assignment');
     exit;
 }
 
@@ -45,7 +45,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['outlet_id'])) {
         $_SESSION['outlet_id']  = $oid;
         $_SESSION['has_outlet'] = true;
         $_SESSION['hq_mode']    = false;
-        header('Location: /dashboard.php'); exit;
+        header('Location: /dashboard'); exit;
     }
     $postError = 'Outlet tidak valid atau Anda tidak ditugaskan ke outlet ini.';
 }
@@ -64,7 +64,7 @@ if (count($outlets) === 1) {
     $_SESSION['outlet_id']  = $outlets[0]['id'];
     $_SESSION['has_outlet'] = true;
     $_SESSION['hq_mode']    = false;
-    header('Location: /dashboard.php'); exit;
+    header('Location: /dashboard'); exit;
 }
 
 // Nama tenant untuk display
@@ -342,7 +342,7 @@ html, body {
   <?php endif; ?>
 
   <div class="footer-link">
-    <a href="/logout.php" onclick="return confirm('Yakin ingin logout?')">
+    <a href="/logout" onclick="return confirm('Yakin ingin logout?')">
       &#x2190; Logout
     </a>
   </div>

@@ -16,7 +16,7 @@ ini_set('session.cookie_samesite', 'Strict');
 if (session_status() === PHP_SESSION_NONE) session_start();
 
 if (empty($_SESSION['user_id']) || empty($_SESSION['tenant_id'])) {
-    header('Location: /login.php?msg=not_logged_in');
+    header('Location: /login?msg=not_logged_in');
     exit;
 }
 
@@ -41,14 +41,14 @@ function switchOutletToken(int $outletId): string {
 }
 
 if ($outletId <= 0) {
-    header('Location: /dashboard.php');
+    header('Location: /dashboard');
     exit;
 }
 
 // Validasi token — tolak jika tidak cocok
 if (!hash_equals(switchOutletToken($outletId), $token)) {
     // Token invalid → bisa jadi CSRF atau link lama — redirect aman
-    header('Location: /dashboard.php?switch_error=invalid_token');
+    header('Location: /dashboard?switch_error=invalid_token');
     exit;
 }
 
@@ -64,7 +64,7 @@ $outlet = $stmt->fetch();
 
 if (!$outlet) {
     // Outlet tidak ditemukan / bukan milik tenant ini / status tidak valid
-    header('Location: /dashboard.php?switch_error=invalid_outlet');
+    header('Location: /dashboard?switch_error=invalid_outlet');
     exit;
 }
 
@@ -74,5 +74,5 @@ $_SESSION['has_outlet'] = true;
 $_SESSION['hq_mode']    = false;
 TenantResolver::reset();
 
-header('Location: /dashboard.php?switched=1');
+header('Location: /dashboard?switched=1');
 exit;

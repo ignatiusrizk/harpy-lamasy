@@ -11,7 +11,7 @@ define('ROOT', __DIR__);
 // ── Auth check sebelum tenant_guard ───────────────────
 if (session_status() === PHP_SESSION_NONE) session_start();
 if (empty($_SESSION['user_id']) || empty($_SESSION['tenant_id'])) {
-    header('Location: /login.php?msg=not_logged_in');
+    header('Location: /login?msg=not_logged_in');
     exit;
 }
 
@@ -28,7 +28,7 @@ if (($user['role'] ?? '') !== 'owner') {
     die('<div style="font-family:sans-serif;padding:60px;text-align:center;background:#0F1C3A;color:#fff;min-height:100vh">
         <h2 style="color:#35E8D5">🔒 Akses Ditolak</h2>
         <p style="color:rgba(255,255,255,.6)">Hanya owner yang bisa menambah outlet.</p>
-        <a href="/dashboard.php" style="color:#35E8D5">← Kembali</a>
+        <a href="/dashboard" style="color:#35E8D5">← Kembali</a>
     </div>');
 }
 
@@ -371,7 +371,7 @@ renderTopbar('add-outlet', !$hasOutlet);
                class="hl-btn hl-btn-primary" style="padding:13px 28px;background:#25D366;border-color:#25D366">
               💬 Hubungi LAMASY via WA
             </a>
-            <a href="/dashboard.php" class="hl-btn hl-btn-outline" style="padding:13px 24px">
+            <a href="/dashboard" class="hl-btn hl-btn-outline" style="padding:13px 24px">
               Kembali ke Dashboard
             </a>
           </div>
@@ -383,10 +383,10 @@ renderTopbar('add-outlet', !$hasOutlet);
             Kamu mendapat <strong>1.000 coin trial</strong> gratis untuk 7 hari ke depan.
           </p>
           <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
-            <a href="/dashboard.php" class="hl-btn hl-btn-primary" style="padding:13px 32px">
+            <a href="/dashboard" class="hl-btn hl-btn-primary" style="padding:13px 32px">
               🚀 Mulai Kelola Laundry
             </a>
-            <a href="/layanan.php" class="hl-btn hl-btn-outline" style="padding:13px 24px">
+            <a href="/layanan" class="hl-btn hl-btn-outline" style="padding:13px 24px">
               Atur Layanan & Harga
             </a>
           </div>
@@ -398,7 +398,7 @@ renderTopbar('add-outlet', !$hasOutlet);
 
     <!-- Breadcrumb -->
     <div class="ao-brand">
-      <a href="/dashboard.php">← Dashboard</a>
+      <a href="/dashboard">← Dashboard</a>
       <span style="color:rgba(27,45,90,.2)">/</span>
       <span style="font-size:13px;font-weight:600;color:var(--navy)">Tambah Outlet</span>
     </div>
@@ -501,7 +501,7 @@ renderTopbar('add-outlet', !$hasOutlet);
           <?php endif; ?>
 
           <div class="btn-row">
-            <a href="/dashboard.php" class="hl-btn hl-btn-outline">Batal</a>
+            <a href="/dashboard" class="hl-btn hl-btn-outline">Batal</a>
             <button type="submit" name="step1_submit" class="hl-btn hl-btn-primary" style="flex:1">
               Lanjut →
             </button>

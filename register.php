@@ -18,7 +18,7 @@ if (session_status() === PHP_SESSION_NONE) session_start();
 
 // Kalau sudah login → redirect ke dashboard
 if (!empty($_SESSION['tenant_id']) && empty($_SESSION['pending_verify'])) {
-    header('Location: /dashboard.php');
+    header('Location: /dashboard');
     exit;
 }
 
@@ -226,7 +226,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['step3_submit'])) {
                 unset($_SESSION['reg']);
                 regResetCsrf();
 
-                header('Location: /pending-verify.php');
+                header('Location: /pending-verify');
                 exit;
 
             } catch (Throwable $e) {
@@ -377,7 +377,7 @@ $captchaB = $r['captcha_b'] ?? 5;
 
 <div class="brand-bar">
   <div class="brand">LAMASY <small>Laundry Management System</small></div>
-  <a href="/login.php">Sudah punya akun? Login →</a>
+  <a href="/login">Sudah punya akun? Login →</a>
 </div>
 
 <div class="stepper">

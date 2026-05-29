@@ -854,7 +854,7 @@ textarea{resize:vertical;min-height:64px}
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeModal()">Tutup</button>
       <button class="btn btn-green" onclick="printStruk()">🖨️ Print Struk</button>
-      <button class="btn btn-teal-sm" onclick="window.location.href='orders.php'">📋 Lihat Orders</button>
+      <button class="btn btn-teal-sm" onclick="window.location.href='/orders'">📋 Lihat Orders</button>
     </div>
   </div>
 </div>

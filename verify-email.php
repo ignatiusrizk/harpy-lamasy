@@ -93,7 +93,7 @@ $tenantId    = $result['tenant_id'] ?? 0;
     <h1>Email Terverifikasi!</h1>
     <p>Akun LAMASY kamu sudah aktif. Selamat menggunakan platform manajemen laundry terbaik!<br>
     Kami juga sudah kirim email sambutan ke kotak masuk kamu.</p>
-    <a href="/login.php" class="btn btn-primary">🚀 Login Sekarang</a>
+    <a href="/login" class="btn btn-primary">🚀 Login Sekarang</a>
 
   <?php elseif ($expired): ?>
     <div class="icon">⏰</div>
@@ -107,9 +107,9 @@ $tenantId    = $result['tenant_id'] ?? 0;
         <button type="submit" class="btn btn-primary">📨 Kirim Ulang Verifikasi</button>
       </form>
     <?php else: ?>
-      <a href="/register.php" class="btn btn-primary">Daftar Ulang</a>
+      <a href="/register" class="btn btn-primary">Daftar Ulang</a>
     <?php endif; ?>
-    <a href="/login.php" class="btn btn-outline">Sudah punya akun</a>
+    <a href="/login" class="btn btn-outline">Sudah punya akun</a>
 
   <?php elseif ($alreadyUsed): ?>
     <div class="icon">ℹ️</div>
@@ -117,15 +117,15 @@ $tenantId    = $result['tenant_id'] ?? 0;
     <h1>Link Sudah Digunakan</h1>
     <p>Email kamu sudah terverifikasi sebelumnya.<br>
     Silakan login langsung.</p>
-    <a href="/login.php" class="btn btn-primary">Login Sekarang</a>
+    <a href="/login" class="btn btn-primary">Login Sekarang</a>
 
   <?php else: ?>
     <div class="icon">❌</div>
     <div class="badge">Verifikasi Gagal</div>
     <h1>Verifikasi Gagal</h1>
     <p><?= htmlspecialchars($message) ?></p>
-    <a href="/register.php" class="btn btn-primary">Daftar Baru</a>
-    <a href="/login.php" class="btn btn-outline">Login</a>
+    <a href="/register" class="btn btn-primary">Daftar Baru</a>
+    <a href="/login" class="btn btn-outline">Login</a>
   <?php endif; ?>
 
   <p style="margin-top:32px;font-size:12px;color:rgba(255,255,255,.3)">

@@ -5,7 +5,7 @@ if (session_status() === PHP_SESSION_NONE) session_start();
 // Switch mode via ?to=hq atau ?to=outlet
 if (isset($_GET['to'])) {
     $_SESSION['hq_mode'] = ($_GET['to'] === 'hq');
-    header('Location: dashboard.php');
+    header('Location: /dashboard');
     exit;
 }
 
@@ -31,7 +31,7 @@ $tid   = TenantResolver::id();
 // Logout
 if (isset($_GET['logout'])) {
     session_destroy();
-    header('Location: login.php?msg=logout');
+    header('Location: /login?msg=logout');
     exit;
 }
 
@@ -53,11 +53,11 @@ if (!$hasOutlet && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_p
         $db->prepare("UPDATE tenants SET nama_perusahaan=?, owner_wa=?, kota=? WHERE id=?")
            ->execute([$namaPerusahaan ?: null, $ownerWa ?: null, $kota ?: null, $tid]);
         TenantResolver::reset();
-        header('Location: dashboard.php?profile_saved=1');
+        header('Location: /dashboard?profile_saved=1');
         exit;
     } catch (Throwable $e) {
         error_log('[dashboard save_profile] ' . $e->getMessage());
-        header('Location: dashboard.php?profile_error=' . urlencode($e->getMessage()));
+        header('Location: /dashboard?profile_error=' . urlencode($e->getMessage()));
         exit;
     }
 }
@@ -82,7 +82,7 @@ if (!$hasOutlet && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['change
         $hash = password_hash($newPw, PASSWORD_BCRYPT, ['cost' => 11]);
         $db->prepare("UPDATE hl_users SET password=? WHERE id=?")->execute([$hash, $user['id']]);
         $db->prepare("UPDATE tenants SET password_hash=? WHERE id=?")->execute([$hash, $tid]);
-        header('Location: dashboard.php?pw_changed=1');
+        header('Location: /dashboard?pw_changed=1');
         exit;
     }
 }
@@ -494,7 +494,7 @@ $pwError      = $pwError ?? '';
       Akun LAMASY kamu sudah aktif. Daftarkan outlet pertama untuk mulai
       mengelola laundry dengan AI — gratis 7 hari, tanpa kartu kredit.
     </p>
-    <a href="/add-outlet.php"
+    <a href="/add-outlet"
        style="display:inline-block;background:#35E8D5;color:#0F1C3A;font-weight:800;
               font-size:16px;padding:15px 40px;border-radius:12px;text-decoration:none;
               transition:opacity .2s">
@@ -677,7 +677,7 @@ $pwError      = $pwError ?? '';
     <?php endforeach; ?>
   </div>
   <div style="text-align:center;margin-top:16px">
-    <a href="/add-outlet.php"
+    <a href="/add-outlet"
        style="font-size:13px;color:#0891B2;text-decoration:none;font-weight:600">
       Daftar outlet untuk akses penuh →
     </a>
@@ -831,9 +831,9 @@ if ($_isRingkas):
                   color:#34D399;font-size:12px;font-weight:700;padding:6px 14px;border-radius:100px">
         🟢 Clocked In · <?= substr($absStmt['jam_masuk'], 0, 5) ?>
       </div>
-      <a href="absensi.php" class="hl-btn hl-btn-outline hl-btn-sm" style="color:#fff;border-color:rgba(255,255,255,.3)">Clock Out</a>
+      <a href="/absensi" class="hl-btn hl-btn-outline hl-btn-sm" style="color:#fff;border-color:rgba(255,255,255,.3)">Clock Out</a>
     <?php else: ?>
-      <a href="absensi.php" class="hl-btn"
+      <a href="/absensi" class="hl-btn"
          style="background:#35E8D5;color:#0F1C3A;font-weight:700;padding:8px 18px;
                 border-radius:8px;text-decoration:none;font-size:13px">
         🕐 Clock In Sekarang
@@ -888,19 +888,19 @@ if ($_dashRole === 'kasir'):
 <div style="background:#fff;border-radius:12px;padding:22px;box-shadow:0 1px 6px rgba(0,0,0,.05);margin-bottom:20px">
   <h3 style="font-size:14px;font-weight:700;color:#0F1C3A;margin-bottom:14px">⚡ Aksi Cepat</h3>
   <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px">
-    <a href="pos.php" style="background:#35E8D5;color:#0F1C3A;font-weight:800;font-size:15px;
+    <a href="/pos" style="background:#35E8D5;color:#0F1C3A;font-weight:800;font-size:15px;
        padding:18px;border-radius:10px;text-decoration:none;text-align:center">
       🛒 Buat Order Baru
     </a>
-    <a href="orders.php?status=aktif" style="background:#0F1C3A;color:#fff;font-weight:700;font-size:14px;
+    <a href="/orders?status=aktif" style="background:#0F1C3A;color:#fff;font-weight:700;font-size:14px;
        padding:18px;border-radius:10px;text-decoration:none;text-align:center">
       📋 Lihat Antrian Order
     </a>
-    <a href="orders.php?status=siap" style="background:#F59E0B;color:#fff;font-weight:700;font-size:14px;
+    <a href="/orders?status=siap" style="background:#F59E0B;color:#fff;font-weight:700;font-size:14px;
        padding:18px;border-radius:10px;text-decoration:none;text-align:center">
       ✅ Order Siap Diambil
     </a>
-    <a href="customer.php" style="background:rgba(53,232,213,.1);color:#0F1C3A;font-weight:700;font-size:14px;
+    <a href="/customer" style="background:rgba(53,232,213,.1);color:#0F1C3A;font-weight:700;font-size:14px;
        padding:18px;border-radius:10px;text-decoration:none;text-align:center;border:1.5px solid rgba(53,232,213,.3)">
       👥 Cari Pelanggan
     </a>
@@ -958,7 +958,7 @@ if ($_dashRole === 'kasir'):
       <span style="background:#FEF3C7;color:#92400E;font-size:10px;font-weight:700;padding:3px 10px;border-radius:100px;text-transform:uppercase">
         <?= $o['status_proses'] ?>
       </span>
-      <a href="orders.php?id=<?= $o['id'] ?>" style="color:#0891B2;text-decoration:none;font-size:12px;font-weight:700">Update →</a>
+      <a href="/orders?id=<?= $o['id'] ?>" style="color:#0891B2;text-decoration:none;font-size:12px;font-weight:700">Update →</a>
     </div>
   </div>
   <?php endforeach; endif; ?>
@@ -1009,7 +1009,7 @@ if ($_dashRole === 'kasir'):
       <div style="font-weight:700;color:#0F1C3A">
         <?= htmlspecialchars($o['no_order']) ?> — <?= htmlspecialchars($o['nama_pelanggan'] ?? '-') ?>
       </div>
-      <a href="orders.php?id=<?= $o['id'] ?>" style="color:#0891B2;text-decoration:none;font-size:12px;font-weight:700">Update Status →</a>
+      <a href="/orders?id=<?= $o['id'] ?>" style="color:#0891B2;text-decoration:none;font-size:12px;font-weight:700">Update Status →</a>
     </div>
     <?php if (!empty($o['alamat_pelanggan'])): ?>
     <div style="font-size:12px;color:#6B7280">📍 <?= htmlspecialchars($o['alamat_pelanggan']) ?></div>
@@ -1233,7 +1233,7 @@ if ($_dashRole === 'kasir'):
           <div class="alert-title">Siap Diambil
             <span class="alert-badge" id="badgeSiap" style="background:#D1FAE5;color:#065F46">0</span>
           </div>
-          <a href="orders.php?status=siap" style="font-size:12px;color:var(--teal);text-decoration:none">Lihat semua</a>
+          <a href="/orders?status=siap" style="font-size:12px;color:var(--teal);text-decoration:none">Lihat semua</a>
         </div>
         <div class="hl-card-body" style="padding:12px" id="listSiap"><div class="hl-loading">⏳</div></div>
       </div>
@@ -1266,7 +1266,7 @@ if ($_dashRole === 'kasir'):
           <div class="alert-title">Belum Bayar (&gt; 3 Hari)
             <span class="alert-badge" id="badgePiutang" style="background:#FEE2E2;color:#991B1B">0</span>
           </div>
-          <a href="orders.php?bayar=belum" style="font-size:12px;color:var(--teal);text-decoration:none">Lihat semua</a>
+          <a href="/orders?bayar=belum" style="font-size:12px;color:var(--teal);text-decoration:none">Lihat semua</a>
         </div>
         <div class="hl-card-body" style="padding:12px" id="listPiutang"><div class="hl-loading">⏳</div></div>
       </div>
@@ -1321,7 +1321,7 @@ async function loadHandoverBanner(){
           ${h.order_pending} pending, ${h.order_siap_ambil} siap.
           ${h.catatan_khusus ? `<div style="color:#92400E;font-size:12px;margin-top:2px"><em>“${h.catatan_khusus}”</em></div>` : ''}
         </div>
-        <a href="absensi.php" style="background:#F59E0B;color:#fff;padding:6px 12px;border-radius:8px;font-weight:600;text-decoration:none;font-size:12px">Buka Absensi →</a>
+        <a href="/absensi" style="background:#F59E0B;color:#fff;padding:6px 12px;border-radius:8px;font-weight:600;text-decoration:none;font-size:12px">Buka Absensi →</a>
       </div>`).join('');
   } catch (e) {}
 }
@@ -1364,7 +1364,7 @@ if (qsInput) {
             const [bg,fg] = (STATUS_PILL_BG[r.status_proses] || '#F3F4F6/#6B7280').split('/');
             const timer = qsTimerLabel(r.estimasi_selesai, r.status_proses);
             const timerColor = timer.includes('TERLAMBAT') ? '#EF4444' : (r.status_proses==='diambil' ? '#10B981' : '#374151');
-            return `<a href="orders.php?q=${encodeURIComponent(r.no_order)}" style="display:block;padding:11px 14px;border-bottom:1px solid #F3F4F6;text-decoration:none;color:inherit">
+            return `<a href="/orders?q=${encodeURIComponent(r.no_order)}" style="display:block;padding:11px 14px;border-bottom:1px solid #F3F4F6;text-decoration:none;color:inherit">
               <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
                 <div style="min-width:0;flex:1">
                   <div style="font-weight:700;color:#0F1C3A;font-size:13px">${qsEsc(r.nama_pelanggan)} <small style="color:#9CA3AF;font-weight:400">· ${qsEsc(r.no_order)}</small></div>
@@ -1613,7 +1613,7 @@ function alertRow(o,tipe){
     </div>
     <div style="display:flex;gap:6px;align-items:center;flex-shrink:0">
       ${waUrl?`<a href="${waUrl}" target="_blank" class="alert-wa">WA</a>`:''}
-      <a href="orders.php" class="hl-btn hl-btn-outline hl-btn-sm" style="font-size:11px">Detail</a>
+      <a href="/orders" class="hl-btn hl-btn-outline hl-btn-sm" style="font-size:11px">Detail</a>
     </div>
   </div>`;
 }

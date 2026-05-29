@@ -86,59 +86,59 @@ function renderTopbar(string $activePage = '', bool $minimalMode = false): void 
         'dashboard' => [
             'label' => 'Dashboard',
             'items' => [
-                'dashboard' => ['label'=>'Dashboard', 'url'=>'dashboard.php', 'perm'=>null],
+                'dashboard' => ['label'=>'Dashboard', 'url'=>'/dashboard', 'perm'=>null],
             ],
         ],
         'operasional' => [
             'label' => 'Operasional',
             'items' => [
-                'pos'       => ['label'=>'POS',       'url'=>'pos.php',       'perm'=>'pos.view'],
-                'orders'    => ['label'=>'Order',     'url'=>'orders.php',    'perms'=>['orders.view_all','orders.view_own']],
-                'kanban'    => ['label'=>'Kanban',    'url'=>'kanban.php',    'perms'=>['orders.view_all','orders.view_own']],
-                'kas'       => ['label'=>'Kas',       'url'=>'kas.php',       'perm'=>'kas.view'],
-                'checklist' => ['label'=>'Checklist', 'url'=>'checklist.php', 'perm'=>null],
+                'pos'       => ['label'=>'POS',       'url'=>'/pos',       'perm'=>'pos.view'],
+                'orders'    => ['label'=>'Order',     'url'=>'/orders',    'perms'=>['orders.view_all','orders.view_own']],
+                'kanban'    => ['label'=>'Kanban',    'url'=>'/kanban',    'perms'=>['orders.view_all','orders.view_own']],
+                'kas'       => ['label'=>'Kas',       'url'=>'/kas',       'perm'=>'kas.view'],
+                'checklist' => ['label'=>'Checklist', 'url'=>'/checklist', 'perm'=>null],
             ],
         ],
         'keuangan' => [
             'label' => 'Keuangan',
             'items' => [
-                'laporan' => ['label'=>'Laporan',    'url'=>'laporan.php', 'perm'=>'laporan.view'],
-                'piutang' => ['label'=>'Piutang B2B','url'=>'piutang.php', 'perm'=>'laporan.view'],
+                'laporan' => ['label'=>'Laporan',    'url'=>'/laporan', 'perm'=>'laporan.view'],
+                'piutang' => ['label'=>'Piutang B2B','url'=>'/piutang', 'perm'=>'laporan.view'],
             ],
         ],
         'master' => [
             'label' => 'Master',
             'items' => [
-                'layanan'  => ['label'=>'Layanan',        'url'=>'layanan.php',   'perm'=>'layanan.view'],
-                'promo'    => ['label'=>'Promo',          'url'=>'promo.php',     'perm'=>'promo.view'],
-                'customer' => ['label'=>'Customer',       'url'=>'customer.php',  'perm'=>'pelanggan.view'],
-                'loyalty'  => ['label'=>'Sistem Poin',    'url'=>'loyalty.php',   'perm'=>'pelanggan.view'],
-                'retention'=> ['label'=>'Retensi Dormant','url'=>'retention.php', 'perm'=>'pelanggan.view'],
+                'layanan'  => ['label'=>'Layanan',        'url'=>'/layanan',   'perm'=>'layanan.view'],
+                'promo'    => ['label'=>'Promo',          'url'=>'/promo',     'perm'=>'promo.view'],
+                'customer' => ['label'=>'Customer',       'url'=>'/customer',  'perm'=>'pelanggan.view'],
+                'loyalty'  => ['label'=>'Sistem Poin',    'url'=>'/loyalty',   'perm'=>'pelanggan.view'],
+                'retention'=> ['label'=>'Retensi Dormant','url'=>'/retention', 'perm'=>'pelanggan.view'],
             ],
         ],
         'hr' => [
             'label' => 'HR',
             'items' => [
-                'karyawan'  => ['label'=>'Karyawan',  'url'=>'karyawan.php',         'perm'=>'karyawan.view'],
-                'absensi'   => ['label'=>'Absensi',   'url'=>'absensi.php',          'perms'=>['absensi.view','absensi.clock']],
-                'droppoint' => ['label'=>'Drop Point','url'=>'droppoint_manager.php',
+                'karyawan'  => ['label'=>'Karyawan',  'url'=>'/karyawan',  'perm'=>'karyawan.view'],
+                'absensi'   => ['label'=>'Absensi',   'url'=>'/absensi',   'perms'=>['absensi.view','absensi.clock']],
+                'droppoint' => ['label'=>'Drop Point','url'=>'/droppoint',
                                 'roles'=>['owner','superadmin','admin','manager']],
             ],
         ],
         'settings' => [
             'label' => 'Settings',
             'items' => [
-                'settings'     => ['label'=>'Role & Permission','url'=>'settings.php',   'perm'=>'settings.roles'],
-                'audit'        => ['label'=>'Audit Log',        'url'=>'audit.php',       'perm'=>'audit.view'],
-                'owner_report' => ['label'=>'Notifikasi Owner', 'url'=>'owner_report.php',
+                'settings'     => ['label'=>'Role & Permission','url'=>'/settings',    'perm'=>'settings.roles'],
+                'audit'        => ['label'=>'Audit Log',        'url'=>'/audit',        'perm'=>'audit.view'],
+                'owner_report' => ['label'=>'Notifikasi Owner', 'url'=>'/owner-report',
                                    'roles'=>['owner','superadmin','admin','manager']],
             ],
         ],
         'bantuan' => [
             'label' => 'Bantuan',
             'items' => [
-                'import'  => ['label'=>'Import Data',    'url'=>'import.php',  'perm'=>'settings.roles'],
-                'support' => ['label'=>'Support & Tiket','url'=>'support.php','perm'=>'bantuan.view'],
+                'import'  => ['label'=>'Import Data',    'url'=>'/import',  'perm'=>'settings.roles'],
+                'support' => ['label'=>'Support & Tiket','url'=>'/support', 'perm'=>'bantuan.view'],
             ],
         ],
     ];
@@ -442,7 +442,7 @@ function renderTopbar(string $activePage = '', bool $minimalMode = false): void 
                   $isActive = (int)$o['id'] === $currentOutletId;
                   $swToken  = substr(hash_hmac('sha256', 'so:' . ($user['id'] ?? '') . ':' . (int)$o['id'], $swSecret), 0, 16);
                 ?>
-                <a href="switch-outlet.php?id=<?= (int)$o['id'] ?>&t=<?= $swToken ?>"
+                <a href="/switch-outlet?id=<?= (int)$o['id'] ?>&t=<?= $swToken ?>"
                    style="display:block;padding:8px 12px;border-radius:6px;text-decoration:none;
                           color:<?= $isActive ? 'var(--navy)' : 'var(--dark)' ?>;font-size:13px;
                           font-weight:<?= $isActive ? '700' : '500' ?>;
@@ -455,7 +455,7 @@ function renderTopbar(string $activePage = '', bool $minimalMode = false): void 
                 <?php endforeach; ?>
                 <div style="border-top:1px solid #F3F4F6;margin:6px 0 4px"></div>
                 <?php if (in_array($user['role'] ?? '', ['owner','superadmin'], true)): ?>
-                <a href="add-outlet.php"
+                <a href="/add-outlet"
                    style="display:block;padding:8px 12px;border-radius:6px;text-decoration:none;
                           color:var(--teal-d);font-size:13px;font-weight:700">
                   + Tambah Outlet Baru
@@ -475,10 +475,10 @@ function renderTopbar(string $activePage = '', bool $minimalMode = false): void 
 
             <span class="ol-top-user"><?= htmlspecialchars($user['nama']) ?></span>
             <?php if (!$minimalMode && in_array($user['role'] ?? '', ['owner','manager','superadmin','admin'], true)): ?>
-              <a href="/dashboard.php?to=hq" class="ol-top-switch"
+              <a href="/dashboard?to=hq" class="ol-top-switch"
                  title="Pindah ke HQ konsolidasi">HQ →</a>
             <?php endif; ?>
-            <a href="logout.php" class="ol-top-logout"
+            <a href="/logout" class="ol-top-logout"
                onclick="return confirm('Yakin logout?')">Logout</a>
           </div>
         </header>

@@ -294,7 +294,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 
     <!-- BACK -->
     <div style="text-align:center;margin-top:10px">
-      <a href="track.php" style="color:#fff;opacity:.7;font-size:12px;text-decoration:none">← Cari order lain</a>
+      <a href="/track" style="color:#fff;opacity:.7;font-size:12px;text-decoration:none">← Cari order lain</a>
     </div>
   <?php endif; ?>
 
