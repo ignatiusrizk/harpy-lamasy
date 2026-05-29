@@ -54,6 +54,12 @@ if ($action) {
     header('Content-Type: application/json');
 
     if ($action === 'list') {
+        // Helper token — sama persis dengan switch-outlet.php
+        $switchSecret = hash('sha256', session_id() . $uid . 'switch_outlet_v1');
+        $mkToken = fn(int $oid): string => substr(
+            hash_hmac('sha256', 'so:' . $uid . ':' . $oid, $switchSecret), 0, 16
+        );
+
         $stmt = $db->prepare(
             "SELECT * FROM outlets WHERE tenant_id=?
               ORDER BY status='closed' ASC, is_main DESC, nama_outlet ASC"
@@ -78,6 +84,8 @@ if ($action) {
                 $s->execute([$tid, $oid]);
                 $o['karyawan_count'] = (int)$s->fetchColumn();
             } catch (Throwable) { $o['karyawan_count'] = 0; }
+
+            $o['switch_token'] = $mkToken($oid);
         }
         unset($o);
         echo json_encode($rows); exit;
@@ -429,7 +437,7 @@ async function loadList(){
         </div>
         <div class="ocard-coin">${coinShow}</div>
         <div class="ocard-actions">
-          ${canEnter ? `<a href="/switch-outlet?id=${o.id}" class="btn btn-primary btn-sm">Masuk →</a>` : ''}
+          ${canEnter ? `<a href="/switch-outlet?id=${o.id}&t=${o.switch_token}" class="btn btn-primary btn-sm">Masuk →</a>` : ''}
           ${!isClosed ? `<button class="btn btn-light btn-sm" onclick="openEdit(${o.id})">✏️ Edit</button>` : ''}
           ${topupBtn}
         </div>
