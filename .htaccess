@@ -8,17 +8,17 @@ RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
 
 # ── Clean URLs: .php → extensionless (301 redirect) ─
 # App pages
-RewriteRule ^(dashboard|pos|orders|kanban|kas|checklist|laporan|piutang|layanan|promo|customer|loyalty|retention|karyawan|absensi|settings|audit|import|support|login|logout|register|track)\.php$ /$1 [R=301,L]
+RewriteRule ^(dashboard|pos|orders|kanban|kas|checklist|laporan|piutang|layanan|promo|customer|loyalty|retention|karyawan|absensi|settings|audit|import|support|login|logout|register|track|landing)\.php$ /$1 [R=301,L]
 RewriteRule ^droppoint_manager\.php$ /droppoint [R=301,L]
 RewriteRule ^owner_report\.php$ /owner-report [R=301,L]
-# Auth flow pages
-RewriteRule ^(pending-verify|resend-verify|select-outlet|switch-outlet|no-assignment|account-suspended|outlet-suspended|add-outlet)\.php$ /$1 [R=301,L]
+# Auth flow & email pages
+RewriteRule ^(pending-verify|resend-verify|select-outlet|switch-outlet|no-assignment|account-suspended|outlet-suspended|add-outlet|verify-email|reset-password)\.php$ /$1 [R=301,L]
 
 # ── Clean URLs: extensionless → .php (internal rewrite)
-RewriteRule ^(dashboard|pos|orders|kanban|kas|checklist|laporan|piutang|layanan|promo|customer|loyalty|retention|karyawan|absensi|settings|audit|import|support|login|logout|register|track)$ $1.php [L,QSA]
+RewriteRule ^(dashboard|pos|orders|kanban|kas|checklist|laporan|piutang|layanan|promo|customer|loyalty|retention|karyawan|absensi|settings|audit|import|support|login|logout|register|track|landing)$ $1.php [L,QSA]
 RewriteRule ^droppoint$ droppoint_manager.php [L,QSA]
 RewriteRule ^owner-report$ owner_report.php [L,QSA]
-RewriteRule ^(pending-verify|resend-verify|select-outlet|switch-outlet|no-assignment|account-suspended|outlet-suspended|add-outlet)$ $1.php [L,QSA]
+RewriteRule ^(pending-verify|resend-verify|select-outlet|switch-outlet|no-assignment|account-suspended|outlet-suspended|add-outlet|verify-email|reset-password)$ $1.php [L,QSA]
 
 # ── Block sensitive file types from web access ──────
 <FilesMatch "\.(sql|md|yml|yaml|log|bak|env|ini|conf|sh)$">
