@@ -8,6 +8,7 @@ if (!defined('SA_ROOT')) define('SA_ROOT', __DIR__);
 require_once SA_ROOT . '/middleware/superadmin_guard.php';
 require_once SA_ROOT . '/superadmin_components.php';
 require_once SA_ROOT . '/../core/Database.php';
+require_once SA_ROOT . '/../core/StrukGenerator.php';
 
 date_default_timezone_set('Asia/Jakarta');
 
@@ -152,6 +153,17 @@ function provisionOutlet(array $wiz, array $tenant): array
         );
 
         $db->commit();
+
+        // Seed struk templates untuk outlet baru
+        foreach (['retail', 'b2b'] as $_tipe) {
+            try {
+                StrukGenerator::saveTemplate($tenantId, $outletId, $_tipe,
+                    StrukGenerator::defaultTemplate($_tipe)
+                );
+            } catch (Throwable $e) {
+                error_log('[add_outlet.php] Gagal seed struk template: ' . $e->getMessage());
+            }
+        }
 
         return [
             'success'    => true,

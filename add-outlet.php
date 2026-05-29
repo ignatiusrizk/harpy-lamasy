@@ -18,6 +18,7 @@ if (empty($_SESSION['user_id']) || empty($_SESSION['tenant_id'])) {
 // tenant_guard memberikan: currentUser(), getCsrfToken(), Database, TenantResolver, dll
 // TenantResolver sudah tolerate no-outlet untuk add-outlet.php
 require_once ROOT . '/middleware/tenant_guard.php';
+require_once ROOT . '/core/StrukGenerator.php';
 
 $tid  = TenantResolver::id();
 $user     = currentUser() ?? [];
@@ -195,6 +196,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['step2_submit'])) {
         }
 
         $db->commit();
+
+        // Seed default struk templates untuk outlet baru
+        try {
+            foreach (['retail', 'b2b'] as $_tipe) {
+                StrukGenerator::saveTemplate($tid, $outletId, $_tipe,
+                    StrukGenerator::defaultTemplate($_tipe)
+                );
+            }
+        } catch (Throwable $e) {
+            error_log('[add-outlet.php] Gagal seed struk template: ' . $e->getMessage());
+            // Non-fatal — outlet tetap terbuat, template akan dibuat on-demand
+        }
 
         if ($isPaid) {
             // Paid/pending outlet: JANGAN switch session ke outlet baru

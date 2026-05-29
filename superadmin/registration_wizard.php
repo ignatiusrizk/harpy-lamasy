@@ -8,6 +8,7 @@ if (!defined('SA_ROOT')) define('SA_ROOT', __DIR__);
 require_once SA_ROOT . '/middleware/superadmin_guard.php';
 require_once SA_ROOT . '/superadmin_components.php';
 require_once SA_ROOT . '/../core/Database.php';
+require_once SA_ROOT . '/../core/StrukGenerator.php';
 
 date_default_timezone_set('Asia/Jakarta');
 
@@ -231,7 +232,18 @@ function provisionTenant(array $wizard): array
 
         $db->commit();
 
-        // ── 9. Coin topup & payment record (AFTER main commit) ──
+        // ── 9. Seed struk templates untuk outlet baru ──
+        foreach (['retail', 'b2b'] as $_tipe) {
+            try {
+                StrukGenerator::saveTemplate($tenantId, $outletId, $_tipe,
+                    StrukGenerator::defaultTemplate($_tipe)
+                );
+            } catch (Throwable $e) {
+                error_log('[registration_wizard] Gagal seed struk template: ' . $e->getMessage());
+            }
+        }
+
+        // ── 10. Coin topup & payment record (AFTER main commit) ──
         $coinAwal = (int)($wizard['coin_awal'] ?? 0);
         $smpId = null;
 

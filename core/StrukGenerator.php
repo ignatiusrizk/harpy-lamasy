@@ -825,7 +825,7 @@ if (window.autoPrint) { window.print(); }
     // ══════════════════════════════════════════════════
     // PRIVATE: Default template (fallback)
     // ══════════════════════════════════════════════════
-    private static function defaultTemplate(string $tipe): array
+    public static function defaultTemplate(string $tipe): array
     {
         $isB2b = $tipe === 'b2b';
         return [
