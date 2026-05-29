@@ -12,7 +12,6 @@ require_once __DIR__ . '/components.php';
 
 $user = currentUser();
 requirePermission('laporan.view');
-}
 
 $tid = TenantResolver::id();
 $oid = TenantResolver::outletId();
