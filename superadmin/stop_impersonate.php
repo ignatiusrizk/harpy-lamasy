@@ -62,12 +62,30 @@ if ($tenantId) {
     } catch (Throwable) {}
 }
 
-// Bersihkan session flags
+// Bersihkan SEMUA session vars yang di-set saat impersonasi
+// (tenant session vars + impersonasi flags)
+// $_SESSION['superadmin_id'] TETAP ADA — tidak dihapus
 unset(
+    // Tenant session vars
+    $_SESSION['user_id'],
+    $_SESSION['tenant_id'],
+    $_SESSION['tenant_slug'],
+    $_SESSION['tenant_coin_balance'],
+    $_SESSION['outlet_id'],
+    $_SESSION['hq_mode'],
+    $_SESSION['hl_login_time'],
+    $_SESSION['hl_last_activity'],
+    $_SESSION['hl_user'],
+    $_SESSION['hl_permissions'],
+    // Impersonasi flags
     $_SESSION['impersonating_tenant_id'],
     $_SESSION['impersonation_log_id'],
     $_SESSION['impersonation_admin_name'],
-    $_SESSION['impersonation_tenant_name']
+    $_SESSION['impersonation_tenant_name'],
+    $_SESSION['stop_impersonate_token'],
+    // Misc yang mungkin di-set selama observasi
+    $_SESSION['last_anomaly_check'],
+    $_SESSION['csrf_token'],
 );
 
 // Kembali ke detail page tenant

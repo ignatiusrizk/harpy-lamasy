@@ -1210,9 +1210,23 @@ $billingStat = $bsSt->fetch(PDO::FETCH_ASSOC);
     <div style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:10px;padding:12px 16px;margin-bottom:20px;font-size:12.5px;color:#FCD34D;">
       ⚠️ Jangan gunakan fitur ini untuk mengakses data sensitif tenant tanpa keperluan yang jelas.
     </div>
-    <form method="POST" action="/superadmin/impersonate.php">
+    <form method="POST" action="/superadmin/impersonate.php" onsubmit="return validateImpersonateForm()">
       <input type="hidden" name="_csrf" value="<?= saGetCsrf() ?>">
       <input type="hidden" name="tenant_id" value="<?= $tenantId ?>">
+      <div style="margin-bottom:16px;">
+        <label style="display:block;font-size:12px;font-weight:600;color:rgba(255,255,255,.7);margin-bottom:6px;">
+          Alasan Observasi <span style="color:#F87171">*</span>
+        </label>
+        <textarea name="reason" id="impersonateReason" required
+          placeholder="Contoh: Investigasi laporan bug kasir tidak bisa input order..."
+          style="width:100%;padding:10px 12px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);
+                 border-radius:8px;color:#fff;font-size:13px;resize:vertical;min-height:72px;box-sizing:border-box;
+                 font-family:inherit;outline:none;"
+          maxlength="200" rows="3"></textarea>
+        <div style="text-align:right;font-size:11px;color:rgba(255,255,255,.3);margin-top:3px;">
+          Maks. 200 karakter
+        </div>
+      </div>
       <div class="sa-modal-footer">
         <button type="button" class="sa-btn sa-btn-outline" onclick="document.getElementById('impersonateModal').classList.remove('open')">Batal</button>
         <button type="submit" class="sa-btn sa-btn-primary">🔍 Mulai Observasi</button>
@@ -1568,7 +1582,26 @@ async function loadMigrations() {
 
 // ── Impersonate modal ──────────────────────────────
 function openImpersonateModal() {
-    document.getElementById('impersonateModal').classList.add('open');
+    const modal = document.getElementById('impersonateModal');
+    const ta = document.getElementById('impersonateReason');
+    if (ta) ta.value = '';
+    modal.classList.add('open');
+    setTimeout(() => { if (ta) ta.focus(); }, 100);
+}
+
+function validateImpersonateForm() {
+    const reason = (document.getElementById('impersonateReason')?.value || '').trim();
+    if (!reason) {
+        alert('Alasan observasi wajib diisi.');
+        document.getElementById('impersonateReason')?.focus();
+        return false;
+    }
+    if (reason.length < 10) {
+        alert('Alasan terlalu singkat (minimal 10 karakter).');
+        document.getElementById('impersonateReason')?.focus();
+        return false;
+    }
+    return confirm('Yakin mulai observasi tenant ini?\n\nSemua aksi tulis akan diblokir selama mode observasi.');
 }
 
 // ── Tenant error log ──────────────────────────────
