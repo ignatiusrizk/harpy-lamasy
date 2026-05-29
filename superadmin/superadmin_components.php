@@ -380,9 +380,6 @@ function saRenderNav(string $activePage = '', string $pageTitle = ''): void {
         <a href="/superadmin/dashboard.php" class="sa-nav-link <?= $activePage === 'dashboard' ? 'active' : '' ?>">
           <span class="icon">🏠</span> Dashboard
         </a>
-        <a href="/superadmin/health.php" class="sa-nav-link <?= $activePage === 'health' ? 'active' : '' ?>">
-          <span class="icon">🩺</span> Health
-        </a>
         <a href="/superadmin/clients.php" class="sa-nav-link <?= $activePage === 'clients' ? 'active' : '' ?>">
           <span class="icon">🏪</span> Clients
         </a>
@@ -391,16 +388,6 @@ function saRenderNav(string $activePage = '', string $pageTitle = ''): void {
         <a href="/superadmin/registrations.php" class="sa-nav-link <?= $activePage === 'registrations' ? 'active' : '' ?>">
           <span class="icon">&#x1F4DD;</span> Registrasi
         </a>
-        <a href="/superadmin/onboarding.php" class="sa-nav-link <?= $activePage === 'onboarding' ? 'active' : '' ?>">
-          <span class="icon">&#x1F680;</span> Onboarding
-        </a>
-        <a href="/superadmin/churn_risk.php" class="sa-nav-link <?= $activePage === 'churn_risk' ? 'active' : '' ?>">
-          <span class="icon">⚠️</span> Churn Risk
-        </a>
-        <a href="/superadmin/broadcast.php" class="sa-nav-link <?= $activePage === 'broadcast' ? 'active' : '' ?>">
-          <span class="icon">📣</span> Broadcast
-        </a>
-
         <a href="/superadmin/migrations.php" class="sa-nav-link <?= $activePage === 'migrations' ? 'active' : '' ?>">
           <span class="icon">📦</span> Migrations
         </a>
