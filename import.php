@@ -276,169 +276,135 @@ if ($action) {
 <?php renderHead('Import Data'); ?>
 <!-- import.php styles -->
 <style>
-/* ── Import Wizard Styles ── */
+/* ── Import Wizard — Light Theme ── */
 .import-wizard { max-width: 860px; margin: 0 auto; }
 
+/* Step indicator */
 .step-indicator {
     display: flex; gap: 0; margin-bottom: 32px;
-    background: rgba(255,255,255,.04);
-    border: 1px solid rgba(255,255,255,.08);
+    background: #fff;
+    border: 1px solid #E5E9F2;
     border-radius: 12px; overflow: hidden;
+    box-shadow: 0 1px 4px rgba(0,0,0,.04);
 }
 .step-item {
     flex: 1; padding: 14px 16px; text-align: center;
-    font-size: 12.5px; font-weight: 600;
-    color: rgba(255,255,255,.35);
-    border-right: 1px solid rgba(255,255,255,.07);
+    font-size: 12.5px; font-weight: 600; color: #9CA3AF;
+    border-right: 1px solid #E5E9F2;
     transition: all .2s;
-    display: flex; flex-direction: column; gap: 4px;
-    align-items: center;
+    display: flex; flex-direction: column; gap: 4px; align-items: center;
 }
 .step-item:last-child { border-right: none; }
 .step-item .step-num {
     width: 24px; height: 24px; border-radius: 50%;
-    background: rgba(255,255,255,.1);
+    background: #E5E9F2; color: #6B7280;
     display: flex; align-items: center; justify-content: center;
     font-size: 11px; font-weight: 800; margin-bottom: 2px;
 }
-.step-item.active { color: var(--accent, #35E8D5); background: rgba(53,232,213,.06); }
-.step-item.active .step-num { background: var(--accent, #35E8D5); color: #0F1C3A; }
-.step-item.done { color: #6EE7B7; }
-.step-item.done .step-num { background: rgba(16,185,129,.2); color: #6EE7B7; }
+.step-item.active { color: #0F7B6C; background: #F0FDFB; }
+.step-item.active .step-num { background: #35E8D5; color: #0F1C3A; }
+.step-item.done { color: #059669; }
+.step-item.done .step-num { background: #D1FAE5; color: #059669; }
 
 .wizard-step { display: none; }
 .wizard-step.active { display: block; }
 
+/* Entity cards */
 .entity-grid {
     display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
     gap: 12px; margin-bottom: 20px;
 }
 .entity-card {
     padding: 16px; border-radius: 12px;
-    border: 1.5px solid rgba(255,255,255,.08);
-    background: rgba(255,255,255,.03);
-    cursor: pointer; text-align: center;
-    transition: all .15s;
+    border: 1.5px solid #E5E9F2; background: #fff;
+    cursor: pointer; text-align: center; transition: all .15s;
+    box-shadow: 0 1px 3px rgba(0,0,0,.04);
 }
-.entity-card:hover { border-color: var(--accent, #35E8D5); background: rgba(53,232,213,.05); }
-.entity-card.selected { border-color: var(--accent, #35E8D5); background: rgba(53,232,213,.08); }
+.entity-card:hover  { border-color: #35E8D5; background: #F0FDFB; }
+.entity-card.selected { border-color: #35E8D5; background: #E6FBF8; box-shadow: 0 0 0 3px rgba(53,232,213,.15); }
 .entity-card .ec-icon { font-size: 28px; margin-bottom: 8px; }
-.entity-card .ec-name { font-size: 13px; font-weight: 700; color: rgba(255,255,255,.9); }
-.entity-card .ec-coin { font-size: 11px; color: rgba(255,255,255,.4); margin-top: 4px; }
+.entity-card .ec-name { font-size: 13px; font-weight: 700; color: #1B2D5A; }
+.entity-card .ec-coin { font-size: 11px; color: #6B7280; margin-top: 4px; }
 
+/* Upload zone */
 .upload-zone {
-    border: 2px dashed rgba(255,255,255,.15);
-    border-radius: 12px; padding: 40px 24px;
-    text-align: center; cursor: pointer;
-    transition: all .2s; background: rgba(255,255,255,.02);
+    border: 2px dashed #D1D5DB; border-radius: 12px;
+    padding: 40px 24px; text-align: center; cursor: pointer;
+    transition: all .2s; background: #F9FAFB;
 }
-.upload-zone:hover, .upload-zone.drag-over {
-    border-color: var(--accent, #35E8D5);
-    background: rgba(53,232,213,.05);
-}
+.upload-zone:hover, .upload-zone.drag-over { border-color: #35E8D5; background: #F0FDFB; }
 .upload-zone .uz-icon { font-size: 40px; margin-bottom: 12px; }
-.upload-zone .uz-text { font-size: 14px; font-weight: 600; color: rgba(255,255,255,.7); }
-.upload-zone .uz-sub  { font-size: 12px; color: rgba(255,255,255,.35); margin-top: 4px; }
+.upload-zone .uz-text { font-size: 14px; font-weight: 600; color: #374151; }
+.upload-zone .uz-sub  { font-size: 12px; color: #9CA3AF; margin-top: 4px; }
 
+/* Mapping table */
 .mapping-table { width: 100%; border-collapse: collapse; font-size: 13px; }
 .mapping-table th {
-    padding: 10px 12px;
-    background: rgba(255,255,255,.04);
+    padding: 10px 12px; background: #F7F8FC;
     font-size: 10px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase;
-    color: rgba(255,255,255,.35); border-bottom: 1px solid rgba(255,255,255,.07);
+    color: #9CA3AF; border-bottom: 1px solid #E5E9F2;
 }
-.mapping-table td {
-    padding: 10px 12px;
-    border-bottom: 1px solid rgba(255,255,255,.05);
-    color: rgba(255,255,255,.8); vertical-align: middle;
-}
+.mapping-table td { padding: 10px 12px; border-bottom: 1px solid #F3F4F6; color: #374151; vertical-align: middle; }
 .mapping-table tr:last-child td { border-bottom: none; }
 .mapping-select {
-    background: rgba(255,255,255,.06); border: 1.5px solid rgba(255,255,255,.1);
-    border-radius: 7px; color: var(--white, #fff); padding: 6px 10px;
+    background: #fff; border: 1.5px solid #E5E9F2;
+    border-radius: 7px; color: #1B2D5A; padding: 6px 10px;
     font-family: inherit; font-size: 12.5px; outline: none;
     transition: border-color .15s; width: 100%;
 }
-.mapping-select:focus { border-color: var(--accent, #35E8D5); }
-.mapping-select option { background: #0F1C3A; }
+.mapping-select:focus { border-color: #35E8D5; }
 
+/* Confidence pills */
 .conf-pill {
     display: inline-flex; align-items: center; gap: 3px;
-    padding: 2px 8px; border-radius: 20px;
-    font-size: 10.5px; font-weight: 600;
+    padding: 2px 8px; border-radius: 20px; font-size: 10.5px; font-weight: 600;
 }
-.conf-high   { background: rgba(16,185,129,.15);  color: #6EE7B7; }
-.conf-medium { background: rgba(245,158,11,.15);  color: #FCD34D; }
-.conf-low    { background: rgba(239,68,68,.15);   color: #FCA5A5; }
-.conf-skip   { background: rgba(107,114,128,.15); color: #D1D5DB; }
+.conf-high   { background: #D1FAE5; color: #065F46; }
+.conf-medium { background: #FEF3C7; color: #92400E; }
+.conf-low    { background: #FEE2E2; color: #991B1B; }
+.conf-skip   { background: #F3F4F6; color: #6B7280; }
 
+/* Preview table */
 .preview-table { width: 100%; border-collapse: collapse; font-size: 12px; }
-.preview-table th, .preview-table td { padding: 8px 10px; border: 1px solid rgba(255,255,255,.07); }
-.preview-table th { background: rgba(255,255,255,.04); color: rgba(255,255,255,.4); font-weight: 600; }
-.preview-table td { color: rgba(255,255,255,.7); }
+.preview-table th, .preview-table td { padding: 8px 10px; border: 1px solid #E5E9F2; }
+.preview-table th { background: #F7F8FC; color: #6B7280; font-weight: 600; }
+.preview-table td { color: #374151; }
 
+/* Result bar */
 .result-bar {
     display: flex; gap: 16px; flex-wrap: wrap;
-    background: rgba(255,255,255,.03);
-    border: 1px solid rgba(255,255,255,.08);
+    background: #F7F8FC; border: 1px solid #E5E9F2;
     border-radius: 12px; padding: 20px; margin-bottom: 20px;
 }
 .result-stat { text-align: center; flex: 1; min-width: 100px; }
 .result-stat .rs-num { font-size: 32px; font-weight: 800; font-family: var(--mono, monospace); }
-.result-stat .rs-label { font-size: 11.5px; color: rgba(255,255,255,.45); margin-top: 4px; }
+.result-stat .rs-label { font-size: 11.5px; color: #9CA3AF; margin-top: 4px; }
 
+/* Error rows */
 .error-row {
     display: flex; align-items: flex-start; gap: 10px;
-    padding: 8px 12px;
-    background: rgba(239,68,68,.05); border-radius: 8px;
-    border: 1px solid rgba(239,68,68,.1); margin-bottom: 6px;
-    font-size: 12.5px;
+    padding: 8px 12px; background: #FEF2F2;
+    border-radius: 8px; border: 1px solid #FECACA;
+    margin-bottom: 6px; font-size: 12.5px;
 }
-.error-row .er-baris { color: rgba(255,255,255,.4); min-width: 48px; font-family: var(--mono, monospace); }
-.error-row .er-msg   { color: #FCA5A5; flex: 1; }
+.error-row .er-baris { color: #9CA3AF; min-width: 48px; font-family: var(--mono, monospace); }
+.error-row .er-msg   { color: #DC2626; flex: 1; }
 
-.hl-btn {
-    display: inline-flex; align-items: center; gap: 6px;
-    padding: 10px 18px; border-radius: 10px;
-    font-family: inherit; font-size: 13.5px; font-weight: 700;
-    border: none; cursor: pointer; text-decoration: none;
-    transition: all .15s; white-space: nowrap;
-}
-.hl-btn-primary { background: linear-gradient(135deg, #35E8D5, #22C4AA); color: #0F1C3A; }
-.hl-btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(53,232,213,.3); }
-.hl-btn-outline { background: transparent; border: 1.5px solid rgba(255,255,255,.15); color: rgba(255,255,255,.7); }
-.hl-btn-outline:hover { border-color: #35E8D5; color: #fff; }
-.hl-btn-sm { padding: 6px 12px; font-size: 12px; }
-.hl-btn-danger { background: rgba(239,68,68,.15); border: 1px solid rgba(239,68,68,.2); color: #FCA5A5; }
-
-.spinner {
-    display: inline-block; width: 20px; height: 20px;
-    border: 2px solid rgba(255,255,255,.1);
-    border-top-color: #35E8D5; border-radius: 50%;
-    animation: spin .7s linear infinite;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
-
-.hl-card {
-    background: rgba(255,255,255,.03);
-    border: 1px solid rgba(255,255,255,.08);
-    border-radius: 14px; overflow: hidden;
-    margin-bottom: 20px;
-}
-.hl-card-header {
-    padding: 14px 20px;
-    border-bottom: 1px solid rgba(255,255,255,.07);
-    font-size: 14px; font-weight: 700; color: rgba(255,255,255,.9);
-    display: flex; align-items: center; justify-content: space-between;
-}
-.hl-card-body { padding: 20px; }
-
+/* History rows */
 .history-row {
     display: flex; align-items: center; gap: 12px;
-    padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,.05);
-    font-size: 12.5px;
+    padding: 10px 0; border-bottom: 1px solid #F3F4F6;
+    font-size: 12.5px; color: #374151;
 }
 .history-row:last-child { border-bottom: none; }
+
+/* Spinner */
+.spinner {
+    display: inline-block; width: 20px; height: 20px;
+    border: 2px solid #E5E9F2; border-top-color: #35E8D5;
+    border-radius: 50%; animation: spin .7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
 
 @media (max-width: 600px) {
     .entity-grid { grid-template-columns: 1fr 1fr; }
@@ -452,11 +418,11 @@ if ($action) {
 
 <div class="import-wizard">
   <div class="hl-page-header" style="margin-bottom:24px;">
-    <h1 style="font-size:22px;font-weight:800;">📥 Import Data</h1>
-    <p style="font-size:13px;color:rgba(255,255,255,.45);margin-top:4px;">
+    <h1 style="font-size:22px;font-weight:800;color:#1B2D5A;">📥 Import Data</h1>
+    <p style="font-size:13px;color:#6B7280;margin-top:4px;">
       Import data dari Smartlink, iLaundry, Excel, atau format apapun — AI mapping otomatis.
     </p>
-    <div style="margin-top:8px;background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.2);border-radius:8px;padding:10px 14px;font-size:12.5px;color:#FCD34D;display:inline-block;">
+    <div style="margin-top:8px;background:#FFFBEB;border:1px solid #FDE68A;border-radius:8px;padding:10px 14px;font-size:12.5px;color:#92400E;display:inline-block;">
       💡 AI mapping menggunakan <strong>1.000 coin</strong>. Gratis jika format sudah dikenal dari cache.
       Saldo kamu: <strong id="coinBalance"><?= number_format(TenantResolver::coinBalance()) ?> coin</strong>
     </div>
@@ -508,9 +474,9 @@ if ($action) {
         </div>
 
         <div id="templateSection" style="display:none;">
-          <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:16px;margin-bottom:20px;">
-            <div style="font-size:13px;font-weight:700;margin-bottom:10px;">📄 Download Template (Opsional)</div>
-            <p style="font-size:12.5px;color:rgba(255,255,255,.5);margin-bottom:12px;">
+          <div style="background:#F7F8FC;border:1px solid #E5E9F2;border-radius:10px;padding:16px;margin-bottom:20px;">
+            <div style="font-size:13px;font-weight:700;margin-bottom:10px;color:#1B2D5A;">📄 Download Template (Opsional)</div>
+            <p style="font-size:12.5px;color:#6B7280;margin-bottom:12px;">
               Jika kamu punya file dari Smartlink, iLaundry, atau Excel sendiri — langsung upload saja.
               AI akan mapping otomatis. Template ini untuk data baru atau jika mau format standar LaMaSy.
             </p>
@@ -532,7 +498,7 @@ if ($action) {
         <button class="hl-btn hl-btn-outline hl-btn-sm" onclick="loadHistory()">⟳ Refresh</button>
       </div>
       <div class="hl-card-body" id="historyBody">
-        <div style="color:rgba(255,255,255,.3);font-size:13px;">Memuat...</div>
+        <div style="color:#9CA3AF;font-size:13px;">Memuat...</div>
       </div>
     </div>
   </div><!-- /#step1 -->
@@ -547,7 +513,7 @@ if ($action) {
         <button class="hl-btn hl-btn-outline hl-btn-sm" onclick="goStep(1)">← Kembali</button>
       </div>
       <div class="hl-card-body">
-        <div style="background:rgba(53,232,213,.05);border:1px solid rgba(53,232,213,.15);border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:12.5px;color:#35E8D5;">
+        <div style="background:#E6FBF8;border:1px solid #99F6E4;border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:12.5px;color:#0F7B6C;">
           📌 Format didukung: <strong>CSV, Excel (.xlsx, .xls)</strong> — ukuran max 10 MB.<br>
           File dari Smartlink, iLaundry, atau Excel kustom sekalipun bisa diupload — AI yang mapping.
         </div>
@@ -560,7 +526,7 @@ if ($action) {
         <input type="file" id="fileInput" accept=".csv,.xlsx,.xls" style="display:none"
                onchange="handleFileSelect(this.files[0])">
 
-        <div id="uploadInfo" style="display:none;margin-top:12px;background:rgba(255,255,255,.04);border-radius:8px;padding:12px 16px;font-size:13px;"></div>
+        <div id="uploadInfo" style="display:none;margin-top:12px;background:#F7F8FC;border:1px solid #E5E9F2;border-radius:8px;padding:12px 16px;font-size:13px;color:#374151;"></div>
 
         <div style="margin-top:16px;text-align:right;">
           <button class="hl-btn hl-btn-primary" id="uploadBtn" onclick="doUpload()" disabled
@@ -584,7 +550,7 @@ if ($action) {
         <div id="mappingMeta" style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:20px;"></div>
 
         <!-- Missing required warning -->
-        <div id="missingWarning" style="display:none;background:rgba(239,68,68,.07);border:1px solid rgba(239,68,68,.2);border-radius:8px;padding:12px 16px;margin-bottom:16px;font-size:12.5px;color:#FCA5A5;"></div>
+        <div id="missingWarning" style="display:none;background:#FEF2F2;border:1px solid #FECACA;border-radius:8px;padding:12px 16px;margin-bottom:16px;font-size:12.5px;color:#DC2626;"></div>
 
         <!-- Mapping table -->
         <div style="overflow-x:auto;">
@@ -717,7 +683,7 @@ function handleFileSelect(file) {
     document.getElementById('uzSub').textContent  = (file.size / 1024).toFixed(1) + ' KB · ' + ext.toUpperCase();
     document.getElementById('uploadInfo').style.display = '';
     document.getElementById('uploadInfo').innerHTML =
-        `<span style="color:rgba(255,255,255,.7);">File dipilih: <strong>${esc(file.name)}</strong></span>`;
+        `<span style="color:#374151;">File dipilih: <strong>${esc(file.name)}</strong></span>`;
     const btn = document.getElementById('uploadBtn');
     btn.disabled = false; btn.style.opacity='1'; btn.style.cursor='pointer';
 }
@@ -769,7 +735,7 @@ async function doUpload() {
 // ────────────────────────────────────────────────────
 async function doAiMapping() {
     const tbody = document.getElementById('mappingTbody');
-    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:32px;">
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:32px;color:#6B7280;">
         <span class="spinner"></span>&nbsp; AI sedang menganalisa file Anda...
     </td></tr>`;
     document.getElementById('mappingMeta').innerHTML = '';
@@ -786,9 +752,9 @@ async function doAiMapping() {
         const d    = await resp.json();
 
         if (d.error) {
-            tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:32px;color:#FCA5A5;">
+            tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:32px;color:#DC2626;">
                 ❌ ${esc(d.error)}
-                ${d.coin_required ? `<br><a href="/billing.php" style="color:#35E8D5;font-size:12px;">Topup Coin →</a>` : ''}
+                ${d.coin_required ? `<br><a href="/billing" style="color:#0F7B6C;font-size:12px;">Topup Coin →</a>` : ''}
             </td></tr>`;
             return;
         }
@@ -798,7 +764,7 @@ async function doAiMapping() {
         document.getElementById('importBtn').disabled = false;
 
     } catch(e) {
-        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:32px;color:#FCA5A5;">Gagal: ${esc(e.message)}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:32px;color:#DC2626;">Gagal: ${esc(e.message)}</td></tr>`;
     }
 }
 
@@ -808,16 +774,16 @@ function renderMapping(d) {
     const srcLabel = { smartlink:'Smartlink', ilaundy:'iLaundry', excel:'Excel', unknown:'Tidak diketahui' };
     const confClass= conf >= 85 ? 'conf-high' : conf >= 60 ? 'conf-medium' : 'conf-low';
     document.getElementById('mappingMeta').innerHTML = `
-        <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:8px;padding:10px 16px;font-size:12.5px;">
+        <div style="background:#F7F8FC;border:1px solid #E5E9F2;border-radius:8px;padding:10px 16px;font-size:12.5px;color:#374151;">
             🤖 <strong>Sumber terdeteksi:</strong> ${esc(srcLabel[d.source_system_detected]||d.source_system_detected||'—')}
         </div>
-        <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:8px;padding:10px 16px;font-size:12.5px;">
+        <div style="background:#F7F8FC;border:1px solid #E5E9F2;border-radius:8px;padding:10px 16px;font-size:12.5px;color:#374151;">
             📊 <strong>Confidence:</strong>
             <span class="conf-pill ${confClass}">${conf}%</span>
         </div>
-        ${d.from_cache ? `<div style="background:rgba(16,185,129,.07);border:1px solid rgba(16,185,129,.2);border-radius:8px;padding:10px 16px;font-size:12.5px;color:#6EE7B7;">
+        ${d.from_cache ? `<div style="background:#ECFDF5;border:1px solid #6EE7B7;border-radius:8px;padding:10px 16px;font-size:12.5px;color:#065F46;">
             ✓ Mapping dari cache — <strong>GRATIS</strong> (format sudah dikenal)
-        </div>` : `<div style="background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.2);border-radius:8px;padding:10px 16px;font-size:12.5px;color:#FCD34D;">
+        </div>` : `<div style="background:#FFFBEB;border:1px solid #FDE68A;border-radius:8px;padding:10px 16px;font-size:12.5px;color:#92400E;">
             🪙 1.000 coin digunakan untuk AI mapping
         </div>`}
     `;
@@ -845,7 +811,7 @@ function renderMapping(d) {
         // Sample data untuk kolom ini
         const sample = uploadedSample.slice(0,2).map(r => {
             const v = r[srcCol] ?? Object.values(r).find((_,i) => Object.keys(r)[i] === srcCol) ?? '—';
-            return `<span style="color:rgba(255,255,255,.5);">${esc(String(v||'').substring(0,30))}</span>`;
+            return `<span style="color:#9CA3AF;">${esc(String(v||'').substring(0,30))}</span>`;
         }).join(' / ');
 
         // Target field dropdown (manual adjust)
@@ -854,14 +820,14 @@ function renderMapping(d) {
         ).join('');
 
         return `<tr>
-            <td style="font-family:var(--mono,monospace);font-size:12px;">${esc(srcCol)}</td>
+            <td style="font-family:var(--mono,monospace);font-size:12px;color:#1B2D5A;">${esc(srcCol)}</td>
             <td>
                 <select class="mapping-select" data-src="${esc(srcCol)}"
                         onchange="updateManualMapping('${esc(srcCol)}',this.value)">
                     ${opts}
                 </select>
             </td>
-            <td style="font-size:11.5px;color:rgba(255,255,255,.5);">${esc(action)}</td>
+            <td style="font-size:11.5px;color:#9CA3AF;">${esc(action)}</td>
             <td><span class="conf-pill ${cfClass}">${cfText}</span></td>
             <td style="font-size:11.5px;">${sample}</td>
         </tr>`;
@@ -873,7 +839,7 @@ function renderMapping(d) {
             .filter(([,v]) => v.target_field && v.action !== 'skip')
             .map(([src, v]) => ({ src, target: v.target_field }));
 
-        let previewHtml = `<div style="font-size:12px;font-weight:700;color:rgba(255,255,255,.5);margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em;">Preview 3 baris pertama</div>
+        let previewHtml = `<div style="font-size:12px;font-weight:700;color:#9CA3AF;margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em;">Preview 3 baris pertama</div>
         <div style="overflow-x:auto;"><table class="preview-table">
             <thead><tr>${previewHeaders.map(h => `<th>${esc(h.target)}</th>`).join('')}</tr></thead>
             <tbody>`;
@@ -952,19 +918,19 @@ function renderResult(d) {
     // Stats
     document.getElementById('resultBar').innerHTML = `
         <div class="result-stat">
-            <div class="rs-num" style="color:#6EE7B7;">${d.success}</div>
+            <div class="rs-num" style="color:#059669;">${d.success}</div>
             <div class="rs-label">✓ Berhasil</div>
         </div>
         <div class="result-stat">
-            <div class="rs-num" style="color:#FCA5A5;">${d.failed}</div>
+            <div class="rs-num" style="color:#DC2626;">${d.failed}</div>
             <div class="rs-label">✗ Gagal</div>
         </div>
         <div class="result-stat">
-            <div class="rs-num" style="color:#D1D5DB;">${d.skipped}</div>
+            <div class="rs-num" style="color:#6B7280;">${d.skipped}</div>
             <div class="rs-label">⊘ Skip</div>
         </div>
         <div class="result-stat">
-            <div class="rs-num" style="color:rgba(255,255,255,.5);">${total}</div>
+            <div class="rs-num" style="color:#1B2D5A;">${total}</div>
             <div class="rs-label">Total Baris</div>
         </div>
     `;
@@ -976,7 +942,7 @@ function renderResult(d) {
     if (d.errors && d.errors.length > 0) {
         dlBtn.style.display = '';
         errSec.innerHTML = `
-            <div style="font-size:13px;font-weight:700;margin-bottom:10px;color:#FCA5A5;">
+            <div style="font-size:13px;font-weight:700;margin-bottom:10px;color:#DC2626;">
                 Baris yang gagal (${d.failed > d.errors.length ? d.failed + ' total, ' : ''}${d.errors.length} ditampilkan):
             </div>
             ${d.errors.slice(0,20).map(e => `
@@ -985,7 +951,7 @@ function renderResult(d) {
                     <div class="er-msg">${esc(e.error||'Error tidak diketahui')}</div>
                 </div>
             `).join('')}
-            ${d.errors.length > 20 ? `<div style="font-size:12px;color:rgba(255,255,255,.35);margin-top:8px;">
+            ${d.errors.length > 20 ? `<div style="font-size:12px;color:#9CA3AF;margin-top:8px;">
                 … dan ${d.errors.length-20} baris lainnya. Download laporan untuk detil lengkap.
             </div>` : ''}
         `;
@@ -1010,22 +976,22 @@ async function loadHistory() {
         const resp = await fetch('?action=history');
         const rows = await resp.json();
         if (!rows.length) {
-            body.innerHTML = '<div style="color:rgba(255,255,255,.3);font-size:13px;">Belum ada riwayat import.</div>';
+            body.innerHTML = '<div style="color:#9CA3AF;font-size:13px;">Belum ada riwayat import.</div>';
             return;
         }
         const STATUS_ICON = { completed:'✅', partial:'⚠️', failed:'❌', importing:'⏳', mapped:'🔍', uploaded:'📁', ai_mapping:'🤖' };
         body.innerHTML = rows.map(r => `
             <div class="history-row">
                 <span style="font-size:16px;">${STATUS_ICON[r.status]||'?'}</span>
-                <span style="flex:1;font-weight:600;">${esc(ENTITY_NAMES[r.entity_type]||r.entity_type)}</span>
-                <span style="color:rgba(255,255,255,.4);font-size:11.5px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(r.file_name)}">${esc(r.file_name)}</span>
-                <span style="font-family:var(--mono,monospace);font-size:12px;color:rgba(255,255,255,.5);">${r.success_rows}/${r.total_rows}</span>
-                <span style="font-size:11px;color:rgba(255,255,255,.3);">${fmtDate(r.created_at)}</span>
-                ${r.status==='failed'||r.status==='partial' ? `<a href="?action=error_report&job_id=${r.id}" style="font-size:11px;color:#FCA5A5;text-decoration:none;">⬇ Error</a>` : ''}
+                <span style="flex:1;font-weight:600;color:#1B2D5A;">${esc(ENTITY_NAMES[r.entity_type]||r.entity_type)}</span>
+                <span style="color:#9CA3AF;font-size:11.5px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(r.file_name)}">${esc(r.file_name)}</span>
+                <span style="font-family:var(--mono,monospace);font-size:12px;color:#6B7280;">${r.success_rows}/${r.total_rows}</span>
+                <span style="font-size:11px;color:#9CA3AF;">${fmtDate(r.created_at)}</span>
+                ${r.status==='failed'||r.status==='partial' ? `<a href="?action=error_report&job_id=${r.id}" style="font-size:11px;color:#DC2626;text-decoration:none;">⬇ Error</a>` : ''}
             </div>
         `).join('');
     } catch(e) {
-        body.innerHTML = '<div style="color:#FCA5A5;font-size:13px;">Gagal memuat riwayat.</div>';
+        body.innerHTML = '<div style="color:#DC2626;font-size:13px;">Gagal memuat riwayat.</div>';
     }
 }
 
