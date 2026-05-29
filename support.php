@@ -299,6 +299,7 @@ if ($action) {
 </div>
 
 <!-- ══ SECTION 1: Submit Tiket Baru ═════════════════ -->
+<?php if (hasPermission('bantuan.submit')): ?>
 <div class="hl-card" style="margin-bottom:20px;" id="submitCard">
   <div class="hl-card-header">
     <div class="submit-toggle" onclick="toggleSubmitForm()">
@@ -341,6 +342,7 @@ if ($action) {
     </form>
   </div>
 </div>
+<?php endif; ?>
 
 <!-- ══ SECTION 2: Daftar Tiket ══════════════════════ -->
 <div class="hl-card">
@@ -399,6 +401,10 @@ if ($action) {
 <?php renderToast(); ?>
 
 <script>
+const CAN_SUBMIT_BANTUAN = <?= hasPermission('bantuan.submit') ? 'true' : 'false' ?>;
+const CAN_REPLY_BANTUAN  = <?= hasPermission('bantuan.reply')  ? 'true' : 'false' ?>;
+const CAN_CLOSE_BANTUAN  = <?= hasPermission('bantuan.close')  ? 'true' : 'false' ?>;
+
 const CSRF = document.querySelector('meta[name="csrf-token"]')?.content || '';
 
 // ── Category & status helpers ────────────────────────
@@ -491,7 +497,7 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') closeThread(
 function renderThread(ticket, replies) {
   document.getElementById('threadTitle').textContent = `Tiket #${ticket.id} — ${ticket.subject}`;
 
-  const canReply  = !['closed'].includes(ticket.status);
+  const canReply  = CAN_REPLY_BANTUAN && !['closed'].includes(ticket.status);
   const isResolved = ticket.status === 'resolved';
   const isClosed   = ticket.status === 'closed';
   const myName     = <?= json_encode($user['nama'] ?? 'Kamu') ?>;
@@ -558,7 +564,7 @@ function renderThread(ticket, replies) {
 
   // Resolve → Close + rating section
   let closeHtml = '';
-  if (isResolved) {
+  if (isResolved && CAN_CLOSE_BANTUAN) {
     closeHtml = `
       <div class="reply-area" style="background:#F0FDF4;border:1px solid #6EE7B7;border-radius:10px;padding:16px;">
         <div style="font-weight:700;color:#065F46;margin-bottom:6px;">✅ Masalah sudah diselesaikan?</div>

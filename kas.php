@@ -200,9 +200,10 @@ tfoot td.td-jumlah{font-family:var(--mono)}
     </div>
   </div>
 
-  <div class="layout-2">
+  <div class="layout-2" <?= !hasPermission('kas.create') ? 'style="grid-template-columns:1fr"' : '' ?>>
 
-    <!-- KOLOM KIRI: Form Input -->
+    <!-- KOLOM KIRI: Form Input (hanya untuk kas.create) -->
+    <?php if (hasPermission('kas.create')): ?>
     <div>
       <div class="hl-card">
         <div class="hl-card-header">
@@ -282,6 +283,7 @@ tfoot td.td-jumlah{font-family:var(--mono)}
         <div class="sb-row"><span style="color:white;font-weight:700">Saldo Bersih</span><span class="sb-saldo" id="sbSaldo">-</span></div>
       </div>
     </div>
+    <?php endif; ?>
 
     <!-- KOLOM KANAN: Tabel -->
     <div>
@@ -319,6 +321,9 @@ tfoot td.td-jumlah{font-family:var(--mono)}
 
 <?php renderToast(); ?>
 <script>
+const CAN_CREATE_KAS = <?= hasPermission('kas.create') ? 'true' : 'false' ?>;
+const CAN_DEL_KAS    = <?= hasPermission('kas.delete') ? 'true' : 'false' ?>;
+
 function localDateStr(d) {
   const dt = d || new Date();
   return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0');
@@ -409,8 +414,8 @@ async function loadKas() {
       </td>
       <td>
         <div style="display:flex;gap:4px">
-          <button class="hl-btn hl-btn-outline hl-btn-sm" onclick="editKas(${row.id})">✏️ Edit</button>
-          <button class="hl-btn hl-btn-sm" style="background:#FEE2E2;color:#991B1B" onclick="deleteKas(${row.id})">🗑️ Hapus</button>
+          ${CAN_CREATE_KAS ? `<button class="hl-btn hl-btn-outline hl-btn-sm" onclick="editKas(${row.id})">✏️ Edit</button>` : ''}
+          ${CAN_DEL_KAS    ? `<button class="hl-btn hl-btn-sm" style="background:#FEE2E2;color:#991B1B" onclick="deleteKas(${row.id})">🗑️ Hapus</button>` : ''}
         </div>
       </td>
     </tr>`).join('');

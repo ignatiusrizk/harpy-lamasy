@@ -38,6 +38,7 @@ if ($action) {
     }
 
     if ($action === 'save_config' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+        if (!hasPermission('pelanggan.edit')) { echo json_encode(['error'=>'Akses ditolak']); exit; }
         verifyCsrf();
         $d = json_decode(file_get_contents('php://input'), true) ?: [];
         try {
@@ -70,6 +71,7 @@ if ($action) {
     }
 
     if ($action === 'save_reward' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+        if (!hasPermission('pelanggan.edit')) { echo json_encode(['error'=>'Akses ditolak']); exit; }
         verifyCsrf();
         $d = json_decode(file_get_contents('php://input'), true) ?: [];
         $id   = (int)($d['id'] ?? 0);
@@ -111,6 +113,7 @@ if ($action) {
     }
 
     if ($action === 'toggle_reward' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+        if (!hasPermission('pelanggan.edit')) { echo json_encode(['error'=>'Akses ditolak']); exit; }
         verifyCsrf();
         $d = json_decode(file_get_contents('php://input'), true) ?: [];
         $id = (int)($d['id'] ?? 0);
@@ -127,6 +130,7 @@ if ($action) {
     }
 
     if ($action === 'delete_reward' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+        if (!hasPermission('pelanggan.edit')) { echo json_encode(['error'=>'Akses ditolak']); exit; }
         verifyCsrf();
         $d  = json_decode(file_get_contents('php://input'), true) ?: [];
         $id = (int)($d['id'] ?? 0);
@@ -204,7 +208,9 @@ if ($action) {
         <input type="number" id="cfgExp" class="hl-input" min="1" max="60" placeholder="12"/>
       </div>
     </div>
+    <?php if (hasPermission('pelanggan.edit')): ?>
     <button class="hl-btn hl-btn-primary" onclick="saveConfig()">💾 Simpan Konfigurasi</button>
+    <?php endif; ?>
     <small style="display:block;margin-top:8px;color:var(--gray);font-size:11px">
       <strong>Contoh:</strong> Rp/poin = 8.000, Nilai poin = 100 → setiap belanja Rp 8.000 dapat 1 poin,
       1 poin saat redeem = diskon Rp 100.
@@ -215,7 +221,9 @@ if ($action) {
   <div class="cfg-card">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
       <h3 style="margin:0">🎁 Katalog Reward</h3>
+      <?php if (hasPermission('pelanggan.edit')): ?>
       <button class="hl-btn hl-btn-teal hl-btn-sm" onclick="openRewardModal()">+ Tambah Reward</button>
+      <?php endif; ?>
     </div>
     <div id="rewardList"><div class="hl-loading">⏳ Memuat...</div></div>
   </div>
@@ -281,6 +289,8 @@ if ($action) {
 <?php renderToast(); ?>
 
 <script>
+const CAN_EDIT_LOYALTY = <?= hasPermission('pelanggan.edit') ? 'true' : 'false' ?>;
+
 async function loadConfig(){
   try{
     const r = await fetch('loyalty.php?action=get_config');
@@ -333,7 +343,7 @@ async function loadRewards(){
       <div class="e-icon">🎁</div>
       <div class="e-title">Belum ada reward</div>
       <div class="e-sub">Tambahkan reward pertama supaya pelanggan bisa tukar poin</div>
-      <button class="hl-btn hl-btn-primary hl-btn-sm" onclick="openRewardModal()">+ Tambah Reward</button>
+      ${CAN_EDIT_LOYALTY ? `<button class="hl-btn hl-btn-primary hl-btn-sm" onclick="openRewardModal()">+ Tambah Reward</button>` : ''}
     </div>`; return; }
     box.innerHTML = rows.map(r => {
       const [bg,fg] = TIPE_COLOR[r.tipe] || ['#F1F5F9','#475569'];
@@ -357,9 +367,9 @@ async function loadRewards(){
           </span>
         </div>
         <div style="display:flex;gap:4px">
-          <button class="hl-btn hl-btn-outline hl-btn-sm" onclick='editReward(${JSON.stringify(r)})'>✏️</button>
-          <button class="hl-btn hl-btn-outline hl-btn-sm" onclick="toggleReward(${r.id})" title="${r.is_active==1?'Nonaktifkan':'Aktifkan'}">${r.is_active==1?'⏸':'▶'}</button>
-          <button class="hl-btn hl-btn-outline hl-btn-sm" style="color:#dc2626" onclick="deleteReward(${r.id})" title="Hapus">🗑</button>
+          ${CAN_EDIT_LOYALTY ? `<button class="hl-btn hl-btn-outline hl-btn-sm" onclick='editReward(${JSON.stringify(r)})'>✏️</button>` : ''}
+          ${CAN_EDIT_LOYALTY ? `<button class="hl-btn hl-btn-outline hl-btn-sm" onclick="toggleReward(${r.id})" title="${r.is_active==1?'Nonaktifkan':'Aktifkan'}">${r.is_active==1?'⏸':'▶'}</button>` : ''}
+          ${CAN_EDIT_LOYALTY ? `<button class="hl-btn hl-btn-outline hl-btn-sm" style="color:#dc2626" onclick="deleteReward(${r.id})" title="Hapus">🗑</button>` : ''}
         </div>
       </div>`;
     }).join('');

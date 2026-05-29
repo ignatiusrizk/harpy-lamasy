@@ -299,7 +299,9 @@ require_once ROOT . '/core/CoinLedger.php';
       <h1 style="font-size:1.3rem;font-weight:800;color:var(--navy)">💼 Rekap Piutang B2B</h1>
       <p style="font-size:13px;color:var(--gray)">Tagihan pelanggan korporat/bulanan & status pembayarannya</p>
     </div>
+    <?php if (hasPermission('laporan.export')): ?>
     <button class="hl-btn hl-btn-primary" onclick="openGen()">+ Buat Tagihan</button>
+    <?php endif; ?>
   </div>
 
   <div class="summary">
@@ -361,6 +363,7 @@ require_once ROOT . '/core/CoinLedger.php';
 
 <?php renderToast(); ?>
 <script>
+const CAN_PIUTANG_WRITE = <?= hasPermission('laporan.export') ? 'true' : 'false' ?>;
 const CSRF = document.querySelector('meta[name="csrf-token"]').content;
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const fmtRp = n => 'Rp ' + Number(n||0).toLocaleString('id-ID');
@@ -399,9 +402,9 @@ async function loadList(){
         else              tempoStr += ` <small style="color:#9CA3AF">(${ht} hari)</small>`;
       }
       const actions = r.status === 'lunas' ? '<span style="color:#9CA3AF;font-size:11px">✓ lunas</span>' : `
-        ${r.status==='belum_tagih' ? `<button class="hl-btn hl-btn-outline btn-sm" onclick="markInvoiced(${r.id})">📤 Tagih</button>` : ''}
-        ${r.status!=='belum_tagih' ? `<button class="hl-btn hl-btn-outline btn-sm" onclick="reminder(${r.id})">🔔 Reminder</button>` : ''}
-        <button class="hl-btn hl-btn-primary btn-sm" onclick="openBayar(${r.id}, '${esc(r.pelanggan_nama)}', ${r.sisa_tagihan})">💵 Bayar</button>
+        ${CAN_PIUTANG_WRITE && r.status==='belum_tagih' ? `<button class="hl-btn hl-btn-outline btn-sm" onclick="markInvoiced(${r.id})">📤 Tagih</button>` : ''}
+        ${CAN_PIUTANG_WRITE && r.status!=='belum_tagih' ? `<button class="hl-btn hl-btn-outline btn-sm" onclick="reminder(${r.id})">🔔 Reminder</button>` : ''}
+        ${CAN_PIUTANG_WRITE ? `<button class="hl-btn hl-btn-primary btn-sm" onclick="openBayar(${r.id}, '${esc(r.pelanggan_nama)}', ${r.sisa_tagihan})">💵 Bayar</button>` : ''}
       `;
       html += `<tr>
         <td data-lbl="Pelanggan"><strong>${esc(r.pelanggan_nama)}</strong><br><small style="color:#9CA3AF">${esc(r.pelanggan_wa||'-')}</small></td>

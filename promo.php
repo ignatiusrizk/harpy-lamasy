@@ -327,7 +327,9 @@ if ($action) {
     <div class="hl-card" style="margin-bottom:16px">
       <div class="hl-card-header">
         <div class="hl-card-title">🎯 Daftar Promo</div>
+        <?php if (hasPermission('promo.create')): ?>
         <button class="hl-btn hl-btn-primary hl-btn-sm" onclick="openPromoModal()">+ Buat Promo</button>
+        <?php endif; ?>
       </div>
     </div>
     <div id="promoGrid" class="promo-grid">
@@ -364,7 +366,9 @@ if ($action) {
             <input type="date" id="vExpired" class="hl-input"/>
           </div>
         </div>
+        <?php if (hasPermission('promo.create')): ?>
         <button class="hl-btn hl-btn-primary" onclick="generateVoucher()">✨ Generate Voucher</button>
+        <?php endif; ?>
       </div>
     </div>
 
@@ -473,6 +477,9 @@ if ($action) {
 
 <?php renderToast(); ?>
 <script>
+const CAN_CREATE_PROMO = <?= hasPermission('promo.create') ? 'true' : 'false' ?>;
+const CAN_DEL_PROMO    = <?= hasPermission('promo.delete') ? 'true' : 'false' ?>;
+
 let promos = [];
 
 function localDateStr(d) {
@@ -516,7 +523,7 @@ function renderPromos() {
       <div class="e-icon">🎯</div>
       <div class="e-title">Belum ada promo</div>
       <div class="e-sub">Buat promo & voucher untuk menarik pelanggan</div>
-      <button class="hl-btn hl-btn-primary hl-btn-sm" onclick="openPromoModal()">+ Buat Promo</button>
+      ${CAN_CREATE_PROMO ? `<button class="hl-btn hl-btn-primary hl-btn-sm" onclick="openPromoModal()">+ Buat Promo</button>` : ''}
     </div></div>`;
     return;
   }
@@ -542,9 +549,9 @@ function renderPromos() {
           p.terpakai>0?`<div style="font-size:11px;color:var(--gray);margin-bottom:8px">${p.terpakai}× terpakai</div>`:''}
         <div style="font-size:11px;color:var(--gray);margin-bottom:8px">🎟️ ${p.total_voucher} voucher · ${p.used_voucher} terpakai</div>
         <div class="promo-actions">
-          <button class="hl-btn hl-btn-outline hl-btn-sm" onclick="editPromo(${p.id})">✏️ Edit</button>
-          <button class="hl-btn hl-btn-sm" style="background:#EDE9FE;color:#5B21B6" onclick="quickGenVoucher(${p.id})">🎟️ Gen Voucher</button>
-          <button class="hl-btn hl-btn-sm" style="background:#FEE2E2;color:#991B1B" onclick="deletePromo(${p.id})">🗑️</button>
+          ${CAN_CREATE_PROMO ? `<button class="hl-btn hl-btn-outline hl-btn-sm" onclick="editPromo(${p.id})">✏️ Edit</button>` : ''}
+          ${CAN_CREATE_PROMO ? `<button class="hl-btn hl-btn-sm" style="background:#EDE9FE;color:#5B21B6" onclick="quickGenVoucher(${p.id})">🎟️ Gen Voucher</button>` : ''}
+          ${CAN_DEL_PROMO    ? `<button class="hl-btn hl-btn-sm" style="background:#FEE2E2;color:#991B1B" onclick="deletePromo(${p.id})">🗑️</button>` : ''}
         </div>
       </div>`;
   }).join('');

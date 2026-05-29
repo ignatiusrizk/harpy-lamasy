@@ -495,7 +495,9 @@ tfoot td{padding:9px 12px;font-weight:700;font-size:13px}
         <input type="date" id="hTgl"/>
         <button class="hl-btn hl-btn-primary hl-btn-sm" onclick="loadHarian()">🔍 Tampilkan</button>
         <button class="hl-btn hl-btn-outline hl-btn-sm" onclick="window.print()">🖨️ Print</button>
+        <?php if (hasPermission('laporan.export')): ?>
         <button class="hl-btn hl-btn-outline hl-btn-sm" onclick="exportCSV('harian')">📥 Export CSV</button>
+        <?php endif; ?>
       </div>
     </div>
 
@@ -556,7 +558,9 @@ tfoot td{padding:9px 12px;font-weight:700;font-size:13px}
         <input type="month" id="bBulan"/>
         <button class="hl-btn hl-btn-primary hl-btn-sm" onclick="loadBulanan()">🔍 Tampilkan</button>
         <button class="hl-btn hl-btn-outline hl-btn-sm" onclick="window.print()">🖨️ Print</button>
+        <?php if (hasPermission('laporan.export')): ?>
         <button class="hl-btn hl-btn-outline hl-btn-sm" onclick="exportCSV('bulanan')">📥 Export CSV</button>
+        <?php endif; ?>
       </div>
     </div>
 
@@ -684,7 +688,9 @@ tfoot td{padding:9px 12px;font-weight:700;font-size:13px}
           <label style="font-size:12px;color:var(--gray);font-weight:600">Bulan:</label>
           <input type="month" id="prodBulan" value="<?= date('Y-m') ?>" onchange="loadProd()"
                  style="padding:7px 10px;border:1px solid #E5E9F2;border-radius:7px;font-family:inherit">
+          <?php if (hasPermission('laporan.export')): ?>
           <button class="hl-btn hl-btn-outline hl-btn-sm" onclick="exportCSV('produktivitas')">📥 Export CSV</button>
+          <?php endif; ?>
         </div>
       </div>
       <div class="hl-card-body" id="prodContent" style="padding:14px">
@@ -749,6 +755,8 @@ tfoot td{padding:9px 12px;font-weight:700;font-size:13px}
 </div>
 
 <script>
+const CAN_EXPORT_LAPORAN = <?= hasPermission('laporan.export') ? 'true' : 'false' ?>;
+
 let chartOmsetInstance = null;
 let harianData  = null;
 let bulananData = null;

@@ -22,6 +22,7 @@ require_once ROOT . '/core/MigrationImporter.php';
 date_default_timezone_set('Asia/Jakarta');
 
 $user = currentUser();
+requirePermission('settings.roles');
 $tid  = TenantResolver::id();
 $oid  = TenantResolver::outletId();
 $db   = Database::get();
