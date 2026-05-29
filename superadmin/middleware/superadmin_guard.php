@@ -11,6 +11,43 @@ require_once SA_ROOT . '/../core/ErrorLogger.php';
 require_once SA_ROOT . '/../core/WaLogger.php';
 require_once SA_ROOT . '/../core/PlatformHealthRecorder.php';
 
+// ══════════════════════════════════════════════════════
+// LAYER 0 — HTTP Basic Auth (second factor sebelum login PHP)
+// Set SA_BASIC_USER dan SA_BASIC_PASS di master/config/db.php
+// Tanpa kedua konstanta ini, basic auth dilewati (backward compat).
+// ══════════════════════════════════════════════════════
+(function () {
+    $requiredUser = defined('SA_BASIC_USER') ? SA_BASIC_USER : '';
+    $requiredPass = defined('SA_BASIC_PASS') ? SA_BASIC_PASS : '';
+
+    // Lewati jika belum dikonfigurasi
+    if ($requiredUser === '' || $requiredPass === '') return;
+
+    // PHP-FPM: Authorization header tidak otomatis diparsing.
+    // superadmin/.htaccess meneruskan header via RewriteRule.
+    if (!isset($_SERVER['PHP_AUTH_USER']) && isset($_SERVER['HTTP_AUTHORIZATION'])) {
+        $parts = explode(' ', $_SERVER['HTTP_AUTHORIZATION'], 2);
+        if (isset($parts[1]) && strtolower($parts[0]) === 'basic') {
+            [$u, $p] = explode(':', base64_decode($parts[1]), 2) + ['', ''];
+            $_SERVER['PHP_AUTH_USER'] = $u;
+            $_SERVER['PHP_AUTH_PW']   = $p ?? '';
+        }
+    }
+
+    $givenUser = $_SERVER['PHP_AUTH_USER'] ?? '';
+    $givenPass = $_SERVER['PHP_AUTH_PW']   ?? '';
+
+    $ok = hash_equals($requiredUser, $givenUser)
+       && hash_equals(hash('sha256', $requiredPass), hash('sha256', $givenPass));
+
+    if (!$ok) {
+        header('WWW-Authenticate: Basic realm="LAMASY Internal"');
+        http_response_code(401);
+        // Kembalikan 404-like body agar scanner tidak tahu path ini ada
+        exit('Not Found');
+    }
+})();
+
 // ── Session security ──────────────────────────────────
 ini_set('session.cookie_httponly', 1);
 ini_set('session.cookie_secure',   1);

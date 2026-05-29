@@ -1,0 +1,14 @@
+Options -Indexes
+
+# ── Pass Authorization header ke PHP (dibutuhkan PHP-FPM/FastCGI) ──
+# Tanpa ini, $_SERVER['PHP_AUTH_USER'] tidak terisi di Hostinger
+RewriteEngine On
+RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization},L]
+
+# ── Blokir akses langsung ke file internal ──────────────
+<FilesMatch "^(superadmin_components)\.php$">
+  Require all denied
+</FilesMatch>
+
+# ── Blokir akses ke subdirektori middleware ──────────────
+RedirectMatch 403 ^/superadmin/middleware/
