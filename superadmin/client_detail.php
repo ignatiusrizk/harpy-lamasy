@@ -422,14 +422,6 @@ $usrSt = $db->prepare("SELECT id, username, nama, role, last_login FROM hl_users
 $usrSt->execute([$tenantId]);
 $users = $usrSt->fetchAll();
 
-// Package info
-$packageInfo = null;
-if (!empty($tenant['package_id'])) {
-    $pkgSt = $db->prepare("SELECT * FROM saas_packages WHERE id=?");
-    $pkgSt->execute([$tenant['package_id']]);
-    $packageInfo = $pkgSt->fetch(PDO::FETCH_ASSOC);
-}
-
 // Coin mode & outlet list (untuk topup per-outlet + tab Outlets)
 $coinMode = $tenant['coin_mode'] ?? 'shared';
 $outletListQ = $db->prepare(
@@ -773,20 +765,6 @@ $billingStat = $bsSt->fetch(PDO::FETCH_ASSOC);
     </div>
     <div class="sa-card-body">
       <div class="sa-grid-4" style="margin-bottom:0;">
-        <div>
-          <div style="font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:rgba(255,255,255,.35);margin-bottom:6px;">Paket</div>
-          <?php if ($packageInfo): ?>
-            <div style="font-size:15px;font-weight:700;color:#A5B4FC;">
-              <?= htmlspecialchars($packageInfo['nama']) ?>
-            </div>
-            <div style="font-size:11px;color:rgba(255,255,255,.35);margin-top:2px;">
-              Max <?= $packageInfo['max_outlets'] ?: '∞' ?> outlet
-              <?= $tenant['package_assigned_at'] ? '· Sejak ' . date('d M Y', strtotime($tenant['package_assigned_at'])) : '' ?>
-            </div>
-          <?php else: ?>
-            <div style="font-size:13px;color:rgba(255,255,255,.3);">Belum ada paket</div>
-          <?php endif; ?>
-        </div>
         <div>
           <div style="font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:rgba(255,255,255,.35);margin-bottom:6px;">Saldo Coin</div>
           <div style="font-size:22px;font-weight:800;font-family:var(--mono);color:#FCD34D;">

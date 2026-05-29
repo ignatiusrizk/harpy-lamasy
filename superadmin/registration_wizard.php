@@ -13,11 +13,6 @@ date_default_timezone_set('Asia/Jakarta');
 
 $db = Database::get();
 
-// ── Load saas_packages ────────────────────────────────
-$packages = $db->query(
-    "SELECT * FROM saas_packages WHERE is_active=1 ORDER BY urutan ASC"
-)->fetchAll(PDO::FETCH_ASSOC);
-
 // ── Load existing registration request jika ada ───────
 $regId  = (int)($_GET['id'] ?? 0);
 $regRow = null;
@@ -68,27 +63,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     elseif ($pStep === '2') {
-        $pkgId = (int)($_POST['package_id'] ?? 0);
-        // Validate package
-        $pkgRow = null;
-        foreach ($packages as $p) {
-            if ((int)$p['id'] === $pkgId) { $pkgRow = $p; break; }
-        }
-        if (!$pkgRow) {
-            $error = 'Pilih paket berlangganan terlebih dahulu.';
-        } else {
-            $wiz['package_id']      = $pkgRow['id'];
-            $wiz['package_nama']    = $pkgRow['nama'];
-            $wiz['setup_fee']       = (int)$pkgRow['setup_fee'];
-            $wiz['max_outlets']     = (int)$pkgRow['max_outlets'];
-            // Allow override for coin_awal and trial_days
-            $coinOverride  = (int)($_POST['coin_awal_override'] ?? -1);
-            $trialOverride = (int)($_POST['trial_days_override'] ?? -1);
-            $wiz['coin_awal']   = $coinOverride  >= 0 ? $coinOverride  : (int)$pkgRow['coin_awal'];
-            $wiz['trial_days']  = $trialOverride >= 0 ? $trialOverride : (int)$pkgRow['trial_hari'];
-            $wiz['coin_mode']   = in_array($_POST['coin_mode'] ?? '', ['shared','per_outlet']) ? $_POST['coin_mode'] : 'shared';
-            $wiz['step'] = 3; $step = 3;
-        }
+        $wiz['setup_fee']    = max(0, (int)($_POST['setup_fee'] ?? 0));
+        $wiz['coin_awal']    = max(0, (int)($_POST['coin_awal'] ?? 0));
+        $wiz['trial_days']   = max(0, min(365, (int)($_POST['trial_days'] ?? 30)));
+        $wiz['coin_mode']    = in_array($_POST['coin_mode'] ?? '', ['shared','per_outlet']) ? $_POST['coin_mode'] : 'shared';
+        $wiz['package_id']   = null;
+        $wiz['package_nama'] = null;
+        $wiz['max_outlets']  = 1;
+        $wiz['step'] = 3; $step = 3;
     }
 
     elseif ($pStep === '3') {
@@ -143,16 +125,15 @@ function provisionTenant(array $wizard): array
             $slug = $slugBase . '_' . $i++;
         }
 
-        $trialEnds   = date('Y-m-d H:i:s', strtotime('+' . max(0,(int)$wizard['trial_days']) . ' days'));
-        $packageId   = (int)($wizard['package_id'] ?? 0) ?: null;
-        $maxOutlets  = (int)($wizard['max_outlets'] ?? 1);
+        $trialEnds  = date('Y-m-d H:i:s', strtotime('+' . max(0,(int)$wizard['trial_days']) . ' days'));
+        $maxOutlets = (int)($wizard['max_outlets'] ?? 1);
 
         // 2. Insert tenant (coin_balance = 0; will topup via ledger if paid)
         $db->prepare(
             "INSERT INTO tenants
                (slug, db_name, nama_perusahaan, owner_name, owner_wa, status, coin_balance, coin_mode,
-                total_outlets, trial_ends_at, package_id, package_assigned_at, max_outlets, provisioned_at)
-             VALUES (?,?,?,?,?,?,0,?,0,?,?,?,?,NOW())"
+                total_outlets, trial_ends_at, max_outlets, provisioned_at)
+             VALUES (?,?,?,?,?,?,0,?,0,?,?,NOW())"
         )->execute([
             $slug,
             'u269895997_harpy_master',
@@ -162,8 +143,6 @@ function provisionTenant(array $wizard): array
             'active',
             $wizard['coin_mode'] ?? 'shared',
             $trialEnds,
-            $packageId,
-            $packageId ? date('Y-m-d H:i:s') : null,
             $maxOutlets,
         ]);
         $tenantId = (int)$db->lastInsertId();
@@ -241,8 +220,8 @@ function provisionTenant(array $wizard): array
 
         // 8. Log
         logSuperAdminAction('provision_tenant', $tenantId,
-            "Provisioned: {$wizard['nama_outlet']} | Owner: {$wizard['owner_name']} | Paket: " .
-            ($wizard['package_nama'] ?? '-') . " | Payment: $payStatus"
+            "Provisioned: {$wizard['nama_outlet']} | Owner: {$wizard['owner_name']} | Fee: Rp " .
+            number_format((int)($wizard['setup_fee'] ?? 0)) . " | Payment: $payStatus"
         );
 
         $db->commit();
@@ -255,13 +234,12 @@ function provisionTenant(array $wizard): array
             // Record confirmed payment
             $smpStmt = $db->prepare(
                 "INSERT INTO saas_manual_payments
-                   (tenant_id, superadmin_id, type, package_id, nominal_dibayar, coin_dikreditkan,
+                   (tenant_id, superadmin_id, type, nominal_dibayar, coin_dikreditkan,
                     metode, nama_pengirim, ref_transfer, tanggal_bayar, catatan, status, created_at)
-                 VALUES (?,?,'setup_fee',?,?,?,?,?,?,?,?,'confirmed',NOW())"
+                 VALUES (?,?,'setup_fee',?,?,?,?,?,?,?,'confirmed',NOW())"
             );
             $smpStmt->execute([
                 $tenantId, $saId,
-                $packageId,
                 (int)$wizard['setup_fee'],
                 $coinAwal,
                 $wizard['metode'] ?? 'transfer_bca',
@@ -277,7 +255,7 @@ function provisionTenant(array $wizard): array
                 _inlineCoinTopup($db, $tenantId, $outletId, $coinAwal,
                     $wizard['coin_mode'] ?? 'shared',
                     'SMP-' . $smpId,
-                    "Coin awal paket " . ($wizard['package_nama'] ?? '-')
+                    "Coin awal aktivasi outlet"
                 );
             }
 
@@ -286,13 +264,12 @@ function provisionTenant(array $wizard): array
             $adjReason = $wizard['adjustment_reason'] ?? 'promo';
             $smpStmt = $db->prepare(
                 "INSERT INTO saas_manual_payments
-                   (tenant_id, superadmin_id, type, package_id, nominal_dibayar, coin_dikreditkan,
+                   (tenant_id, superadmin_id, type, nominal_dibayar, coin_dikreditkan,
                     metode, catatan, adjustment_reason, status, tanggal_bayar, created_at)
-                 VALUES (?,?,'adjustment',?,0,?,'lainnya',?,?,'confirmed',?,NOW())"
+                 VALUES (?,?,'adjustment',0,?,'lainnya',?,?,'confirmed',?,NOW())"
             );
             $smpStmt->execute([
                 $tenantId, $saId,
-                $packageId,
                 $coinAwal,
                 $wizard['catatan'] ?: 'Gratis/promo saat registrasi',
                 $adjReason,
@@ -322,7 +299,6 @@ function provisionTenant(array $wizard): array
             . "🔗 Login  : " . (defined('APP_URL') ? APP_URL : 'https://lamasy.harpy.id') . "/login.php\n"
             . "👤 Username : *{$username}*\n"
             . "🔑 Password : *{$password}*"
-            . ($wizard['package_nama'] ? "\n📦 Paket     : " . $wizard['package_nama'] : "")
             . $coinLine . "\n\n"
             . "Silakan login dan mulai setup outlet Anda.\n"
             . "Ada pertanyaan? Hubungi kami kapan saja.\n\n_Tim LaMaSy — Harpy Group_";
@@ -557,7 +533,7 @@ $csrf = saGetCsrf();
   <!-- Step indicators -->
   <div class="wizard-steps">
     <?php
-    $stepLabels = ['Data Klien','Paket','Pembayaran','Review','Selesai'];
+    $stepLabels = ['Data Klien','Aktivasi','Pembayaran','Review','Selesai'];
     foreach ($stepLabels as $i => $label):
         $n = $i + 1;
         $cls = $n < $step ? 'done' : ($n === $step ? 'active' : '');
@@ -633,89 +609,51 @@ $csrf = saGetCsrf();
     </form>
   </div>
 
-  <!-- ══ STEP 2: PAKET ══════════════════════════════ -->
+  <!-- ══ STEP 2: BIAYA AKTIVASI ══════════════════════ -->
   <?php elseif ($step === 2): ?>
   <div class="wiz-card">
-    <h2>Pilih Paket</h2>
-    <div class="sub">Paket menentukan setup fee, coin awal, dan batas outlet</div>
-    <form method="POST" id="step2Form">
+    <h2>Biaya Aktivasi Outlet</h2>
+    <div class="sub">Tentukan biaya aktivasi dan konfigurasi awal akun</div>
+    <form method="POST">
       <input type="hidden" name="_csrf" value="<?= htmlspecialchars($csrf) ?>"/>
       <input type="hidden" name="step" value="2"/>
 
-      <div class="wiz-field">
-        <label class="wiz-label">Paket Berlangganan <span class="req">*</span></label>
-        <?php if (empty($packages)): ?>
-          <div style="padding:16px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);border-radius:10px;color:#FCA5A5;font-size:13px;">
-            Belum ada paket aktif. Tambahkan paket di <a href="packages.php" style="color:#FCA5A5;">Paket & Bundle</a>.
-          </div>
-        <?php else: ?>
-        <div class="pkg-grid">
-          <?php foreach ($packages as $pkg):
-            $selected = ((int)($wiz['package_id'] ?? 0) === (int)$pkg['id']);
-            $feeLabel = $pkg['setup_fee'] > 0 ? 'Rp ' . number_format($pkg['setup_fee'],0,',','.') : 'Gratis';
-          ?>
-          <label class="pkg-card <?= $selected ? 'selected' : '' ?>"
-                 onclick="selectPkg(this, <?= $pkg['id'] ?>, <?= (int)$pkg['setup_fee'] ?>, <?= (int)$pkg['coin_awal'] ?>, <?= (int)$pkg['trial_hari'] ?>)">
-            <input type="radio" name="package_id" value="<?= $pkg['id'] ?>" <?= $selected ? 'checked' : '' ?>/>
-            <div class="pkg-check">✓</div>
-            <?php if ($pkg['is_custom']): ?>
-              <div class="pkg-badge">Enterprise</div><br>
-            <?php endif; ?>
-            <div class="pkg-name"><?= htmlspecialchars($pkg['nama']) ?></div>
-            <div class="pkg-fee"><?= $feeLabel ?></div>
-            <div class="pkg-detail">
-              🪙 <?= number_format($pkg['coin_awal'],0,',','.') ?> coin awal<br>
-              📅 <?= (int)$pkg['trial_hari'] ?> hari trial<br>
-              🏪 <?= $pkg['max_outlets'] > 0 ? 'Maks. ' . $pkg['max_outlets'] . ' outlet' : 'Unlimited outlet' ?>
-            </div>
-          </label>
-          <?php endforeach; ?>
+      <div class="field-grid-2">
+        <div class="wiz-field">
+          <label class="wiz-label">Biaya Aktivasi Outlet (Rp)</label>
+          <input type="number" name="setup_fee" class="wiz-input" min="0" step="10000"
+                 value="<?= (int)($wiz['setup_fee'] ?? 300000) ?>" placeholder="300000"/>
+          <div style="font-size:11px;color:rgba(255,255,255,.3);margin-top:4px;">0 = gratis / promo</div>
         </div>
-        <?php endif; ?>
+        <div class="wiz-field">
+          <label class="wiz-label">Coin Awal Dikreditkan</label>
+          <input type="number" name="coin_awal" class="wiz-input" min="0"
+                 value="<?= (int)($wiz['coin_awal'] ?? 50000) ?>" placeholder="50000"/>
+          <div style="font-size:11px;color:rgba(255,255,255,.3);margin-top:4px;">Dikreditkan saat aktivasi</div>
+        </div>
       </div>
 
-      <!-- Override fields (collapsed by default) -->
-      <details class="override-panel">
-        <summary>Konfigurasi tambahan / override</summary>
-        <div style="margin-top:14px;">
-          <div class="field-grid-2">
-            <div class="wiz-field">
-              <label class="wiz-label">Override Coin Awal</label>
-              <input type="number" name="coin_awal_override" id="coinAwalOverride" class="wiz-input" min="0"
-                     placeholder="Biarkan kosong = ikut paket"
-                     value="<?= isset($wiz['coin_awal']) && $wiz['package_id'] ? '' : '' ?>"/>
-              <div style="font-size:11px;color:rgba(255,255,255,.3);margin-top:4px">Kosong = gunakan default paket</div>
-            </div>
-            <div class="wiz-field">
-              <label class="wiz-label">Override Trial (hari)</label>
-              <input type="number" name="trial_days_override" id="trialOverride" class="wiz-input" min="0"
-                     placeholder="Biarkan kosong = ikut paket"
-                     value=""/>
-              <div style="font-size:11px;color:rgba(255,255,255,.3);margin-top:4px">Kosong = gunakan default paket</div>
-            </div>
-          </div>
-          <div class="wiz-field" style="margin-top:4px;">
-            <label class="wiz-label">Mode Coin</label>
-            <div class="radio-group">
-              <?php $cm = $wiz['coin_mode'] ?? 'shared'; ?>
-              <label class="radio-opt <?= $cm === 'shared' ? 'selected' : '' ?>" onclick="selectRadio(this,'coin_mode','shared')">
-                <input type="radio" name="coin_mode" value="shared" <?= $cm === 'shared' ? 'checked' : '' ?>/>
-                <div><div class="opt-label">Shared</div><div class="opt-sub">Semua outlet berbagi 1 saldo coin tenant</div></div>
-              </label>
-              <label class="radio-opt <?= $cm === 'per_outlet' ? 'selected' : '' ?>" onclick="selectRadio(this,'coin_mode','per_outlet')">
-                <input type="radio" name="coin_mode" value="per_outlet" <?= $cm === 'per_outlet' ? 'checked' : '' ?>/>
-                <div><div class="opt-label">Per Outlet</div><div class="opt-sub">Setiap outlet punya saldo coin sendiri</div></div>
-              </label>
-            </div>
-          </div>
+      <div class="field-grid-2">
+        <div class="wiz-field">
+          <label class="wiz-label">Durasi Trial (hari)</label>
+          <input type="number" name="trial_days" class="wiz-input" min="0" max="365"
+                 value="<?= (int)($wiz['trial_days'] ?? 30) ?>"/>
         </div>
-      </details>
+      </div>
 
-      <!-- Live preview -->
-      <div id="pkgPreview" style="display:none;margin-top:14px;background:rgba(99,102,241,.06);border:1px solid rgba(99,102,241,.15);border-radius:10px;padding:12px 14px;font-size:13px;color:rgba(255,255,255,.65);">
-        Setup fee: <strong id="prevFee" style="color:var(--white)"></strong> &nbsp;·&nbsp;
-        Coin awal: <strong id="prevCoin" style="color:#6EE7B7"></strong> &nbsp;·&nbsp;
-        Trial: <strong id="prevTrial" style="color:var(--white)"></strong>
+      <div class="wiz-field">
+        <label class="wiz-label">Mode Coin</label>
+        <div class="radio-group">
+          <?php $cm = $wiz['coin_mode'] ?? 'shared'; ?>
+          <label class="radio-opt <?= $cm === 'shared' ? 'selected' : '' ?>" onclick="selectRadio(this,'coin_mode','shared')">
+            <input type="radio" name="coin_mode" value="shared" <?= $cm === 'shared' ? 'checked' : '' ?>/>
+            <div><div class="opt-label">Shared</div><div class="opt-sub">Semua outlet berbagi 1 saldo coin tenant</div></div>
+          </label>
+          <label class="radio-opt <?= $cm === 'per_outlet' ? 'selected' : '' ?>" onclick="selectRadio(this,'coin_mode','per_outlet')">
+            <input type="radio" name="coin_mode" value="per_outlet" <?= $cm === 'per_outlet' ? 'checked' : '' ?>/>
+            <div><div class="opt-label">Per Outlet</div><div class="opt-sub">Setiap outlet punya saldo coin sendiri</div></div>
+          </label>
+        </div>
       </div>
 
       <div class="wiz-footer">
@@ -730,8 +668,8 @@ $csrf = saGetCsrf();
   <div class="wiz-card">
     <h2>Status Pembayaran</h2>
     <div class="sub">
-      Setup fee paket <strong><?= htmlspecialchars($wiz['package_nama'] ?? '-') ?></strong>:
-      <strong style="color:#6EE7B7;">Rp <?= number_format((int)($wiz['setup_fee'] ?? 0), 0, ',', '.') ?></strong>
+      Biaya aktivasi outlet:
+      <strong style="color:#6EE7B7;"><?= (int)($wiz['setup_fee'] ?? 0) > 0 ? 'Rp ' . number_format((int)$wiz['setup_fee'], 0, ',', '.') : 'Gratis' ?></strong>
     </div>
     <form method="POST" id="step3Form">
       <input type="hidden" name="_csrf" value="<?= htmlspecialchars($csrf) ?>"/>
