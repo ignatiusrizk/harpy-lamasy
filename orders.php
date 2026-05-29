@@ -1024,17 +1024,20 @@ textarea{resize:vertical;min-height:64px}
 
 <!-- MODAL CETAK ULANG NOTA -->
 <div class="modal-overlay" id="modalCetak" style="align-items:center;justify-content:center;padding:20px">
-  <div class="modal" style="height:auto;max-height:90vh;width:420px">
+  <div class="modal" style="height:auto;max-height:90vh;width:480px">
     <div class="modal-header">
       <span class="modal-title">🖨️ Cetak Ulang Nota</span>
       <button class="modal-close" onclick="closeCetakModal()">✕</button>
     </div>
-    <div class="modal-body">
-      <div id="strukCetakUlang"></div>
+    <div class="modal-body" style="padding:8px;background:#f4f6fb;min-height:280px;display:flex;align-items:center;justify-content:center">
+      <iframe id="cetakFrame"
+              style="border:none;background:#fff;width:100%;min-height:380px;border-radius:6px;box-shadow:0 2px 12px rgba(0,0,0,.1)"
+              title="Cetak Ulang Nota"></iframe>
     </div>
-    <div class="modal-footer">
+    <div class="modal-footer" style="gap:6px">
       <button class="btn btn-outline btn-sm" onclick="closeCetakModal()">Tutup</button>
       <button class="btn btn-primary btn-sm" onclick="doPrint()">🖨️ Print</button>
+      <a id="openCetakBtn" href="#" target="_blank" class="btn btn-outline btn-sm">↗ Buka Penuh</a>
     </div>
   </div>
 </div>
@@ -1568,10 +1571,16 @@ function fmtDateTime(d){if(!d)return'-';return new Date(d).toLocaleString('id-ID
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;')}
 function showToast(msg,type='success'){const t=document.getElementById('toast');t.textContent=msg;t.className='toast '+type+' show';setTimeout(()=>t.className='toast',3500)}
 
-// ── CETAK ULANG ───────────────────────────────────────
+// ── CETAK ULANG — pakai StrukGenerator ───────────────
 async function cetakUlang(id) {
-  document.getElementById('strukCetakUlang').innerHTML = '<div style="text-align:center;padding:20px;color:var(--gray)">⏳ Memuat...</div>';
+  const frame   = document.getElementById('cetakFrame');
+  const openBtn = document.getElementById('openCetakBtn');
+  // watermark=1 → show "COPY" watermark untuk cetak ulang
+  const apiUrl  = `/api/struk.php?action=generate&id=${id}&tipe=retail`;
+  openBtn.href  = apiUrl;
+  frame.src     = apiUrl;
   document.getElementById('modalCetak').classList.add('open');
+  return; // ── legacy code tidak aktif ──
 
   const r = await fetch('orders.php?action=get_struk&id=' + id);
   const d = await r.json();
@@ -1628,7 +1637,15 @@ async function cetakUlang(id) {
 }
 
 function closeCetakModal() { document.getElementById('modalCetak').classList.remove('open'); }
-function doPrint() { window.print(); }
+function doPrint() {
+  const frame = document.getElementById('cetakFrame');
+  if (frame && frame.contentWindow) {
+    frame.contentWindow.focus();
+    frame.contentWindow.print();
+  } else {
+    window.print();
+  }
+}
 
 // ── WA REMINDER ───────────────────────────────────────
 let currentWAId = null;

@@ -128,9 +128,10 @@ function renderTopbar(string $activePage = '', bool $minimalMode = false): void 
         'settings' => [
             'label' => 'Settings',
             'items' => [
-                'settings'     => ['label'=>'Role & Permission','url'=>'/settings',    'perm'=>'settings.roles'],
-                'audit'        => ['label'=>'Audit Log',        'url'=>'/audit',        'perm'=>'audit.view'],
-                'owner_report' => ['label'=>'Notifikasi Owner', 'url'=>'/owner-report',
+                'struk'        => ['label'=>'Struk & Invoice',   'url'=>'/struk',        'perm'=>'settings.roles'],
+                'settings'     => ['label'=>'Role & Permission', 'url'=>'/settings',     'perm'=>'settings.roles'],
+                'audit'        => ['label'=>'Audit Log',         'url'=>'/audit',         'perm'=>'audit.view'],
+                'owner_report' => ['label'=>'Notifikasi Owner',  'url'=>'/owner-report',
                                    'roles'=>['owner','superadmin','admin','manager']],
             ],
         ],
@@ -183,7 +184,7 @@ function renderTopbar(string $activePage = '', bool $minimalMode = false): void 
       'dashboard'=>'🏠','pos'=>'🛒','orders'=>'📋','kas'=>'💰',
       'laporan'=>'📊','layanan'=>'🧺','promo'=>'🎟️','customer'=>'👥',
       'karyawan'=>'👤','absensi'=>'📅','settings'=>'⚙️','audit'=>'🔍',
-      'checklist'=>'✅','droppoint'=>'📦','owner_report'=>'📨','piutang'=>'💼','kanban'=>'🗂️',
+      'checklist'=>'✅','droppoint'=>'📦','owner_report'=>'📨','piutang'=>'💼','kanban'=>'🗂️','struk'=>'🧾',
       'loyalty'=>'⭐','retention'=>'😴','support'=>'🎧','import'=>'📥',
     ];
     ?>

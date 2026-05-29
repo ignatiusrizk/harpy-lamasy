@@ -400,9 +400,15 @@ async function loadList(){
         else if (ht <= 3) tempoStr += ` <span class="tempo-warn">(${ht} hari)</span>`;
         else              tempoStr += ` <small style="color:#9CA3AF">(${ht} hari)</small>`;
       }
-      const actions = r.status === 'lunas' ? '<span style="color:#9CA3AF;font-size:11px">✓ lunas</span>' : `
+      const actions = r.status === 'lunas' ? `
+        <span style="color:#9CA3AF;font-size:11px">✓ lunas</span>
+        <a href="/api/struk.php?action=generate_invoice&id=${r.id}&preview=1" target="_blank"
+           class="hl-btn hl-btn-outline btn-sm" style="font-size:11px">📄 Invoice</a>
+      ` : `
         ${CAN_PIUTANG_WRITE && r.status==='belum_tagih' ? `<button class="hl-btn hl-btn-outline btn-sm" onclick="markInvoiced(${r.id})">📤 Tagih</button>` : ''}
         ${CAN_PIUTANG_WRITE && r.status!=='belum_tagih' ? `<button class="hl-btn hl-btn-outline btn-sm" onclick="reminder(${r.id})">🔔 Reminder</button>` : ''}
+        <a href="/api/struk.php?action=generate_invoice&id=${r.id}" target="_blank"
+           class="hl-btn hl-btn-outline btn-sm" style="font-size:11px" title="Generate Invoice B2B (200 coin)">📄 Invoice</a>
         ${CAN_PIUTANG_WRITE ? `<button class="hl-btn hl-btn-primary btn-sm" onclick="openBayar(${r.id}, '${esc(r.pelanggan_nama)}', ${r.sisa_tagihan})">💵 Bayar</button>` : ''}
       `;
       html += `<tr>

@@ -843,18 +843,24 @@ textarea{resize:vertical;min-height:64px}
 
 <!-- MODAL STRUK -->
 <div class="modal-overlay" id="modalStruk">
-  <div class="modal">
+  <div class="modal" style="max-width:520px">
     <div class="modal-header">
       <span class="modal-title">🧾 Struk Pembayaran</span>
       <button class="modal-close" onclick="closeModal()">✕</button>
     </div>
-    <div class="modal-body">
-      <div id="strukPrint"></div>
+    <div class="modal-body" style="padding:8px;background:#f4f6fb;min-height:300px;display:flex;align-items:center;justify-content:center">
+      <iframe id="strukFrame"
+              style="border:none;background:#fff;width:100%;min-height:420px;border-radius:6px;box-shadow:0 2px 12px rgba(0,0,0,.1)"
+              title="Struk"></iframe>
+      <div id="strukLoading" style="display:none;text-align:center;color:#6B7280;padding:40px">
+        ⏳ Memuat struk…
+      </div>
     </div>
-    <div class="modal-footer">
+    <div class="modal-footer" style="gap:6px;flex-wrap:wrap">
       <button class="btn btn-outline" onclick="closeModal()">Tutup</button>
       <button class="btn btn-green" onclick="printStruk()">🖨️ Print Struk</button>
-      <button class="btn btn-teal-sm" onclick="window.location.href='/orders'">📋 Lihat Orders</button>
+      <a id="openStrukBtn" href="#" target="_blank" class="btn btn-teal-sm">↗ Buka Penuh</a>
+      <button class="btn btn-teal-sm" onclick="window.location.href='/orders'">📋 Orders</button>
     </div>
   </div>
 </div>
@@ -1360,6 +1366,31 @@ async function doSaveTransaksi() {
 }
 
 async function showStruk(id) {
+  // ── Gunakan StrukGenerator via API ──────────────────
+  const frame   = document.getElementById('strukFrame');
+  const loading = document.getElementById('strukLoading');
+  const openBtn = document.getElementById('openStrukBtn');
+
+  const apiUrl = `/api/struk.php?action=generate&id=${id}&tipe=retail`;
+  openBtn.href = apiUrl;
+
+  loading.style.display = 'block';
+  frame.style.display   = 'none';
+  document.getElementById('modalStruk').classList.add('open');
+
+  frame.onload = () => {
+    loading.style.display = 'none';
+    frame.style.display   = 'block';
+    // Sesuaikan tinggi iframe ke konten
+    try {
+      const h = frame.contentDocument?.body?.scrollHeight;
+      if (h && h > 200) frame.style.minHeight = Math.min(h + 20, 600) + 'px';
+    } catch(e) {}
+  };
+  frame.src = apiUrl;
+  return; // ── legacy code tidak dijalankan di bawah ini ──
+
+  // LEGACY fallback (tidak aktif — di-skip oleh return di atas)
   const res  = await fetch('pos.php?action=get_detail&id=' + id);
   const data = await res.json();
   if (data.error) return;
@@ -1419,7 +1450,15 @@ async function showStruk(id) {
   document.getElementById('modalStruk').classList.add('open');
 }
 
-function printStruk() { window.print(); }
+function printStruk() {
+  const frame = document.getElementById('strukFrame');
+  if (frame && frame.contentWindow) {
+    frame.contentWindow.focus();
+    frame.contentWindow.print();
+  } else {
+    window.print();
+  }
+}
 function closeModal()  { document.getElementById('modalStruk').classList.remove('open'); }
 
 let appliedVoucher = null;
