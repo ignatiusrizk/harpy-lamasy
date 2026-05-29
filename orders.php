@@ -1323,12 +1323,13 @@ async function openDetail(id) {
 
     <div class="total-box" id="editTotalBox">
       <div class="tb-row"><span class="tb-label">Subtotal</span><span class="tb-value" id="etSubtotal">-</span></div>
-      <div class="tb-row"><span class="tb-label">Diskon</span><span class="tb-value">- Rp <input type="number" id="edit_diskon" value="${d.diskon||0}" min="0" step="500" oninput="recalcEdit()" style="width:80px;background:transparent;border:none;border-bottom:1px solid rgba(255,255,255,.3);color:white;font-family:var(--mono);font-size:13px;padding:0;outline:none"/></span></div>
+      <div class="tb-row"><span class="tb-label">Diskon</span><span class="tb-value">- Rp ${CAN_EDIT_ORDER ? `<input type="number" id="edit_diskon" value="${d.diskon||0}" min="0" step="500" oninput="recalcEdit()" style="width:80px;background:transparent;border:none;border-bottom:1px solid rgba(255,255,255,.3);color:white;font-family:var(--mono);font-size:13px;padding:0;outline:none"/>` : `<span id="edit_diskon" style="font-family:var(--mono);color:white">${(d.diskon||0).toLocaleString('id-ID')}</span>`}</span></div>
       <div class="tb-row tb-total"><span style="color:white;font-weight:700">TOTAL</span><span class="tb-value tb-big" id="etTotal">-</span></div>
-      <div class="tb-row"><span class="tb-label">DP/Bayar</span><span class="tb-value">Rp <input type="number" id="edit_dp" value="${d.dp||0}" min="0" step="1000" oninput="recalcEdit()" style="width:90px;background:transparent;border:none;border-bottom:1px solid rgba(255,255,255,.3);color:white;font-family:var(--mono);font-size:13px;padding:0;outline:none"/></span></div>
+      <div class="tb-row"><span class="tb-label">DP/Bayar</span><span class="tb-value">Rp ${CAN_EDIT_ORDER ? `<input type="number" id="edit_dp" value="${d.dp||0}" min="0" step="1000" oninput="recalcEdit()" style="width:90px;background:transparent;border:none;border-bottom:1px solid rgba(255,255,255,.3);color:white;font-family:var(--mono);font-size:13px;padding:0;outline:none"/>` : `<span id="edit_dp" style="font-family:var(--mono);color:white">${parseFloat(d.dp||0).toLocaleString('id-ID')}</span>`}</span></div>
       <div class="tb-row"><span class="tb-label">Sisa Bayar</span><span class="tb-value tb-sisa" id="etSisa">-</span></div>
     </div>
 
+    ${CAN_EDIT_ORDER ? `
     <div class="form-row" style="margin-bottom:12px">
       <div class="form-group">
         <label>Metode Bayar</label>
@@ -1341,7 +1342,6 @@ async function openDetail(id) {
         <input type="date" id="edit_estimasi" value="${d.estimasi_selesai||''}"/>
       </div>
     </div>
-
     <div class="section-title">📝 Catatan</div>
     <div class="form-group">
       <label>Catatan untuk Pelanggan</label>
@@ -1350,7 +1350,13 @@ async function openDetail(id) {
     <div class="form-group">
       <label>Catatan Internal</label>
       <textarea id="edit_catatan_internal" placeholder="Catatan hanya untuk tim...">${esc(d.catatan_internal||'')}</textarea>
+    </div>` : `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;font-size:13px">
+      <div><span style="color:var(--gray)">Metode Bayar: </span><strong>${(d.metode_bayar||'cash').toUpperCase()}</strong></div>
+      <div><span style="color:var(--gray)">Est. Selesai: </span><strong>${d.estimasi_selesai ? fmtDate(d.estimasi_selesai) : '-'}</strong></div>
     </div>
+    ${d.catatan ? `<div style="font-size:13px;margin-bottom:8px"><span style="color:var(--gray)">Catatan: </span>${esc(d.catatan)}</div>` : ''}
+    `}
 
     <div class="section-title">🗒️ Catatan Internal (Tim) <span style="font-size:11px;font-weight:500;color:var(--gray)">— riwayat per-user</span></div>
     <div id="notesList" style="margin-bottom:8px;max-height:200px;overflow-y:auto;border:1px solid rgba(27,45,90,.1);border-radius:8px;padding:8px;background:var(--off)">
