@@ -156,6 +156,10 @@ $_canSwitch = !empty($hqIsOwner) || !empty($hqIsManager);
 
       <div class="hq-side-divider"></div>
 
+      <a href="/hq/struk"
+         class="hq-side-link <?= $_aPage === 'hq-struk' ? 'active' : '' ?>">
+        <span class="ico">🧾</span> Struk & Invoice
+      </a>
       <a href="/hq/settings"
          class="hq-side-link <?= $_aPage === 'hq-settings' ? 'active' : '' ?>">
         <span class="ico">⚙️</span> Settings
