@@ -236,19 +236,20 @@ if ($action) {
       Bisa diubah per-klien saat provisioning.
     </p>
 
-    <div class="fg">
-      <label>Biaya Aktivasi Outlet (Rp)</label>
-      <input type="number" id="defFee" min="0" step="10000" placeholder="300000"/>
-    </div>
     <div class="fg-row">
       <div class="fg">
-        <label>Coin Awal Dikreditkan</label>
-        <input type="number" id="defCoin" min="0" placeholder="50000"/>
+        <label>Biaya Aktivasi Outlet (Rp)</label>
+        <input type="number" id="defFee" min="0" step="10000" placeholder="300000" oninput="previewDiscount()"/>
       </div>
       <div class="fg">
-        <label>Durasi Trial (hari)</label>
-        <input type="number" id="defTrial" min="0" max="365" placeholder="30"/>
+        <label>Diskon (%)</label>
+        <input type="number" id="defDiscount" min="0" max="100" step="1" placeholder="0" oninput="previewDiscount()"/>
+        <span class="fg-hint" id="defDiscountPreview"></span>
       </div>
+    </div>
+    <div class="fg">
+      <label>Coin Awal Dikreditkan</label>
+      <input type="number" id="defCoin" min="0" placeholder="50000"/>
     </div>
 
     <div class="sa-modal-footer">
@@ -321,30 +322,55 @@ const DEF_KEY = 'sa_activation_defaults';
 function loadDefaults() {
   try { return JSON.parse(localStorage.getItem(DEF_KEY)) || {}; } catch { return {}; }
 }
-function saveDefaultsToStorage(fee, coinAwal, trial) {
-  localStorage.setItem(DEF_KEY, JSON.stringify({ fee, coinAwal, trial }));
+function saveDefaultsToStorage(fee, discount, coinAwal) {
+  localStorage.setItem(DEF_KEY, JSON.stringify({ fee, discount, coinAwal }));
 }
 
 function refreshActivationCard() {
-  const d = loadDefaults();
-  const fee = d.fee ?? 300000;
-  document.getElementById('activationFeeDisplay').textContent =
-    fee > 0 ? 'Rp ' + parseInt(fee).toLocaleString('id-ID') : 'Gratis';
+  const d        = loadDefaults();
+  const fee      = d.fee      ?? 300000;
+  const discount = d.discount ?? 0;
+  const final    = Math.round(fee * (1 - discount / 100));
+  let display    = fee > 0 ? 'Rp ' + parseInt(fee).toLocaleString('id-ID') : 'Gratis';
+  if (discount > 0 && fee > 0) {
+    display += ` <span style="font-size:14px;color:rgba(255,255,255,.35);text-decoration:line-through">${display}</span>`
+             + ` → <span style="color:#6EE7B7;">Rp ${final.toLocaleString('id-ID')}</span>`
+             + ` <span style="font-size:13px;color:#FCD34D;">(−${discount}%)</span>`;
+    display = 'Rp ' + parseInt(fee).toLocaleString('id-ID')
+            + ` <span style="font-size:16px;color:rgba(255,255,255,.3);text-decoration:line-through;margin-left:8px;"></span>`;
+    display = `<span style="font-family:var(--mono);">Rp ${final.toLocaleString('id-ID')}</span>`
+            + ` <span style="font-size:13px;color:#FCD34D;margin-left:6px;">−${discount}%</span>`;
+  }
+  document.getElementById('activationFeeDisplay').innerHTML = display;
 }
 
 function openDefaultModal() {
   const d = loadDefaults();
-  document.getElementById('defFee').value   = d.fee   ?? 300000;
-  document.getElementById('defCoin').value  = d.coinAwal ?? 50000;
-  document.getElementById('defTrial').value = d.trial ?? 30;
+  document.getElementById('defFee').value      = d.fee      ?? 300000;
+  document.getElementById('defDiscount').value = d.discount ?? 0;
+  document.getElementById('defCoin').value     = d.coinAwal ?? 50000;
+  document.getElementById('defDiscountPreview').textContent = '';
   document.getElementById('defaultModal').classList.add('open');
 }
 
+function previewDiscount() {
+  const fee      = parseInt(document.getElementById('defFee').value)      || 0;
+  const discount = parseFloat(document.getElementById('defDiscount').value) || 0;
+  const hint     = document.getElementById('defDiscountPreview');
+  if (fee > 0 && discount > 0) {
+    const final = Math.round(fee * (1 - discount / 100));
+    hint.textContent = `Harga setelah diskon: Rp ${final.toLocaleString('id-ID')}`;
+    hint.style.color = '#6EE7B7';
+  } else {
+    hint.textContent = '';
+  }
+}
+
 function saveDefaults() {
-  const fee   = parseInt(document.getElementById('defFee').value)   || 0;
-  const coinA = parseInt(document.getElementById('defCoin').value)  || 0;
-  const trial = parseInt(document.getElementById('defTrial').value) || 30;
-  saveDefaultsToStorage(fee, coinA, trial);
+  const fee      = parseInt(document.getElementById('defFee').value)        || 0;
+  const discount = parseFloat(document.getElementById('defDiscount').value) || 0;
+  const coinA    = parseInt(document.getElementById('defCoin').value)       || 0;
+  saveDefaultsToStorage(fee, discount, coinA);
   refreshActivationCard();
   closeModal('defaultModal');
   saShowToast('Default aktivasi disimpan.', 'success');
