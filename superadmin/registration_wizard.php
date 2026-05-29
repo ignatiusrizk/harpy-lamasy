@@ -153,6 +153,8 @@ function provisionTenant(array $wizard): array
 
         // 3. Insert outlet
         $outletSlug = $slug . '_outlet1';
+        $payStatus = $wizard['payment_status'] ?? 'belum_bayar';
+        $outletStatus = ($payStatus === 'sudah_bayar' || $payStatus === 'gratis') ? 'active' : 'pending';
         $db->prepare(
             "INSERT INTO outlets (tenant_id, nama_outlet, slug, kota, status, coin_balance, is_main, setup_done)
              VALUES (?,?,?,?,?,0,1,0)"
@@ -161,7 +163,7 @@ function provisionTenant(array $wizard): array
             $wizard['nama_outlet'],
             $outletSlug,
             $wizard['kota'] ?? '',
-            'trial',
+            $outletStatus,
         ]);
         $outletId = (int)$db->lastInsertId();
         $db->prepare("UPDATE tenants SET total_outlets=1 WHERE id=?")->execute([$tenantId]);
@@ -195,7 +197,6 @@ function provisionTenant(array $wizard): array
         }
 
         // 7. Registration request
-        $payStatus = $wizard['payment_status'] ?? 'belum_bayar';
         if (!empty($wizard['reg_id'])) {
             $db->prepare(
                 "UPDATE registration_requests SET status='completed', tenant_id=?, outlet_id=?, updated_at=NOW() WHERE id=?"
@@ -234,7 +235,7 @@ function provisionTenant(array $wizard): array
         $coinAwal = (int)($wizard['coin_awal'] ?? 0);
         $smpId = null;
 
-        if ($payStatus === 'sudah_bayar' && (int)($wizard['setup_fee'] ?? 0) > 0) {
+        if ($payStatus === 'sudah_bayar') {
             // Record confirmed payment
             $smpStmt = $db->prepare(
                 "INSERT INTO saas_manual_payments
@@ -300,7 +301,7 @@ function provisionTenant(array $wizard): array
         $waMsg = "Halo *{$wizard['owner_name']}*!\n\n"
             . "Selamat datang di *LaMaSy — Laundry Management System* 🎉\n\n"
             . "Akun Anda telah aktif:\n\n"
-            . "🔗 Login  : " . (defined('APP_URL') ? APP_URL : 'https://lamasy.harpy.id') . "/login.php\n"
+            . "🔗 Login  : " . (defined('APP_URL') ? APP_URL : 'https://lamasy.harpy.id') . "/login\n"
             . "👤 Username : *{$username}*\n"
             . "🔑 Password : *{$password}*"
             . $coinLine . "\n\n"
@@ -429,47 +430,6 @@ $csrf = saGetCsrf();
 .radio-opt .opt-label { font-size: 13px; font-weight: 600; color: var(--white); }
 .radio-opt .opt-sub   { font-size: 11px; color: rgba(255,255,255,.35); margin-top: 2px; }
 .radio-opt.selected   { border-color: var(--sa); background: var(--sa-l); }
-
-/* ── Package cards ──────────────────────────────── */
-.pkg-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px,1fr)); gap: 12px; margin-bottom: 8px; }
-.pkg-card {
-  border: 2px solid rgba(255,255,255,.08);
-  border-radius: 12px; padding: 16px 14px;
-  cursor: pointer; transition: all .18s; position: relative;
-  background: rgba(255,255,255,.025);
-}
-.pkg-card:hover { border-color: rgba(99,102,241,.4); background: rgba(99,102,241,.06); }
-.pkg-card.selected {
-  border-color: var(--sa); background: rgba(99,102,241,.12);
-  box-shadow: 0 0 0 3px rgba(99,102,241,.15);
-}
-.pkg-card input[type=radio] { position: absolute; opacity: 0; width: 0; height: 0; }
-.pkg-card .pkg-name { font-size: 15px; font-weight: 800; color: var(--white); margin-bottom: 4px; }
-.pkg-card .pkg-fee  { font-size: 18px; font-weight: 700; color: #6EE7B7; margin-bottom: 8px; font-family: var(--mono); }
-.pkg-card .pkg-detail { font-size: 11.5px; color: rgba(255,255,255,.45); line-height: 1.6; }
-.pkg-card .pkg-badge {
-  display: inline-block; font-size: 9px; font-weight: 700; letter-spacing: .08em;
-  text-transform: uppercase; padding: 2px 7px; border-radius: 20px;
-  background: rgba(245,158,11,.15); color: #FCD34D; margin-bottom: 8px;
-}
-.pkg-card .pkg-check {
-  position: absolute; top: 10px; right: 10px;
-  width: 20px; height: 20px; border-radius: 50%;
-  background: var(--sa); display: none; align-items: center; justify-content: center;
-  font-size: 10px;
-}
-.pkg-card.selected .pkg-check { display: flex; }
-
-/* ── Override panel ─────────────────────────────── */
-.override-panel {
-  background: rgba(255,255,255,.025);
-  border: 1px solid rgba(255,255,255,.07);
-  border-radius: 10px; padding: 16px;
-  margin-top: 12px;
-}
-.override-panel summary { font-size: 12px; font-weight: 600; color: rgba(255,255,255,.4);
-  cursor: pointer; list-style: none; display: flex; align-items: center; gap: 6px; }
-.override-panel summary::before { content: '⚙️'; }
 
 /* ── Pay status info box ────────────────────────── */
 .pay-info-box {
@@ -815,12 +775,22 @@ $csrf = saGetCsrf();
       <tr><td>Kota</td><td><?= htmlspecialchars($wiz['kota'] ?: '-') ?></td></tr>
       <tr><td>Sumber</td><td><?= ($wiz['source'] ?? '') === 'self_service' ? 'Self Service' : 'Assisted' ?></td></tr>
 
-      <tr class="section-head"><td colspan="2">Paket</td></tr>
-      <tr><td>Paket</td><td><strong style="color:var(--sa)"><?= htmlspecialchars($wiz['package_nama'] ?? '-') ?></strong></td></tr>
-      <tr><td>Setup Fee</td><td>Rp <?= number_format((int)($wiz['setup_fee'] ?? 0), 0, ',', '.') ?></td></tr>
+      <tr class="section-head"><td colspan="2">Aktivasi</td></tr>
+      <tr><td>Biaya Aktivasi</td><td>
+        <?php
+          $feeOri  = (int)($wiz['setup_fee_ori'] ?? $wiz['setup_fee'] ?? 0);
+          $feeFin  = (int)($wiz['setup_fee'] ?? 0);
+          $disc    = (float)($wiz['discount_pct'] ?? 0);
+          if ($disc > 0 && $feeOri > $feeFin):
+        ?>
+          <span style="text-decoration:line-through;color:rgba(255,255,255,.35);font-size:12px;margin-right:6px;">Rp <?= number_format($feeOri, 0, ',', '.') ?></span>
+          <strong style="color:#6EE7B7;">Rp <?= number_format($feeFin, 0, ',', '.') ?></strong>
+          <span style="color:#FCD34D;font-size:12px;margin-left:4px;">(−<?= $disc ?>%)</span>
+        <?php else: ?>
+          Rp <?= number_format($feeFin, 0, ',', '.') ?>
+        <?php endif; ?>
+      </td></tr>
       <tr><td>Coin Awal</td><td><?= number_format((int)($wiz['coin_awal'] ?? 0), 0, ',', '.') ?> coin</td></tr>
-      <tr><td>Trial</td><td><?= (int)($wiz['trial_days'] ?? 0) ?> hari</td></tr>
-      <tr><td>Maks Outlet</td><td><?= ($wiz['max_outlets'] ?? 1) > 0 ? $wiz['max_outlets'] : 'Unlimited' ?></td></tr>
       <tr><td>Mode Coin</td><td><?= ($wiz['coin_mode'] ?? '') === 'per_outlet' ? 'Per Outlet' : 'Shared' ?></td></tr>
 
       <tr class="section-head"><td colspan="2">Pembayaran</td></tr>
@@ -883,7 +853,7 @@ $csrf = saGetCsrf();
         <div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:10px;">Kredensial Login (tampil sekali)</div>
         <div class="cred-row">
           <span class="cred-key">URL Login</span>
-          <span class="cred-value">lamasy.harpy.id/login.php</span>
+          <span class="cred-value">lamasy.harpy.id/login</span>
         </div>
         <div class="cred-row">
           <span class="cred-key">Username</span>
