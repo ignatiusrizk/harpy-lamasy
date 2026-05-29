@@ -267,7 +267,7 @@ require __DIR__ . '/_layout_open.php';
     <h1>🏪 Manajemen Outlet
       <small>Kelola semua cabang · <?= htmlspecialchars($tenantNm) ?></small>
     </h1>
-    <?php if ($hqCanManageOutlet): ?><a href="/add-outlet.php" class="btn btn-primary">+ Tambah Outlet Baru</a><?php endif; ?>
+    <?php if ($hqCanManageOutlet): ?><a href="/add-outlet" class="btn btn-primary">+ Tambah Outlet Baru</a><?php endif; ?>
   </div>
 
   <div class="summary-bar">
@@ -376,7 +376,7 @@ async function loadList(){
   if (rows.length === 0) {
     document.getElementById('outletList').innerHTML =
       '<div style="text-align:center;padding:48px;background:#fff;border-radius:14px;color:#6B7280">' +
-      '<div style="font-size:48px">🏪</div><p>Belum ada outlet. <a href="/add-outlet.php" style="color:#0891B2;font-weight:700">Tambah outlet pertama →</a></p>' +
+      '<div style="font-size:48px">🏪</div><p>Belum ada outlet. <a href="/add-outlet" style="color:#0891B2;font-weight:700">Tambah outlet pertama →</a></p>' +
       '</div>';
     return;
   }
@@ -429,7 +429,7 @@ async function loadList(){
         </div>
         <div class="ocard-coin">${coinShow}</div>
         <div class="ocard-actions">
-          ${canEnter ? `<a href="/switch-outlet.php?id=${o.id}" class="btn btn-primary btn-sm">Masuk →</a>` : ''}
+          ${canEnter ? `<a href="/switch-outlet?id=${o.id}" class="btn btn-primary btn-sm">Masuk →</a>` : ''}
           ${!isClosed ? `<button class="btn btn-light btn-sm" onclick="openEdit(${o.id})">✏️ Edit</button>` : ''}
           ${topupBtn}
         </div>

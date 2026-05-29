@@ -54,19 +54,19 @@ $_canSwitch = !empty($hqIsOwner) || !empty($hqIsManager);
     <nav class="hq-side-nav">
       <div class="hq-side-label">Eksekutif</div>
 
-      <a href="/dashboard.php?to=hq"
+      <a href="/dashboard?to=hq"
          class="hq-side-link <?= $_aPage === 'hq-dashboard' ? 'active' : '' ?>">
         <span class="ico">📊</span> Dashboard
       </a>
-      <a href="/hq/outlet.php"
+      <a href="/hq/outlet"
          class="hq-side-link <?= $_aPage === 'hq-outlet' ? 'active' : '' ?>">
         <span class="ico">🏪</span> Outlet
       </a>
-      <a href="/hq/droppoint.php"
+      <a href="/hq/droppoint"
          class="hq-side-link <?= $_aPage === 'hq-droppoint' ? 'active' : '' ?>">
         <span class="ico">📦</span> Drop Point
       </a>
-      <a href="/hq/layanan.php"
+      <a href="/hq/layanan"
          class="hq-side-link <?= $_aPage === 'hq-layanan' ? 'active' : '' ?>">
         <span class="ico">🧺</span> Layanan & Harga
       </a>
@@ -82,15 +82,15 @@ $_canSwitch = !empty($hqIsOwner) || !empty($hqIsManager);
           <span class="arr">▼</span>
         </button>
         <div class="hq-side-submenu">
-          <a href="/hq/karyawan.php"
+          <a href="/hq/karyawan"
              class="hq-side-link <?= $_aPage === 'hq-karyawan' ? 'active' : '' ?>">Karyawan</a>
-          <a href="/hq/mutasi.php"
+          <a href="/hq/mutasi"
              class="hq-side-link <?= $_aPage === 'hq-mutasi' ? 'active' : '' ?>">Riwayat Mutasi</a>
-          <a href="/hq/sdm.php"
+          <a href="/hq/sdm"
              class="hq-side-link <?= $_aPage === 'hq-sdm' ? 'active' : '' ?>">SDM Analytics</a>
-          <a href="/hq/penggajian.php"
+          <a href="/hq/penggajian"
              class="hq-side-link <?= $_aPage === 'hq-penggajian' ? 'active' : '' ?>">Penggajian</a>
-          <a href="/hq/roles.php"
+          <a href="/hq/roles"
              class="hq-side-link <?= $_aPage === 'hq-roles' ? 'active' : '' ?>">Role & Akses</a>
         </div>
       </div>
@@ -103,9 +103,9 @@ $_canSwitch = !empty($hqIsOwner) || !empty($hqIsManager);
           <span class="arr">▼</span>
         </button>
         <div class="hq-side-submenu">
-          <a href="/hq/pelanggan.php"
+          <a href="/hq/pelanggan"
              class="hq-side-link <?= $_aPage === 'hq-pelanggan' ? 'active' : '' ?>">Pelanggan</a>
-          <a href="/hq/promo.php"
+          <a href="/hq/promo"
              class="hq-side-link <?= $_aPage === 'hq-promo' ? 'active' : '' ?>">Promo & Voucher</a>
         </div>
       </div>
@@ -113,23 +113,23 @@ $_canSwitch = !empty($hqIsOwner) || !empty($hqIsManager);
       <div class="hq-side-divider"></div>
       <div class="hq-side-label">Analitik</div>
 
-      <a href="/hq/laporan.php"
+      <a href="/hq/laporan"
          class="hq-side-link <?= $_aPage === 'hq-laporan' ? 'active' : '' ?>">
         <span class="ico">📈</span> Laporan
       </a>
-      <a href="/hq/billing.php"
+      <a href="/hq/billing"
          class="hq-side-link <?= $_aPage === 'hq-billing' ? 'active' : '' ?>">
         <span class="ico">💳</span> Coin & Billing
       </a>
-      <a href="/hq/checklist.php"
+      <a href="/hq/checklist"
          class="hq-side-link <?= $_aPage === 'hq-checklist' ? 'active' : '' ?>">
         <span class="ico">✅</span> Checklist
       </a>
-      <a href="/hq/broadcast.php"
+      <a href="/hq/broadcast"
          class="hq-side-link <?= $_aPage === 'hq-broadcast' ? 'active' : '' ?>">
         <span class="ico">📢</span> Broadcast
       </a>
-      <a href="/hq/audit.php"
+      <a href="/hq/audit"
          class="hq-side-link <?= $_aPage === 'hq-audit' ? 'active' : '' ?>">
         <span class="ico">📋</span> Audit
       </a>
@@ -137,11 +137,11 @@ $_canSwitch = !empty($hqIsOwner) || !empty($hqIsManager);
       <div class="hq-side-divider"></div>
       <div class="hq-side-label">AI Tools</div>
 
-      <a href="/hq/ai-chat.php"
+      <a href="/hq/ai-chat"
          class="hq-side-link <?= $_aPage === 'hq-ai-chat' ? 'active' : '' ?>">
         <span class="ico">✨</span> AI Chat
       </a>
-      <a href="/hq/ai-churning.php"
+      <a href="/hq/ai-churning"
          class="hq-side-link <?= $_aPage === 'hq-ai-churning' ? 'active' : '' ?>">
         <span class="ico">🎯</span> Smart Notif
       </a>
@@ -149,14 +149,14 @@ $_canSwitch = !empty($hqIsOwner) || !empty($hqIsManager);
       <div class="hq-side-divider"></div>
       <div class="hq-side-label">Bantuan</div>
 
-      <a href="/support.php"
+      <a href="/support"
          class="hq-side-link <?= $_aPage === 'hq-support' ? 'active' : '' ?>">
         <span class="ico">🎧</span> Support & Tiket
       </a>
 
       <div class="hq-side-divider"></div>
 
-      <a href="/hq/settings.php"
+      <a href="/hq/settings"
          class="hq-side-link <?= $_aPage === 'hq-settings' ? 'active' : '' ?>">
         <span class="ico">⚙️</span> Settings
       </a>
@@ -176,9 +176,9 @@ $_canSwitch = !empty($hqIsOwner) || !empty($hqIsManager);
       <div class="hq-top-right">
         <span class="hq-top-user"><?= htmlspecialchars($_ownerNama) ?></span>
         <?php if ($_canSwitch): ?>
-          <a href="/dashboard.php?to=outlet" class="hq-top-switch" title="Pindah ke Outlet View">Ke Outlet →</a>
+          <a href="/dashboard?to=outlet" class="hq-top-switch" title="Pindah ke Outlet View">Ke Outlet →</a>
         <?php endif; ?>
-        <a href="/logout.php" class="hq-top-logout" onclick="return confirm('Yakin logout?')">Logout</a>
+        <a href="/logout" class="hq-top-logout" onclick="return confirm('Yakin logout?')">Logout</a>
       </div>
     </div>
 

@@ -693,7 +693,7 @@ require __DIR__ . '/_layout_open.php';
       <p>HQ <strong style="color:#35E8D5"><?= htmlspecialchars($tenantNm) ?></strong>
          · <?= $outletCnt ?> outlet aktif · <?= date('l, d F Y') ?></p>
     </div>
-    <?php if ($hqCanManageOutlet): ?><a href="/add-outlet.php" class="btn btn-primary">🏪 Tambah Outlet</a><?php endif; ?>
+    <?php if ($hqCanManageOutlet): ?><a href="/add-outlet" class="btn btn-primary">🏪 Tambah Outlet</a><?php endif; ?>
   </div>
 
   <!-- AI BRIEFING HQ -->
@@ -893,7 +893,7 @@ require __DIR__ . '/_layout_open.php';
   <?php if (empty($outlets)): ?>
   <div class="empty-state">
     <div class="ico">🏪</div>
-    <p>Belum ada outlet aktif. <a href="/add-outlet.php" style="color:#0891B2;font-weight:700">Daftarkan outlet pertama →</a></p>
+    <p>Belum ada outlet aktif. <a href="/add-outlet" style="color:#0891B2;font-weight:700">Daftarkan outlet pertama →</a></p>
   </div>
   <?php else: ?>
   <div class="outlet-grid">
@@ -949,7 +949,7 @@ require __DIR__ . '/_layout_open.php';
         <div class="ocard-coin<?= $coinClass ?>" <?= $coinClass ? 'title="Coin tipis — segera topup"' : '' ?>>
           <?= $coinClass === ' crit' ? '⚠️' : '🪙' ?> <strong><?= $coinShow ?></strong> coin<?= $coinClass === ' crit' ? ' · KRITIS' : ($coinClass === ' low' ? ' · TIPIS' : '') ?>
         </div>
-        <a href="/switch-outlet.php?id=<?= (int)$o['id'] ?>" class="btn btn-primary btn-sm">Masuk →</a>
+        <a href="/switch-outlet?id=<?= (int)$o['id'] ?>" class="btn btn-primary btn-sm">Masuk →</a>
       </div>
     </div>
     <?php endforeach; ?>
@@ -960,19 +960,19 @@ require __DIR__ . '/_layout_open.php';
   <div class="panel" style="margin-top:8px">
     <div class="panel-title">⚡ Aksi Cepat</div>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px">
-      <?php if ($hqCanManageOutlet): ?><a href="/add-outlet.php" class="btn btn-light" style="justify-content:center">🏪 Tambah Outlet</a><?php endif; ?>
-      <a href="/hq/outlet.php" class="btn btn-light" style="justify-content:center">🏢 Manajemen Outlet</a>
+      <?php if ($hqCanManageOutlet): ?><a href="/add-outlet" class="btn btn-light" style="justify-content:center">🏪 Tambah Outlet</a><?php endif; ?>
+      <a href="/hq/outlet" class="btn btn-light" style="justify-content:center">🏢 Manajemen Outlet</a>
       <?php if ($hqCanBilling): ?>
       <button type="button" onclick="openTopupModal()" class="btn btn-light"
               style="justify-content:center;cursor:pointer;font-family:inherit;font-size:13px">
         🪙 Topup Coin Outlet
       </button>
       <?php endif; ?>
-      <a href="/hq/karyawan.php" class="btn btn-light" style="justify-content:center">👥 Karyawan Lintas Outlet</a>
-      <a href="/hq/pelanggan.php" class="btn btn-light" style="justify-content:center">🧑‍🤝‍🧑 Pelanggan Lintas Outlet</a>
-      <a href="/hq/laporan.php" class="btn btn-light" style="justify-content:center">📈 Laporan Konsolidasi</a>
-      <a href="/hq/roles.php" class="btn btn-light" style="justify-content:center">🔐 Role & Akses</a>
-      <a href="/hq/settings.php" class="btn btn-light" style="justify-content:center">⚙️ Pengaturan Akun</a>
+      <a href="/hq/karyawan" class="btn btn-light" style="justify-content:center">👥 Karyawan Lintas Outlet</a>
+      <a href="/hq/pelanggan" class="btn btn-light" style="justify-content:center">🧑‍🤝‍🧑 Pelanggan Lintas Outlet</a>
+      <a href="/hq/laporan" class="btn btn-light" style="justify-content:center">📈 Laporan Konsolidasi</a>
+      <a href="/hq/roles" class="btn btn-light" style="justify-content:center">🔐 Role & Akses</a>
+      <a href="/hq/settings" class="btn btn-light" style="justify-content:center">⚙️ Pengaturan Akun</a>
     </div>
   </div>
 

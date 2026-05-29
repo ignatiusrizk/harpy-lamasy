@@ -828,7 +828,7 @@ require __DIR__ . '/_layout_open.php';
     </div>
 
     <div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap">
-      <a href="/add-outlet.php" class="btn btn-primary">🏪 Tambah Outlet Baru</a>
+      <a href="/add-outlet" class="btn btn-primary">🏪 Tambah Outlet Baru</a>
       <a href="https://wa.me/<?= $supportWa ?>?text=<?= urlencode('Halo Tim LAMASY, saya mau upgrade paket / tambah outlet untuk akun '.($hqTenant['email'] ?? '-').'.') ?>"
          target="_blank" rel="noopener" class="btn btn-wa">💬 Upgrade via WhatsApp</a>
     </div>
