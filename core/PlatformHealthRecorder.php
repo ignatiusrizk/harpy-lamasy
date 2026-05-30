@@ -37,6 +37,12 @@ class PlatformHealthRecorder
     /**
      * Paksa record untuk tanggal tertentu (untuk backfill / testing).
      */
+    /** Alias backward-compat — spec menyebut recordDaily, implementasi sebenarnya recordYesterdayIfNeeded */
+    public static function recordDaily(): void
+    {
+        self::recordYesterdayIfNeeded();
+    }
+
     public static function recordDate(\PDO $db, string $date): void
     {
         // Tenant stats

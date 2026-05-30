@@ -256,6 +256,13 @@ class Loyalty
         }
     }
 
+    /** Alias backward-compat — spec menyebut earnFromOrder, implementasi sebenarnya earnForTransaction */
+    public static function earnFromOrder(
+        int $tenantId, ?int $outletId, int $orderId, int $pelangganId, float $total
+    ): int {
+        return self::earnForTransaction($tenantId, $outletId, $orderId, $pelangganId, $total);
+    }
+
     /** Riwayat poin pelanggan */
     public static function history(int $tenantId, int $pelangganId, int $limit = 50): array
     {

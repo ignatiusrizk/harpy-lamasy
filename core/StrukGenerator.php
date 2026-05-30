@@ -343,7 +343,7 @@ class StrukGenerator
     // ══════════════════════════════════════════════════
     // PRIVATE: Render Thermal (58mm / 80mm)
     // ══════════════════════════════════════════════════
-    private static function renderThermal(
+    public static function renderThermal(
         array  $trx,
         array  $items,
         array  $tmpl,
@@ -548,7 +548,7 @@ if (window.autoPrint) { window.print(); }
     // PRIVATE: Render PDF A4 / A5 (formal, untuk B2B)
     // HTML output → dicetak via browser / html2pdf.js
     // ══════════════════════════════════════════════════
-    private static function renderPdf(
+    public static function renderPdf(
         array  $trx,
         array  $items,
         array  $tmpl,

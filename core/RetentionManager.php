@@ -144,6 +144,13 @@ class RetentionManager
         return $msg;
     }
 
+    /** Alias backward-compat — spec menyebut sendDormantReminders, implementasi sebenarnya dueReminders */
+    public static function sendDormantReminders(
+        int $tenantId, int $outletId, int $limit = self::MAX_PER_DAY
+    ): array {
+        return self::dueReminders($tenantId, $outletId, $limit);
+    }
+
     private static function normalizePhone(?string $raw): string
     {
         $p = preg_replace('/[^0-9]/', '', (string)$raw);

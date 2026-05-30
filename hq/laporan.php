@@ -515,6 +515,20 @@ if ($action === 'ai_insight') {
     exit;
 }
 
+// ── API: deduct coin untuk export PDF ───────────────────
+if ($action === 'deduct_export_pdf' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    header('Content-Type: application/json');
+    verifyCsrf();
+    $coin = new CoinLedger();
+    if (!$coin->canAfford('export_pdf')) {
+        echo json_encode(['ok' => false, 'error' => 'Koin tidak cukup untuk Export PDF (butuh 500 koin).']);
+        exit;
+    }
+    $coin->deduct('export_pdf');
+    echo json_encode(['ok' => true]);
+    exit;
+}
+
 $allOutlets = $db->prepare("SELECT id, nama_outlet FROM outlets
                               WHERE tenant_id=? AND status IN ('trial','grace','active')
                               ORDER BY is_main DESC, nama_outlet ASC");
@@ -1270,9 +1284,21 @@ function drillDown(outletId){
   window.scrollTo({ top:0, behavior:'smooth' });
 }
 
+// ── Coin gate: deduct export_pdf sebelum generate ──
+async function deductExportPdf() {
+  const r = await fetch('/hq/laporan?action=deduct_export_pdf', {
+    method: 'POST',
+    headers: { 'X-CSRF-Token': KEU_CSRF }
+  });
+  const j = await r.json();
+  if (!j.ok) { alert(j.error || 'Koin tidak cukup untuk Export PDF.'); return false; }
+  return true;
+}
+
 // ── Download PDF native (html2pdf.js) ──
 async function downloadPdf(){
   if (typeof html2pdf === 'undefined') { alert('Library PDF belum dimuat. Coba refresh halaman.'); return; }
+  if (!await deductExportPdf()) return;
   const target = document.querySelector('.hq-content-inner');
   if (!target) return;
 
@@ -1687,6 +1713,7 @@ async function loadKeuAiInsight() {
 // ── Export PDF SAK EMKM ────────────────────────────────
 async function exportKeuPdf() {
   if (typeof html2pdf === 'undefined') { alert('Library PDF belum dimuat. Refresh halaman.'); return; }
+  if (!await deductExportPdf()) return;
   const periode    = document.getElementById('keuPeriode').value;
   const outletSel  = document.getElementById('keuOutlet');
   const outletName = outletSel.options[outletSel.selectedIndex].text.replace(/[^\w-]/g,'_');

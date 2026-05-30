@@ -9,6 +9,7 @@ $pageTitle  = 'Broadcast SOP';
 define('ROOT', dirname(__DIR__));
 require_once ROOT . '/middleware/hq_guard.php';
 require_once ROOT . '/core/Broadcast.php';
+require_once ROOT . '/core/CoinLedger.php';
 
 $db   = Database::get();
 $tid  = (int)$hqTenant['id'];
@@ -30,12 +31,18 @@ if ($action === 'preview' && $_SERVER['REQUEST_METHOD'] === 'POST') {
 if ($action === 'create' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     header('Content-Type: application/json');
     if (!$canSend) { echo json_encode(['error'=>'Akses ditolak']); exit; }
+    $coin = new CoinLedger();
+    if (!$coin->canAfford('wa_blast')) {
+        echo json_encode(['error' => 'Koin tidak cukup untuk WA Blast (butuh 100 koin).']);
+        exit;
+    }
     $d = json_decode(file_get_contents('php://input'), true) ?: [];
     $u = currentUser();
     try {
         $bid = Broadcast::create($tid, $d['judul'] ?? '', $d['pesan'] ?? '',
             array_map('intval', $d['outlet_ids'] ?? []),
             $u ? (int)$u['id'] : null, $u['nama'] ?? null);
+        $coin->deduct('wa_blast', (string)$bid);
         try { logAudit('create', 'broadcast', 'Broadcast: '.($d['judul']??''), (string)$bid); } catch (Throwable) {}
         echo json_encode(['ok'=>true, 'id'=>$bid]);
     } catch (Throwable $e) { echo json_encode(['error'=>$e->getMessage()]); }
