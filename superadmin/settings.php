@@ -213,6 +213,13 @@ $tosVersions = $db->query(
 $activePage = 'settings';
 $pageTitle  = 'Platform Settings';
 ?>
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<?php saRenderHead('Platform Settings'); ?>
+</head>
+<body>
+<div class="sa-layout">
 <?php saRenderNav('settings', 'Platform Settings'); ?>
 
 <style>
@@ -398,7 +405,6 @@ $pageTitle  = 'Platform Settings';
 <div id="toast-set"></div>
 
 <?php saRenderNavClose(); ?>
-
 <script>
 const CSRF = '<?= htmlspecialchars($csrf) ?>';
 
@@ -500,3 +506,5 @@ async function releaseTos() {
 // Init
 loadMaintStatus();
 </script>
+</body>
+</html>
