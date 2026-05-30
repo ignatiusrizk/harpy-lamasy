@@ -13,6 +13,32 @@
 --   T6: Quick Wash 24 Jam        — SUSPENDED, 1 outlet, Bandung
 -- ══════════════════════════════════════════════════════════════════
 
+-- ──────────────────────────────────────────────────────────────────
+-- CLEANUP: hapus data dummy lama jika sudah pernah dijalankan
+-- (aman dijalankan berkali-kali, hanya hapus tenant T2-T6 di bawah)
+-- ──────────────────────────────────────────────────────────────────
+SET @cleanup_emails := "'budi.hartono@gmail.com','maya@freshlaundry.id','hendra.laundry@gmail.com','sari.bunda@bundawangilaundry.com','deni.quickwash@gmail.com'";
+DELETE FROM hl_loyalty_log    WHERE tenant_id IN (SELECT id FROM tenants WHERE FIND_IN_SET(CONCAT("'",email,"'"), @cleanup_emails));
+DELETE FROM hl_komisi_rekap   WHERE tenant_id IN (SELECT id FROM tenants WHERE FIND_IN_SET(CONCAT("'",email,"'"), @cleanup_emails));
+DELETE FROM hl_drop_points    WHERE tenant_id IN (SELECT id FROM tenants WHERE FIND_IN_SET(CONCAT("'",email,"'"), @cleanup_emails));
+DELETE FROM hl_absensi        WHERE tenant_id IN (SELECT id FROM tenants WHERE FIND_IN_SET(CONCAT("'",email,"'"), @cleanup_emails));
+DELETE FROM hl_gaji           WHERE tenant_id IN (SELECT id FROM tenants WHERE FIND_IN_SET(CONCAT("'",email,"'"), @cleanup_emails));
+DELETE FROM hl_kas            WHERE tenant_id IN (SELECT id FROM tenants WHERE FIND_IN_SET(CONCAT("'",email,"'"), @cleanup_emails));
+DELETE FROM hl_transaksi_item WHERE tenant_id IN (SELECT id FROM tenants WHERE FIND_IN_SET(CONCAT("'",email,"'"), @cleanup_emails));
+DELETE FROM hl_transaksi      WHERE tenant_id IN (SELECT id FROM tenants WHERE FIND_IN_SET(CONCAT("'",email,"'"), @cleanup_emails));
+DELETE FROM hl_promo          WHERE tenant_id IN (SELECT id FROM tenants WHERE FIND_IN_SET(CONCAT("'",email,"'"), @cleanup_emails));
+DELETE FROM hl_pelanggan      WHERE tenant_id IN (SELECT id FROM tenants WHERE FIND_IN_SET(CONCAT("'",email,"'"), @cleanup_emails));
+DELETE FROM hl_layanan        WHERE tenant_id IN (SELECT id FROM tenants WHERE FIND_IN_SET(CONCAT("'",email,"'"), @cleanup_emails));
+DELETE FROM hl_users          WHERE tenant_id IN (SELECT id FROM tenants WHERE FIND_IN_SET(CONCAT("'",email,"'"), @cleanup_emails));
+DELETE FROM coin_ledger       WHERE tenant_id IN (SELECT id FROM tenants WHERE FIND_IN_SET(CONCAT("'",email,"'"), @cleanup_emails));
+DELETE FROM payments          WHERE tenant_id IN (SELECT id FROM tenants WHERE FIND_IN_SET(CONCAT("'",email,"'"), @cleanup_emails));
+DELETE FROM saas_manual_payments WHERE tenant_id IN (SELECT id FROM tenants WHERE FIND_IN_SET(CONCAT("'",email,"'"), @cleanup_emails));
+DELETE FROM support_tickets   WHERE tenant_id IN (SELECT id FROM tenants WHERE FIND_IN_SET(CONCAT("'",email,"'"), @cleanup_emails));
+DELETE FROM tenant_notes      WHERE tenant_id IN (SELECT id FROM tenants WHERE FIND_IN_SET(CONCAT("'",email,"'"), @cleanup_emails));
+DELETE FROM superadmin_logs   WHERE target_tenant_id IN (SELECT id FROM tenants WHERE FIND_IN_SET(CONCAT("'",email,"'"), @cleanup_emails));
+DELETE FROM outlets           WHERE tenant_id IN (SELECT id FROM tenants WHERE FIND_IN_SET(CONCAT("'",email,"'"), @cleanup_emails));
+DELETE FROM tenants           WHERE FIND_IN_SET(CONCAT("'",email,"'"), @cleanup_emails);
+
 SET @PASS := '$2y$10$ZPzHp.pCr7UugGmFjtLsieC8Aaz0G3n3nFz5/05R1eyrwudzZQTSy';
 SET @SAID := 1; -- superadmin id (sesuaikan kalau perlu)
 
@@ -37,13 +63,13 @@ SET @pkgGrowth  := (SELECT id FROM saas_packages WHERE slug='growth');
 -- TENANT 2: CV Bersih Kilat Mandiri (ACTIVE, 3 outlet, Yogyakarta)
 -- ══════════════════════════════════════════════════════════════════
 INSERT INTO tenants
-(slug, nama_outlet, nama_perusahaan, owner_name, owner_wa, email, phone,
+(slug, nama_perusahaan, kota, owner_name, owner_wa, email, phone,
  status, coin_balance, coin_mode, total_outlets, max_outlets,
  loyalty_enabled, loyalty_rupiah_per_poin, loyalty_poin_value,
  package_id, package_assigned_at, registration_source, password_hash,
  trial_ends_at, provisioned_at, registered_at, verified_at)
 VALUES
-('bersih-kilat','Laundry Bersih Kilat','CV Bersih Kilat Mandiri',
+('bersih-kilat','CV Bersih Kilat Mandiri','Yogyakarta',
  'Budi Hartono','628123456789','budi.hartono@gmail.com','628123456789',
  'active',45000,'shared',3,3,1,1000,100,
  @pkgGrowth, NOW(),'assisted',@PASS,
@@ -75,12 +101,12 @@ SET @O2C := LAST_INSERT_ID();
 -- TENANT 3: Fresh Laundry Semarang (TRIAL, 1 outlet)
 -- ══════════════════════════════════════════════════════════════════
 INSERT INTO tenants
-(slug, nama_outlet, nama_perusahaan, owner_name, owner_wa, email, phone,
+(slug, nama_perusahaan, kota, owner_name, owner_wa, email, phone,
  status, coin_balance, coin_mode, total_outlets, max_outlets,
  package_id, package_assigned_at, registration_source, password_hash,
  trial_ends_at, provisioned_at, registered_at, verified_at)
 VALUES
-('fresh-laundry','Fresh Laundry Semarang','Fresh Laundry Semarang',
+('fresh-laundry','Fresh Laundry Semarang','Semarang',
  'Maya Putri Ariani','6285678901234','maya@freshlaundry.id','6285678901234',
  'trial',28000,'shared',1,1,
  @pkgStarter, NOW(),'self_service',@PASS,
@@ -98,12 +124,12 @@ SET @O3 := LAST_INSERT_ID();
 -- TENANT 4: Laundry Express Maju (GRACE, 1 outlet)
 -- ══════════════════════════════════════════════════════════════════
 INSERT INTO tenants
-(slug, nama_outlet, nama_perusahaan, owner_name, owner_wa, email, phone,
+(slug, nama_perusahaan, kota, owner_name, owner_wa, email, phone,
  status, coin_balance, coin_mode, total_outlets, max_outlets,
  package_id, package_assigned_at, registration_source, password_hash,
  trial_ends_at, provisioned_at, registered_at, verified_at)
 VALUES
-('express-maju','Laundry Express Maju','Laundry Express Maju',
+('express-maju','Laundry Express Maju','Solo',
  'Hendra Kurniawan','6281398765432','hendra.laundry@gmail.com','6281398765432',
  'grace',3500,'shared',1,1,
  @pkgStarter, NOW(),'assisted',@PASS,
@@ -123,13 +149,13 @@ SET @O4 := LAST_INSERT_ID();
 -- TENANT 5: Bunda Wangi Laundry (ACTIVE, 2 outlet, Surabaya)
 -- ══════════════════════════════════════════════════════════════════
 INSERT INTO tenants
-(slug, nama_outlet, nama_perusahaan, owner_name, owner_wa, email, phone,
+(slug, nama_perusahaan, kota, owner_name, owner_wa, email, phone,
  status, coin_balance, coin_mode, total_outlets, max_outlets,
  loyalty_enabled, loyalty_rupiah_per_poin, loyalty_poin_value,
  package_id, package_assigned_at, registration_source, password_hash,
  trial_ends_at, provisioned_at, registered_at, verified_at)
 VALUES
-('bunda-wangi','Bunda Wangi Laundry','PT Bunda Wangi Sejahtera',
+('bunda-wangi','PT Bunda Wangi Sejahtera','Surabaya',
  'Sari Indrawati','628156789012','sari.bunda@bundawangilaundry.com','628156789012',
  'active',78000,'per_outlet',2,3,1,1000,100,
  @pkgGrowth, NOW(),'assisted',@PASS,
@@ -155,12 +181,12 @@ SET @O5B := LAST_INSERT_ID();
 -- TENANT 6: Quick Wash 24 Jam (SUSPENDED, 1 outlet, Bandung)
 -- ══════════════════════════════════════════════════════════════════
 INSERT INTO tenants
-(slug, nama_outlet, nama_perusahaan, owner_name, owner_wa, email, phone,
+(slug, nama_perusahaan, kota, owner_name, owner_wa, email, phone,
  status, coin_balance, coin_mode, total_outlets, max_outlets,
  package_id, package_assigned_at, registration_source, password_hash,
  trial_ends_at, provisioned_at, registered_at, verified_at)
 VALUES
-('quick-wash','Quick Wash 24 Jam','Quick Wash 24 Jam',
+('quick-wash','Quick Wash 24 Jam','Bandung',
  'Deni Setiawan','6281234561111','deni.quickwash@gmail.com','6281234561111',
  'suspended',0,'shared',1,1,
  @pkgStarter, NOW(),'self_service',@PASS,
@@ -1133,47 +1159,11 @@ INSERT INTO hl_komisi_rekap (tenant_id,outlet_id,drop_point_id,periode_start,per
 -- ══════════════════════════════════════════════════════════════════
 -- KEUANGAN: Aset Tetap, Kas Bank, Liabilitas
 -- ══════════════════════════════════════════════════════════════════
--- T2 Aset Tetap
-INSERT INTO hl_aset_tetap (tenant_id,outlet_id,nama,kategori,tanggal_perolehan,nilai_perolehan,nilai_sisa,umur_ekonomis,metode_penyusutan,status) VALUES
-(@T2,@O2A,'Mesin Cuci LG 10kg #1','mesin','2023-01-15',4500000,500000,48,'garis_lurus','aktif'),
-(@T2,@O2A,'Mesin Cuci LG 10kg #2','mesin','2023-06-01',4500000,500000,48,'garis_lurus','aktif'),
-(@T2,@O2A,'Motor Honda Beat (kurir)','kendaraan','2023-03-01',18000000,5000000,48,'garis_lurus','aktif'),
-(@T2,@O2A,'Setrika Uap Komersial','peralatan','2023-04-01',2500000,300000,36,'garis_lurus','aktif'),
-(@T2,@O2B,'Mesin Cuci Samsung 8kg','mesin','2023-09-01',3800000,500000,48,'garis_lurus','aktif'),
-(@T2,@O2B,'Setrika Uap','peralatan','2023-09-15',1800000,200000,36,'garis_lurus','aktif'),
-(@T2,@O2C,'Mesin Cuci Sharp 9kg #1','mesin','2026-04-10',4200000,500000,48,'garis_lurus','aktif'),
-(@T2,@O2C,'Mesin Cuci Sharp 9kg #2','mesin','2026-04-10',4200000,500000,48,'garis_lurus','aktif'),
--- T5 Aset Tetap
-(@T5,@O5A,'Mesin Cuci LG Premium 12kg','mesin','2026-02-01',6500000,1000000,48,'garis_lurus','aktif'),
-(@T5,@O5A,'Mesin Dryer LG 10kg','mesin','2026-02-01',5500000,800000,48,'garis_lurus','aktif'),
-(@T5,@O5A,'Setrika Boiler Komersial','peralatan','2026-02-15',3500000,500000,48,'garis_lurus','aktif'),
-(@T5,@O5B,'Mesin Cuci LG Premium 12kg','mesin','2026-03-15',6500000,1000000,48,'garis_lurus','aktif'),
-(@T5,@O5B,'Mesin Dryer LG 10kg','mesin','2026-03-15',5500000,800000,48,'garis_lurus','aktif');
-
--- T2 Kas Bank
-INSERT INTO hl_kas_bank (tenant_id,outlet_id,nama_akun,bank,no_rekening,saldo_awal,saldo_akhir,per_tanggal) VALUES
-(@T2,@O2A,'BCA Operasional','BCA','1234567890',5000000,8250000,'2026-04-30');
-SET @KB1 := LAST_INSERT_ID();
-INSERT INTO hl_kas_bank (tenant_id,outlet_id,nama_akun,bank,no_rekening,saldo_awal,saldo_akhir,per_tanggal) VALUES
-(@T5,@O5A,'Mandiri Operasional','Mandiri','9876543210',10000000,15800000,'2026-04-30');
-SET @KB2 := LAST_INSERT_ID();
-
--- Mutasi kas bank
-INSERT INTO hl_kas_bank_mutasi (tenant_id,outlet_id,kas_bank_id,tipe,keterangan,jumlah,tanggal) VALUES
-(@T2,@O2A,@KB1,'masuk','Setoran kas harian',2500000,'2026-05-05'),
-(@T2,@O2A,@KB1,'keluar','Transfer gaji April',9700000,'2026-05-01'),
-(@T2,@O2A,@KB1,'masuk','Pembayaran B2B Hotel Melati (Apr)',273000,'2026-05-08'),
-(@T2,@O2A,@KB1,'masuk','Setoran kas harian',1800000,'2026-05-12'),
-(@T2,@O2A,@KB1,'masuk','Setoran kas harian',2100000,'2026-05-19'),
-(@T5,@O5A,@KB2,'masuk','Pembayaran B2B Hotel Garden (Apr)',562500,'2026-05-03'),
-(@T5,@O5A,@KB2,'keluar','Transfer gaji April',12600000,'2026-05-01'),
-(@T5,@O5A,@KB2,'masuk','Setoran kas mingguan',3500000,'2026-05-10'),
-(@T5,@O5A,@KB2,'masuk','Setoran kas mingguan',4200000,'2026-05-20');
-
--- Liabilitas
-INSERT INTO hl_liabilitas (tenant_id,outlet_id,nama,tipe,kreditur,tanggal_pinjam,saldo_awal,saldo_terbayar,bunga_persen,tenor_bulan,status) VALUES
-(@T2,@O2A,'KUR BRI Pengembangan Outlet 2','pinjaman_bank','BRI','2023-09-01',30000000,15000000,6.00,36,'aktif'),
-(@T5,@O5A,'KUR Mandiri Pengembangan Outlet','pinjaman_bank','Mandiri','2026-01-30',50000000,8000000,6.00,48,'aktif');
+-- DILEWATI: hl_aset_tetap / hl_kas_bank / hl_liabilitas butuh coa_id
+-- yang di-seed otomatis via FinancialCalculator::seedCoa() pas tenant
+-- baru dibuat (PHP). Untuk dummy SQL, owner bisa input manual via UI
+-- Keuangan (hq/keuangan.php → tab Aset Tetap / Pinjaman / Kas Bank).
+-- Laporan SAK EMKM tetap jalan dari data kas + transaksi yang sudah ada.
 
 -- ══════════════════════════════════════════════════════════════════
 -- COIN LEDGER
