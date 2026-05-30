@@ -208,6 +208,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['step3_submit'])) {
                     $tenantId,
                 ]);
 
+                // 5b. Catat penerimaan ToS
+                try {
+                    $tosVer = $db->query(
+                        "SELECT version FROM saas_tos_versions WHERE is_current=1 LIMIT 1"
+                    )->fetchColumn() ?: '1.0';
+                    $db->prepare(
+                        "UPDATE tenants SET tos_accepted_at=NOW(), tos_version=?, tos_ip=? WHERE id=?"
+                    )->execute([$tosVer, $_SERVER['REMOTE_ADDR'] ?? null, $tenantId]);
+                } catch (Throwable $e) {
+                    error_log('[register.php] ToS record error: ' . $e->getMessage());
+                }
+
                 $db->commit();
 
                 // 6. Rate limit
@@ -571,8 +583,8 @@ elseif ($step === 3): ?>
       <input type="checkbox" name="terms" required>
       <span>
         Saya menyetujui
-        <a href="/landing.php#terms" target="_blank">Syarat &amp; Ketentuan</a>
-        dan <a href="/landing.php#privacy" target="_blank">Kebijakan Privasi</a>
+        <a href="/tos" target="_blank">Syarat &amp; Ketentuan</a>
+        dan <a href="/privacy" target="_blank">Kebijakan Privasi</a>
         LAMASY.
       </span>
     </label>

@@ -57,6 +57,39 @@ function renderObserverBanner(): void
     <?php
 }
 
+// ── Demo Mode Banner ──────────────────────────────────
+function renderDemoBanner(): void {
+    if (empty($_SESSION['is_demo'])) return; ?>
+    <div id="demoBanner" style="
+        background:linear-gradient(135deg,#1F3864,#2E5FA3);
+        color:#fff;padding:10px 16px;
+        display:flex;align-items:center;justify-content:space-between;
+        gap:10px;font-size:13px;flex-wrap:wrap;
+        position:sticky;top:0;z-index:900;
+        box-shadow:0 2px 8px rgba(0,0,0,.2);
+    ">
+      <span style="display:flex;align-items:center;gap:8px">
+        🎮 <strong>Mode Demo</strong>
+        <span style="color:rgba(255,255,255,.6)">— Data akan direset setiap 24 jam. Fitur write dibatasi.</span>
+      </span>
+      <span style="display:flex;align-items:center;gap:8px">
+        <a href="/demo-exit?convert=1"
+           style="background:#FAC775;color:#1F3864;padding:6px 14px;border-radius:6px;text-decoration:none;font-size:12px;font-weight:700;white-space:nowrap">
+          Daftar Gratis — Trial 30 Hari →
+        </a>
+        <a href="/demo-exit"
+           onclick="return confirm('Keluar dari mode demo?')"
+           style="color:rgba(255,255,255,.5);text-decoration:none;font-size:18px;line-height:1;padding:2px 4px"
+           title="Keluar demo">✕</a>
+      </span>
+    </div>
+    <style>
+      .has-demo-banner .ol-top { top: 45px; }
+      #demoBanner + * { /* ruang untuk banner */ }
+    </style>
+    <?php
+}
+
 function renderHead(string $title = 'Harpy'): void {
     $csrf = getCsrfToken(); ?>
     <meta charset="UTF-8"/>
@@ -228,8 +261,9 @@ function renderTopbar(string $activePage = '', bool $minimalMode = false): void 
       </aside>
 
       <!-- ── MAIN AREA ── -->
-      <div class="ol-main">
+      <div class="ol-main <?= !empty($_SESSION['is_demo']) ? 'has-demo-banner' : '' ?>">
         <?php renderObserverBanner(); ?>
+        <?php renderDemoBanner(); ?>
         <header class="ol-top">
           <div class="ol-top-left">
             <?php if (!$minimalMode): ?>
@@ -489,6 +523,74 @@ function renderToast(): void { ?>
       </div><!-- /.ol-main -->
     </div><!-- /.ol-shell -->
     <div class="hl-toast" id="toast"></div>
+
+    <?php if (!empty($_SESSION['is_demo'])): ?>
+    <!-- Demo CTA Modal -->
+    <div id="demoCta" style="
+        display:none;position:fixed;inset:0;background:rgba(15,28,58,.7);
+        z-index:9999;align-items:center;justify-content:center;padding:20px;
+    ">
+      <div style="
+          background:#fff;border-radius:20px;padding:40px 36px;
+          max-width:420px;width:100%;text-align:center;
+          box-shadow:0 20px 60px rgba(0,0,0,.3);
+          animation:ctaIn .25s ease;
+      ">
+        <style>@keyframes ctaIn{from{transform:scale(.9);opacity:0}to{transform:scale(1);opacity:1}}</style>
+        <div id="demoCtaIcon" style="font-size:48px;margin-bottom:16px">🎉</div>
+        <h3 id="demoCtaTitle" style="font-size:20px;font-weight:800;color:#1F3864;margin-bottom:10px"></h3>
+        <p id="demoCtaBody" style="font-size:14px;color:#5a6a8a;line-height:1.6;margin-bottom:24px"></p>
+        <a id="demoCtaBtn" href="/demo-exit?convert=1"
+           style="display:block;padding:14px;background:#1F3864;color:#fff;border-radius:10px;font-weight:700;font-size:15px;text-decoration:none;margin-bottom:12px">
+          Daftar Gratis Sekarang →
+        </a>
+        <button onclick="document.getElementById('demoCta').style.display='none'"
+                style="background:none;border:none;color:#aab;font-size:13px;cursor:pointer">
+          Lanjut explore demo
+        </button>
+      </div>
+    </div>
+    <script>
+    window._demoMode = true;
+    window._demoActionsCount = <?= (int)($_SESSION['demo_actions'] ?? 0) ?>;
+    function showDemoCTA(opts){
+      var m = document.getElementById('demoCta');
+      if (!m || sessionStorage.getItem('demoCta_shown')) return;
+      document.getElementById('demoCtaIcon').textContent  = opts.icon  || '🎉';
+      document.getElementById('demoCtaTitle').textContent = opts.title || 'Suka fitur ini?';
+      document.getElementById('demoCtaBody').textContent  = opts.body  || '';
+      if (opts.url) document.getElementById('demoCtaBtn').href = opts.url;
+      m.style.display = 'flex';
+      sessionStorage.setItem('demoCta_shown','1');
+    }
+    // Auto-trigger CTA setelah 3 aksi
+    function _demoTrackAction(){
+      window._demoActionsCount++;
+      fetch('/dashboard?action=demo_track_action',{method:'POST',headers:{'X-Requested-With':'XMLHttpRequest'}}).catch(()=>{});
+      if (window._demoActionsCount === 3) {
+        setTimeout(function(){
+          showDemoCTA({
+            icon:'🚀',
+            title:'Kamu sudah explore 3 fitur!',
+            body:'Akun nyata memberikan data real bisnis kamu, notifikasi WA ke pelanggan, dan laporan yang tidak di-reset. Daftar sekarang — gratis 30 hari!',
+            url:'/demo-exit?convert=1',
+          });
+        }, 1500);
+      }
+    }
+    // Patch fetch untuk tracking di demo
+    (function(){
+      var _origFetch = window.fetch;
+      window.fetch = function(url, opts){
+        if (_demoMode && opts && opts.method === 'POST') {
+          var action = (typeof url === 'string' ? url : '').split('action=')[1];
+          if (action && !action.startsWith('demo_')) _demoTrackAction();
+        }
+        return _origFetch.apply(this, arguments);
+      };
+    })();
+    </script>
+    <?php endif; ?>
     <script>
     function csrfToken(){return document.querySelector('meta[name="csrf-token"]')?.content||'';}
     // ── Notification bell ──

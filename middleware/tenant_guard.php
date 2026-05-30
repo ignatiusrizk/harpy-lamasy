@@ -44,6 +44,38 @@ require_once ROOT . '/core/TenantResolver.php';
 require_once ROOT . '/core/TenantQuery.php';
 require_once ROOT . '/core/CoinLedger.php';
 
+// ── Maintenance Mode Check ─────────────────────────────
+// Baca dari file cache (performa — tidak query DB setiap request)
+(function () {
+    $cacheFile = ROOT . '/storage/maintenance.json';
+    if (!file_exists($cacheFile)) return;
+
+    $cfg = json_decode(@file_get_contents($cacheFile), true) ?: [];
+    if (empty($cfg['active'])) return;
+
+    // Whitelist: superadmin paths & maintenance page sendiri
+    $uri = $_SERVER['REQUEST_URI'] ?? '';
+    if (str_starts_with($uri, '/superadmin/') ||
+        str_starts_with($uri, '/maintenance')  ||
+        str_starts_with($uri, '/logout')) {
+        return;
+    }
+
+    // Whitelist IP (superadmin bisa tetap akses)
+    $whitelistIPs = $cfg['whitelist_ips'] ?? [];
+    if (in_array($_SERVER['REMOTE_ADDR'] ?? '', $whitelistIPs, true)) return;
+
+    // AJAX → JSON error
+    if (!empty($_GET['action']) || !empty($_SERVER['HTTP_X_REQUESTED_WITH'])) {
+        header('Content-Type: application/json');
+        echo json_encode(['error' => 'Sistem sedang maintenance. Silakan coba beberapa saat lagi.', 'maintenance' => true]);
+        exit;
+    }
+
+    header('Location: /maintenance');
+    exit;
+})();
+
 // ── Cek login ─────────────────────────────────────────
 if (empty($_SESSION['user_id']) || empty($_SESSION['tenant_id'])) {
     if (!empty($_GET['action']) || !empty($_SERVER['HTTP_X_REQUESTED_WITH'])) {
@@ -92,6 +124,64 @@ if (isset($_SESSION['hl_login_time'])) {
     }
 }
 $_SESSION['hl_last_activity'] = $_now;
+
+// ── ToS Version Check (skip demo & impersonation) ─────
+// Hanya halaman penuh (bukan AJAX, bukan accept-tos sendiri)
+if (empty($_SESSION['is_demo']) &&
+    empty($_SESSION['impersonating_tenant_id']) &&
+    empty($_GET['action']) &&
+    empty($_SERVER['HTTP_X_REQUESTED_WITH'])) {
+    $currentScript = $_SERVER['PHP_SELF'] ?? '';
+    $tosAllowed    = ['/accept-tos.php','/logout.php','/tos.php','/privacy.php'];
+    if (!in_array($currentScript, $tosAllowed, true)) {
+        try {
+            $_currentTosVer = Database::get()->query(
+                "SELECT version FROM saas_tos_versions WHERE is_current=1 LIMIT 1"
+            )->fetchColumn();
+
+            // Ambil tos_version tenant (cache di session agar tidak query setiap request)
+            if (!isset($_SESSION['_tenant_tos_ver'])) {
+                $_tenantTosVer = Database::get()->prepare(
+                    "SELECT tos_version FROM tenants WHERE id=? LIMIT 1"
+                );
+                $_tenantTosVer->execute([(int)$_SESSION['tenant_id']]);
+                $_SESSION['_tenant_tos_ver'] = $_tenantTosVer->fetchColumn() ?: null;
+            }
+
+            if ($_currentTosVer && $_SESSION['_tenant_tos_ver'] !== $_currentTosVer) {
+                header('Location: /accept-tos');
+                exit;
+            }
+        } catch (Throwable) {
+            // Non-fatal — jangan block akses jika tabel belum ada
+        }
+    }
+}
+
+// ── Demo Mode: block aksi write tertentu ───────────────
+if (!empty($_SESSION['is_demo'])) {
+    define('DEMO_MODE', true);
+    // Track page views
+    if (empty($_GET['action']) && empty($_SERVER['HTTP_X_REQUESTED_WITH'])) {
+        $_SESSION['demo_pages_viewed'] = ($_SESSION['demo_pages_viewed'] ?? 0) + 1;
+    }
+    // Block aksi yang merusak atau tidak relevan di demo
+    $blockedDemoActions = [
+        'delete_pelanggan','delete_karyawan','delete_layanan',
+        'update_settings','topup_coin','export_data',
+        'delete_order','purge','reset_data',
+    ];
+    $_demoAction = $_POST['action'] ?? $_GET['action'] ?? '';
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && in_array($_demoAction, $blockedDemoActions, true)) {
+        header('Content-Type: application/json');
+        echo json_encode([
+            'error' => 'Fitur ini tidak tersedia di mode demo.',
+            'demo'  => true,
+            'cta'   => 'Daftar sekarang untuk akses penuh!',
+        ]);
+        exit;
+    }
+}
 
 // ── Anomaly Detector + Daily Report (1x per 30 menit per session) ──
 // Pseudo-cron: skip AJAX supaya tidak nambah latency response.
