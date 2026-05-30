@@ -18,6 +18,7 @@ $_tenantNama = $hqTenant['nama_perusahaan'] ?? 'Kantor Pusat';
 // Group active state
 $_inTim = in_array($_aPage, ['hq-karyawan','hq-mutasi','hq-sdm','hq-penggajian','hq-roles'], true);
 $_inCrm = in_array($_aPage, ['hq-pelanggan','hq-promo'], true);
+$_inKeu = in_array($_aPage, ['hq-keuangan','hq-laporan'], true);
 
 // Switch button visibility (owner & manager only)
 $_canSwitch = !empty($hqIsOwner) || !empty($hqIsManager);
@@ -116,6 +117,10 @@ $_canSwitch = !empty($hqIsOwner) || !empty($hqIsManager);
       <a href="/hq/laporan"
          class="hq-side-link <?= $_aPage === 'hq-laporan' ? 'active' : '' ?>">
         <span class="ico">📈</span> Laporan
+      </a>
+      <a href="/hq/keuangan"
+         class="hq-side-link <?= $_aPage === 'hq-keuangan' ? 'active' : '' ?>">
+        <span class="ico">📒</span> Keuangan
       </a>
       <a href="/hq/billing"
          class="hq-side-link <?= $_aPage === 'hq-billing' ? 'active' : '' ?>">

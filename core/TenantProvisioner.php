@@ -5,6 +5,10 @@
 // cukup INSERT ke tabel tenants + seed data default
 // ══════════════════════════════════════════════════════
 
+if (!class_exists('FinancialCalculator')) {
+    require_once __DIR__ . '/FinancialCalculator.php';
+}
+
 class TenantProvisioner
 {
     // ── Provision tenant baru ─────────────────────────
@@ -120,6 +124,7 @@ class TenantProvisioner
 
             $roleIds = self::seedRoles($db, $tenantId);
             self::seedPermissions($db, $tenantId, $roleIds);
+            FinancialCalculator::seedCoa($db, $tenantId);
             return $roleIds['owner'] ?? null;
         } catch (Throwable $e) {
             error_log('[seedDefaultsForTenant] ' . $e->getMessage());

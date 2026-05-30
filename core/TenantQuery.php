@@ -40,7 +40,8 @@ class TenantQuery
     //   - Karyawan view di outlet = JOIN hl_karyawan_outlet WHERE outlet_id=?
     private static array $outletTables = [
         'hl_transaksi', 'hl_transaksi_item',
-        'hl_kas', 'hl_absensi', 'hl_layanan', 'hl_gaji', 'hl_izin', 'hl_promo', 'hl_audit_log'
+        'hl_kas', 'hl_absensi', 'hl_layanan', 'hl_gaji', 'hl_izin', 'hl_promo', 'hl_audit_log',
+        'hl_aset_tetap', 'hl_liabilitas', 'hl_jurnal_manual', 'hl_kas_bank', 'hl_kas_bank_mutasi',
     ];
 
     private static function hasOutletScope(string $table): bool

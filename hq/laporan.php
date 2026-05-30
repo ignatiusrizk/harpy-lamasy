@@ -523,6 +523,7 @@ $outletOptions = $allOutlets->fetchAll();
 
 $ownerNama  = $hqUser['nama'] ?? 'Owner';
 $tenantNama = $hqTenant['nama_perusahaan'] ?? 'HQ';
+$keuCsrf    = getCsrfToken();
 ?>
 <?php
 $pageTitle  = 'Laporan Konsolidasi';
@@ -643,11 +644,46 @@ require __DIR__ . '/_layout_open.php';
     table.outlets-tbl{font-size:12px}
     table.outlets-tbl th,table.outlets-tbl td{padding:7px 6px}
   }
+
+  /* ── Top-level tabs ── */
+  .lap-tabs{display:flex;gap:4px;margin-bottom:16px;border-bottom:2px solid #E5E7EB;padding-bottom:0}
+  .lap-tab{background:none;border:none;font-family:inherit;font-size:13px;font-weight:700;color:#6B7280;
+           padding:9px 20px;border-bottom:3px solid transparent;cursor:pointer;margin-bottom:-2px;border-radius:6px 6px 0 0}
+  .lap-tab.active{color:#0F1C3A;border-bottom-color:#35E8D5;background:#F0FDFB}
+  .lap-tab:hover:not(.active){color:#0F1C3A;background:#F9FAFB}
+  /* ── Keuangan sub-tabs ── */
+  .keu-subtabs{display:flex;gap:4px;margin-bottom:16px;background:#F9FAFB;padding:4px;border-radius:8px;width:fit-content}
+  .keu-stab{background:none;border:none;font-family:inherit;font-size:12px;font-weight:700;color:#6B7280;
+            padding:7px 14px;border-radius:6px;cursor:pointer;white-space:nowrap}
+  .keu-stab.active{background:#fff;color:#0F1C3A;box-shadow:0 1px 4px rgba(0,0,0,.1)}
+  .keu-stab:hover:not(.active){background:rgba(255,255,255,.6)}
+  /* ── Keuangan rows ── */
+  .keu-row{display:flex;justify-content:space-between;padding:7px 0;font-size:13px;border-bottom:1px solid #F3F4F6}
+  .keu-row:last-child{border-bottom:none}
+  .keu-row.indent{padding-left:16px;color:#6B7280}
+  .keu-row.subtotal{font-weight:700;background:#F9FAFB;padding:7px 6px;border-radius:4px}
+  .keu-row.total{font-weight:800;font-size:14px;color:#0F1C3A;border-top:2px solid #0F1C3A;margin-top:4px;padding-top:10px}
+  .keu-section-head{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:12px 0 4px;color:#6B7280}
+  .keu-badge{display:inline-block;padding:2px 10px;border-radius:100px;font-size:11px;font-weight:800;letter-spacing:.04em}
+  .keu-badge.ok{background:#D1FAE5;color:#065F46}.keu-badge.warn{background:#FEF3C7;color:#92400E}
+  .keu-badge.bad{background:#FEE2E2;color:#991B1B}
+  .keu-ratio-bar{height:7px;border-radius:100px;background:#EEF1F8;overflow:hidden;margin-top:5px}
+  .keu-ratio-fill{height:100%;border-radius:100px;transition:width .4s}
+  .keu-grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:720px){.keu-grid2{grid-template-columns:1fr}}
 </style>
 
   <h1>📈 Laporan Konsolidasi
     <small>Lintas outlet · <?= htmlspecialchars($tenantNama) ?></small>
   </h1>
+
+  <div class="lap-tabs">
+    <button class="lap-tab active" onclick="switchLapTab('operasional',this)">📊 Operasional</button>
+    <button class="lap-tab" onclick="switchLapTab('keuangan',this)">📒 Keuangan Formal</button>
+  </div>
+
+  <!-- ══ TAB: OPERASIONAL ══ -->
+  <div id="tabOperasional">
 
   <!-- Print-only header -->
   <div class="print-header">
@@ -811,6 +847,112 @@ require __DIR__ . '/_layout_open.php';
       </table>
     </div>
   </div>
+
+  </div><!-- end tabOperasional -->
+
+  <!-- ══ TAB: KEUANGAN FORMAL ══ -->
+  <div id="tabKeuangan" style="display:none">
+
+    <div class="filter-bar">
+      <label>📅 Periode <input type="month" id="keuPeriode" value="<?= date('Y-m') ?>"></label>
+      <select id="keuOutlet">
+        <option value="0">📍 Semua (Konsolidasi HQ)</option>
+        <?php foreach ($outletOptions as $o): ?>
+          <option value="<?= (int)$o['id'] ?>"><?= htmlspecialchars($o['nama_outlet']) ?></option>
+        <?php endforeach; ?>
+      </select>
+      <button class="preset-btn" onclick="loadKeuangan()">↻ Refresh</button>
+      <button class="preset-btn" onclick="loadKeuAiInsight()"
+              style="background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border-color:transparent">
+        ✨ AI Insight <span style="font-size:10px;opacity:.8">(300 🪙)</span>
+      </button>
+      <button class="btn-export" onclick="exportKeuPdf()" style="background:#DC2626;margin-left:auto">
+        📄 Export PDF SAK EMKM
+      </button>
+    </div>
+
+    <!-- Keuangan AI Insight panel -->
+    <div id="keuAiPanel" style="display:none;margin-bottom:18px;background:linear-gradient(135deg,#0F1C3A,#1a2d52);
+         border-radius:14px;padding:22px 26px;color:#fff;position:relative">
+      <button onclick="document.getElementById('keuAiPanel').style.display='none'"
+              style="position:absolute;top:12px;right:14px;background:rgba(255,255,255,.08);border:none;
+                     color:#fff;width:26px;height:26px;border-radius:6px;cursor:pointer;font-size:14px">✕</button>
+      <div style="font-size:11px;font-weight:800;letter-spacing:.08em;color:#35E8D5;margin-bottom:8px">✨ AI INSIGHT KEUANGAN</div>
+      <div id="keuAiLoading" style="display:none;padding:20px;text-align:center;font-size:13px;color:rgba(255,255,255,.6)">
+        <div style="font-size:28px;animation:aiSpin 1.5s linear infinite">⏳</div>
+        <div style="margin-top:6px">Claude menganalisa laporan keuangan…</div>
+      </div>
+      <div id="keuAiContent" style="display:none">
+        <div id="keuAiSummary" style="font-size:13px;line-height:1.65;color:rgba(255,255,255,.92);
+             background:rgba(255,255,255,.06);padding:12px 14px;border-radius:8px;border-left:3px solid #35E8D5;margin-bottom:14px"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+          <div>
+            <div style="font-size:11px;font-weight:800;color:#35E8D5;letter-spacing:.08em;margin-bottom:6px">📊 HIGHLIGHTS</div>
+            <ul id="keuAiHighlights" style="list-style:none;padding:0;margin:0;font-size:12px;color:rgba(255,255,255,.85);line-height:1.7"></ul>
+          </div>
+          <div>
+            <div style="font-size:11px;font-weight:800;color:#F59E0B;letter-spacing:.08em;margin-bottom:6px">💡 REKOMENDASI</div>
+            <ul id="keuAiRecs" style="list-style:none;padding:0;margin:0;font-size:12px;color:rgba(255,255,255,.85);line-height:1.7"></ul>
+          </div>
+        </div>
+        <div id="keuAiMeta" style="margin-top:10px;font-size:10px;color:rgba(255,255,255,.35)"></div>
+      </div>
+      <div id="keuAiError" style="display:none;padding:14px;background:rgba(239,68,68,.1);border-radius:8px;
+           font-size:13px;color:#FCA5A5"></div>
+    </div>
+
+    <!-- Sub-tab nav -->
+    <div class="keu-subtabs">
+      <button class="keu-stab active" onclick="switchKeuTab('lr',this)">📊 Laba Rugi</button>
+      <button class="keu-stab" onclick="switchKeuTab('neraca',this)">⚖️ Neraca</button>
+      <button class="keu-stab" onclick="switchKeuTab('arus',this)">💧 Arus Kas</button>
+      <button class="keu-stab" onclick="switchKeuTab('rasio',this)">📐 Rasio</button>
+      <button class="keu-stab" onclick="switchKeuTab('aset',this)">🏭 Aset Tetap</button>
+    </div>
+
+    <!-- L/R panel -->
+    <div id="keuPanelLr" class="panel" style="margin-bottom:18px">
+      <div class="panel-title">📊 Laporan Laba Rugi
+        <span id="keuLrPeriode" style="font-size:11px;font-weight:400;color:#9CA3AF"></span>
+      </div>
+      <div id="keuLrContent"><div style="color:#9CA3AF;text-align:center;padding:30px">Memuat…</div></div>
+    </div>
+
+    <!-- Neraca panel -->
+    <div id="keuPanelNeraca" class="panel" style="display:none;margin-bottom:18px">
+      <div class="panel-title">⚖️ Neraca (Balance Sheet)
+        <span id="keuNeracaPeriode" style="font-size:11px;font-weight:400;color:#9CA3AF"></span>
+        <span id="keuBalanceBadge" style="margin-left:6px"></span>
+      </div>
+      <div id="keuNeracaContent"><div style="color:#9CA3AF;text-align:center;padding:30px">Memuat…</div></div>
+    </div>
+
+    <!-- Arus Kas panel -->
+    <div id="keuPanelArus" class="panel" style="display:none;margin-bottom:18px">
+      <div class="panel-title">💧 Laporan Arus Kas
+        <span id="keuArusPeriode" style="font-size:11px;font-weight:400;color:#9CA3AF"></span>
+      </div>
+      <div id="keuArusContent"><div style="color:#9CA3AF;text-align:center;padding:30px">Memuat…</div></div>
+    </div>
+
+    <!-- Rasio panel -->
+    <div id="keuPanelRasio" class="panel" style="display:none;margin-bottom:18px">
+      <div class="panel-title">📐 Rasio Keuangan
+        <span id="keuRasioPeriode" style="font-size:11px;font-weight:400;color:#9CA3AF"></span>
+      </div>
+      <div id="keuRasioContent"><div style="color:#9CA3AF;text-align:center;padding:30px">Memuat…</div></div>
+    </div>
+
+    <!-- Aset panel -->
+    <div id="keuPanelAset" class="panel" style="display:none;margin-bottom:18px">
+      <div class="panel-title">🏭 Nilai Buku Aset Tetap
+        <span id="keuAsetPeriode" style="font-size:11px;font-weight:400;color:#9CA3AF"></span>
+      </div>
+      <div id="keuAsetContent"><div style="color:#9CA3AF;text-align:center;padding:30px">Memuat…</div></div>
+    </div>
+
+    <div id="keuPdfTarget" style="display:none"></div>
+  </div><!-- end tabKeuangan -->
 
 <script>
 let chartT = null;
@@ -1165,6 +1307,429 @@ async function downloadPdf(){
     document.body.classList.remove('pdf-mode');
     overlay.classList.remove('show');
   }
+}
+
+// ══════════════════════════════════════════════════════
+// KEUANGAN FORMAL
+// ══════════════════════════════════════════════════════
+const KEU_CSRF = '<?= htmlspecialchars($keuCsrf) ?>';
+let keuActiveTab = 'lr';
+
+function switchLapTab(tab, el) {
+  document.querySelectorAll('.lap-tab').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('tabOperasional').style.display = tab === 'operasional' ? '' : 'none';
+  document.getElementById('tabKeuangan').style.display    = tab === 'keuangan'    ? '' : 'none';
+  if (tab === 'keuangan') loadKeuangan();
+}
+
+function switchKeuTab(tab, el) {
+  document.querySelectorAll('.keu-stab').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('#tabKeuangan .panel').forEach(p => {
+    if (p.id && p.id.startsWith('keuPanel')) p.style.display = 'none';
+  });
+  keuActiveTab = tab;
+  const map = {lr:'keuPanelLr',neraca:'keuPanelNeraca',arus:'keuPanelArus',rasio:'keuPanelRasio',aset:'keuPanelAset'};
+  if (map[tab]) document.getElementById(map[tab]).style.display = '';
+  loadKeuangan();
+}
+
+function keuParams() {
+  const p   = document.getElementById('keuPeriode').value;
+  const oid = document.getElementById('keuOutlet').value;
+  return `periode=${encodeURIComponent(p)}&outlet_id=${oid}`;
+}
+
+async function keuFetch(action) {
+  const r = await fetch(`/hq/keuangan.php?action=${action}&${keuParams()}`, {
+    headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-Token': KEU_CSRF }
+  });
+  return r.json();
+}
+
+function loadKeuangan() {
+  if      (keuActiveTab === 'lr')     loadKeuLr();
+  else if (keuActiveTab === 'neraca') loadKeuNeraca();
+  else if (keuActiveTab === 'arus')   loadKeuArus();
+  else if (keuActiveTab === 'rasio')  loadKeuRasio();
+  else if (keuActiveTab === 'aset')   loadKeuAset();
+}
+
+// ── L/R ──────────────────────────────────────────────
+async function loadKeuLr() {
+  const box = document.getElementById('keuLrContent');
+  box.innerHTML = '<div style="color:#9CA3AF;text-align:center;padding:30px">⏳ Memuat…</div>';
+  try {
+    const res = await keuFetch('laporan_lr');
+    if (!res.ok) { box.innerHTML = `<div style="color:#EF4444;padding:20px">${escapeHtml(res.error||'Error')}</div>`; return; }
+    renderKeuLr(res.data);
+  } catch(e) { box.innerHTML = `<div style="color:#EF4444;padding:20px">Gagal: ${escapeHtml(e.message)}</div>`; }
+}
+
+function renderKeuLr(d) {
+  const box = document.getElementById('keuLrContent');
+  document.getElementById('keuLrPeriode').textContent = '· ' + (d.periode||'');
+  const row = (lbl, val, cls='') => `<div class="keu-row ${cls}">
+    <span>${lbl}</span><span style="font-family:monospace;font-weight:${cls.includes('total')||cls.includes('subtotal')?'800':'600'}">${fmtRp(val)}</span></div>`;
+  const head = lbl => `<div class="keu-section-head">${lbl}</div>`;
+
+  let h = head('💰 PENDAPATAN');
+  h += row('Pendapatan Kiloan / Reguler', d.pendapatan.kiloan, 'indent');
+  h += row('Pendapatan B2B / Kontrak', d.pendapatan.b2b, 'indent');
+  h += row('Pendapatan Drop Point', d.pendapatan.drop_point, 'indent');
+  if ((d.pendapatan.lain||0) > 0) h += row('Pendapatan Lain-lain', d.pendapatan.lain, 'indent');
+  h += row('Total Pendapatan', d.total_pendapatan, 'subtotal');
+
+  h += head('📋 BEBAN OPERASIONAL');
+  if ((d.beban.gaji||0) > 0) h += row('Beban Gaji Karyawan', d.beban.gaji, 'indent');
+  if ((d.beban.komisi_mitra||0) > 0) h += row('Beban Komisi Mitra', d.beban.komisi_mitra, 'indent');
+  if ((d.beban.operasional_kas||0) > 0) {
+    const det = d.beban.detail_kas || {};
+    if (Object.keys(det).length > 0) {
+      for (const [k,v] of Object.entries(det)) h += row(escapeHtml(k||'Operasional lain'), v, 'indent');
+    } else {
+      h += row('Beban Operasional (Kas)', d.beban.operasional_kas, 'indent');
+    }
+  }
+  if ((d.beban.penyusutan||0) > 0) h += row('Beban Penyusutan Aset', d.beban.penyusutan, 'indent');
+  if ((d.beban.bunga||0) > 0) h += row('Beban Bunga Pinjaman', d.beban.bunga, 'indent');
+  const manualEnt = Object.entries(d.beban.manual || {});
+  manualEnt.forEach(([k,v]) => h += row(escapeHtml(k), v, 'indent'));
+  h += row('Total Beban', d.total_beban, 'subtotal');
+
+  const laba = d.laba_bersih || 0;
+  const mc = laba >= 0 ? '#065F46' : '#991B1B';
+  h += `<div class="keu-row total" style="color:${mc}">
+    <span>LABA BERSIH</span><span style="font-family:monospace;font-weight:800;font-size:15px">${fmtRp(laba)}</span></div>`;
+  const margin = d.margin || 0;
+  const mCls = laba >= 0 ? (margin >= 15 ? 'ok' : 'warn') : 'bad';
+  h += `<div style="display:flex;align-items:center;gap:8px;margin-top:10px;font-size:12px;color:#6B7280">
+    Net Profit Margin: <span class="keu-badge ${mCls}">${margin}%</span>
+    <span style="font-size:11px">Benchmark laundry UMKM ≥ 15%</span>
+  </div>`;
+  box.innerHTML = h;
+}
+
+// ── NERACA ────────────────────────────────────────────
+async function loadKeuNeraca() {
+  const box = document.getElementById('keuNeracaContent');
+  box.innerHTML = '<div style="color:#9CA3AF;text-align:center;padding:30px">⏳ Memuat…</div>';
+  try {
+    const res = await keuFetch('laporan_neraca');
+    if (!res.ok) { box.innerHTML = `<div style="color:#EF4444;padding:20px">${escapeHtml(res.error||'Error')}</div>`; return; }
+    renderKeuNeraca(res.data);
+  } catch(e) { box.innerHTML = `<div style="color:#EF4444;padding:20px">Gagal: ${escapeHtml(e.message)}</div>`; }
+}
+
+function renderKeuNeraca(d) {
+  const box = document.getElementById('keuNeracaContent');
+  document.getElementById('keuNeracaPeriode').textContent = '· ' + (d.periode||'');
+  document.getElementById('keuBalanceBadge').innerHTML = d.is_balanced
+    ? '<span class="keu-badge ok">✓ SEIMBANG</span>'
+    : `<span class="keu-badge bad">✗ TIDAK SEIMBANG (selisih ${fmtRp(d.selisih||0)})</span>`;
+
+  const row = (lbl, val, cls='') => `<div class="keu-row ${cls}">
+    <span>${lbl}</span><span style="font-family:monospace;font-weight:${cls.includes('total')||cls.includes('subtotal')?'800':'600'}">${fmtRp(val)}</span></div>`;
+  const head = lbl => `<div class="keu-section-head">${lbl}</div>`;
+
+  let aH = head('ASET LANCAR');
+  if ((d.aset.kas_tunai||0) > 0) aH += row('Kas Tunai', d.aset.kas_tunai, 'indent');
+  if ((d.aset.kas_bank||0) > 0)  aH += row('Kas Bank / Rekening', d.aset.kas_bank, 'indent');
+  if ((d.aset.piutang||0) > 0)   aH += row('Piutang Usaha', d.aset.piutang, 'indent');
+  if ((d.aset.persediaan||0) > 0) aH += row('Persediaan Bahan', d.aset.persediaan, 'indent');
+  if ((d.aset.biaya_dimuka||0) > 0) aH += row('Biaya Dibayar Dimuka', d.aset.biaya_dimuka, 'indent');
+  aH += row('Total Aset Lancar', d.aset.total_aset_lancar||0, 'subtotal');
+  aH += head('ASET TETAP');
+  (d.aset.aset_tetap_detail||[]).forEach(a => aH += row(escapeHtml(a.nama), a.nilai_buku, 'indent'));
+  aH += row('Total Aset Tetap (Nilai Buku)', d.aset.aset_tetap_buku||0, 'subtotal');
+  aH += row('TOTAL ASET', d.aset.total_aset||0, 'total');
+
+  let lH = head('LIABILITAS LANCAR');
+  if ((d.liabilitas.hutang_usaha||0) > 0) lH += row('Hutang Usaha', d.liabilitas.hutang_usaha, 'indent');
+  if ((d.liabilitas.cicilan_lancar||0) > 0) lH += row('Cicilan Jatuh Tempo (12 bln)', d.liabilitas.cicilan_lancar, 'indent');
+  lH += row('Total Liabilitas Lancar', d.liabilitas.total_liabilitas_lancar||0, 'subtotal');
+  if ((d.liabilitas.pinjaman_jangka_panjang||0) > 0) {
+    lH += head('LIABILITAS JANGKA PANJANG');
+    lH += row('Pinjaman Jangka Panjang', d.liabilitas.pinjaman_jangka_panjang, 'indent');
+  }
+  lH += row('Total Liabilitas', d.liabilitas.total_liabilitas||0, 'subtotal');
+  lH += head('EKUITAS');
+  if ((d.ekuitas.modal_disetor||0) > 0) lH += row('Modal Disetor', d.ekuitas.modal_disetor, 'indent');
+  if (d.ekuitas.laba_ditahan) lH += row('Laba Ditahan', d.ekuitas.laba_ditahan, 'indent');
+  lH += row('Laba Periode Berjalan', d.ekuitas.laba_periode||0, 'indent');
+  if ((d.ekuitas.prive||0) > 0) lH += row('(−) Prive / Penarikan Owner', d.ekuitas.prive, 'indent');
+  lH += row('Total Ekuitas', d.ekuitas.total_ekuitas||0, 'subtotal');
+  lH += row('TOTAL LIABILITAS + EKUITAS', d.total_liab_ekuitas||0, 'total');
+
+  box.innerHTML = `<div class="keu-grid2">
+    <div style="padding-right:12px;border-right:1px solid #F3F4F6">${aH}</div>
+    <div style="padding-left:6px">${lH}</div>
+  </div>`;
+}
+
+// ── ARUS KAS ──────────────────────────────────────────
+async function loadKeuArus() {
+  const box = document.getElementById('keuArusContent');
+  box.innerHTML = '<div style="color:#9CA3AF;text-align:center;padding:30px">⏳ Memuat…</div>';
+  try {
+    const res = await keuFetch('laporan_arus_kas');
+    if (!res.ok) { box.innerHTML = `<div style="color:#EF4444;padding:20px">${escapeHtml(res.error||'Error')}</div>`; return; }
+    renderKeuArus(res.data);
+  } catch(e) { box.innerHTML = `<div style="color:#EF4444;padding:20px">Gagal: ${escapeHtml(e.message)}</div>`; }
+}
+
+function renderKeuArus(d) {
+  const box = document.getElementById('keuArusContent');
+  document.getElementById('keuArusPeriode').textContent = '· ' + (d.periode||'');
+  const row = (lbl, val, indent=false) => `<div class="keu-row ${indent?'indent':''}">
+    <span>${lbl}</span><span style="font-family:monospace;font-weight:600">${fmtRp(val)}</span></div>`;
+  const net = (lbl, val) => `<div style="display:flex;justify-content:space-between;padding:9px 0;font-size:13px;
+      font-weight:700;color:${val>=0?'#065F46':'#991B1B'};border-bottom:2px solid #E5E7EB;margin-bottom:8px">
+    <span>${lbl}</span><span style="font-family:monospace">${fmtRp(val)}</span></div>`;
+  const sec = (title, color) => `<div class="keu-section-head" style="color:${color};margin-top:12px">${title}</div>`;
+
+  let h = sec('🔄 AKTIVITAS OPERASIONAL', '#10B981');
+  h += row('+ Penerimaan dari Pelanggan', d.operasional.penerimaan_pelanggan, true);
+  h += row('− Pembayaran Operasional', d.operasional.pembayaran_operasional, true);
+  h += net('= NET ARUS KAS OPERASIONAL', d.operasional.net);
+
+  h += sec('🏭 AKTIVITAS INVESTASI', '#8B5CF6');
+  h += row('− Pembelian Aset Tetap', d.investasi.pembelian_aset, true);
+  h += row('+ Penjualan Aset Tetap', d.investasi.penjualan_aset, true);
+  h += net('= NET ARUS KAS INVESTASI', d.investasi.net);
+
+  h += sec('🏦 AKTIVITAS PENDANAAN', '#F59E0B');
+  h += row('+ Penerimaan Pinjaman', d.pendanaan.penerimaan_pinjaman, true);
+  h += row('− Pembayaran Cicilan', d.pendanaan.pembayaran_cicilan, true);
+  h += row('+ Setor Modal', d.pendanaan.setor_modal, true);
+  h += row('− Prive / Penarikan Owner', d.pendanaan.prive, true);
+  h += net('= NET ARUS KAS PENDANAAN', d.pendanaan.net);
+
+  const total = d.kenaikan_kas || 0;
+  h += `<div style="display:flex;justify-content:space-between;padding:12px 0;font-size:15px;font-weight:800;
+      color:${total>=0?'#065F46':'#991B1B'};border-top:2px solid #0F1C3A;margin-top:4px">
+    <span>KENAIKAN/(PENURUNAN) KAS BERSIH</span>
+    <span style="font-family:monospace">${fmtRp(total)}</span>
+  </div>`;
+  box.innerHTML = h;
+}
+
+// ── RASIO ─────────────────────────────────────────────
+async function loadKeuRasio() {
+  const box = document.getElementById('keuRasioContent');
+  box.innerHTML = '<div style="color:#9CA3AF;text-align:center;padding:30px">⏳ Memuat…</div>';
+  try {
+    const res = await keuFetch('laporan_rasio');
+    if (!res.ok) { box.innerHTML = `<div style="color:#EF4444;padding:20px">${escapeHtml(res.error||'Error')}</div>`; return; }
+    renderKeuRasio(res.data);
+  } catch(e) { box.innerHTML = `<div style="color:#EF4444;padding:20px">Gagal: ${escapeHtml(e.message)}</div>`; }
+}
+
+function renderKeuRasio(d) {
+  const box = document.getElementById('keuRasioContent');
+  document.getElementById('keuRasioPeriode').textContent = '· ' + (d.periode||'');
+  const BENCH = {
+    net_profit_margin:{ label:'Net Profit Margin', fmt:v=>v+'%', max:40, good:15, warn:5, invert:false, desc:'Benchmark laundry ≥15%' },
+    roa:             { label:'ROA', fmt:v=>v+'%', max:30, good:10, warn:3, invert:false, desc:'Benchmark ≥10%' },
+    roe:             { label:'ROE', fmt:v=>v+'%', max:50, good:15, warn:5, invert:false, desc:'Benchmark ≥15%' },
+    current_ratio:   { label:'Current Ratio', fmt:v=>v+'×', max:5, good:2, warn:1.5, invert:false, desc:'Sehat ≥2×' },
+    cash_ratio:      { label:'Cash Ratio', fmt:v=>v+'×', max:3, good:0.5, warn:0.2, invert:false, desc:'Sehat ≥0.5×' },
+    debt_to_equity:  { label:'Debt-to-Equity (DER)', fmt:v=>v+'×', max:5, good:2, warn:3, invert:true, desc:'Sehat ≤2×' },
+    debt_ratio:      { label:'Debt Ratio', fmt:v=>(v*100).toFixed(1)+'%', max:1, good:0.5, warn:0.7, invert:true, desc:'Sehat ≤50%' },
+    asset_turnover:  { label:'Asset Turnover', fmt:v=>v+'×', max:5, good:1, warn:0.5, invert:false, desc:'Sehat ≥1×' },
+  };
+  const rasioRow = (key, val) => {
+    const cfg = BENCH[key];
+    if (val === null || val === undefined) {
+      return `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #F3F4F6;font-size:13px">
+        <div><span style="font-weight:600;color:#0F1C3A">${cfg.label}</span>
+        <span style="font-size:11px;color:#9CA3AF;margin-left:8px">${cfg.desc}</span></div>
+        <span class="keu-badge" style="background:#F3F4F6;color:#6B7280">N/A</span>
+      </div>`;
+    }
+    const pct = Math.min(100, Math.round(Math.abs(val) / cfg.max * 100));
+    const isGood = cfg.invert ? val <= cfg.good : val >= cfg.good;
+    const isWarn = cfg.invert ? val <= cfg.warn : val >= cfg.warn;
+    const bColor = isGood ? '#10B981' : (isWarn ? '#F59E0B' : '#EF4444');
+    const bCls   = isGood ? 'ok' : (isWarn ? 'warn' : 'bad');
+    const bText  = isGood ? 'Sehat' : (isWarn ? 'Waspada' : 'Kritis');
+    return `<div style="padding:10px 0;border-bottom:1px solid #F3F4F6">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+        <div><span style="font-size:13px;font-weight:600;color:#0F1C3A">${cfg.label}</span>
+          <span style="font-size:11px;color:#9CA3AF;margin-left:8px">${cfg.desc}</span></div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-family:monospace;font-weight:700;font-size:14px">${cfg.fmt(val)}</span>
+          <span class="keu-badge ${bCls}">${bText}</span>
+        </div>
+      </div>
+      <div class="keu-ratio-bar"><div class="keu-ratio-fill" style="width:${pct}%;background:${bColor}"></div></div>
+    </div>`;
+  };
+  const SECS = [
+    {title:'📈 Profitabilitas', keys:['net_profit_margin','roa','roe']},
+    {title:'💧 Likuiditas',     keys:['current_ratio','cash_ratio']},
+    {title:'🏦 Solvabilitas',   keys:['debt_to_equity','debt_ratio']},
+    {title:'⚙️ Aktivitas',      keys:['asset_turnover']},
+  ];
+  let h = '';
+  SECS.forEach(s => {
+    h += `<div class="keu-section-head">${s.title}</div>`;
+    s.keys.forEach(k => h += rasioRow(k, d[k]));
+  });
+  const bepCov = d.bep_coverage;
+  const bepCls = bepCov === null ? 'warn' : (bepCov >= 100 ? 'ok' : 'bad');
+  const bepTxt = bepCov === null ? 'N/A' : (bepCov >= 100 ? `Di atas BEP (${bepCov}%)` : `Di bawah BEP (${bepCov}%)`);
+  h += `<div class="keu-section-head">💎 BREAK EVEN POINT</div>`;
+  h += `<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0">
+    <div><div style="font-size:13px;font-weight:600;color:#0F1C3A">BEP (Titik Impas)</div>
+      <div style="font-size:11px;color:#9CA3AF">Omset minimum agar tidak merugi</div></div>
+    <div style="text-align:right">
+      <div style="font-family:monospace;font-weight:700;font-size:14px">${fmtRp(d.bep_rupiah||0)}</div>
+      <span class="keu-badge ${bepCls}" style="margin-top:4px;display:inline-block">${bepTxt}</span>
+    </div>
+  </div>`;
+  box.innerHTML = h;
+}
+
+// ── ASET TETAP ────────────────────────────────────────
+async function loadKeuAset() {
+  const box = document.getElementById('keuAsetContent');
+  box.innerHTML = '<div style="color:#9CA3AF;text-align:center;padding:30px">⏳ Memuat…</div>';
+  try {
+    const res = await keuFetch('laporan_aset');
+    if (!res.ok) { box.innerHTML = `<div style="color:#EF4444;padding:20px">${escapeHtml(res.error||'Error')}</div>`; return; }
+    renderKeuAset(res.data);
+  } catch(e) { box.innerHTML = `<div style="color:#EF4444;padding:20px">Gagal: ${escapeHtml(e.message)}</div>`; }
+}
+
+function renderKeuAset(d) {
+  const box = document.getElementById('keuAsetContent');
+  document.getElementById('keuAsetPeriode').textContent = '· s/d ' + document.getElementById('keuPeriode').value;
+  if (!d.detail || d.detail.length === 0) {
+    box.innerHTML = '<div style="color:#9CA3AF;text-align:center;padding:30px">Belum ada aset tetap aktif.<br>Tambah melalui menu <a href="/hq/keuangan" style="color:#35E8D5">Keuangan → Aset Tetap</a>.</div>';
+    return;
+  }
+  let h = `<div style="overflow-x:auto"><table class="outlets-tbl">
+    <thead><tr>
+      <th style="text-align:left">Nama Aset</th>
+      <th>Nilai Perolehan</th><th>Akum. Penyusutan</th>
+      <th>Nilai Buku</th><th>Depresiasi/bln</th><th>Sisa Umur</th>
+    </tr></thead><tbody>`;
+  let totalBuku = 0;
+  d.detail.forEach(a => {
+    const sisa = Math.max(0, (a.umur_ekonomis||0) - (a.umur_terpakai||0));
+    const pct  = Math.min(100, Math.round((a.umur_terpakai||0) / Math.max(1, a.umur_ekonomis||1) * 100));
+    const bClr = pct >= 90 ? '#EF4444' : pct >= 70 ? '#F59E0B' : '#35E8D5';
+    totalBuku += a.nilai_buku || 0;
+    h += `<tr>
+      <td><strong>${escapeHtml(a.nama)}</strong>
+        <div style="background:#EEF1F8;border-radius:100px;height:4px;overflow:hidden;margin-top:5px;width:120px">
+          <div style="background:${bClr};height:100%;width:${pct}%"></div>
+        </div>
+        <div style="font-size:10px;color:#9CA3AF;margin-top:2px">${pct}% terpakai</div>
+      </td>
+      <td>${fmtRp(a.nilai_perolehan||0)}</td>
+      <td style="color:#EF4444">${fmtRp(a.akum_penyusutan||0)}</td>
+      <td style="font-weight:800">${fmtRp(a.nilai_buku||0)}</td>
+      <td>${fmtRp(a.penyusutan_bulan||0)}</td>
+      <td>${sisa > 0 ? sisa + ' bln' : '<span style="color:#EF4444;font-weight:700">Habis</span>'}</td>
+    </tr>`;
+  });
+  h += `</tbody><tfoot><tr class="total-row">
+    <td><strong>TOTAL NILAI BUKU</strong></td>
+    <td></td><td></td>
+    <td><strong>${fmtRp(d.total_nilai_buku||totalBuku)}</strong></td>
+    <td></td><td></td>
+  </tr></tfoot></table></div>`;
+  box.innerHTML = h;
+}
+
+// ── Keuangan AI Insight ────────────────────────────────
+async function loadKeuAiInsight() {
+  const panel   = document.getElementById('keuAiPanel');
+  const loading = document.getElementById('keuAiLoading');
+  const content = document.getElementById('keuAiContent');
+  const errBox  = document.getElementById('keuAiError');
+  panel.style.display  = 'block';
+  loading.style.display = 'block';
+  content.style.display = errBox.style.display = 'none';
+  panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  try {
+    const periode = document.getElementById('keuPeriode').value;
+    const oid     = document.getElementById('keuOutlet').value;
+    const start   = periode + '-01';
+    const end     = periode + '-31';
+    const r = await fetch(`/hq/laporan.php?action=ai_insight&start=${start}&end=${end}&outlet_id=${oid}`);
+    const data = await r.json();
+    loading.style.display = 'none';
+    if (data.error) { errBox.textContent = data.error; errBox.style.display = 'block'; return; }
+    document.getElementById('keuAiSummary').textContent = data.summary || '';
+    document.getElementById('keuAiHighlights').innerHTML =
+      (data.highlights||[]).map(h=>`<li style="padding:4px 0 4px 14px;position:relative">
+        <span style="position:absolute;left:0;color:#35E8D5">▸</span>${escapeHtml(h)}</li>`).join('');
+    document.getElementById('keuAiRecs').innerHTML =
+      (data.recommendations||[]).map(h=>`<li style="padding:4px 0 4px 14px;position:relative">
+        <span style="position:absolute;left:0;color:#F59E0B">→</span>${escapeHtml(h)}</li>`).join('');
+    const meta = [];
+    if (data.from_cache) meta.push('⚡ Dari cache (24 jam)');
+    else meta.push(`💬 ${data.tokens_used||0} tokens · coin terpotong`);
+    if (data.generated_at) meta.push(`🕒 ${data.generated_at}`);
+    document.getElementById('keuAiMeta').textContent = meta.join(' · ');
+    content.style.display = 'block';
+  } catch(e) {
+    loading.style.display = 'none';
+    errBox.textContent = 'Gagal: ' + e.message;
+    errBox.style.display = 'block';
+  }
+}
+
+// ── Export PDF SAK EMKM ────────────────────────────────
+async function exportKeuPdf() {
+  if (typeof html2pdf === 'undefined') { alert('Library PDF belum dimuat. Refresh halaman.'); return; }
+  const periode    = document.getElementById('keuPeriode').value;
+  const outletSel  = document.getElementById('keuOutlet');
+  const outletName = outletSel.options[outletSel.selectedIndex].text.replace(/[^\w-]/g,'_');
+  const filename   = `Keuangan_SAK_EMKM_${periode}_${outletName}.pdf`;
+  const pdfTarget  = document.getElementById('keuPdfTarget');
+  const panelIds   = ['keuPanelLr','keuPanelNeraca','keuPanelArus','keuPanelRasio','keuPanelAset'];
+
+  let body = '';
+  panelIds.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) body += `<div style="margin-bottom:28px">${el.innerHTML}</div>`;
+  });
+
+  pdfTarget.innerHTML = `<div style="font-family:Arial,sans-serif;max-width:800px;margin:0 auto;padding:20px">
+    <div style="text-align:center;margin-bottom:24px;border-bottom:3px double #0F1C3A;padding-bottom:16px">
+      <h2 style="font-size:18px;font-weight:800;color:#0F1C3A;margin:0">LAPORAN KEUANGAN</h2>
+      <h3 style="font-size:14px;font-weight:600;color:#374151;margin:6px 0 4px"><?= htmlspecialchars($tenantNama) ?></h3>
+      <p style="font-size:12px;color:#6B7280;margin:0">Periode: ${periode} &nbsp;·&nbsp; Disusun berdasarkan SAK EMKM</p>
+    </div>
+    ${body}
+    <div style="margin-top:24px;border-top:1px solid #E5E7EB;padding-top:12px;font-size:10px;color:#9CA3AF;text-align:center">
+      Laporan dibuat oleh LAMASY &nbsp;·&nbsp; <?= htmlspecialchars($tenantNama) ?>
+    </div>
+  </div>`;
+
+  let overlay = document.getElementById('pdfOverlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'pdfOverlay'; overlay.className = 'pdf-overlay';
+    overlay.innerHTML = '<span class="spin">⏳</span> Membuat PDF SAK EMKM…';
+    document.body.appendChild(overlay);
+  }
+  overlay.classList.add('show');
+  try {
+    await html2pdf().from(pdfTarget).set({
+      margin:[12,10,12,10], filename,
+      image:{type:'jpeg',quality:0.95},
+      html2canvas:{scale:2,useCORS:true,backgroundColor:'#ffffff'},
+      jsPDF:{unit:'mm',format:'a4',orientation:'portrait'},
+      pagebreak:{mode:['avoid-all','css','legacy']},
+    }).save();
+  } catch(e) { alert('Gagal PDF: ' + e.message); }
+  finally { overlay.classList.remove('show'); pdfTarget.innerHTML = ''; }
 }
 
 loadData();
