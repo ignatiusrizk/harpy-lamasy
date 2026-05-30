@@ -645,68 +645,68 @@ INSERT INTO hl_kas (tenant_id,outlet_id,tanggal,tipe,kategori,keterangan,jumlah,
 -- TRANSAKSI — T2 Outlet B (Parangtritis) Maret–Mei
 -- ══════════════════════════════════════════════════════════════════
 INSERT INTO hl_transaksi (tenant_id,outlet_id,no_order,tanggal,pelanggan_id,nama_pelanggan,telepon,subtotal,diskon,total,dp,sisa_bayar,metode_bayar,status_bayar,status_proses,estimasi_selesai,created_by) VALUES
-(@T2,@O2B,'HL-20260315-001','2026-03-15',@P_SUMI,'Sumiati','08111333555',28000,0,28000,0,0,'cash','lunas','diambil','2026-03-17',@U_RINA);
+(@T2,@O2B,'HL-20260315-101','2026-03-15',@P_SUMI,'Sumiati','08111333555',28000,0,28000,0,0,'cash','lunas','diambil','2026-03-17',@U_RINA);
 SET @T_M := LAST_INSERT_ID();
 INSERT INTO hl_transaksi_item (tenant_id,outlet_id,transaksi_id,layanan_id,nama_layanan,satuan,jumlah,harga_satuan,subtotal) VALUES (@T2,@O2B,@T_M,@L_2B_KIL,'Cuci Kiloan','kg',4,7000,28000);
-INSERT INTO hl_kas (tenant_id,outlet_id,tanggal,tipe,kategori,keterangan,jumlah,ref_order,created_by) VALUES (@T2,@O2B,'2026-03-15','masuk','transaksi','Pembayaran HL-20260315-001',28000,'HL-20260315-001',@U_RINA);
+INSERT INTO hl_kas (tenant_id,outlet_id,tanggal,tipe,kategori,keterangan,jumlah,ref_order,created_by) VALUES (@T2,@O2B,'2026-03-15','masuk','transaksi','Pembayaran HL-20260315-101',28000,'HL-20260315-101',@U_RINA);
 
 INSERT INTO hl_transaksi (tenant_id,outlet_id,no_order,tanggal,pelanggan_id,nama_pelanggan,telepon,subtotal,diskon,total,dp,sisa_bayar,metode_bayar,status_bayar,status_proses,estimasi_selesai,created_by) VALUES
-(@T2,@O2B,'HL-20260315-002','2026-03-15',@P_PP,'PP Al-Hikmah Bantul','08222444666',227500,0,227500,0,227500,'transfer','belum_bayar','diambil','2026-03-19',@U_EKO);
+(@T2,@O2B,'HL-20260315-102','2026-03-15',@P_PP,'PP Al-Hikmah Bantul','08222444666',227500,0,227500,0,227500,'transfer','belum_bayar','diambil','2026-03-19',@U_EKO);
 SET @T_M := LAST_INSERT_ID();
 INSERT INTO hl_transaksi_item (tenant_id,outlet_id,transaksi_id,layanan_id,nama_layanan,satuan,jumlah,harga_satuan,subtotal) VALUES (@T2,@O2B,@T_M,@L_2B_B2B,'Cuci B2B','kg',35,6500,227500);
 
 INSERT INTO hl_transaksi (tenant_id,outlet_id,no_order,tanggal,pelanggan_id,nama_pelanggan,telepon,subtotal,diskon,total,dp,sisa_bayar,metode_bayar,status_bayar,status_proses,estimasi_selesai,created_by) VALUES
-(@T2,@O2B,'HL-20260318-001','2026-03-18',@P_SRI,'Sri Mulyani','08444666888',70000,0,70000,0,0,'cash','lunas','diambil','2026-03-20',@U_RINA);
+(@T2,@O2B,'HL-20260318-101','2026-03-18',@P_SRI,'Sri Mulyani','08444666888',70000,0,70000,0,0,'cash','lunas','diambil','2026-03-20',@U_RINA);
 SET @T_M := LAST_INSERT_ID();
 INSERT INTO hl_transaksi_item (tenant_id,outlet_id,transaksi_id,layanan_id,nama_layanan,satuan,jumlah,harga_satuan,subtotal) VALUES
 (@T2,@O2B,@T_M,@L_2B_KIL,'Cuci Kiloan','kg',5,7000,35000),
 (@T2,@O2B,@T_M,@L_2B_SEP,'Cuci Sepatu','pasang',1,35000,35000);
-INSERT INTO hl_kas (tenant_id,outlet_id,tanggal,tipe,kategori,keterangan,jumlah,ref_order,created_by) VALUES (@T2,@O2B,'2026-03-18','masuk','transaksi','Pembayaran HL-20260318-001',70000,'HL-20260318-001',@U_RINA);
+INSERT INTO hl_kas (tenant_id,outlet_id,tanggal,tipe,kategori,keterangan,jumlah,ref_order,created_by) VALUES (@T2,@O2B,'2026-03-18','masuk','transaksi','Pembayaran HL-20260318-101',70000,'HL-20260318-101',@U_RINA);
 
 INSERT INTO hl_transaksi (tenant_id,outlet_id,no_order,tanggal,pelanggan_id,nama_pelanggan,telepon,subtotal,diskon,total,dp,sisa_bayar,metode_bayar,status_bayar,status_proses,estimasi_selesai,created_by) VALUES
-(@T2,@O2B,'HL-20260325-001','2026-03-25',@P_CVMB,'CV Maju Bersama','08555777999',130000,0,130000,0,130000,'transfer','belum_bayar','diambil','2026-03-28',@U_EKO);
+(@T2,@O2B,'HL-20260325-101','2026-03-25',@P_CVMB,'CV Maju Bersama','08555777999',130000,0,130000,0,130000,'transfer','belum_bayar','diambil','2026-03-28',@U_EKO);
 SET @T_M := LAST_INSERT_ID();
 INSERT INTO hl_transaksi_item (tenant_id,outlet_id,transaksi_id,layanan_id,nama_layanan,satuan,jumlah,harga_satuan,subtotal) VALUES (@T2,@O2B,@T_M,@L_2B_B2B,'Cuci B2B','kg',20,6500,130000);
 
 INSERT INTO hl_transaksi (tenant_id,outlet_id,no_order,tanggal,pelanggan_id,nama_pelanggan,telepon,subtotal,diskon,total,dp,sisa_bayar,metode_bayar,status_bayar,status_proses,estimasi_selesai,created_by) VALUES
-(@T2,@O2B,'HL-20260405-001','2026-04-05',@P_SUMI,'Sumiati','08111333555',60000,0,60000,0,0,'cash','lunas','diambil','2026-04-07',@U_RINA);
+(@T2,@O2B,'HL-20260405-101','2026-04-05',@P_SUMI,'Sumiati','08111333555',60000,0,60000,0,0,'cash','lunas','diambil','2026-04-07',@U_RINA);
 SET @T_M := LAST_INSERT_ID();
 INSERT INTO hl_transaksi_item (tenant_id,outlet_id,transaksi_id,layanan_id,nama_layanan,satuan,jumlah,harga_satuan,subtotal) VALUES
 (@T2,@O2B,@T_M,@L_2B_KIL,'Cuci Kiloan','kg',5,7000,35000),
 (@T2,@O2B,@T_M,@L_2B_BED,'Bedcover','item',1,25000,25000);
-INSERT INTO hl_kas (tenant_id,outlet_id,tanggal,tipe,kategori,keterangan,jumlah,ref_order,created_by) VALUES (@T2,@O2B,'2026-04-05','masuk','transaksi','Pembayaran HL-20260405-001',60000,'HL-20260405-001',@U_RINA);
+INSERT INTO hl_kas (tenant_id,outlet_id,tanggal,tipe,kategori,keterangan,jumlah,ref_order,created_by) VALUES (@T2,@O2B,'2026-04-05','masuk','transaksi','Pembayaran HL-20260405-101',60000,'HL-20260405-101',@U_RINA);
 
 INSERT INTO hl_transaksi (tenant_id,outlet_id,no_order,tanggal,pelanggan_id,nama_pelanggan,telepon,subtotal,diskon,total,dp,sisa_bayar,metode_bayar,status_bayar,status_proses,estimasi_selesai,created_by) VALUES
-(@T2,@O2B,'HL-20260408-001','2026-04-08',@P_PP,'PP Al-Hikmah Bantul','08222444666',247000,0,247000,0,247000,'transfer','belum_bayar','diambil','2026-04-12',@U_EKO);
+(@T2,@O2B,'HL-20260408-101','2026-04-08',@P_PP,'PP Al-Hikmah Bantul','08222444666',247000,0,247000,0,247000,'transfer','belum_bayar','diambil','2026-04-12',@U_EKO);
 SET @T_M := LAST_INSERT_ID();
 INSERT INTO hl_transaksi_item (tenant_id,outlet_id,transaksi_id,layanan_id,nama_layanan,satuan,jumlah,harga_satuan,subtotal) VALUES (@T2,@O2B,@T_M,@L_2B_B2B,'Cuci B2B','kg',38,6500,247000);
 
 INSERT INTO hl_transaksi (tenant_id,outlet_id,no_order,tanggal,pelanggan_id,nama_pelanggan,telepon,subtotal,diskon,total,dp,sisa_bayar,metode_bayar,status_bayar,status_proses,estimasi_selesai,created_by) VALUES
-(@T2,@O2B,'HL-20260415-001','2026-04-15',@P_SRI,'Sri Mulyani','08444666888',42000,0,42000,0,0,'cash','lunas','diambil','2026-04-17',@U_RINA);
+(@T2,@O2B,'HL-20260415-101','2026-04-15',@P_SRI,'Sri Mulyani','08444666888',42000,0,42000,0,0,'cash','lunas','diambil','2026-04-17',@U_RINA);
 SET @T_M := LAST_INSERT_ID();
 INSERT INTO hl_transaksi_item (tenant_id,outlet_id,transaksi_id,layanan_id,nama_layanan,satuan,jumlah,harga_satuan,subtotal) VALUES (@T2,@O2B,@T_M,@L_2B_KIL,'Cuci Kiloan','kg',6,7000,42000);
-INSERT INTO hl_kas (tenant_id,outlet_id,tanggal,tipe,kategori,keterangan,jumlah,ref_order,created_by) VALUES (@T2,@O2B,'2026-04-15','masuk','transaksi','Pembayaran HL-20260415-001',42000,'HL-20260415-001',@U_RINA);
+INSERT INTO hl_kas (tenant_id,outlet_id,tanggal,tipe,kategori,keterangan,jumlah,ref_order,created_by) VALUES (@T2,@O2B,'2026-04-15','masuk','transaksi','Pembayaran HL-20260415-101',42000,'HL-20260415-101',@U_RINA);
 
 INSERT INTO hl_transaksi (tenant_id,outlet_id,no_order,tanggal,pelanggan_id,nama_pelanggan,telepon,subtotal,diskon,total,dp,sisa_bayar,metode_bayar,status_bayar,status_proses,estimasi_selesai,created_by) VALUES
-(@T2,@O2B,'HL-20260418-001','2026-04-18',@P_CVMB,'CV Maju Bersama','08555777999',143000,0,143000,0,143000,'transfer','belum_bayar','diambil','2026-04-22',@U_EKO);
+(@T2,@O2B,'HL-20260418-101','2026-04-18',@P_CVMB,'CV Maju Bersama','08555777999',143000,0,143000,0,143000,'transfer','belum_bayar','diambil','2026-04-22',@U_EKO);
 SET @T_M := LAST_INSERT_ID();
 INSERT INTO hl_transaksi_item (tenant_id,outlet_id,transaksi_id,layanan_id,nama_layanan,satuan,jumlah,harga_satuan,subtotal) VALUES (@T2,@O2B,@T_M,@L_2B_B2B,'Cuci B2B','kg',22,6500,143000);
 
 INSERT INTO hl_transaksi (tenant_id,outlet_id,no_order,tanggal,pelanggan_id,nama_pelanggan,telepon,subtotal,diskon,total,dp,sisa_bayar,metode_bayar,status_bayar,status_proses,estimasi_selesai,created_by) VALUES
-(@T2,@O2B,'HL-20260508-001','2026-05-08',@P_PP,'PP Al-Hikmah Bantul','08222444666',260000,0,260000,0,260000,'transfer','belum_bayar','diambil','2026-05-12',@U_EKO);
+(@T2,@O2B,'HL-20260508-101','2026-05-08',@P_PP,'PP Al-Hikmah Bantul','08222444666',260000,0,260000,0,260000,'transfer','belum_bayar','diambil','2026-05-12',@U_EKO);
 SET @T_M := LAST_INSERT_ID();
 INSERT INTO hl_transaksi_item (tenant_id,outlet_id,transaksi_id,layanan_id,nama_layanan,satuan,jumlah,harga_satuan,subtotal) VALUES (@T2,@O2B,@T_M,@L_2B_B2B,'Cuci B2B','kg',40,6500,260000);
 
 INSERT INTO hl_transaksi (tenant_id,outlet_id,no_order,tanggal,pelanggan_id,nama_pelanggan,telepon,subtotal,diskon,total,dp,sisa_bayar,metode_bayar,status_bayar,status_proses,estimasi_selesai,created_by) VALUES
-(@T2,@O2B,'HL-20260515-001','2026-05-15',@P_SUMI,'Sumiati','08111333555',49000,0,49000,0,0,'qris','lunas','siap','2026-05-16',@U_RINA);
+(@T2,@O2B,'HL-20260515-101','2026-05-15',@P_SUMI,'Sumiati','08111333555',49000,0,49000,0,0,'qris','lunas','siap','2026-05-16',@U_RINA);
 SET @T_M := LAST_INSERT_ID();
 INSERT INTO hl_transaksi_item (tenant_id,outlet_id,transaksi_id,layanan_id,nama_layanan,satuan,jumlah,harga_satuan,subtotal) VALUES
 (@T2,@O2B,@T_M,@L_2B_EXP,'Cuci Express','kg',2,12000,24000),
 (@T2,@O2B,@T_M,@L_2B_BED,'Bedcover','item',1,25000,25000);
-INSERT INTO hl_kas (tenant_id,outlet_id,tanggal,tipe,kategori,keterangan,jumlah,ref_order,created_by) VALUES (@T2,@O2B,'2026-05-15','masuk','transaksi','Pembayaran HL-20260515-001',49000,'HL-20260515-001',@U_RINA);
+INSERT INTO hl_kas (tenant_id,outlet_id,tanggal,tipe,kategori,keterangan,jumlah,ref_order,created_by) VALUES (@T2,@O2B,'2026-05-15','masuk','transaksi','Pembayaran HL-20260515-101',49000,'HL-20260515-101',@U_RINA);
 
 INSERT INTO hl_transaksi (tenant_id,outlet_id,no_order,tanggal,pelanggan_id,nama_pelanggan,telepon,subtotal,diskon,total,dp,sisa_bayar,metode_bayar,status_bayar,status_proses,estimasi_selesai,created_by) VALUES
-(@T2,@O2B,'HL-20260524-001','2026-05-24',@P_CVMB,'CV Maju Bersama','08555777999',117000,0,117000,0,117000,'transfer','belum_bayar','cuci','2026-05-28',@U_EKO);
+(@T2,@O2B,'HL-20260524-101','2026-05-24',@P_CVMB,'CV Maju Bersama','08555777999',117000,0,117000,0,117000,'transfer','belum_bayar','cuci','2026-05-28',@U_EKO);
 SET @T_M := LAST_INSERT_ID();
 INSERT INTO hl_transaksi_item (tenant_id,outlet_id,transaksi_id,layanan_id,nama_layanan,satuan,jumlah,harga_satuan,subtotal) VALUES (@T2,@O2B,@T_M,@L_2B_B2B,'Cuci B2B','kg',18,6500,117000);
 
@@ -714,41 +714,41 @@ INSERT INTO hl_transaksi_item (tenant_id,outlet_id,transaksi_id,layanan_id,nama_
 -- TRANSAKSI — T2 Outlet C (Kaliurang) — baru buka Mei
 -- ══════════════════════════════════════════════════════════════════
 INSERT INTO hl_transaksi (tenant_id,outlet_id,no_order,tanggal,pelanggan_id,nama_pelanggan,telepon,subtotal,diskon,total,dp,sisa_bayar,metode_bayar,status_bayar,status_proses,estimasi_selesai,created_by) VALUES
-(@T2,@O2C,'HL-20260502-001','2026-05-02',@P_ASEP,'Asep Sulaiman','08161616161',30000,6000,24000,0,0,'cash','lunas','diambil','2026-05-04',@U_YULI);
+(@T2,@O2C,'HL-20260502-201','2026-05-02',@P_ASEP,'Asep Sulaiman','08161616161',30000,6000,24000,0,0,'cash','lunas','diambil','2026-05-04',@U_YULI);
 SET @T_M := LAST_INSERT_ID();
 INSERT INTO hl_transaksi_item (tenant_id,outlet_id,transaksi_id,layanan_id,nama_layanan,satuan,jumlah,harga_satuan,subtotal) VALUES (@T2,@O2C,@T_M,@L_2C_KIL,'Cuci Kiloan','kg',4,7500,30000);
-INSERT INTO hl_kas (tenant_id,outlet_id,tanggal,tipe,kategori,keterangan,jumlah,ref_order,created_by) VALUES (@T2,@O2C,'2026-05-02','masuk','transaksi','Pembayaran HL-20260502-001',24000,'HL-20260502-001',@U_YULI);
+INSERT INTO hl_kas (tenant_id,outlet_id,tanggal,tipe,kategori,keterangan,jumlah,ref_order,created_by) VALUES (@T2,@O2C,'2026-05-02','masuk','transaksi','Pembayaran HL-20260502-201',24000,'HL-20260502-201',@U_YULI);
 
 INSERT INTO hl_transaksi (tenant_id,outlet_id,no_order,tanggal,pelanggan_id,nama_pelanggan,telepon,subtotal,diskon,total,dp,sisa_bayar,metode_bayar,status_bayar,status_proses,estimasi_selesai,created_by) VALUES
-(@T2,@O2C,'HL-20260506-001','2026-05-06',@P_LINDA,'Linda Wati','08171717171',39000,0,39000,0,0,'cash','lunas','diambil','2026-05-08',@U_YULI);
+(@T2,@O2C,'HL-20260506-201','2026-05-06',@P_LINDA,'Linda Wati','08171717171',39000,0,39000,0,0,'cash','lunas','diambil','2026-05-08',@U_YULI);
 SET @T_M := LAST_INSERT_ID();
 INSERT INTO hl_transaksi_item (tenant_id,outlet_id,transaksi_id,layanan_id,nama_layanan,satuan,jumlah,harga_satuan,subtotal) VALUES
 (@T2,@O2C,@T_M,@L_2C_KIL,'Cuci Kiloan','kg',2,7500,15000),
 (@T2,@O2C,@T_M,@L_2C_BED,'Bedcover','item',1,28000,28000);
-INSERT INTO hl_kas (tenant_id,outlet_id,tanggal,tipe,kategori,keterangan,jumlah,ref_order,created_by) VALUES (@T2,@O2C,'2026-05-06','masuk','transaksi','Pembayaran HL-20260506-001',39000,'HL-20260506-001',@U_YULI);
+INSERT INTO hl_kas (tenant_id,outlet_id,tanggal,tipe,kategori,keterangan,jumlah,ref_order,created_by) VALUES (@T2,@O2C,'2026-05-06','masuk','transaksi','Pembayaran HL-20260506-201',39000,'HL-20260506-201',@U_YULI);
 
 INSERT INTO hl_transaksi (tenant_id,outlet_id,no_order,tanggal,pelanggan_id,nama_pelanggan,telepon,subtotal,diskon,total,dp,sisa_bayar,metode_bayar,status_bayar,status_proses,estimasi_selesai,created_by) VALUES
-(@T2,@O2C,'HL-20260510-001','2026-05-10',@P_VILA,'Vila Kaliurang','08191919191',180000,0,180000,0,180000,'transfer','belum_bayar','diambil','2026-05-13',@U_SISKA);
+(@T2,@O2C,'HL-20260510-201','2026-05-10',@P_VILA,'Vila Kaliurang','08191919191',180000,0,180000,0,180000,'transfer','belum_bayar','diambil','2026-05-13',@U_SISKA);
 SET @T_M := LAST_INSERT_ID();
 INSERT INTO hl_transaksi_item (tenant_id,outlet_id,transaksi_id,layanan_id,nama_layanan,satuan,jumlah,harga_satuan,subtotal) VALUES (@T2,@O2C,@T_M,@L_2C_KIL,'Cuci Kiloan Vila','kg',24,7500,180000);
 
 INSERT INTO hl_transaksi (tenant_id,outlet_id,no_order,tanggal,pelanggan_id,nama_pelanggan,telepon,subtotal,diskon,total,dp,sisa_bayar,metode_bayar,status_bayar,status_proses,estimasi_selesai,created_by) VALUES
-(@T2,@O2C,'HL-20260516-001','2026-05-16',@P_ASEP,'Asep Sulaiman','08161616161',33000,6600,26400,0,0,'qris','lunas','diambil','2026-05-18',@U_YULI);
+(@T2,@O2C,'HL-20260516-201','2026-05-16',@P_ASEP,'Asep Sulaiman','08161616161',33000,6600,26400,0,0,'qris','lunas','diambil','2026-05-18',@U_YULI);
 SET @T_M := LAST_INSERT_ID();
 INSERT INTO hl_transaksi_item (tenant_id,outlet_id,transaksi_id,layanan_id,nama_layanan,satuan,jumlah,harga_satuan,subtotal) VALUES (@T2,@O2C,@T_M,@L_2C_SET,'Cuci+Setrika','kg',3,11000,33000);
-INSERT INTO hl_kas (tenant_id,outlet_id,tanggal,tipe,kategori,keterangan,jumlah,ref_order,created_by) VALUES (@T2,@O2C,'2026-05-16','masuk','transaksi','Pembayaran HL-20260516-001',26400,'HL-20260516-001',@U_YULI);
+INSERT INTO hl_kas (tenant_id,outlet_id,tanggal,tipe,kategori,keterangan,jumlah,ref_order,created_by) VALUES (@T2,@O2C,'2026-05-16','masuk','transaksi','Pembayaran HL-20260516-201',26400,'HL-20260516-201',@U_YULI);
 
 INSERT INTO hl_transaksi (tenant_id,outlet_id,no_order,tanggal,pelanggan_id,nama_pelanggan,telepon,subtotal,diskon,total,dp,sisa_bayar,metode_bayar,status_bayar,status_proses,estimasi_selesai,created_by) VALUES
-(@T2,@O2C,'HL-20260522-001','2026-05-22',@P_ANITA,'Anita Permata','08181818181',26000,0,26000,0,0,'cash','lunas','siap','2026-05-24',@U_YULI);
+(@T2,@O2C,'HL-20260522-201','2026-05-22',@P_ANITA,'Anita Permata','08181818181',26000,0,26000,0,0,'cash','lunas','siap','2026-05-24',@U_YULI);
 SET @T_M := LAST_INSERT_ID();
 INSERT INTO hl_transaksi_item (tenant_id,outlet_id,transaksi_id,layanan_id,nama_layanan,satuan,jumlah,harga_satuan,subtotal) VALUES (@T2,@O2C,@T_M,@L_2C_EXP,'Cuci Express','kg',2,13000,26000);
-INSERT INTO hl_kas (tenant_id,outlet_id,tanggal,tipe,kategori,keterangan,jumlah,ref_order,created_by) VALUES (@T2,@O2C,'2026-05-22','masuk','transaksi','Pembayaran HL-20260522-001',26000,'HL-20260522-001',@U_YULI);
+INSERT INTO hl_kas (tenant_id,outlet_id,tanggal,tipe,kategori,keterangan,jumlah,ref_order,created_by) VALUES (@T2,@O2C,'2026-05-22','masuk','transaksi','Pembayaran HL-20260522-201',26000,'HL-20260522-201',@U_YULI);
 
 INSERT INTO hl_transaksi (tenant_id,outlet_id,no_order,tanggal,pelanggan_id,nama_pelanggan,telepon,subtotal,diskon,total,dp,sisa_bayar,metode_bayar,status_bayar,status_proses,estimasi_selesai,created_by) VALUES
-(@T2,@O2C,'HL-20260528-001','2026-05-28',@P_LINDA,'Linda Wati','08171717171',22500,4500,18000,0,0,'cash','lunas','cuci','2026-05-30',@U_YULI);
+(@T2,@O2C,'HL-20260528-201','2026-05-28',@P_LINDA,'Linda Wati','08171717171',22500,4500,18000,0,0,'cash','lunas','cuci','2026-05-30',@U_YULI);
 SET @T_M := LAST_INSERT_ID();
 INSERT INTO hl_transaksi_item (tenant_id,outlet_id,transaksi_id,layanan_id,nama_layanan,satuan,jumlah,harga_satuan,subtotal) VALUES (@T2,@O2C,@T_M,@L_2C_KIL,'Cuci Kiloan','kg',3,7500,22500);
-INSERT INTO hl_kas (tenant_id,outlet_id,tanggal,tipe,kategori,keterangan,jumlah,ref_order,created_by) VALUES (@T2,@O2C,'2026-05-28','masuk','transaksi','Pembayaran HL-20260528-001',18000,'HL-20260528-001',@U_YULI);
+INSERT INTO hl_kas (tenant_id,outlet_id,tanggal,tipe,kategori,keterangan,jumlah,ref_order,created_by) VALUES (@T2,@O2C,'2026-05-28','masuk','transaksi','Pembayaran HL-20260528-201',18000,'HL-20260528-201',@U_YULI);
 
 -- ══════════════════════════════════════════════════════════════════
 -- TRANSAKSI — T5 Outlet A (Manyar) Maret-Mei
@@ -833,49 +833,49 @@ INSERT INTO hl_kas (tenant_id,outlet_id,tanggal,tipe,kategori,keterangan,jumlah,
 -- TRANSAKSI — T5 Outlet B (Rungkut) Maret-Mei
 -- ══════════════════════════════════════════════════════════════════
 INSERT INTO hl_transaksi (tenant_id,outlet_id,no_order,tanggal,pelanggan_id,nama_pelanggan,telepon,subtotal,diskon,total,dp,sisa_bayar,metode_bayar,status_bayar,status_proses,estimasi_selesai,created_by) VALUES
-(@T5,@O5B,'HL-20260320-001','2026-03-20',@P_ANDIK,'Andika Putra','08181919101',45000,0,45000,0,0,'cash','lunas','diambil','2026-03-22',@U_MIRA);
+(@T5,@O5B,'HL-20260320-101','2026-03-20',@P_ANDIK,'Andika Putra','08181919101',45000,0,45000,0,0,'cash','lunas','diambil','2026-03-22',@U_MIRA);
 SET @T_M := LAST_INSERT_ID();
 INSERT INTO hl_transaksi_item (tenant_id,outlet_id,transaksi_id,layanan_id,nama_layanan,satuan,jumlah,harga_satuan,subtotal) VALUES (@T5,@O5B,@T_M,@L_5B_KIL,'Cuci Kiloan Premium','kg',5,9000,45000);
-INSERT INTO hl_kas (tenant_id,outlet_id,tanggal,tipe,kategori,keterangan,jumlah,ref_order,created_by) VALUES (@T5,@O5B,'2026-03-20','masuk','transaksi','Pembayaran HL-20260320-001',45000,'HL-20260320-001',@U_MIRA);
+INSERT INTO hl_kas (tenant_id,outlet_id,tanggal,tipe,kategori,keterangan,jumlah,ref_order,created_by) VALUES (@T5,@O5B,'2026-03-20','masuk','transaksi','Pembayaran HL-20260320-101',45000,'HL-20260320-101',@U_MIRA);
 
 INSERT INTO hl_transaksi (tenant_id,outlet_id,no_order,tanggal,pelanggan_id,nama_pelanggan,telepon,subtotal,diskon,total,dp,sisa_bayar,metode_bayar,status_bayar,status_proses,estimasi_selesai,created_by) VALUES
-(@T5,@O5B,'HL-20260325-001','2026-03-25',@P_APAR,'Apartemen Puncak','031-5333444',525000,0,525000,0,525000,'transfer','belum_bayar','diambil','2026-03-29',@U_BOWO);
+(@T5,@O5B,'HL-20260325-101','2026-03-25',@P_APAR,'Apartemen Puncak','031-5333444',525000,0,525000,0,525000,'transfer','belum_bayar','diambil','2026-03-29',@U_BOWO);
 SET @T_M := LAST_INSERT_ID();
 INSERT INTO hl_transaksi_item (tenant_id,outlet_id,transaksi_id,layanan_id,nama_layanan,satuan,jumlah,harga_satuan,subtotal) VALUES (@T5,@O5B,@T_M,@L_5B_B2B,'Cuci B2B','kg',70,7500,525000);
 
 INSERT INTO hl_transaksi (tenant_id,outlet_id,no_order,tanggal,pelanggan_id,nama_pelanggan,telepon,subtotal,diskon,total,dp,sisa_bayar,metode_bayar,status_bayar,status_proses,estimasi_selesai,created_by) VALUES
-(@T5,@O5B,'HL-20260410-001','2026-04-10',@P_MARIA,'Maria Dewi','08191020111',72000,0,72000,0,0,'qris','lunas','diambil','2026-04-12',@U_MIRA);
+(@T5,@O5B,'HL-20260410-101','2026-04-10',@P_MARIA,'Maria Dewi','08191020111',72000,0,72000,0,0,'qris','lunas','diambil','2026-04-12',@U_MIRA);
 SET @T_M := LAST_INSERT_ID();
 INSERT INTO hl_transaksi_item (tenant_id,outlet_id,transaksi_id,layanan_id,nama_layanan,satuan,jumlah,harga_satuan,subtotal) VALUES (@T5,@O5B,@T_M,@L_5B_SET,'Cuci+Setrika','kg',6,12000,72000);
-INSERT INTO hl_kas (tenant_id,outlet_id,tanggal,tipe,kategori,keterangan,jumlah,ref_order,created_by) VALUES (@T5,@O5B,'2026-04-10','masuk','transaksi','Pembayaran HL-20260410-001',72000,'HL-20260410-001',@U_MIRA);
+INSERT INTO hl_kas (tenant_id,outlet_id,tanggal,tipe,kategori,keterangan,jumlah,ref_order,created_by) VALUES (@T5,@O5B,'2026-04-10','masuk','transaksi','Pembayaran HL-20260410-101',72000,'HL-20260410-101',@U_MIRA);
 
 INSERT INTO hl_transaksi (tenant_id,outlet_id,no_order,tanggal,pelanggan_id,nama_pelanggan,telepon,subtotal,diskon,total,dp,sisa_bayar,metode_bayar,status_bayar,status_proses,estimasi_selesai,created_by) VALUES
-(@T5,@O5B,'HL-20260418-001','2026-04-18',@P_APAR,'Apartemen Puncak','031-5333444',600000,0,600000,0,600000,'transfer','belum_bayar','diambil','2026-04-22',@U_BOWO);
+(@T5,@O5B,'HL-20260418-101','2026-04-18',@P_APAR,'Apartemen Puncak','031-5333444',600000,0,600000,0,600000,'transfer','belum_bayar','diambil','2026-04-22',@U_BOWO);
 SET @T_M := LAST_INSERT_ID();
 INSERT INTO hl_transaksi_item (tenant_id,outlet_id,transaksi_id,layanan_id,nama_layanan,satuan,jumlah,harga_satuan,subtotal) VALUES (@T5,@O5B,@T_M,@L_5B_B2B,'Cuci B2B','kg',80,7500,600000);
 
 INSERT INTO hl_transaksi (tenant_id,outlet_id,no_order,tanggal,pelanggan_id,nama_pelanggan,telepon,subtotal,diskon,total,dp,sisa_bayar,metode_bayar,status_bayar,status_proses,estimasi_selesai,created_by) VALUES
-(@T5,@O5B,'HL-20260425-001','2026-04-25',@P_RINAH,'Rina Hartono','08202021121',54000,0,54000,0,0,'cash','lunas','diambil','2026-04-27',@U_MIRA);
+(@T5,@O5B,'HL-20260425-101','2026-04-25',@P_RINAH,'Rina Hartono','08202021121',54000,0,54000,0,0,'cash','lunas','diambil','2026-04-27',@U_MIRA);
 SET @T_M := LAST_INSERT_ID();
 INSERT INTO hl_transaksi_item (tenant_id,outlet_id,transaksi_id,layanan_id,nama_layanan,satuan,jumlah,harga_satuan,subtotal) VALUES (@T5,@O5B,@T_M,@L_5B_KIL,'Cuci Kiloan Premium','kg',6,9000,54000);
-INSERT INTO hl_kas (tenant_id,outlet_id,tanggal,tipe,kategori,keterangan,jumlah,ref_order,created_by) VALUES (@T5,@O5B,'2026-04-25','masuk','transaksi','Pembayaran HL-20260425-001',54000,'HL-20260425-001',@U_MIRA);
+INSERT INTO hl_kas (tenant_id,outlet_id,tanggal,tipe,kategori,keterangan,jumlah,ref_order,created_by) VALUES (@T5,@O5B,'2026-04-25','masuk','transaksi','Pembayaran HL-20260425-101',54000,'HL-20260425-101',@U_MIRA);
 
 INSERT INTO hl_transaksi (tenant_id,outlet_id,no_order,tanggal,pelanggan_id,nama_pelanggan,telepon,subtotal,diskon,total,dp,sisa_bayar,metode_bayar,status_bayar,status_proses,estimasi_selesai,created_by) VALUES
-(@T5,@O5B,'HL-20260510-001','2026-05-10',@P_MARIA,'Maria Dewi','08191020111',60000,9000,51000,0,0,'qris','lunas','diambil','2026-05-12',@U_MIRA);
+(@T5,@O5B,'HL-20260510-101','2026-05-10',@P_MARIA,'Maria Dewi','08191020111',60000,9000,51000,0,0,'qris','lunas','diambil','2026-05-12',@U_MIRA);
 SET @T_M := LAST_INSERT_ID();
 INSERT INTO hl_transaksi_item (tenant_id,outlet_id,transaksi_id,layanan_id,nama_layanan,satuan,jumlah,harga_satuan,subtotal) VALUES (@T5,@O5B,@T_M,@L_5B_EXP,'Cuci Express','kg',4,15000,60000);
-INSERT INTO hl_kas (tenant_id,outlet_id,tanggal,tipe,kategori,keterangan,jumlah,ref_order,created_by) VALUES (@T5,@O5B,'2026-05-10','masuk','transaksi','Pembayaran HL-20260510-001',51000,'HL-20260510-001',@U_MIRA);
+INSERT INTO hl_kas (tenant_id,outlet_id,tanggal,tipe,kategori,keterangan,jumlah,ref_order,created_by) VALUES (@T5,@O5B,'2026-05-10','masuk','transaksi','Pembayaran HL-20260510-101',51000,'HL-20260510-101',@U_MIRA);
 
 INSERT INTO hl_transaksi (tenant_id,outlet_id,no_order,tanggal,pelanggan_id,nama_pelanggan,telepon,subtotal,diskon,total,dp,sisa_bayar,metode_bayar,status_bayar,status_proses,estimasi_selesai,created_by) VALUES
-(@T5,@O5B,'HL-20260518-001','2026-05-18',@P_APAR,'Apartemen Puncak','031-5333444',675000,0,675000,0,675000,'transfer','belum_bayar','diambil','2026-05-22',@U_BOWO);
+(@T5,@O5B,'HL-20260518-101','2026-05-18',@P_APAR,'Apartemen Puncak','031-5333444',675000,0,675000,0,675000,'transfer','belum_bayar','diambil','2026-05-22',@U_BOWO);
 SET @T_M := LAST_INSERT_ID();
 INSERT INTO hl_transaksi_item (tenant_id,outlet_id,transaksi_id,layanan_id,nama_layanan,satuan,jumlah,harga_satuan,subtotal) VALUES (@T5,@O5B,@T_M,@L_5B_B2B,'Cuci B2B','kg',90,7500,675000);
 
 INSERT INTO hl_transaksi (tenant_id,outlet_id,no_order,tanggal,pelanggan_id,nama_pelanggan,telepon,subtotal,diskon,total,dp,sisa_bayar,metode_bayar,status_bayar,status_proses,estimasi_selesai,created_by) VALUES
-(@T5,@O5B,'HL-20260524-001','2026-05-24',@P_ANDIK,'Andika Putra','08181919101',45000,0,45000,0,0,'cash','lunas','siap','2026-05-26',@U_MIRA);
+(@T5,@O5B,'HL-20260524-101','2026-05-24',@P_ANDIK,'Andika Putra','08181919101',45000,0,45000,0,0,'cash','lunas','siap','2026-05-26',@U_MIRA);
 SET @T_M := LAST_INSERT_ID();
 INSERT INTO hl_transaksi_item (tenant_id,outlet_id,transaksi_id,layanan_id,nama_layanan,satuan,jumlah,harga_satuan,subtotal) VALUES (@T5,@O5B,@T_M,@L_5B_KIL,'Cuci Kiloan Premium','kg',5,9000,45000);
-INSERT INTO hl_kas (tenant_id,outlet_id,tanggal,tipe,kategori,keterangan,jumlah,ref_order,created_by) VALUES (@T5,@O5B,'2026-05-24','masuk','transaksi','Pembayaran HL-20260524-001',45000,'HL-20260524-001',@U_MIRA);
+INSERT INTO hl_kas (tenant_id,outlet_id,tanggal,tipe,kategori,keterangan,jumlah,ref_order,created_by) VALUES (@T5,@O5B,'2026-05-24','masuk','transaksi','Pembayaran HL-20260524-101',45000,'HL-20260524-101',@U_MIRA);
 
 -- ══════════════════════════════════════════════════════════════════
 -- TRANSAKSI — T4 Express Maju (sudah grace, transaksi menurun)
