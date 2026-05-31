@@ -432,18 +432,18 @@ if ($action) {
         $metode   = ['cash'=>'Cash','transfer'=>'Transfer','qris'=>'QRIS'][$t['metode_bayar']] ?? $t['metode_bayar'];
         $trackUrl = (defined('APP_URL') ? APP_URL : 'https://lamasy.harpy.id') . '/track.php?order=' . urlencode($t['no_order']);
 
-        $msg = "Halo *{$t['nama_pelanggan']}* 👋\n\n"
-             . "Pesanan Anda di *{$brandName}* sudah kami terima ✅\n\n"
-             . "📋 *No. Order:* {$t['no_order']}\n"
-             . "📅 *Tanggal:* {$tgl}\n"
-             . "🧺 *Layanan:*{$itemList}\n\n"
-             . "💰 *Total:* {$totalFmt}\n"
-             . "💵 *Bayar ({$metode}):* {$dpFmt}\n"
-             . ($t['sisa_bayar'] > 0 ? "⚠️ *Sisa Bayar:* {$sisaFmt}\n" : "✅ *Status Bayar:* Lunas\n")
-             . "📅 *Est. Selesai:* {$est}\n\n"
-             . "🔍 Cek status real-time:\n{$trackUrl}\n\n"
-             . ($alamat ? "📍 *Alamat outlet:*\n{$outletNama}\n{$alamat}\n\n" : "")
-             . "Terima kasih sudah mempercayakan cucian Anda kepada kami 🙏\n"
+        $msg = "Halo *{$t['nama_pelanggan']}*,\n\n"
+             . "Pesanan Anda di *{$brandName}* sudah kami terima.\n\n"
+             . "*No. Order:* {$t['no_order']}\n"
+             . "*Tanggal:* {$tgl}\n"
+             . "*Layanan:*{$itemList}\n\n"
+             . "*Total:* {$totalFmt}\n"
+             . "*Bayar ({$metode}):* {$dpFmt}\n"
+             . ($t['sisa_bayar'] > 0 ? "*Sisa Bayar:* {$sisaFmt}\n" : "*Status Bayar:* Lunas\n")
+             . "*Est. Selesai:* {$est}\n\n"
+             . "Cek status real-time:\n{$trackUrl}\n\n"
+             . ($alamat ? "*Alamat outlet:*\n{$outletNama}\n{$alamat}\n\n" : "")
+             . "Terima kasih sudah mempercayakan cucian Anda kepada kami.\n"
              . "_" . $brandName . "_";
 
         // Deduct coin + log

@@ -562,36 +562,36 @@ if ($action) {
         $alamatBlock = $alamatLine ? "{$outletNama}\n{$alamatLine}" : $outletNama;
 
         if ($tipe === 'siap') {
-            $msg = "Halo *{$t['nama_pelanggan']}* 👋\n\n"
-                 . "Laundry Anda di *{$brandName}* sudah *✅ SIAP DIAMBIL!*\n\n"
-                 . "📋 *No. Order:* {$t['no_order']}\n"
-                 . "🧺 *Layanan:*{$itemList}\n"
-                 . "💰 *Total:* {$totalFmt}\n"
-                 . ($t['sisa_bayar'] > 0 ? "⚠️ *Sisa Bayar:* {$sisaFmt}\n" : "✅ *Status Bayar:* Lunas\n")
-                 . "\n📍 Silakan diambil di:\n{$alamatBlock}\n"
-                 . "\n🔍 Cek detail order: {$trackUrl}\n"
-                 . "\nTerima kasih sudah mempercayakan cucian Anda kepada kami 🙏\n_{$brandName}_";
+            $msg = "Halo *{$t['nama_pelanggan']}*,\n\n"
+                 . "Laundry Anda di *{$brandName}* sudah *SIAP DIAMBIL*.\n\n"
+                 . "*No. Order:* {$t['no_order']}\n"
+                 . "*Layanan:*{$itemList}\n"
+                 . "*Total:* {$totalFmt}\n"
+                 . ($t['sisa_bayar'] > 0 ? "*Sisa Bayar:* {$sisaFmt}\n" : "*Status Bayar:* Lunas\n")
+                 . "\nSilakan diambil di:\n{$alamatBlock}\n"
+                 . "\nCek detail order: {$trackUrl}\n"
+                 . "\nTerima kasih sudah mempercayakan cucian Anda kepada kami.\n_{$brandName}_";
         } elseif ($tipe === 'lunas_reminder') {
-            $msg = "Halo *{$t['nama_pelanggan']}* 👋\n\n"
+            $msg = "Halo *{$t['nama_pelanggan']}*,\n\n"
                  . "Ini pengingat untuk pelunasan laundry Anda di *{$brandName}*.\n\n"
-                 . "📋 *No. Order:* {$t['no_order']}\n"
-                 . "💰 *Total:* {$totalFmt}\n"
-                 . "⚠️ *Sisa yang harus dibayar:* {$sisaFmt}\n\n"
-                 . "🔍 Detail order: {$trackUrl}\n\n"
-                 . "Mohon segera dilunasi saat pengambilan ya 🙏\n"
-                 . "\nTerima kasih!\n_{$brandName}_";
+                 . "*No. Order:* {$t['no_order']}\n"
+                 . "*Total:* {$totalFmt}\n"
+                 . "*Sisa yang harus dibayar:* {$sisaFmt}\n\n"
+                 . "Detail order: {$trackUrl}\n\n"
+                 . "Mohon segera dilunasi saat pengambilan ya.\n"
+                 . "\nTerima kasih.\n_{$brandName}_";
         } else {
             $statusLabel = ['masuk'=>'Diterima','cuci'=>'Sedang Dicuci','kering'=>'Sedang Dikeringkan',
                 'setrika'=>'Sedang Disetrika','siap'=>'Siap Diambil','diambil'=>'Sudah Diambil'];
             $stLabel = $statusLabel[$t['status_proses']] ?? $t['status_proses'];
-            $msg = "Halo *{$t['nama_pelanggan']}* 👋\n\n"
+            $msg = "Halo *{$t['nama_pelanggan']}*,\n\n"
                  . "Update status laundry Anda di *{$brandName}*:\n\n"
-                 . "📋 *No. Order:* {$t['no_order']}\n"
-                 . "🔄 *Status:* {$stLabel}\n"
-                 . "📅 *Est. Selesai:* {$est}\n"
-                 . "🧺 *Layanan:*{$itemList}\n\n"
-                 . "🔍 Cek status real-time: {$trackUrl}\n\n"
-                 . "Terima kasih 🙏\n_{$brandName}_";
+                 . "*No. Order:* {$t['no_order']}\n"
+                 . "*Status:* {$stLabel}\n"
+                 . "*Est. Selesai:* {$est}\n"
+                 . "*Layanan:*{$itemList}\n\n"
+                 . "Cek status real-time: {$trackUrl}\n\n"
+                 . "Terima kasih.\n_{$brandName}_";
         }
 
         $phone = preg_replace('/[^0-9]/', '', $t['telepon'] ?? '');
