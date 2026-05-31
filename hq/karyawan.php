@@ -349,9 +349,16 @@ if ($action) {
                    ->execute([$tid, $kid, $oid, $uid, $note]);
             }
 
-            // Update primary outlet (default login) — konsisten dengan flow mutasi
-            $db->prepare("UPDATE hl_users SET outlet_id=? WHERE id=? AND tenant_id=?")
-               ->execute([$oid, $kid, $tid]);
+            // Update primary outlet (default login) HANYA kalau karyawan belum punya
+            // outlet utama. Kalau sudah punya (mode bantu/multi-outlet), biarkan
+            // primary tetap di outlet existing.
+            $primaryCheck = $db->prepare("SELECT outlet_id FROM hl_users WHERE id=? AND tenant_id=?");
+            $primaryCheck->execute([$kid, $tid]);
+            $currentPrimary = (int)$primaryCheck->fetchColumn();
+            if ($currentPrimary <= 0) {
+                $db->prepare("UPDATE hl_users SET outlet_id=? WHERE id=? AND tenant_id=?")
+                   ->execute([$oid, $kid, $tid]);
+            }
 
             hqAudit($db, $tid, $uid, 'add_assignment', "karyawan=$kid outlet=$oid note=$note");
             echo json_encode(['success'=>true]);
@@ -880,6 +887,7 @@ async function loadList(){
         <div class="kr-actions">
           <button class="btn btn-light" onclick="showDetail(${r.id})">Detail</button>
           ${r.is_active==1 ? `<button class="btn btn-primary" onclick="openMutasiById(${r.id})">${hasOutlet ? '🔄 Mutasi' : '📍 Assign Outlet'}</button>` : ''}
+          ${r.is_active==1 && hasOutlet ? `<button class="btn btn-light" onclick="openBantuById(${r.id})" title="Assign tambahan tanpa pindah (Area Coordinator, perbantuan)">➕ Outlet</button>` : ''}
         </div>
       </div>
     `;
@@ -891,6 +899,13 @@ function openMutasiById(id) {
   const k = (window._karyawanCache || {})[id];
   if (!k) { alert('Data karyawan tidak ditemukan, refresh halaman.'); return; }
   openMutasi(k.id, k.nama, k.assignments || []);
+}
+
+// Mode 'bantu' — tambah outlet tanpa pindah (Area Coordinator, kurir antar-outlet, perbantuan)
+function openBantuById(id) {
+  const k = (window._karyawanCache || {})[id];
+  if (!k) { alert('Data karyawan tidak ditemukan, refresh halaman.'); return; }
+  openMutasi(k.id, k.nama, k.assignments || [], 'bantu');
 }
 
 async function showDetail(id){
@@ -1037,43 +1052,68 @@ async function toggleActive(id, nama, activate){
   loadList();
 }
 
-let mutMode = 'mutasi'; // 'mutasi' atau 'assign' — auto-detect dari assignments
+let mutMode = 'mutasi'; // 'mutasi' | 'assign' | 'bantu'
 
-function openMutasi(id, nama, currentAssignments){
+function openMutasi(id, nama, currentAssignments, forceMode){
   document.getElementById('mutKaryawanId').value = id;
   document.getElementById('mutKaryawanName').value = nama;
   document.getElementById('mutNotes').value = '';
   document.getElementById('mutTanggal').value = new Date().toISOString().slice(0,10);
   document.getElementById('mutasiAlert').innerHTML = '';
 
-  // Auto-switch mode: kalau belum ada outlet → mode ASSIGN, kalau sudah → MUTASI
-  mutMode = (currentAssignments.length === 0) ? 'assign' : 'mutasi';
+  // Mode logic:
+  // - explicit 'bantu' (Area Coordinator, perbantuan — multi-outlet)
+  // - assignments=0 → 'assign'  (belum punya outlet)
+  // - assignments≥1 → 'mutasi'  (pindah outlet)
+  if (forceMode === 'bantu') {
+    mutMode = 'bantu';
+  } else {
+    mutMode = (currentAssignments.length === 0) ? 'assign' : 'mutasi';
+  }
 
   const titleEl   = document.getElementById('mutModalTitle');
   const fromWrap  = document.getElementById('mutFromWrap');
   const toLabel   = document.getElementById('mutToLabel');
   const submitBtn = document.getElementById('mutSubmitBtn');
+  const notesEl   = document.getElementById('mutNotes');
+  const allOutlets = <?= json_encode($outletList) ?>;
 
   if (mutMode === 'assign') {
     titleEl.textContent   = '📍 Assign Karyawan ke Outlet';
-    fromWrap.style.display = 'none';                              // Sembunyikan "Dari Outlet"
+    fromWrap.style.display = 'none';
     toLabel.textContent   = 'Tugaskan ke Outlet';
     submitBtn.innerHTML   = '✓ Konfirmasi Assign';
+    notesEl.placeholder   = 'cth: penempatan awal, role kasir outlet A…';
+    document.getElementById('mutTo').innerHTML = allOutlets
+      .map(o => `<option value="${o.id}">${escapeHtml(o.nama_outlet)}</option>`).join('');
+  } else if (mutMode === 'bantu') {
+    titleEl.textContent   = '➕ Tambah Outlet Bantu';
+    fromWrap.style.display = 'none';                              // Tidak perlu FROM — outlet existing tetap aktif
+    toLabel.textContent   = 'Tambahkan Outlet';
+    submitBtn.innerHTML   = '✓ Tambah Outlet';
+    notesEl.placeholder   = 'cth: Area Coordinator, kurir antar-outlet, perbantuan akhir pekan…';
+
+    // Filter outlet yang sudah ditugaskan — biar nggak duplicate
+    const assignedIds = (currentAssignments || []).map(a => Number(a.outlet_id));
+    const available   = allOutlets.filter(o => !assignedIds.includes(Number(o.id)));
+    if (available.length === 0) {
+      document.getElementById('mutTo').innerHTML = '<option value="">(sudah ditugaskan ke semua outlet aktif)</option>';
+    } else {
+      document.getElementById('mutTo').innerHTML = available
+        .map(o => `<option value="${o.id}">${escapeHtml(o.nama_outlet)}</option>`).join('');
+    }
   } else {
     titleEl.textContent   = '🔄 Mutasi Karyawan';
     fromWrap.style.display = '';
     toLabel.textContent   = 'Ke Outlet';
     submitBtn.innerHTML   = '✓ Konfirmasi Mutasi';
+    notesEl.placeholder   = 'cth: rotasi tim, kebutuhan operasional, request karyawan…';
 
-    // Populate FROM dropdown (only when mutasi mode)
     document.getElementById('mutFrom').innerHTML =
       currentAssignments.map(a => `<option value="${a.outlet_id}">${escapeHtml(a.nama_outlet)}</option>`).join('');
+    document.getElementById('mutTo').innerHTML = allOutlets
+      .map(o => `<option value="${o.id}">${escapeHtml(o.nama_outlet)}</option>`).join('');
   }
-
-  // Populate TO dropdown (all outlets) — sama untuk kedua mode
-  const allOutlets = <?= json_encode($outletList) ?>;
-  document.getElementById('mutTo').innerHTML = allOutlets
-    .map(o => `<option value="${o.id}">${escapeHtml(o.nama_outlet)}</option>`).join('');
 
   openModal('mutasiModal');
 }
@@ -1088,8 +1128,8 @@ async function submitMutasi(){
 
   if (!toOutletId) { alertEl.innerHTML = '<div class="alert error">Pilih outlet tujuan</div>'; return; }
 
-  // ── ASSIGN mode: karyawan belum punya outlet ──
-  if (mutMode === 'assign') {
+  // ── ASSIGN / BANTU mode: pakai endpoint add_assignment ──
+  if (mutMode === 'assign' || mutMode === 'bantu') {
     const r = await fetch('/hq/karyawan.php?action=add_assignment', {
       method:'POST',
       headers:{'Content-Type':'application/json','X-CSRF-TOKEN':csrf},
@@ -1097,7 +1137,10 @@ async function submitMutasi(){
     });
     const j = await r.json();
     if (j.error) { alertEl.innerHTML = '<div class="alert error">'+escapeHtml(j.error)+'</div>'; return; }
-    alertEl.innerHTML = '<div class="alert success">✓ Karyawan berhasil di-assign ke outlet</div>';
+    const okMsg = mutMode === 'bantu'
+      ? '✓ Outlet bantu berhasil ditambahkan'
+      : '✓ Karyawan berhasil di-assign ke outlet';
+    alertEl.innerHTML = '<div class="alert success">'+okMsg+'</div>';
     setTimeout(() => { closeModal('mutasiModal'); loadList(); }, 800);
     return;
   }
