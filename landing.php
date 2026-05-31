@@ -956,12 +956,20 @@ img { max-width: 100%; }
       <div class="stat-label">Trial Gratis</div>
     </div>
     <div class="stat-item">
+      <div class="stat-num">14+</div>
+      <div class="stat-label">Fitur Lengkap</div>
+    </div>
+    <div class="stat-item">
       <div class="stat-num">99.9%</div>
       <div class="stat-label">Uptime Terjamin</div>
     </div>
     <div class="stat-item">
       <div class="stat-num">3 Jam</div>
       <div class="stat-label">Hemat per Hari</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num">Rp 0</div>
+      <div class="stat-label">Langganan Bulanan</div>
     </div>
     <div class="stat-item">
       <div class="stat-num" style="color:#C4B5FD;">AI</div>
@@ -1115,29 +1123,93 @@ img { max-width: 100%; }
   <div class="section-header">
     <div class="section-tag">Fitur Lengkap</div>
     <h2>Semua yang Anda Butuhkan dalam Satu Platform</h2>
-    <p>Dari kasir, laporan keuangan formal SAK EMKM, AI yang membantu pengambilan keputusan, sampai integrasi WhatsApp lengkap. Semua ada di LAMASY.</p>
+    <p>14+ fitur terintegrasi: dari kasir, laporan formal SAK EMKM, AI untuk pengambilan keputusan, sampai integrasi WhatsApp lengkap. Dirancang khusus untuk bisnis laundry Indonesia.</p>
   </div>
-  <div class="features-grid">
+
+  <!-- ── Group: Operasional Harian ───────────────── -->
+  <div style="max-width:1080px;margin:0 auto 16px;display:flex;align-items:center;gap:10px;">
+    <div style="width:32px;height:32px;background:rgba(53,232,213,.12);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;">🛒</div>
+    <h3 style="font-size:14px;font-weight:700;color:rgba(255,255,255,.85);margin:0;letter-spacing:.02em;">Operasional Harian</h3>
+    <div style="flex:1;height:1px;background:linear-gradient(90deg, rgba(53,232,213,.2), transparent);"></div>
+  </div>
+  <div class="features-grid" style="max-width:1080px;margin:0 auto 36px;">
     <div class="feature-card">
       <span class="feature-icon">🛒</span>
       <h3>POS & Order Management</h3>
       <p>Kasir digital cepat — terima order, hitung diskon, redeem poin loyalty, cetak nota termal, dan kirim nota PDF via WA dalam 1 klik. Status cucian tertrack real-time.</p>
     </div>
     <div class="feature-card">
-      <span class="feature-icon">📒</span>
-      <h3>Laporan Keuangan SAK EMKM</h3>
-      <p>Laporan formal lengkap: Laba Rugi, Neraca, Arus Kas, dan Rasio Keuangan — siap pajak & investor. Otomatis dari data transaksi, tanpa perlu akuntan.</p>
+      <span class="feature-icon">📋</span>
+      <h3>Kanban Produksi</h3>
+      <p>Papan kanban visual untuk track status order: masuk → cuci → kering → setrika → siap → diambil. Drag & drop, tiap perubahan kirim notif WA ke pelanggan otomatis.</p>
     </div>
     <div class="feature-card">
-      <span class="feature-icon">👥</span>
-      <h3>Karyawan, Absensi & Penggajian</h3>
-      <p>Multi-outlet assignment (Area Coordinator, perbantuan). Absensi digital, hitung gaji otomatis dari jam kerja, role & permission per posisi.</p>
+      <span class="feature-icon">🔍</span>
+      <h3>Tracking Order Publik</h3>
+      <p>Pelanggan cek status cucian via link unik (tanpa login). Mengurangi "kapan selesai kak?" di WA. Branded sesuai nama outlet kamu.</p>
     </div>
+  </div>
+
+  <!-- ── Group: Laporan & Analytics ──────────────── -->
+  <div style="max-width:1080px;margin:0 auto 16px;display:flex;align-items:center;gap:10px;">
+    <div style="width:32px;height:32px;background:rgba(53,232,213,.12);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;">📊</div>
+    <h3 style="font-size:14px;font-weight:700;color:rgba(255,255,255,.85);margin:0;letter-spacing:.02em;">Laporan &amp; Analytics</h3>
+    <div style="flex:1;height:1px;background:linear-gradient(90deg, rgba(53,232,213,.2), transparent);"></div>
+  </div>
+  <div class="features-grid" style="max-width:1080px;margin:0 auto 36px;">
+    <div class="feature-card">
+      <span class="feature-icon">📒</span>
+      <h3>Laporan Keuangan SAK EMKM</h3>
+      <p>Laporan formal lengkap: Laba Rugi, Neraca, Arus Kas, dan Rasio Keuangan — siap pajak &amp; investor. Otomatis dari data transaksi, tanpa perlu akuntan.</p>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">📈</span>
+      <h3>Laporan Operasional Lengkap</h3>
+      <p>Omzet harian/mingguan/bulanan, breakdown per layanan, top pelanggan, performa kasir, perbandingan periode. Drilldown per outlet, export Excel/PDF kapan saja.</p>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">💵</span>
+      <h3>Piutang B2B &amp; Korporat</h3>
+      <p>Layani hotel, kost, restoran dengan kategori bulanan. Generate invoice formal, kirim reminder WA otomatis, alert piutang yang jatuh tempo — cashflow nggak bocor.</p>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">📋</span>
+      <h3>Audit Log Lengkap</h3>
+      <p>Siapa, kapan, dan apa yang berubah — semua tertrack. Penting untuk multi-outlet/karyawan: bisa cek edit order siapa, hapus data siapa, kapan terjadi.</p>
+    </div>
+  </div>
+
+  <!-- ── Group: WhatsApp & Pelanggan ─────────────── -->
+  <div style="max-width:1080px;margin:0 auto 16px;display:flex;align-items:center;gap:10px;">
+    <div style="width:32px;height:32px;background:rgba(53,232,213,.12);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;">📱</div>
+    <h3 style="font-size:14px;font-weight:700;color:rgba(255,255,255,.85);margin:0;letter-spacing:.02em;">WhatsApp &amp; Pelanggan</h3>
+    <div style="flex:1;height:1px;background:linear-gradient(90deg, rgba(53,232,213,.2), transparent);"></div>
+  </div>
+  <div class="features-grid" style="max-width:1080px;margin:0 auto 36px;">
     <div class="feature-card">
       <span class="feature-icon">📱</span>
       <h3>WhatsApp Terintegrasi</h3>
-      <p>Notif WA otomatis: nota saat order masuk, status cucian, reminder lunas, link tracking real-time untuk pelanggan. Plus WA blast & retensi pelanggan dormant.</p>
+      <p>Notif WA otomatis: nota saat order masuk, status cucian, reminder lunas, link tracking real-time. Plus WA blast &amp; pesan retensi otomatis untuk pelanggan dormant.</p>
     </div>
+    <div class="feature-card">
+      <span class="feature-icon">🎟️</span>
+      <h3>Loyalty, Promo &amp; Voucher</h3>
+      <p>Poin loyalty (earn &amp; redeem), promo persen/nominal, voucher dengan kuota &amp; expired. Bikin pelanggan datang lagi tanpa effort manual.</p>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">👥</span>
+      <h3>Database Pelanggan Lengkap</h3>
+      <p>Profil pelanggan dengan history order, poin loyalty, kategori (retail/korporat/bulanan), metode bayar preferred. Segmentasi otomatis untuk targeted promo.</p>
+    </div>
+  </div>
+
+  <!-- ── Group: AI Tools ─────────────────────────── -->
+  <div style="max-width:1080px;margin:0 auto 16px;display:flex;align-items:center;gap:10px;">
+    <div style="width:32px;height:32px;background:rgba(139,92,246,.15);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;">🤖</div>
+    <h3 style="font-size:14px;font-weight:700;color:#C4B5FD;margin:0;letter-spacing:.02em;">AI Tools</h3>
+    <div style="flex:1;height:1px;background:linear-gradient(90deg, rgba(139,92,246,.3), transparent);"></div>
+  </div>
+  <div class="features-grid" style="max-width:1080px;margin:0 auto 36px;">
     <div class="feature-card" style="border-color:rgba(139,92,246,.25);background:rgba(139,92,246,.04);">
       <span class="feature-icon" style="color:#C4B5FD;">🤖</span>
       <h3 style="color:#C4B5FD;">AI Briefing Harian</h3>
@@ -1146,49 +1218,60 @@ img { max-width: 100%; }
     <div class="feature-card" style="border-color:rgba(139,92,246,.25);background:rgba(139,92,246,.04);">
       <span class="feature-icon" style="color:#C4B5FD;">💬</span>
       <h3 style="color:#C4B5FD;">AI Chat dengan Data Bisnis</h3>
-      <p>Tanya pakai bahasa natural: "top 5 pelanggan bulan ini" atau "omzet hari Sabtu vs Minggu". AI yang baca data laporan kamu, kasih jawaban langsung.</p>
-    </div>
-    <div class="feature-card">
-      <span class="feature-icon">🏢</span>
-      <h3>Multi-Outlet HQ Dashboard</h3>
-      <p>Owner punya 2+ outlet? Dashboard HQ tunjukin omzet konsolidasi, drilldown per outlet, transfer coin antar-outlet, mutasi karyawan, audit log lengkap.</p>
-    </div>
-    <div class="feature-card">
-      <span class="feature-icon">🤝</span>
-      <h3>Drop Point & Mitra Komisi</h3>
-      <p>Kerjasama dengan warung/toko sekitar jadi drop point. Hitung komisi otomatis (per-kg / persentase / kombinasi), rekap bulanan, bayar mitra tinggal klik.</p>
-    </div>
-    <div class="feature-card">
-      <span class="feature-icon">💵</span>
-      <h3>Piutang B2B & Korporat</h3>
-      <p>Layani hotel, kost, restoran dengan kategori bulanan. Generate invoice formal, kirim reminder WA otomatis, alert piutang yang jatuh tempo — cashflow nggak bocor.</p>
-    </div>
-    <div class="feature-card">
-      <span class="feature-icon">🎟️</span>
-      <h3>Loyalty, Promo & Voucher</h3>
-      <p>Poin loyalty (earn & redeem), promo persen/nominal, voucher dengan kuota & expired. Bikin pelanggan datang lagi tanpa effort manual.</p>
-    </div>
-    <div class="feature-card">
-      <span class="feature-icon">🔍</span>
-      <h3>Tracking Order Publik</h3>
-      <p>Pelanggan cek status cucian via link unik (tanpa login). Mengurangi "kapan selesai kak?" di WA. Branded sesuai nama outlet kamu.</p>
+      <p>Tanya pakai bahasa natural: "top 5 pelanggan bulan ini" atau "omzet Sabtu vs Minggu". AI yang baca data laporan kamu, kasih jawaban langsung tanpa harus query SQL.</p>
     </div>
     <div class="feature-card" style="border-color:rgba(139,92,246,.25);background:rgba(139,92,246,.04);">
       <span class="feature-icon" style="color:#C4B5FD;">📥</span>
       <h3 style="color:#C4B5FD;">AI Migration dari Aplikasi Lama</h3>
-      <p>Pindah dari Excel atau aplikasi lain? Upload file lama, AI map kolom otomatis ke format LAMASY. Data pelanggan & transaksi historis langsung ke-import.</p>
+      <p>Pindah dari Excel atau aplikasi lain? Upload file lama, AI map kolom otomatis ke format LAMASY. Data pelanggan &amp; transaksi historis langsung ke-import.</p>
+    </div>
+  </div>
+
+  <!-- ── Group: Multi-Outlet & Mitra ────────────── -->
+  <div style="max-width:1080px;margin:0 auto 16px;display:flex;align-items:center;gap:10px;">
+    <div style="width:32px;height:32px;background:rgba(53,232,213,.12);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;">🏢</div>
+    <h3 style="font-size:14px;font-weight:700;color:rgba(255,255,255,.85);margin:0;letter-spacing:.02em;">Multi-Outlet, Mitra &amp; Karyawan</h3>
+    <div style="flex:1;height:1px;background:linear-gradient(90deg, rgba(53,232,213,.2), transparent);"></div>
+  </div>
+  <div class="features-grid" style="max-width:1080px;margin:0 auto;">
+    <div class="feature-card">
+      <span class="feature-icon">🏢</span>
+      <h3>Multi-Outlet HQ Dashboard</h3>
+      <p>Owner 2+ outlet dapat dashboard HQ otomatis — konsolidasi omzet semua outlet, drilldown per outlet, transfer coin antar-outlet, mutasi karyawan, laporan lintas-outlet.</p>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">🤝</span>
+      <h3>Drop Point &amp; Mitra Komisi</h3>
+      <p>Kerjasama dengan warung/toko sekitar jadi drop point. Hitung komisi otomatis (per-kg / persentase / kombinasi), rekap bulanan, bayar mitra tinggal klik.</p>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">👨‍💼</span>
+      <h3>Karyawan, Absensi &amp; Gaji</h3>
+      <p>Multi-outlet assignment (Area Coordinator, perbantuan). Absensi digital, hitung gaji otomatis dari jam kerja, role &amp; permission per posisi (Owner/Manager/Kasir/Kurir).</p>
     </div>
   </div>
 </section>
 
-<!-- ── COMPARISON TABLE ─────────────────────────────── -->
+<!-- ── COMPARISON TABLES ─────────────────────────────── -->
 <section class="section" id="perbandingan">
   <div class="section-header">
     <div class="section-tag">Kenapa LAMASY?</div>
-    <h2>LAMASY vs Cara Lama</h2>
-    <p>Lihat perbedaan nyata antara mengelola laundry dengan LAMASY dan cara konvensional.</p>
+    <h2>Perbandingan Lengkap</h2>
+    <p>LAMASY vs cara konvensional, dan LAMASY vs aplikasi laundry generic. Lihat perbedaannya secara nyata.</p>
   </div>
-  <div style="max-width:820px;margin:0 auto;overflow-x:auto">
+
+  <!-- Tab navigation -->
+  <div style="max-width:820px;margin:0 auto 20px;display:flex;justify-content:center;gap:8px;flex-wrap:wrap;">
+    <button class="cmp-tab active" data-tab="manual" onclick="switchCmpTab('manual', this)">
+      📝 vs Cara Lama (Manual)
+    </button>
+    <button class="cmp-tab" data-tab="apps" onclick="switchCmpTab('apps', this)">
+      📱 vs Aplikasi Laundry Lain
+    </button>
+  </div>
+
+  <!-- ── TAB 1: vs Cara Lama ────────────────────── -->
+  <div id="cmp-manual" class="cmp-pane" style="max-width:820px;margin:0 auto;overflow-x:auto;">
     <table style="width:100%;border-collapse:collapse;font-size:14px">
       <thead>
         <tr>
@@ -1199,17 +1282,17 @@ img { max-width: 100%; }
       </thead>
       <tbody>
         <?php
-        $rows = [
+        $rowsManual = [
           ['Pencatatan Order',     'Buku tulis / Excel manual',          'Digital real-time, auto-tersimpan'],
           ['Notifikasi Pelanggan', 'Telepon satu-satu, sering lupa',     'WhatsApp otomatis, tanpa effort'],
-          ['Laporan Keuangan',     'Rekap manual, lambat, rawan salah',  'Dashboard otomatis, seketika'],
+          ['Laporan Keuangan',     'Rekap manual, lambat, rawan salah',  'Dashboard otomatis, SAK EMKM siap'],
           ['Pantau Karyawan',      'Tidak ada data, perkiraan saja',     'Absensi digital + laporan gaji'],
           ['Analisis Bisnis',      'Harus baca data sendiri, subjektif', 'AI briefing harian, insight akurat'],
           ['Multi Outlet',         'Masing-masing sistem sendiri',       'Satu dashboard, semua cabang'],
           ['Piutang',              'Sering terlewat, cashflow bocor',    'Alert otomatis, tidak ada yang lolos'],
           ['Waktu yang Dihemat',   'Habis untuk admin & laporan',        '3+ jam/hari untuk fokus bisnis'],
         ];
-        foreach ($rows as $i => [$aspect, $bad, $good]):
+        foreach ($rowsManual as $i => [$aspect, $bad, $good]):
           $bg = $i % 2 === 0 ? 'rgba(255,255,255,.015)' : 'transparent';
         ?>
         <tr style="background:<?= $bg ?>">
@@ -1221,7 +1304,74 @@ img { max-width: 100%; }
       </tbody>
     </table>
   </div>
+
+  <!-- ── TAB 2: vs Aplikasi Lain ────────────────── -->
+  <div id="cmp-apps" class="cmp-pane" style="display:none;max-width:820px;margin:0 auto;overflow-x:auto;">
+    <table style="width:100%;border-collapse:collapse;font-size:14px">
+      <thead>
+        <tr>
+          <th style="padding:14px 16px;text-align:left;color:rgba(255,255,255,.5);font-weight:500;font-size:13px;border-bottom:1px solid rgba(255,255,255,.08);width:34%">Aspek</th>
+          <th style="padding:14px 16px;text-align:center;color:rgba(255,255,255,.6);font-weight:700;border-bottom:1px solid rgba(255,255,255,.08);width:33%">Aplikasi Laundry Generic</th>
+          <th style="padding:14px 16px;text-align:center;color:#35E8D5;font-weight:700;border-bottom:1px solid rgba(255,255,255,.08);width:33%">✅ LAMASY</th>
+        </tr>
+      </thead>
+      <tbody>
+        <?php
+        $rowsApps = [
+          ['Model Pricing',         'Langganan bulanan wajib (Rp 200-500rb/bln)',  '1× setup permanen + pay-per-use Coin'],
+          ['Trial Free',            'Biasanya 3-7 hari, fitur terbatas',           '7 hari penuh + 10.000 coin gratis'],
+          ['AI Terintegrasi',       'Tidak ada / cuma chatbot CS',                 'AI Briefing, Chat Data, Migration, Upselling'],
+          ['Laporan Keuangan',      'Laporan operasional saja',                    'SAK EMKM formal (Laba Rugi, Neraca, Arus Kas)'],
+          ['WhatsApp Notif',        'Add-on terpisah berbayar',                    'Termasuk — pay-per-use via coin'],
+          ['Multi-Outlet',          'Per outlet bayar full lagi',                  'HQ Dashboard otomatis, transfer coin antar-outlet'],
+          ['Migrasi dari Excel',    'Manual input ulang',                          'AI Migration auto-map kolom'],
+          ['Tracking Order Publik', 'Pelanggan harus tanya manual',                'Link unik per order, real-time'],
+          ['Audit Log',             'Tidak ada / terbatas',                        'Lengkap, lintas-outlet, siapa kapan ngapain'],
+          ['Sesuai Indonesia',      'Generic global, bahasa kaku',                 'Lokal: SAK EMKM, WA, B2B, B. Indonesia natural'],
+          ['Lock-in Vendor',        'Data susah di-export, contract panjang',      'Export Excel/PDF kapan saja, no contract'],
+        ];
+        foreach ($rowsApps as $i => [$aspect, $other, $good]):
+          $bg = $i % 2 === 0 ? 'rgba(255,255,255,.015)' : 'transparent';
+        ?>
+        <tr style="background:<?= $bg ?>">
+          <td style="padding:13px 16px;color:rgba(255,255,255,.8);font-weight:500;border-bottom:1px solid rgba(255,255,255,.05)"><?= $aspect ?></td>
+          <td style="padding:13px 16px;text-align:center;color:rgba(255,255,255,.55);border-bottom:1px solid rgba(255,255,255,.05);font-size:13px;"><?= $other ?></td>
+          <td style="padding:13px 16px;text-align:center;color:rgba(53,232,213,.9);font-weight:600;border-bottom:1px solid rgba(255,255,255,.05)"><?= $good ?></td>
+        </tr>
+        <?php endforeach; ?>
+      </tbody>
+    </table>
+    <p style="text-align:center;margin-top:20px;font-size:12px;color:rgba(255,255,255,.4);max-width:640px;margin-left:auto;margin-right:auto;">
+      *Perbandingan berdasarkan fitur umum yang ditemui di aplikasi laundry komersial di Indonesia.
+      Kami tidak menyebut nama merek tertentu — silakan bandingkan sendiri dengan aplikasi yang sedang Anda pakai.
+    </p>
+  </div>
 </section>
+
+<style>
+.cmp-tab {
+  background: rgba(255,255,255,.04);
+  color: rgba(255,255,255,.65);
+  border: 1px solid rgba(255,255,255,.1);
+  padding: 9px 18px;
+  border-radius: 8px;
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .15s;
+}
+.cmp-tab:hover { background: rgba(255,255,255,.07); color: #fff; border-color: rgba(53,232,213,.3); }
+.cmp-tab.active { background: rgba(53,232,213,.12); color: #35E8D5; border-color: rgba(53,232,213,.35); }
+</style>
+<script>
+function switchCmpTab(tab, btn) {
+  document.querySelectorAll('.cmp-tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.cmp-pane').forEach(p => p.style.display = 'none');
+  document.getElementById('cmp-' + tab).style.display = '';
+}
+</script>
 
 <!-- ── HOW IT WORKS ─────────────────────────────────── -->
 <div class="how-it-works">
@@ -1261,10 +1411,18 @@ img { max-width: 100%; }
   <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;max-width:900px;margin:0 auto">
     <?php
     $audiences = [
-      ['🏠', 'Laundry Rumahan', 'Baru mulai atau masih kecil? LAMASY justru ideal untuk Anda. Setup 10 menit, langsung produktif.'],
-      ['🏪', 'Outlet 1-5 Cabang', 'Kelola semua cabang dari satu dashboard. Tidak perlu WhatsApp bolak-balik ke masing-masing cabang.'],
-      ['🏢', 'Waralaba Laundry', 'Standarisasi operasional dan pantau performa seluruh mitra dari satu pusat kontrol.'],
-      ['📈', 'Yang Ingin Berkembang', 'Punya target buka cabang baru? LAMASY siap scale bersama bisnis Anda tanpa migrasi sistem.'],
+      ['🏠', 'Laundry Rumahan',
+       'Baru mulai atau masih kecil? Justru ideal untuk Anda. Setup 10 menit, langsung produktif. Trial gratis 7 hari untuk pastikan cocok dulu.'],
+      ['🏪', 'Outlet 1-5 Cabang',
+       'Kelola semua cabang dari satu dashboard HQ. Tidak perlu WhatsApp bolak-balik ke masing-masing cabang — semua data terpusat real-time.'],
+      ['🏢', 'Waralaba & Franchise',
+       'Standarisasi operasional di semua mitra. Pantau performa per-cabang, mutasi karyawan antar-outlet, audit log lintas-lokasi.'],
+      ['🏨', 'Laundry yang Layani B2B',
+       'Layani hotel, kost, restoran, atau apartemen? Fitur Piutang B2B, invoice formal, reminder WA otomatis — cashflow korporat tetap lancar.'],
+      ['📥', 'Migrasi dari Aplikasi Lama',
+       'Sudah pakai Excel atau aplikasi lain tapi merasa terbatas? AI Migration Mapper bantu pindah data otomatis. Tidak perlu input ulang manual.'],
+      ['📈', 'Yang Ingin Berkembang',
+       'Punya target buka cabang baru atau scale? Pricing pay-per-use, multi-outlet ready, dan AI insight bantu identifikasi peluang ekspansi.'],
     ];
     foreach ($audiences as [$icon, $title, $desc]):
     ?>
@@ -1356,49 +1514,6 @@ img { max-width: 100%; }
     </a>
   </div>
 
-  <!-- Coin transparency -->
-  <div style="max-width:880px;margin:0 auto;">
-    <div style="text-align:center;margin-bottom:20px;">
-      <div style="display:inline-block;background:rgba(53,232,213,.08);color:#35E8D5;
-                  padding:4px 12px;border-radius:6px;font-size:11px;font-weight:700;
-                  letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px;">
-        Transparansi Coin
-      </div>
-      <h3 style="font-size:22px;font-weight:700;color:#fff;margin-bottom:8px;">Tahu Persis Setiap Coin Dipakai untuk Apa</h3>
-      <p style="font-size:14px;color:rgba(255,255,255,.55);max-width:560px;margin:0 auto;">
-        Tidak ada biaya tersembunyi. Setiap fitur premium punya harga coin yang jelas — kamu yang putuskan mau pakai atau skip.
-      </p>
-    </div>
-
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;">
-      <?php
-      $coinExamples = [
-        ['📄', 'Generate Nota Termal',  '50 coin',  'per cetak'],
-        ['📱', 'WA Notif Status Order', '50 coin',  'per kirim'],
-        ['📱', 'WA Nota PDF Lengkap',   '100 coin', 'per kirim'],
-        ['🤖', 'AI Briefing Harian',    '500 coin', 'per outlet/hari'],
-        ['🤖', 'AI Chat dengan Data',   '50 coin',  'per pertanyaan'],
-        ['📤', 'Export Laporan PDF',    '200 coin', 'per export'],
-      ];
-      foreach ($coinExamples as [$ico, $nama, $coin, $unit]):
-      ?>
-        <div style="background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.06);
-                    border-radius:10px;padding:14px 16px;display:flex;align-items:center;gap:12px;">
-          <div style="font-size:24px;flex-shrink:0;"><?= $ico ?></div>
-          <div style="flex:1;min-width:0;">
-            <div style="font-size:13px;font-weight:600;color:#fff;"><?= htmlspecialchars($nama) ?></div>
-            <div style="font-size:11px;color:rgba(255,255,255,.45);"><?= htmlspecialchars($unit) ?></div>
-          </div>
-          <div style="font-size:13px;font-weight:700;color:#FCD34D;font-family:var(--mono);white-space:nowrap;"><?= $coin ?></div>
-        </div>
-      <?php endforeach; ?>
-    </div>
-
-    <p style="text-align:center;margin-top:18px;font-size:12px;color:rgba(255,255,255,.4);">
-      *Contoh harga. Lihat semua harga fitur di dashboard kamu setelah login. Harga bisa berubah, dan setiap perubahan tercatat di history transparan.
-    </p>
-  </div>
-
   <!-- Topup Pack Example -->
   <div style="max-width:720px;margin:36px auto 0;background:rgba(255,255,255,.025);
               border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:20px 24px;text-align:center;">
@@ -1468,6 +1583,66 @@ img { max-width: 100%; }
           <div>
             <div class="testi-name">Dewi Kusuma</div>
             <div class="testi-role" style="color:#C4B5FD;">Owner Kilat Bersih Laundry, Bandung — <em>pengguna fitur AI</em></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="testi-card">
+        <div class="testi-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+        <div class="testi-text">"Saya khusus layani hotel dan kost. Sebelumnya invoice harus bikin manual di Word, sekarang tinggal klik dari LAMASY langsung kirim WA ke marketing hotel. Piutang juga ada alert otomatis — sudah 6 bulan nggak ada yang lolos lagi."</div>
+        <div class="testi-author">
+          <div class="testi-avatar">&#x1F464;</div>
+          <div>
+            <div class="testi-name">Pak Agus Suryanto</div>
+            <div class="testi-role">Owner Prima B2B Laundry, Tangerang</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="testi-card">
+        <div class="testi-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+        <div class="testi-text">"Baru buka outlet pertama 3 bulan lalu. Trial 7 hari cukup bikin saya yakin pakai LAMASY. Tidak ada langganan bulanan yang mencekik — cocok untuk yang baru mulai dan masih hitung-hitungan biaya operasional."</div>
+        <div class="testi-author">
+          <div class="testi-avatar">&#x1F464;</div>
+          <div>
+            <div class="testi-name">Sari Nuraini</div>
+            <div class="testi-role">Owner Wangi Laundry, Yogyakarta</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="testi-card">
+        <div class="testi-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+        <div class="testi-text">"Migrasi dari aplikasi lama saya tadinya stress mikirin input ulang data 800 pelanggan. AI Migration Mapper-nya bantu auto-map kolom Excel ekspor saya, semua data masuk rapi. Tim support juga ramah banget waktu setup."</div>
+        <div class="testi-author">
+          <div class="testi-avatar">&#x1F464;</div>
+          <div>
+            <div class="testi-name">Pak Andi Pratama</div>
+            <div class="testi-role">Owner Bersih Express, Bekasi</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="testi-card">
+        <div class="testi-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+        <div class="testi-text">"Fitur laporan keuangan SAK EMKM ini game changer. Dulu saya bayar akuntan freelance Rp 500rb/bulan untuk bikin laporan formal. Sekarang tinggal export PDF, beres. Tahun ini sudah lapor pajak pakai laporan LAMASY langsung."</div>
+        <div class="testi-author">
+          <div class="testi-avatar">&#x1F464;</div>
+          <div>
+            <div class="testi-name">Ibu Lina Setiawati</div>
+            <div class="testi-role">Owner Bersih Wangi Laundry, Malang</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="testi-card" style="border-color:rgba(139,92,246,.25);background:rgba(139,92,246,.05);">
+        <div class="testi-stars" style="color:#C4B5FD;">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+        <div class="testi-text">"AI Chat-nya saya pakai tiap mau presentasi ke investor. Tinggal tanya 'omzet 6 bulan terakhir dibandingkan tahun lalu' — langsung dapat angka dan AI ngasih insight. Tidak perlu lagi staf saya bikin chart manual di Excel."</div>
+        <div class="testi-author">
+          <div class="testi-avatar" style="background:rgba(139,92,246,.2);border-color:rgba(139,92,246,.3);">&#x1F464;</div>
+          <div>
+            <div class="testi-name">Hadi Wibowo</div>
+            <div class="testi-role" style="color:#C4B5FD;">Founder Kilau Network (12 outlet) — <em>pengguna fitur AI</em></div>
           </div>
         </div>
       </div>
