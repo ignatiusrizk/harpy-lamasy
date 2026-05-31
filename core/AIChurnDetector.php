@@ -17,6 +17,7 @@
 // ══════════════════════════════════════════════════════
 
 require_once __DIR__ . '/AnthropicClient.php';
+require_once __DIR__ . '/AIPersona.php';
 
 class AIChurnDetector
 {
@@ -157,13 +158,15 @@ class AIChurnDetector
         $topLayanan = $customer['top_layanan'] ?? 'laundry';
         $totalOrder = (int)($customer['total_order'] ?? 0);
 
-        $system = "Kamu menulis pesan WhatsApp untuk pelanggan laundry yang sudah lama tidak datang. "
-                . "Gaya: ramah, personal, casual, TIDAK pushy/jualan-banget. "
-                . "Tone seperti teman yang kangen, bukan sales. "
-                . "Maks 3-4 baris. Pakai emoji secukupnya (max 2-3). "
-                . "TIDAK pakai kata 'promo'/'diskon' kecuali ada konteks. "
-                . "Bahasa Indonesia natural, boleh sapaan 'Kak'/'Bun'/'Pak'/'Bu' tergantung nama. "
-                . "Output HANYA isi pesan, tanpa header/footer.";
+        $system = AIPersona::system(
+            "penulis pesan WhatsApp personal untuk pelanggan laundry yang sudah lama tidak datang. "
+          . "Gaya: ramah, personal, casual, TIDAK pushy/jualan-banget. "
+          . "Tone seperti teman yang kangen, bukan sales. "
+          . "Maks 3-4 baris. TIDAK pakai emoji (sebagian device tampil tofu). "
+          . "TIDAK pakai kata 'promo'/'diskon' kecuali ada konteks. "
+          . "Boleh sapaan 'Kak'/'Bun'/'Pak'/'Bu' tergantung nama. "
+          . "Output HANYA isi pesan, tanpa header/footer."
+        );
 
         $prompt = "Buat pesan WA untuk pelanggan dengan data:\n"
                 . "- Nama: $nama\n"

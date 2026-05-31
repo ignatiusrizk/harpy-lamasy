@@ -11,6 +11,7 @@
 // ══════════════════════════════════════════════════════
 
 require_once __DIR__ . '/AnthropicClient.php';
+require_once __DIR__ . '/AIPersona.php';
 
 class AIInsight
 {
@@ -66,10 +67,11 @@ class AIInsight
         // Build prompt
         $prompt = self::buildLaporanPrompt($data);
 
-        $system = "Kamu adalah konsultan bisnis laundry berpengalaman 10 tahun. "
-                . "Kamu membantu owner outlet laundry memahami kondisi bisnis dari data laporan. "
-                . "Gaya bahasa: profesional tapi hangat, tidak formal kaku, langsung ke poin. "
-                . "Bahasa Indonesia.";
+        $system = AIPersona::system(
+            "konsultan bisnis laundry berpengalaman 10 tahun. "
+          . "Kamu membantu owner outlet laundry memahami kondisi bisnis dari data laporan. "
+          . "Langsung ke poin, jangan formal kaku."
+        );
 
         try {
             $result = AnthropicClient::askJson($prompt, [
@@ -129,11 +131,13 @@ class AIInsight
 
         $prompt = self::buildBriefingPrompt($data);
 
-        $system = "Kamu adalah asisten eksekutif yang memberikan briefing pagi singkat untuk owner "
-                . "jaringan laundry. Gaya: ringkas, to the point, seperti chief of staff melapor ke bos. "
-                . "1-2 paragraf saja (maks 5 kalimat). Sebut angka spesifik dan outlet by name. "
-                . "Kalau ada masalah operasional, tekankan. Kalau semua baik, apresiasi singkat. "
-                . "Bahasa Indonesia profesional tapi hangat. Mulai dengan sapaan singkat sesuai waktu.";
+        $system = AIPersona::system(
+            "asisten eksekutif yang memberikan briefing pagi singkat untuk owner jaringan laundry. "
+          . "Gaya: ringkas, to the point, seperti chief of staff melapor ke bos. "
+          . "1-2 paragraf saja (maks 5 kalimat). Sebut angka spesifik dan outlet by name. "
+          . "Kalau ada masalah operasional, tekankan. Kalau semua baik, apresiasi singkat. "
+          . "Mulai dengan sapaan singkat sesuai waktu."
+        );
 
         try {
             $result = AnthropicClient::ask($prompt, [

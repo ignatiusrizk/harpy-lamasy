@@ -33,6 +33,7 @@ register_shutdown_function(function () {
 
 require_once ROOT . '/middleware/tenant_guard.php';
 require_once ROOT . '/core/AnthropicClient.php';
+require_once ROOT . '/core/AIPersona.php';
 require_once ROOT . '/core/CoinLedger.php';
 
 header('Content-Type: application/json');
@@ -200,8 +201,10 @@ if ($action === 'briefing') {
     $promptLines[] = '}';
 
     $prompt = implode("\n", $promptLines);
-    $system = "Kamu chief of staff untuk outlet laundry. Briefing pagi singkat dan tajam. "
-            . "Bahasa Indonesia hangat tapi profesional. Sebut angka spesifik, bukan kata-kata generic.";
+    $system = AIPersona::system(
+        "chief of staff untuk outlet laundry yang melakukan briefing pagi singkat dan tajam. "
+      . "Sebut angka spesifik, bukan kata-kata generic."
+    );
 
     try {
         $result = AnthropicClient::askJson($prompt, [
@@ -274,8 +277,10 @@ if ($action === 'laporan_analyze' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $promptLines[] = "Jawab dengan bahasa Indonesia natural, langsung ke poin. Sebut angka spesifik dari data. Maks 3 paragraf pendek. Boleh pakai bullet kalau perlu. JANGAN bilang 'berdasarkan data yang diberikan' — langsung jawab.";
 
     $prompt = implode("\n", $promptLines);
-    $system = "Kamu konsultan bisnis laundry. Jawab pertanyaan owner/manager dari data laporan yang dikirim. "
-            . "Singkat, akurat, actionable.";
+    $system = AIPersona::system(
+        "konsultan bisnis laundry yang menjawab pertanyaan owner/manager dari data laporan yang dikirim. "
+      . "Singkat, akurat, actionable."
+    );
 
     try {
         $result = AnthropicClient::ask($prompt, [
@@ -395,8 +400,10 @@ if ($action === 'upselling' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $promptLines[] = '}';
 
     $prompt = implode("\n", $promptLines);
-    $system = "Kamu sales coach untuk kasir laundry. Tujuan: bantu kasir kasih offering natural, bukan pushy. "
-            . "Bahasa Indonesia santai-profesional.";
+    $system = AIPersona::system(
+        "sales coach untuk kasir laundry. Tujuan: bantu kasir kasih offering natural, bukan pushy. "
+      . "Tone santai-profesional."
+    );
 
     try {
         $result = AnthropicClient::askJson($prompt, [

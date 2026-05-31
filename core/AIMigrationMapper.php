@@ -107,6 +107,7 @@ class AIMigrationMapper
         // 2. Pastikan ada AnthropicClient
         if (!class_exists('AnthropicClient')) {
             require_once dirname(__FILE__) . '/AnthropicClient.php';
+            require_once dirname(__FILE__) . '/AIPersona.php';
         }
 
         $schema    = self::SCHEMAS[$entityType] ?? [];
@@ -115,9 +116,10 @@ class AIMigrationMapper
         // Required fields untuk konteks AI
         $requiredList = implode(', ', array_keys(array_filter($schema, fn($f) => $f['required'])));
 
-        $systemPrompt = 'Kamu adalah asisten migrasi data sistem laundry LaMaSy. '
-            . 'Tugas kamu memetakan kolom dari file yang diupload ke schema target. '
-            . 'Selalu respond dengan JSON valid saja — tidak ada teks lain.';
+        $systemPrompt = AIPersona::system(
+            'asisten migrasi data yang memetakan kolom dari file upload ke schema target. '
+          . 'Selalu respond dengan JSON valid saja — tidak ada teks lain.'
+        );
 
         $prompt = "File data laundry ini memiliki kolom-kolom berikut:\n"
             . "Headers: " . implode(', ', array_map(fn($h) => "\"$h\"", $headers)) . "\n\n"

@@ -19,6 +19,7 @@
 // ══════════════════════════════════════════════════════
 
 require_once __DIR__ . '/AnthropicClient.php';
+require_once __DIR__ . '/AIPersona.php';
 
 class AIChatData
 {
@@ -50,6 +51,13 @@ class AIChatData
         '/\bbenchmark\s*\(/i',
         '/\bsleep\s*\(/i',
         '/--|#|\/\*/',  // SQL comments — bisa dipakai bypass, ban
+
+        // ── Defense in depth: block kolom & pola sensitif ──
+        '/\bpassword(_hash)?\b/i',           // hl_users.password, password_hash
+        '/\bremember_token\b/i',             // session/auth token kalau ada
+        '/\bapi_key\b/i',                    // API keys kalau pernah ada
+        '/\bsecret(_key)?\b/i',              // generic secrets
+        '/SELECT\s+\*\s+FROM\s+hl_users\b/i', // wajib eksplisit, jangan SELECT *
     ];
 
     /**
@@ -80,7 +88,8 @@ hl_layanan (master layanan)
   - id, tenant_id, outlet_id (NULL = global), nama, harga, satuan
 
 hl_users (karyawan)
-  - id, tenant_id, nama, email, role
+  - Kolom queryable: id, tenant_id, nama, email, role, jabatan, telepon, tgl_masuk, is_active
+  - DILARANG: password, password_hash (sensitif — block by server)
   - Untuk outlet assignment, JOIN ke hl_karyawan_outlet
 
 hl_kas (cashflow)
@@ -158,9 +167,7 @@ SCHEMA;
     /** Step 1: generate SQL */
     private static function generateSql(string $question): string
     {
-        $system = "Kamu adalah SQL generator yang ketat. Output HANYA query SQL valid MariaDB, "
-                . "tanpa penjelasan, tanpa markdown fence. Mulai dengan SELECT.\n\n"
-                . self::getSchemaContext();
+        $system = AIPersona::sqlGenerator(self::getSchemaContext());
 
         $prompt = "Pertanyaan user (Bahasa Indonesia): \"$question\"\n\n"
                 . "Generate 1 query SQL untuk menjawab pertanyaan ini. "
@@ -275,9 +282,11 @@ SCHEMA;
         $rowCount = count($rows);
         $sample = array_slice($rows, 0, 20); // first 20 rows untuk context AI
 
-        $system = "Kamu menjelaskan hasil query SQL ke user dalam Bahasa Indonesia yang natural. "
-                . "Jangan tampilkan SQL atau jargon teknis. Jawab langsung ke pertanyaan, singkat dan padat. "
-                . "Sebut angka spesifik. Kalau hasilnya 0 baris atau kosong, bilang dengan ramah.";
+        $system = AIPersona::system(
+            "asisten data yang menjelaskan hasil query ke user dalam bahasa natural. "
+          . "Jangan tampilkan SQL atau jargon teknis. Jawab langsung ke pertanyaan, singkat dan padat. "
+          . "Sebut angka spesifik. Kalau hasilnya 0 baris atau kosong, bilang dengan ramah."
+        );
 
         $prompt = "Pertanyaan user: \"$question\"\n\n"
                 . "Hasil query ($rowCount baris):\n"
