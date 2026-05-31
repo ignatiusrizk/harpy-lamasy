@@ -1172,11 +1172,6 @@ img { max-width: 100%; }
       <h3>Piutang B2B &amp; Korporat</h3>
       <p>Layani hotel, kost, restoran dengan kategori bulanan. Generate invoice formal, kirim reminder WA otomatis, alert piutang yang jatuh tempo — cashflow nggak bocor.</p>
     </div>
-    <div class="feature-card">
-      <span class="feature-icon">📋</span>
-      <h3>Audit Log Lengkap</h3>
-      <p>Siapa, kapan, dan apa yang berubah — semua tertrack. Penting untuk multi-outlet/karyawan: bisa cek edit order siapa, hapus data siapa, kapan terjadi.</p>
-    </div>
   </div>
 
   <!-- ── Group: WhatsApp & Pelanggan ─────────────── -->
@@ -1236,8 +1231,8 @@ img { max-width: 100%; }
   <div class="features-grid" style="max-width:1080px;margin:0 auto;">
     <div class="feature-card">
       <span class="feature-icon">🏢</span>
-      <h3>Multi-Outlet HQ Dashboard</h3>
-      <p>Owner 2+ outlet dapat dashboard HQ otomatis — konsolidasi omzet semua outlet, drilldown per outlet, transfer coin antar-outlet, mutasi karyawan, laporan lintas-outlet.</p>
+      <h3>Multi-Outlet HQ + Audit Log</h3>
+      <p>Owner 2+ outlet dapat dashboard HQ otomatis — konsolidasi omzet, drilldown per outlet, transfer coin antar-outlet, mutasi karyawan. Plus audit log lintas-outlet: siapa edit/hapus apa, kapan terjadi.</p>
     </div>
     <div class="feature-card">
       <span class="feature-icon">🤝</span>
@@ -1514,23 +1509,6 @@ function switchCmpTab(tab, btn) {
     </a>
   </div>
 
-  <!-- Topup Pack Example -->
-  <div style="max-width:720px;margin:36px auto 0;background:rgba(255,255,255,.025);
-              border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:20px 24px;text-align:center;">
-    <div style="font-size:12px;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;">Topup Coin (kapan saja)</div>
-    <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap;font-size:13px;color:rgba(255,255,255,.8);">
-      <span><strong>Rp 50.000</strong> → 10.000 coin</span>
-      <span style="opacity:.4;">·</span>
-      <span><strong>Rp 100.000</strong> → 22.000 coin <span style="color:#86EFAC;font-size:11px;">+10%</span></span>
-      <span style="opacity:.4;">·</span>
-      <span><strong>Rp 250.000</strong> → 60.000 coin <span style="color:#86EFAC;font-size:11px;">+20%</span></span>
-      <span style="opacity:.4;">·</span>
-      <span><strong>Rp 500.000</strong> → 130.000 coin <span style="color:#86EFAC;font-size:11px;">+30%</span></span>
-    </div>
-    <div style="margin-top:10px;font-size:11px;color:rgba(255,255,255,.4);">
-      Coin tidak ada masa berlaku. Berhenti pakai? Coin tetap tersimpan sampai kamu aktif lagi.
-    </div>
-  </div>
 </section>
 
 <!-- ── TESTIMONIALS ─────────────────────────────────── -->
