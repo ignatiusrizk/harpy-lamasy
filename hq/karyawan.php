@@ -315,8 +315,9 @@ if ($action) {
     if ($action === 'add_assignment' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         $d = json_decode(file_get_contents('php://input'), true);
         verifyCsrf();
-        $kid = (int)($d['karyawan_id'] ?? 0);
-        $oid = (int)($d['outlet_id']   ?? 0);
+        $kid  = (int)($d['karyawan_id'] ?? 0);
+        $oid  = (int)($d['outlet_id']   ?? 0);
+        $note = trim(strip_tags($d['notes'] ?? ''));
         if (!$kid || !$oid) { echo json_encode(['error'=>'Data invalid']); exit; }
 
         $vK = $db->prepare("SELECT id FROM hl_users WHERE id=? AND tenant_id=?");
@@ -337,16 +338,22 @@ if ($action) {
             $ex->execute([$tid, $kid, $oid]);
             if ($exId = $ex->fetchColumn()) {
                 $db->prepare("UPDATE hl_karyawan_outlet
-                                 SET is_active=1, assigned_at=NOW(), unassigned_at=NULL, assigned_by=?
+                                 SET is_active=1, assigned_at=NOW(), unassigned_at=NULL,
+                                     assigned_by=?, notes=CONCAT(COALESCE(notes,''),' | Assign ulang: ',?)
                                WHERE id=?")
-                   ->execute([$uid, $exId]);
+                   ->execute([$uid, $note, $exId]);
             } else {
                 $db->prepare("INSERT INTO hl_karyawan_outlet
-                                (tenant_id, karyawan_id, outlet_id, is_active, assigned_at, assigned_by)
-                              VALUES (?,?,?,1,NOW(),?)")
-                   ->execute([$tid, $kid, $oid, $uid]);
+                                (tenant_id, karyawan_id, outlet_id, is_active, assigned_at, assigned_by, notes)
+                              VALUES (?,?,?,1,NOW(),?,?)")
+                   ->execute([$tid, $kid, $oid, $uid, $note]);
             }
-            hqAudit($db, $tid, $uid, 'add_assignment', "karyawan=$kid outlet=$oid");
+
+            // Update primary outlet (default login) — konsisten dengan flow mutasi
+            $db->prepare("UPDATE hl_users SET outlet_id=? WHERE id=? AND tenant_id=?")
+               ->execute([$oid, $kid, $tid]);
+
+            hqAudit($db, $tid, $uid, 'add_assignment', "karyawan=$kid outlet=$oid note=$note");
             echo json_encode(['success'=>true]);
         } catch (Throwable $e) {
             error_log('[hq add_assignment] '.$e->getMessage());
@@ -623,11 +630,11 @@ require __DIR__ . '/_layout_open.php';
   <div class="modal" id="detailContent"></div>
 </div>
 
-<!-- Mutasi Modal -->
+<!-- Mutasi / Assign Modal (auto-switch) -->
 <div class="modal-backdrop" id="mutasiModal" onclick="if(event.target===this)closeModal('mutasiModal')">
   <div class="modal">
     <div class="modal-header">
-      <div class="modal-title">🔄 Mutasi Karyawan</div>
+      <div class="modal-title" id="mutModalTitle">🔄 Mutasi Karyawan</div>
       <button class="modal-close" onclick="closeModal('mutasiModal')">×</button>
     </div>
     <div id="mutasiAlert"></div>
@@ -637,12 +644,12 @@ require __DIR__ . '/_layout_open.php';
         <input type="text" id="mutKaryawanName" readonly style="background:#F9FAFB">
         <input type="hidden" id="mutKaryawanId">
       </div>
-      <div>
+      <div id="mutFromWrap">
         <label>Dari Outlet</label>
         <select id="mutFrom"></select>
       </div>
       <div>
-        <label>Ke Outlet</label>
+        <label id="mutToLabel">Ke Outlet</label>
         <select id="mutTo"></select>
       </div>
       <div>
@@ -656,7 +663,7 @@ require __DIR__ . '/_layout_open.php';
         <label>Catatan / Alasan</label>
         <textarea id="mutNotes" rows="2" placeholder="cth: rotasi tim, kebutuhan operasional, request karyawan…"></textarea>
       </div>
-      <button class="btn btn-primary" style="padding:12px;font-size:14px" onclick="submitMutasi()">
+      <button class="btn btn-primary" id="mutSubmitBtn" style="padding:12px;font-size:14px" onclick="submitMutasi()">
         ✓ Konfirmasi Mutasi
       </button>
     </div>
@@ -1017,6 +1024,8 @@ async function toggleActive(id, nama, activate){
   loadList();
 }
 
+let mutMode = 'mutasi'; // 'mutasi' atau 'assign' — auto-detect dari assignments
+
 function openMutasi(id, nama, currentAssignments){
   document.getElementById('mutKaryawanId').value = id;
   document.getElementById('mutKaryawanName').value = nama;
@@ -1024,13 +1033,31 @@ function openMutasi(id, nama, currentAssignments){
   document.getElementById('mutTanggal').value = new Date().toISOString().slice(0,10);
   document.getElementById('mutasiAlert').innerHTML = '';
 
-  // Populate FROM dropdown (from current assignments)
-  const fromSel = document.getElementById('mutFrom');
-  fromSel.innerHTML = currentAssignments.length === 0
-    ? '<option value="">(belum ditugaskan ke outlet apapun)</option>'
-    : currentAssignments.map(a => `<option value="${a.outlet_id}">${escapeHtml(a.nama_outlet)}</option>`).join('');
+  // Auto-switch mode: kalau belum ada outlet → mode ASSIGN, kalau sudah → MUTASI
+  mutMode = (currentAssignments.length === 0) ? 'assign' : 'mutasi';
 
-  // Populate TO dropdown (all outlets)
+  const titleEl   = document.getElementById('mutModalTitle');
+  const fromWrap  = document.getElementById('mutFromWrap');
+  const toLabel   = document.getElementById('mutToLabel');
+  const submitBtn = document.getElementById('mutSubmitBtn');
+
+  if (mutMode === 'assign') {
+    titleEl.textContent   = '📍 Assign Karyawan ke Outlet';
+    fromWrap.style.display = 'none';                              // Sembunyikan "Dari Outlet"
+    toLabel.textContent   = 'Tugaskan ke Outlet';
+    submitBtn.innerHTML   = '✓ Konfirmasi Assign';
+  } else {
+    titleEl.textContent   = '🔄 Mutasi Karyawan';
+    fromWrap.style.display = '';
+    toLabel.textContent   = 'Ke Outlet';
+    submitBtn.innerHTML   = '✓ Konfirmasi Mutasi';
+
+    // Populate FROM dropdown (only when mutasi mode)
+    document.getElementById('mutFrom').innerHTML =
+      currentAssignments.map(a => `<option value="${a.outlet_id}">${escapeHtml(a.nama_outlet)}</option>`).join('');
+  }
+
+  // Populate TO dropdown (all outlets) — sama untuk kedua mode
   const allOutlets = <?= json_encode($outletList) ?>;
   document.getElementById('mutTo').innerHTML = allOutlets
     .map(o => `<option value="${o.id}">${escapeHtml(o.nama_outlet)}</option>`).join('');
@@ -1041,12 +1068,34 @@ function openMutasi(id, nama, currentAssignments){
 async function submitMutasi(){
   const alertEl = document.getElementById('mutasiAlert');
   alertEl.innerHTML = '';
+
+  const karyawanId = document.getElementById('mutKaryawanId').value;
+  const toOutletId = document.getElementById('mutTo').value;
+  const notes      = document.getElementById('mutNotes').value;
+
+  if (!toOutletId) { alertEl.innerHTML = '<div class="alert error">Pilih outlet tujuan</div>'; return; }
+
+  // ── ASSIGN mode: karyawan belum punya outlet ──
+  if (mutMode === 'assign') {
+    const r = await fetch('/hq/karyawan.php?action=add_assignment', {
+      method:'POST',
+      headers:{'Content-Type':'application/json','X-CSRF-TOKEN':csrf},
+      body: JSON.stringify({ karyawan_id: karyawanId, outlet_id: toOutletId, notes: notes }),
+    });
+    const j = await r.json();
+    if (j.error) { alertEl.innerHTML = '<div class="alert error">'+escapeHtml(j.error)+'</div>'; return; }
+    alertEl.innerHTML = '<div class="alert success">✓ Karyawan berhasil di-assign ke outlet</div>';
+    setTimeout(() => { closeModal('mutasiModal'); loadList(); }, 800);
+    return;
+  }
+
+  // ── MUTASI mode: dari outlet A ke outlet B ──
   const data = {
-    karyawan_id: document.getElementById('mutKaryawanId').value,
+    karyawan_id: karyawanId,
     from_outlet_id: document.getElementById('mutFrom').value,
-    to_outlet_id: document.getElementById('mutTo').value,
+    to_outlet_id: toOutletId,
     tanggal_efektif: document.getElementById('mutTanggal').value,
-    notes: document.getElementById('mutNotes').value,
+    notes: notes,
   };
   if (!data.from_outlet_id) { alertEl.innerHTML = '<div class="alert error">Pilih outlet asal</div>'; return; }
   if (data.from_outlet_id === data.to_outlet_id) { alertEl.innerHTML = '<div class="alert error">Outlet asal dan tujuan tidak boleh sama</div>'; return; }
