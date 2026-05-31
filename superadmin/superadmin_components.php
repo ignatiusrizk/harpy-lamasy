@@ -408,6 +408,9 @@ function saRenderNav(string $activePage = '', string $pageTitle = ''): void {
         <a href="/superadmin/coin_pricing.php" class="sa-nav-link <?= $activePage === 'coin_pricing' ? 'active' : '' ?>">
           <span class="icon">💲</span> Coin Pricing
         </a>
+        <a href="/superadmin/ai_usage.php" class="sa-nav-link <?= $activePage === 'ai_usage' ? 'active' : '' ?>">
+          <span class="icon">🤖</span> AI Usage & Margin
+        </a>
         <div class="sa-nav-section">Support</div>
         <a href="/superadmin/support.php" class="sa-nav-link <?= $activePage === 'support' ? 'active' : '' ?>">
           <span class="icon">🎧</span> Tiket Support

@@ -35,6 +35,7 @@ require_once ROOT . '/middleware/tenant_guard.php';
 require_once ROOT . '/core/AnthropicClient.php';
 require_once ROOT . '/core/AIPersona.php';
 require_once ROOT . '/core/CoinLedger.php';
+require_once ROOT . '/core/AIBudget.php';
 
 header('Content-Type: application/json');
 
@@ -107,6 +108,9 @@ if ($action === 'briefing') {
     if (!CoinLedger::canAfford('ai_briefing_hq')) {
         ai_err('Coin tidak cukup untuk AI Briefing (butuh '.CoinLedger::getHarga('ai_briefing_hq').' coin)');
     }
+    // Cek daily AI budget per tenant
+    try { AIBudget::checkOrThrow($tid, 'ai_briefing_hq'); }
+    catch (RuntimeException $e) { ai_err($e->getMessage()); }
 
     // ── Kumpul data hari ini ──
     try {
@@ -230,6 +234,10 @@ if ($action === 'briefing') {
 
     // Deduct coin & cache
     CoinLedger::deduct('ai_briefing_hq', 'briefing_'.$today);
+    AIBudget::record($tid, $oid, 'ai_briefing_hq',
+        $result['tokens_in'], $result['tokens_out'],
+        CoinLedger::getHarga('ai_briefing_hq'),
+        $result['model'] ?? null, false);
     ai_cache_put($tid, $oid, $key, $output, $result['tokens_in'], $result['tokens_out'], 24);
     if (function_exists('logAudit')) logAudit('ai_briefing', 'dashboard', 'Outlet briefing '.$today);
 
@@ -250,6 +258,8 @@ if ($action === 'laporan_analyze' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!CoinLedger::canAfford('ai_chat_data')) {
         ai_err('Coin tidak cukup (butuh '.CoinLedger::getHarga('ai_chat_data').' coin)');
     }
+    try { AIBudget::checkOrThrow($tid, 'ai_chat_data'); }
+    catch (RuntimeException $e) { ai_err($e->getMessage()); }
 
     $tipe    = (string)($body['tipe'] ?? 'harian');
     $periode = (string)($body['periode'] ?? '');
@@ -293,6 +303,10 @@ if ($action === 'laporan_analyze' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     CoinLedger::deduct('ai_chat_data', 'laporan_chat');
+    AIBudget::record($tid, $oid, 'ai_chat_data',
+        $result['tokens_in'], $result['tokens_out'],
+        CoinLedger::getHarga('ai_chat_data'),
+        $result['model'] ?? null, false);
     if (function_exists('logAudit')) logAudit('ai_chat', 'laporan', mb_substr($pertanyaan, 0, 80));
 
     ai_ok([
@@ -323,6 +337,9 @@ if ($action === 'upselling' && $_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (!CoinLedger::canAfford('ai_upselling')) {
         ai_err('Coin tidak cukup (butuh '.CoinLedger::getHarga('ai_upselling').' coin)');
+    }
+    try { AIBudget::checkOrThrow($tid, 'ai_upselling'); }
+    catch (RuntimeException $e) { ai_err($e->getMessage());
     }
 
     // Ambil profil + history
@@ -426,6 +443,10 @@ if ($action === 'upselling' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     ];
 
     CoinLedger::deduct('ai_upselling', 'upsell_p'.$pid);
+    AIBudget::record($tid, $oid, 'ai_upselling',
+        $result['tokens_in'], $result['tokens_out'],
+        CoinLedger::getHarga('ai_upselling'),
+        $result['model'] ?? null, false);
     ai_cache_put($tid, $oid, $key, $output, $result['tokens_in'], $result['tokens_out'], 24);
     if (function_exists('logAudit')) logAudit('ai_upselling', 'pelanggan#'.$pid, '');
 

@@ -98,6 +98,16 @@ class AIInsight
         // Simpan ke cache
         self::saveCache($tenantId, $outletId, $cacheKey, $output, $result['tokens_in'], $result['tokens_out']);
 
+        // Track usage untuk monitoring (best-effort)
+        if (class_exists('AIBudget')) {
+            try {
+                AIBudget::record($tenantId, $outletId, 'ai_insight_laporan',
+                    (int)$result['tokens_in'], (int)$result['tokens_out'],
+                    class_exists('CoinLedger') ? CoinLedger::getHarga('ai_insight_laporan') : 0,
+                    $result['model'] ?? null, false);
+            } catch (Throwable) {}
+        }
+
         return $output;
     }
 
@@ -159,6 +169,15 @@ class AIInsight
         ];
 
         self::saveCache($tenantId, null, $cacheKey, $output, $result['tokens_in'], $result['tokens_out']);
+
+        if (class_exists('AIBudget')) {
+            try {
+                AIBudget::record($tenantId, null, 'ai_briefing_hq',
+                    (int)$result['tokens_in'], (int)$result['tokens_out'],
+                    class_exists('CoinLedger') ? CoinLedger::getHarga('ai_briefing_hq') : 0,
+                    $result['model'] ?? null, false);
+            } catch (Throwable) {}
+        }
 
         return $output;
     }

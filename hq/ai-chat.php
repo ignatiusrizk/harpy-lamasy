@@ -13,6 +13,7 @@ define('ROOT', dirname(__DIR__));
 require_once ROOT . '/middleware/hq_guard.php';
 require_once ROOT . '/core/AIChatData.php';
 require_once ROOT . '/core/CoinLedger.php';
+require_once ROOT . '/core/AIBudget.php';
 
 $db   = Database::get();
 $tid  = (int)$hqTenant['id'];
@@ -26,6 +27,8 @@ if ($action === 'ask' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         echo json_encode(['error' => 'Coin tidak cukup. Butuh 50 coin per pertanyaan.']);
         exit;
     }
+    try { AIBudget::checkOrThrow($tid, 'ai_chat_data'); }
+    catch (RuntimeException $e) { echo json_encode(['error' => $e->getMessage(), 'kind' => 'chat']); exit; }
 
     $question = trim($_POST['question'] ?? '');
     if (!$question) {
@@ -37,6 +40,13 @@ if ($action === 'ask' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         $result = AIChatData::ask($question, $tid);
 
         try { CoinLedger::deduct('ai_chat_data'); } catch (Throwable) {}
+        try {
+            AIBudget::record($tid, null, 'ai_chat_data',
+                (int)($result['tokens_used'] / 2),   // rough split if total only
+                (int)($result['tokens_used'] / 2),
+                CoinLedger::getHarga('ai_chat_data'),
+                'claude-sonnet-4-5', false);
+        } catch (Throwable) {}
         try { logAudit('ai_chat', 'data', "Tanya: " . substr($question, 0, 100)); } catch (Throwable) {}
 
         echo json_encode([
