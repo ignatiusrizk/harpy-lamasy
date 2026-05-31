@@ -10,9 +10,9 @@ date_default_timezone_set('Asia/Jakarta');
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<meta name="description" content="LAMASY — Laundry Management System by Harpy. Platform manajemen laundry modern. POS, laporan keuangan, manajemen karyawan, notifikasi WhatsApp, dan lebih banyak lagi."/>
-<meta name="keywords" content="software laundry, ERP laundry, aplikasi laundry, POS laundry, manajemen laundry"/>
-<title>LAMASY — Laundry Management System by Harpy</title>
+<meta name="description" content="LAMASY — ERP Laundry modern dengan AI terintegrasi. POS, Laporan Keuangan SAK EMKM, manajemen karyawan, integrasi WhatsApp lengkap. Trial 30 hari gratis, bayar sesuai pemakaian via Coin — tanpa langganan bulanan."/>
+<meta name="keywords" content="software laundry, ERP laundry, aplikasi laundry, POS laundry, manajemen laundry, AI laundry, laporan keuangan laundry, SAK EMKM laundry"/>
+<title>LAMASY — ERP Laundry Modern dengan AI Terintegrasi</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -876,11 +876,11 @@ img { max-width: 100%; }
   </div>
 
   <h1>ERP Laundry Modern dengan <span class="accent">Kecerdasan AI</span> Terintegrasi</h1>
-  <p class="hero-sub">Kelola order, karyawan, dan keuangan — sekarang diperkuat AI yang menganalisis data bisnis Anda otomatis setiap hari. Setup dalam hitungan menit.</p>
+  <p class="hero-sub">POS, laporan keuangan SAK EMKM, AI briefing harian, integrasi WhatsApp lengkap — semua dalam 1 platform. Bayar sesuai pemakaian, tanpa langganan bulanan yang mengikat.</p>
 
   <div class="hero-btns">
-    <a href="/register.php" class="btn-primary">&#128640; Coba Gratis 7 Hari</a>
-    <a href="#fitur" class="btn-secondary">&#9654; Lihat Demo</a>
+    <a href="/register.php" class="btn-primary">&#128640; Coba Gratis 30 Hari</a>
+    <a href="#fitur" class="btn-secondary">&#9654; Lihat Fitur</a>
   </div>
 
   <!-- Dashboard Mockup -->
@@ -952,8 +952,8 @@ img { max-width: 100%; }
 <div class="stats-bar">
   <div class="stats-inner">
     <div class="stat-item">
-      <div class="stat-num">500+</div>
-      <div class="stat-label">Outlet Aktif</div>
+      <div class="stat-num">30 Hari</div>
+      <div class="stat-label">Trial Gratis</div>
     </div>
     <div class="stat-item">
       <div class="stat-num">99.9%</div>
@@ -1113,40 +1113,70 @@ img { max-width: 100%; }
 <!-- ── FITUR ────────────────────────────────────────── -->
 <section class="section" id="fitur">
   <div class="section-header">
-    <div class="section-tag">Fitur Unggulan</div>
+    <div class="section-tag">Fitur Lengkap</div>
     <h2>Semua yang Anda Butuhkan dalam Satu Platform</h2>
-    <p>Dari kasir hingga laporan keuangan, dari absensi karyawan hingga notifikasi pelanggan — semua ada di LAMASY.</p>
+    <p>Dari kasir, laporan keuangan formal SAK EMKM, AI yang membantu pengambilan keputusan, sampai integrasi WhatsApp lengkap. Semua ada di LAMASY.</p>
   </div>
   <div class="features-grid">
     <div class="feature-card">
       <span class="feature-icon">🛒</span>
       <h3>POS & Order Management</h3>
-      <p>Kasir digital yang cepat dan mudah. Terima order, cetak nota, track status cucian secara real-time dari satu layar.</p>
+      <p>Kasir digital cepat — terima order, hitung diskon, redeem poin loyalty, cetak nota termal, dan kirim nota PDF via WA dalam 1 klik. Status cucian tertrack real-time.</p>
     </div>
     <div class="feature-card">
-      <span class="feature-icon">📊</span>
-      <h3>Laporan Keuangan Real-time</h3>
-      <p>Dashboard keuangan lengkap dengan grafik pendapatan harian, mingguan, dan bulanan. Ekspor laporan kapanpun.</p>
+      <span class="feature-icon">📒</span>
+      <h3>Laporan Keuangan SAK EMKM</h3>
+      <p>Laporan formal lengkap: Laba Rugi, Neraca, Arus Kas, dan Rasio Keuangan — siap pajak & investor. Otomatis dari data transaksi, tanpa perlu akuntan.</p>
     </div>
     <div class="feature-card">
       <span class="feature-icon">👥</span>
-      <h3>Manajemen Karyawan & Absensi</h3>
-      <p>Atur jadwal kerja, pantau absensi, hitung gaji otomatis, dan kelola performa karyawan dengan mudah.</p>
+      <h3>Karyawan, Absensi & Penggajian</h3>
+      <p>Multi-outlet assignment (Area Coordinator, perbantuan). Absensi digital, hitung gaji otomatis dari jam kerja, role & permission per posisi.</p>
     </div>
     <div class="feature-card">
-      <span class="feature-icon">💰</span>
-      <h3>Kas & Pembukuan Otomatis</h3>
-      <p>Catat pemasukan dan pengeluaran otomatis. Buku kas digital yang rapi, akurat, dan bisa diakses kapanpun.</p>
+      <span class="feature-icon">📱</span>
+      <h3>WhatsApp Terintegrasi</h3>
+      <p>Notif WA otomatis: nota saat order masuk, status cucian, reminder lunas, link tracking real-time untuk pelanggan. Plus WA blast & retensi pelanggan dormant.</p>
+    </div>
+    <div class="feature-card" style="border-color:rgba(139,92,246,.25);background:rgba(139,92,246,.04);">
+      <span class="feature-icon" style="color:#C4B5FD;">🤖</span>
+      <h3 style="color:#C4B5FD;">AI Briefing Harian</h3>
+      <p>Setiap pagi dapat ringkasan kondisi outlet — omzet kemarin, order belum bayar, anomali, peluang upselling. Owner cepat ambil keputusan tanpa scroll laporan.</p>
+    </div>
+    <div class="feature-card" style="border-color:rgba(139,92,246,.25);background:rgba(139,92,246,.04);">
+      <span class="feature-icon" style="color:#C4B5FD;">💬</span>
+      <h3 style="color:#C4B5FD;">AI Chat dengan Data Bisnis</h3>
+      <p>Tanya pakai bahasa natural: "top 5 pelanggan bulan ini" atau "omzet hari Sabtu vs Minggu". AI yang baca data laporan kamu, kasih jawaban langsung.</p>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">🏢</span>
+      <h3>Multi-Outlet HQ Dashboard</h3>
+      <p>Owner punya 2+ outlet? Dashboard HQ tunjukin omzet konsolidasi, drilldown per outlet, transfer coin antar-outlet, mutasi karyawan, audit log lengkap.</p>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">🤝</span>
+      <h3>Drop Point & Mitra Komisi</h3>
+      <p>Kerjasama dengan warung/toko sekitar jadi drop point. Hitung komisi otomatis (per-kg / persentase / kombinasi), rekap bulanan, bayar mitra tinggal klik.</p>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">💵</span>
+      <h3>Piutang B2B & Korporat</h3>
+      <p>Layani hotel, kost, restoran dengan kategori bulanan. Generate invoice formal, kirim reminder WA otomatis, alert piutang yang jatuh tempo — cashflow nggak bocor.</p>
     </div>
     <div class="feature-card">
       <span class="feature-icon">🎟️</span>
-      <h3>Promo & Voucher</h3>
-      <p>Buat promo diskon, voucher cashback, dan program loyalitas pelanggan untuk meningkatkan repeat order.</p>
+      <h3>Loyalty, Promo & Voucher</h3>
+      <p>Poin loyalty (earn & redeem), promo persen/nominal, voucher dengan kuota & expired. Bikin pelanggan datang lagi tanpa effort manual.</p>
     </div>
     <div class="feature-card">
-      <span class="feature-icon">🔔</span>
-      <h3>Notifikasi WhatsApp</h3>
-      <p>Kirim notifikasi WA otomatis ke pelanggan saat cucian siap. Teks dibuat AI — personal dan natural, bukan template kaku.</p>
+      <span class="feature-icon">🔍</span>
+      <h3>Tracking Order Publik</h3>
+      <p>Pelanggan cek status cucian via link unik (tanpa login). Mengurangi "kapan selesai kak?" di WA. Branded sesuai nama outlet kamu.</p>
+    </div>
+    <div class="feature-card" style="border-color:rgba(139,92,246,.25);background:rgba(139,92,246,.04);">
+      <span class="feature-icon" style="color:#C4B5FD;">📥</span>
+      <h3 style="color:#C4B5FD;">AI Migration dari Aplikasi Lama</h3>
+      <p>Pindah dari Excel atau aplikasi lain? Upload file lama, AI map kolom otomatis ke format LAMASY. Data pelanggan & transaksi historis langsung ke-import.</p>
     </div>
   </div>
 </section>
@@ -1205,7 +1235,7 @@ img { max-width: 100%; }
       <div class="step-card">
         <div class="step-num-wrap">1</div>
         <h3>Daftar Akun</h3>
-        <p>Isi form registrasi sederhana. Akun trial 7 hari langsung aktif. Tidak perlu kartu kredit, tidak ada komitmen.</p>
+        <p>Isi form registrasi sederhana. Akun trial 30 hari langsung aktif dengan 1.000 coin gratis. Tidak perlu kartu kredit.</p>
       </div>
       <div class="step-card">
         <div class="step-num-wrap">2</div>
@@ -1259,86 +1289,129 @@ img { max-width: 100%; }
 <section class="section" id="harga">
   <div class="section-header">
     <div class="section-tag">Harga</div>
-    <h2>Transparan, Tanpa Biaya Tersembunyi</h2>
-    <p>Mulai gratis 7 hari. Aktifkan dengan setup fee sekali bayar. Coin habis? Topup sesuai kebutuhan.</p>
+    <h2>Bayar Sesuai Pemakaian — Bukan Langganan Mengikat</h2>
+    <p>Tidak ada paket bertingkat. Tidak ada biaya bulanan wajib. Cuma <strong>1× setup fee per outlet</strong>, sisanya kamu yang kontrol via Coin sesuai pemakaian fitur.</p>
   </div>
 
-  <!-- Coin explanation -->
-  <div style="max-width:640px;margin:0 auto 36px;background:rgba(53,232,213,.05);
-              border:1px solid rgba(53,232,213,.15);border-radius:12px;padding:16px 20px;
-              font-size:13px;color:rgba(255,255,255,.65);line-height:1.7;text-align:center">
-    💡 <strong style="color:#35E8D5">Sistem Coin:</strong>
-    Bayar hanya untuk fitur yang kamu pakai — WA notifikasi, nota digital, AI briefing, dll.
-    Tidak ada biaya langganan bulanan yang memaksa. <a href="#faq" style="color:#35E8D5">Pelajari lebih lanjut ↓</a>
-  </div>
+  <!-- Main Pricing Card -->
+  <div style="max-width:880px;margin:0 auto 32px;display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px;">
 
-  <div class="pricing-grid" style="grid-template-columns:repeat(auto-fit,minmax(260px,1fr));max-width:960px;margin:0 auto">
-
-    <!-- Card 1: Trial -->
-    <div class="pricing-card">
-      <div class="pricing-name">Trial</div>
-      <div class="pricing-price">Gratis<div class="per">7 hari pertama</div></div>
-      <div class="pricing-desc">Daftar langsung pakai. Tidak perlu kartu kredit, tidak ada komitmen.</div>
+    <!-- Trial Card -->
+    <div class="pricing-card" style="display:flex;flex-direction:column;">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:rgba(53,232,213,.7);margin-bottom:8px;">Coba Dulu</div>
+      <div class="pricing-name">Trial Gratis</div>
+      <div class="pricing-price">Rp 0<div class="per">30 hari penuh, semua fitur</div></div>
+      <div class="pricing-desc">Daftar 3 langkah, langsung pakai. Tidak perlu kartu kredit, tidak ada komitmen.</div>
       <div class="pricing-divider"></div>
-      <ul class="pricing-features">
-        <li>Semua fitur POS & order</li>
-        <li>Laporan keuangan</li>
-        <li><strong>1.000 coin</strong> gratis bawaan</li>
-        <li>1 outlet, unlimited order</li>
-        <li>Manajemen karyawan</li>
-        <li style="color:#C4B5FD;">✦ AI Briefing (pakai coin)</li>
+      <ul class="pricing-features" style="flex:1;">
+        <li>Semua fitur (POS, Keuangan, Karyawan)</li>
+        <li><strong>1.000 coin</strong> gratis untuk coba AI &amp; WA</li>
+        <li>1 outlet, unlimited transaksi</li>
+        <li>30 hari penuh — bukan trial 7 hari pelit</li>
         <li>Support via WhatsApp</li>
       </ul>
-      <a href="/register.php" class="btn-pricing btn-pricing-outline">Mulai Trial Gratis</a>
+      <a href="/register.php" class="btn-pricing btn-pricing-outline" style="margin-top:auto;">Mulai Trial Gratis</a>
     </div>
 
-    <!-- Card 2: Starter (featured) -->
-    <div class="pricing-card featured">
-      <div class="pricing-badge">&#11088; Paling Populer</div>
-      <div class="pricing-name">Starter</div>
-      <div class="pricing-price"><sup>Rp</sup>300rb<div class="per">setup fee · sekali bayar</div></div>
-      <div class="pricing-desc">Setup & onboarding dibantu tim LAMASY. Setelah itu cukup topup coin.</div>
+    <!-- Aktivasi Card -->
+    <div class="pricing-card featured" style="display:flex;flex-direction:column;">
+      <div class="pricing-badge">⭐ Setelah Trial</div>
+      <div class="pricing-name">Aktivasi Outlet</div>
+      <div class="pricing-price"><sup>Rp</sup>300<span style="font-size:24px;font-weight:600;">rb</span><div class="per">1× per outlet · tanpa langganan bulanan</div></div>
+      <div class="pricing-desc">Setup fee sekali bayar untuk aktivasi outlet permanen. Topup coin sesuai pemakaian — kapan saja, berapa saja.</div>
       <div class="pricing-divider"></div>
-      <ul class="pricing-features">
-        <li>Semua fitur Trial +</li>
-        <li><strong>50.000 coin</strong> topup awal</li>
-        <li>1 outlet aktif</li>
-        <li style="color:#C4B5FD;">✦ AI Briefing Harian</li>
-        <li style="color:#C4B5FD;">✦ AI Analisis Tren</li>
-        <li>WA Notifikasi otomatis</li>
-        <li>Onboarding 1-on-1 (30 menit)</li>
-        <li>Support prioritas</li>
+      <ul class="pricing-features" style="flex:1;">
+        <li><strong>Semua fitur Trial</strong> + AI tools lanjutan</li>
+        <li><strong>30.000 coin</strong> bonus aktivasi awal</li>
+        <li>Outlet aktif permanen (no expiry)</li>
+        <li>Topup coin self-service kapan saja</li>
+        <li>Onboarding 1-on-1 (30 menit via WA/Zoom)</li>
+        <li>Support prioritas + dedicated WA</li>
       </ul>
-      <a href="/register.php" class="btn-pricing btn-pricing-primary">Aktivasi Sekarang</a>
-    </div>
-
-    <!-- Card 3: Growth -->
-    <div class="pricing-card" style="border-color:rgba(139,92,246,.25)">
-      <div class="pricing-name" style="color:#C4B5FD">Growth</div>
-      <div class="pricing-price"><sup style="color:#C4B5FD">Rp</sup><span style="color:#C4B5FD">500rb</span><div class="per">setup fee · sekali bayar</div></div>
-      <div class="pricing-desc">Untuk yang punya 2+ cabang atau sedang agresif ekspansi.</div>
-      <div class="pricing-divider" style="border-color:rgba(139,92,246,.2)"></div>
-      <ul class="pricing-features">
-        <li>Semua fitur Starter +</li>
-        <li><strong>150.000 coin</strong> topup awal</li>
-        <li>Multi outlet <strong>(hingga 5)</strong></li>
-        <li style="color:#C4B5FD;">✦ Semua fitur AI</li>
-        <li style="color:#C4B5FD;">✦ AI Rekomendasi Bisnis</li>
-        <li>Laporan konsolidasi multi-outlet</li>
-        <li>Onboarding + training tim (1 jam)</li>
-        <li>Dedicated support WA</li>
-      </ul>
-      <a href="https://wa.me/6285121519302?text=Halo%2C+saya+tertarik+paket+Growth+LAMASY"
-         target="_blank" class="btn-pricing btn-pricing-outline"
-         style="border-color:rgba(139,92,246,.5);color:#C4B5FD">Hubungi Kami</a>
+      <a href="/register.php" class="btn-pricing btn-pricing-primary" style="margin-top:auto;">Aktivasi Outlet Saya</a>
     </div>
 
   </div>
 
-  <p style="text-align:center;margin-top:24px;font-size:13px;color:rgba(255,255,255,.4)">
-    Butuh lebih dari 5 outlet atau solusi enterprise custom?
-    <a href="https://wa.me/6285121519302?text=Halo+Tim+LAMASY%2C+saya+ingin+berdiskusi+tentang+solusi+enterprise+atau+multi-outlet+untuk+bisnis+laundry+saya." target="_blank" style="color:#35E8D5">Diskusi dengan tim kami →</a>
-  </p>
+  <!-- Multi-outlet note -->
+  <div style="max-width:880px;margin:0 auto 36px;background:rgba(139,92,246,.05);
+              border:1px solid rgba(139,92,246,.18);border-radius:12px;padding:18px 24px;
+              display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+    <div style="font-size:32px;flex-shrink:0;">🏢</div>
+    <div style="flex:1;min-width:200px;">
+      <div style="font-size:14px;font-weight:700;color:#C4B5FD;margin-bottom:4px;">Punya 2+ outlet atau franchise?</div>
+      <div style="font-size:13px;color:rgba(255,255,255,.7);line-height:1.55;">
+        Setup fee tetap Rp 300rb/outlet, plus akses HQ Dashboard konsolidasi gratis. Diskon volume mulai 5 outlet — diskusi dengan tim kami.
+      </div>
+    </div>
+    <a href="https://wa.me/6285121519302?text=Halo+Tim+LAMASY%2C+saya+ingin+diskusi+pricing+untuk+multi-outlet."
+       target="_blank"
+       style="background:rgba(139,92,246,.15);color:#C4B5FD;border:1px solid rgba(139,92,246,.4);
+              padding:10px 18px;border-radius:8px;font-size:13px;font-weight:600;text-decoration:none;flex-shrink:0;">
+      💬 Diskusi Volume
+    </a>
+  </div>
+
+  <!-- Coin transparency -->
+  <div style="max-width:880px;margin:0 auto;">
+    <div style="text-align:center;margin-bottom:20px;">
+      <div style="display:inline-block;background:rgba(53,232,213,.08);color:#35E8D5;
+                  padding:4px 12px;border-radius:6px;font-size:11px;font-weight:700;
+                  letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px;">
+        Transparansi Coin
+      </div>
+      <h3 style="font-size:22px;font-weight:700;color:#fff;margin-bottom:8px;">Tahu Persis Setiap Coin Dipakai untuk Apa</h3>
+      <p style="font-size:14px;color:rgba(255,255,255,.55);max-width:560px;margin:0 auto;">
+        Tidak ada biaya tersembunyi. Setiap fitur premium punya harga coin yang jelas — kamu yang putuskan mau pakai atau skip.
+      </p>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;">
+      <?php
+      $coinExamples = [
+        ['📄', 'Generate Nota Termal',  '50 coin',  'per cetak'],
+        ['📱', 'WA Notif Status Order', '50 coin',  'per kirim'],
+        ['📱', 'WA Nota PDF Lengkap',   '100 coin', 'per kirim'],
+        ['🤖', 'AI Briefing Harian',    '500 coin', 'per outlet/hari'],
+        ['🤖', 'AI Chat dengan Data',   '50 coin',  'per pertanyaan'],
+        ['📤', 'Export Laporan PDF',    '200 coin', 'per export'],
+      ];
+      foreach ($coinExamples as [$ico, $nama, $coin, $unit]):
+      ?>
+        <div style="background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.06);
+                    border-radius:10px;padding:14px 16px;display:flex;align-items:center;gap:12px;">
+          <div style="font-size:24px;flex-shrink:0;"><?= $ico ?></div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:13px;font-weight:600;color:#fff;"><?= htmlspecialchars($nama) ?></div>
+            <div style="font-size:11px;color:rgba(255,255,255,.45);"><?= htmlspecialchars($unit) ?></div>
+          </div>
+          <div style="font-size:13px;font-weight:700;color:#FCD34D;font-family:var(--mono);white-space:nowrap;"><?= $coin ?></div>
+        </div>
+      <?php endforeach; ?>
+    </div>
+
+    <p style="text-align:center;margin-top:18px;font-size:12px;color:rgba(255,255,255,.4);">
+      *Contoh harga. Lihat semua harga fitur di dashboard kamu setelah login. Harga bisa berubah, dan setiap perubahan tercatat di history transparan.
+    </p>
+  </div>
+
+  <!-- Topup Pack Example -->
+  <div style="max-width:720px;margin:36px auto 0;background:rgba(255,255,255,.025);
+              border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:20px 24px;text-align:center;">
+    <div style="font-size:12px;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;">Topup Coin (kapan saja)</div>
+    <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap;font-size:13px;color:rgba(255,255,255,.8);">
+      <span><strong>Rp 50.000</strong> → 10.000 coin</span>
+      <span style="opacity:.4;">·</span>
+      <span><strong>Rp 100.000</strong> → 22.000 coin <span style="color:#86EFAC;font-size:11px;">+10%</span></span>
+      <span style="opacity:.4;">·</span>
+      <span><strong>Rp 250.000</strong> → 60.000 coin <span style="color:#86EFAC;font-size:11px;">+20%</span></span>
+      <span style="opacity:.4;">·</span>
+      <span><strong>Rp 500.000</strong> → 130.000 coin <span style="color:#86EFAC;font-size:11px;">+30%</span></span>
+    </div>
+    <div style="margin-top:10px;font-size:11px;color:rgba(255,255,255,.4);">
+      Coin tidak ada masa berlaku. Berhenti pakai? Coin tetap tersimpan sampai kamu aktif lagi.
+    </div>
+  </div>
 </section>
 
 <!-- ── TESTIMONIALS ─────────────────────────────────── -->
@@ -1408,29 +1481,41 @@ img { max-width: 100%; }
   <div style="max-width:720px;margin:0 auto" id="faqList">
     <?php
     $faqs = [
-      ['Apakah LAMASY benar-benar gratis?',
-       'Trial 7 hari pertama <strong>benar-benar gratis</strong> — tidak perlu kartu kredit, tidak ada biaya tersembunyi. Setelah trial, kamu bisa aktivasi dengan setup fee sekali bayar (mulai Rp 300rb). Setelah itu hanya topup coin sesuai pemakaian fitur.'],
+      ['Apakah LAMASY benar-benar gratis di awal?',
+       'Trial <strong>30 hari penuh</strong> dan benar-benar gratis — tidak perlu kartu kredit, tidak ada biaya tersembunyi. Semua fitur (POS, Keuangan, Karyawan, AI, WA) bisa dicoba. Setelah trial, aktivasi outlet permanen dengan setup fee Rp 300rb sekali bayar.'],
 
-      ['Apa itu sistem "Coin"?',
-       'Coin adalah unit kredit untuk mengakses fitur premium: kirim notifikasi WhatsApp, cetak nota digital, AI briefing, dll. Kamu hanya bayar untuk yang kamu pakai. 1 notifikasi WA = 100 coin, 1 AI briefing = 500 coin. Trial dapat 1.000 coin gratis bawaan.'],
+      ['Bagaimana sistem pricing-nya? Saya bingung soal coin.',
+       'Simpel: <strong>1× setup fee Rp 300rb per outlet</strong> untuk aktivasi permanen, sisanya pay-per-use via Coin. Contoh: 1× WA notif = 50 coin, 1× AI Chat = 50 coin, 1× AI Briefing = 500 coin. Topup coin self-service (mulai Rp 50rb / 10.000 coin). <strong>Tidak ada langganan bulanan wajib</strong> — kamu yang kontrol pemakaian.'],
+
+      ['Apa bedanya dengan aplikasi laundry lain?',
+       'Tiga hal utama: <strong>(1)</strong> Pricing transparan pay-per-use — tidak ada paket bertingkat yang membatasi fitur. <strong>(2)</strong> AI terintegrasi — briefing pagi, chat dengan data laporan, deteksi pelanggan dormant. <strong>(3)</strong> Laporan keuangan formal SAK EMKM (Laba Rugi, Neraca, Arus Kas) — siap pajak, tanpa perlu akuntan.'],
+
+      ['Sudah ada data di Excel / aplikasi lama. Bisa di-import?',
+       'Bisa! Pakai fitur <strong>AI Migration Mapper</strong> — upload file Excel atau export dari aplikasi lama, AI baca header & sample lalu map otomatis ke format LAMASY. Data pelanggan, layanan, transaksi historis bisa langsung masuk. Kami juga sediakan assisted migration berbayar untuk file kompleks.'],
 
       ['Apakah data saya aman?',
-       'Ya. Data kamu disimpan di server terenkripsi dengan backup harian. Setiap tenant (akun) memiliki isolasi data penuh — data outlet kamu tidak bisa diakses oleh siapapun kecuali kamu. Kami juga tidak menjual atau membagikan data ke pihak ketiga.'],
+       'Ya. Data disimpan di server terenkripsi dengan backup harian. Setiap tenant punya isolasi data penuh — data kamu hanya bisa diakses oleh kamu dan karyawan yang kamu undang. Bahkan AI Chat di-batasi via SQL allowlist + tenant_id binding — AI mustahil leak data tenant lain. Password kamu di-hash bcrypt, tidak tersimpan plain text.'],
 
       ['Bisa diakses dari HP?',
-       'LAMASY dirancang <strong>mobile-first</strong> — bisa diakses dari browser HP manapun tanpa perlu install aplikasi. Tampilannya responsif dan nyaman di layar kecil.'],
+       'LAMASY dirancang <strong>mobile-first</strong> — semua halaman responsif. Kasir bisa pakai HP, owner cek dashboard dari mana saja, kurir update status order via HP. Tidak perlu install aplikasi, cukup buka browser dan login.'],
 
-      ['Bagaimana cara setup-nya? Susah tidak?',
-       'Sangat mudah. Daftar 3 langkah, verifikasi email, lalu langsung bisa pakai. Tidak perlu keahlian teknis apapun. Untuk paket Starter dan Growth, tim kami akan memandu kamu lewat sesi onboarding 1-on-1 via WhatsApp atau Zoom.'],
+      ['Punya 2+ outlet. Bagaimana managementnya?',
+       'Owner dapat akses HQ Dashboard otomatis — konsolidasi omzet semua outlet, drilldown per outlet, transfer coin antar-outlet, mutasi karyawan, audit log lintas-outlet. Karyawan bisa di-assign multi-outlet (Area Coordinator, kurir antar-outlet, perbantuan weekend). Setup fee Rp 300rb/outlet.'],
 
-      ['Bisa tambah karyawan?',
-       'Ya! Kamu bisa menambahkan karyawan sebagai user dengan role dan akses yang berbeda — kasir, staff laundry, manajer. Setiap role punya tampilan dan fitur yang sesuai tugas mereka.'],
+      ['Bisa tambah karyawan dengan role berbeda?',
+       'Ya. Role bawaan: Owner, Manager, Kasir, Staff (operator cuci), Kurir, Mitra (drop point). Setiap role punya akses & tampilan sesuai tugas — kasir cuma lihat POS+orders, manager lihat laporan outlet, owner lihat semua. Custom role + permission juga bisa di-atur.'],
+
+      ['Apakah AI-nya beneran berguna atau cuma marketing?',
+       'AI di LAMASY fokus ke 4 hal konkret: <strong>(1) Briefing pagi</strong> — ringkasan kondisi outlet otomatis. <strong>(2) Chat dengan Data</strong> — tanya pakai bahasa natural, AI baca laporan. <strong>(3) Pesan retensi</strong> — generate WA personal untuk pelanggan dormant. <strong>(4) Upselling di POS</strong> — saran cross-sell saat kasir input order. Semua opt-in, bisa di-skip kalau nggak perlu.'],
 
       ['Bagaimana jika trial habis dan belum aktivasi?',
-       'Setelah 7 hari trial, outlet masuk periode <strong>grace 7 hari</strong> — kamu masih bisa lihat data (read-only) tapi tidak bisa buat order baru. Setelah grace berakhir, outlet akan ditangguhkan dan data tetap tersimpan selama 30 hari. Kamu bisa aktivasi kapan saja.'],
+       'Setelah trial 30 hari, outlet masuk periode <strong>grace 30 hari</strong> — data masih bisa dilihat (read-only) tapi tidak bisa input order baru. Setelah grace berakhir, outlet ditangguhkan tapi data tetap tersimpan 90 hari. Kamu bisa aktivasi kapan saja tanpa kehilangan data.'],
 
       ['Apakah ada kontrak jangka panjang?',
-       'Tidak ada. LAMASY tidak memiliki kontrak bulanan atau tahunan yang mengikat. Setup fee dibayar sekali untuk onboarding, setelah itu kamu topup coin sesuai kebutuhan. Berhenti kapan saja, tidak ada penalti.'],
+       'Tidak ada. Tidak ada kontrak bulanan/tahunan. Setup fee dibayar sekali untuk aktivasi outlet permanen, sisanya kamu yang kontrol via topup coin. Berhenti pakai? Coin tersimpan sampai kamu aktif lagi, tidak ada penalti.'],
+
+      ['Bagaimana support kalau ada masalah?',
+       'Support via WhatsApp untuk semua tenant aktif (jam kerja 9-21 WIB, response &lt;2 jam). Tenant dengan multi-outlet dapat dedicated WA group. Trial dan tenant baru dapat onboarding 1-on-1 (30 menit) untuk setup outlet, layanan, dan training kasir.'],
     ];
     foreach ($faqs as $i => [$q, $a]):
     ?>
@@ -1459,9 +1544,9 @@ img { max-width: 100%; }
 <div class="cta-banner">
   <div class="cta-inner">
     <h2>Siap Digitalisasi Laundry Anda?</h2>
-    <p>Bergabung dengan 500+ outlet laundry yang sudah lebih rapi bersama LAMASY. Daftar gratis, tidak perlu kartu kredit.</p>
+    <p>Mulai trial 30 hari penuh sekarang — semua fitur, tanpa kartu kredit, tanpa komitmen. Setelah cocok, aktivasi outlet permanen cuma Rp 300rb sekali bayar.</p>
     <div class="cta-btns">
-      <a href="/register.php" class="btn-primary">&#128640; Mulai Gratis 7 Hari</a>
+      <a href="/register.php" class="btn-primary">&#128640; Mulai Trial 30 Hari Gratis</a>
       <a href="https://wa.me/6285121519302?text=Halo+saya+ingin+tahu+lebih+lanjut+tentang+LAMASY" target="_blank" class="btn-secondary">&#128172; Chat WhatsApp</a>
     </div>
   </div>
