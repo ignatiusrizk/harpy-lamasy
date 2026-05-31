@@ -196,46 +196,88 @@ SCHEMA;
         return $sql;
     }
 
-    /** Step 2: validate SQL */
+    /** Step 2: validate SQL — error message ramah, bukan technical */
     private static function validateSql(string $sql): void
     {
         if (strlen($sql) > self::MAX_QUERY_LEN) {
-            throw new RuntimeException('Query terlalu panjang.');
+            throw new RuntimeException(
+                'Pertanyaan kamu butuh query yang terlalu kompleks. Coba pertanyaan yang lebih spesifik atau pecah jadi beberapa pertanyaan.'
+            );
         }
 
         // Must start with SELECT
         if (!preg_match('/^\s*SELECT\s/i', $sql)) {
-            throw new RuntimeException('Query harus dimulai dengan SELECT.');
+            throw new RuntimeException(
+                'Saya hanya bisa mengambil data (read-only), tidak bisa ubah data. Coba tanya untuk lihat informasi saja.'
+            );
         }
 
-        // Forbidden patterns
+        // Forbidden patterns — kategorisasi pesan biar ramah
         foreach (self::FORBIDDEN_PATTERNS as $pattern) {
             if (preg_match($pattern, $sql)) {
-                throw new RuntimeException('Query mengandung pola terlarang: ' . $pattern);
+                throw new RuntimeException(self::friendlyForbiddenMessage($pattern));
             }
         }
 
         // Multiple statements?
         if (substr_count($sql, ';') > 0) {
-            throw new RuntimeException('Multiple statement tidak diizinkan.');
+            throw new RuntimeException(
+                'Pertanyaan terlalu kompleks. Coba pecah jadi satu pertanyaan saja per chat.'
+            );
         }
 
         // Extract table names yang di-FROM/JOIN
         if (preg_match_all('/\b(?:FROM|JOIN)\s+([a-z_][a-z0-9_]*)/i', $sql, $matches)) {
             foreach ($matches[1] as $table) {
                 if (!in_array(strtolower($table), self::ALLOWED_TABLES, true)) {
-                    throw new RuntimeException("Tabel '$table' tidak diizinkan. Allowlist: "
-                        . implode(', ', self::ALLOWED_TABLES));
+                    throw new RuntimeException(
+                        "Data yang kamu cari ada di area yang belum bisa saya akses. "
+                      . "Saya bisa bantu untuk topik: transaksi, pelanggan, layanan, karyawan, kas, dan outlet."
+                    );
                 }
             }
         }
 
-        // Wajib ada tenant_id filter
+        // Wajib ada tenant_id filter — internal safety, tidak akan ke user normal
         if (!preg_match('/\btenant_id\s*=\s*\?/i', $sql)) {
-            throw new RuntimeException("Query wajib punya filter `tenant_id = ?`.");
+            throw new RuntimeException(
+                'Hmm, ada masalah teknis kecil di pertanyaan kamu. Coba ulangi dengan kata-kata lain ya.'
+            );
         }
+    }
 
-        // Wajib LIMIT (auto-inject kalau tidak ada) — handled di execute
+    /** Map technical forbidden pattern ke pesan yang friendly */
+    private static function friendlyForbiddenMessage(string $pattern): string
+    {
+        // Password / token / secret
+        if (preg_match('/password|remember_token|api_key|secret/', $pattern)) {
+            return 'Kolom password dan data rahasia tidak bisa saya tampilkan demi keamanan akun. '
+                 . 'Tapi data karyawan lain seperti nama, role, jabatan, atau nomor telepon bisa — '
+                 . 'mau saya bantu tampilkan?';
+        }
+        // SELECT * FROM hl_users
+        if (stripos($pattern, 'hl_users') !== false) {
+            return 'Untuk data karyawan, saya butuh tahu kolom spesifik yang kamu mau lihat. '
+                 . 'Contoh: "tampilkan nama dan role semua karyawan" atau "kasir di outlet Malioboro".';
+        }
+        // Data manipulation (INSERT/UPDATE/DELETE)
+        if (preg_match('/INSERT|UPDATE|DELETE|DROP/i', $pattern)) {
+            return 'Saya hanya bisa mengambil data (read-only), tidak bisa ubah atau hapus. '
+                 . 'Untuk perubahan data, pakai menu masing-masing (POS / Karyawan / dll).';
+        }
+        // System tables
+        if (preg_match('/information_schema|mysql|sys|performance_schema/i', $pattern)) {
+            return 'Pertanyaan kamu mengarah ke area sistem internal yang tidak bisa saya akses. '
+                 . 'Coba tanya soal data bisnis kamu saja.';
+        }
+        // SQL injection patterns
+        if (preg_match('/sleep|benchmark|outfile|dumpfile|load_file|--|#/', $pattern)) {
+            return 'Pertanyaan kamu mengandung pola yang nggak aman untuk saya proses. '
+                 . 'Coba ulangi dengan bahasa yang lebih natural.';
+        }
+        // Generic fallback
+        return 'Pertanyaan kamu butuh akses ke area yang belum saya support. '
+             . 'Coba tanya soal omzet, pelanggan, transaksi, atau karyawan.';
     }
 
     /** Step 3: execute dengan binding tenant_id ke SEMUA placeholder */

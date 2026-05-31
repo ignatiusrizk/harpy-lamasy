@@ -48,8 +48,12 @@ if ($action === 'ask' && $_SERVER['REQUEST_METHOD'] === 'POST') {
             'tokens_used' => $result['tokens_used'],
             'generated_at'=> $result['generated_at'],
         ]);
+    } catch (RuntimeException $e) {
+        // AI conversational refusal (validateSql / AI's ERROR: prefix) — friendly redirect
+        echo json_encode(['error' => $e->getMessage(), 'kind' => 'chat']);
     } catch (Throwable $e) {
-        echo json_encode(['error' => $e->getMessage()]);
+        // System error (DB down, API timeout, etc.) — actual warning
+        echo json_encode(['error' => $e->getMessage(), 'kind' => 'system']);
     }
     exit;
 }
@@ -81,6 +85,7 @@ require __DIR__ . '/_layout_open.php';
 .ai-msg.user .ai-bubble { background:#0F1C3A; color:#fff; border-bottom-right-radius:4px }
 .ai-msg.bot .ai-bubble { background:#F7F8FC; color:#1F2937; border-bottom-left-radius:4px; border:1px solid #EEF1F8 }
 .ai-bubble.error { background:#FEE2E2; color:#991B1B; border-color:#FCA5A5 }
+.ai-bubble.info  { background:#EEF6FF; color:#1E40AF; border-color:#BFDBFE }
 
 .ai-detail { margin-top:8px; font-size:11px; color:#6B7280 }
 .ai-detail summary { cursor:pointer; user-select:none; padding:4px 0; font-weight:600 }
@@ -237,7 +242,11 @@ async function submitQ() {
     qSubmit.disabled = false;
 
     if (d.error) {
-      addMsg('bot', '⚠️ ' + esc(d.error), 'error');
+      // AI refusal/redirect (kind='chat') → ikon ramah 💡
+      // System error → ⚠️
+      const icon = d.kind === 'chat' ? '💡' : '⚠️';
+      const cls  = d.kind === 'chat' ? 'info'  : 'error';
+      addMsg('bot', icon + ' ' + esc(d.error), cls);
       return;
     }
 
