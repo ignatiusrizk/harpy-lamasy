@@ -855,6 +855,11 @@ async function loadList(){
     return;
   }
 
+  // Cache karyawan rows ke window — avoid embed JSON di onclick attribute
+  // (JSON.stringify menghasilkan " yang akan merusak HTML attribute)
+  window._karyawanCache = {};
+  rows.forEach(r => { window._karyawanCache[r.id] = r; });
+
   grid.innerHTML = rows.map(r => {
     const outlets = r.assignments && r.assignments.length
       ? r.assignments.map(a => `<span class="kr-outlet-badge">📍 ${escapeHtml(a.nama_outlet)}</span>`).join('')
@@ -862,6 +867,7 @@ async function loadList(){
     const inactiveBadge = r.is_active == 0
       ? '<span class="kr-role" style="background:#FEE2E2;color:#991B1B;margin-left:4px">NON-AKTIF</span>'
       : '';
+    const hasOutlet = (r.assignments || []).length > 0;
     return `
       <div class="kr-card ${r.is_active==0?'inactive':''}">
         <div>
@@ -873,11 +879,18 @@ async function loadList(){
         <div class="kr-outlets">${outlets}</div>
         <div class="kr-actions">
           <button class="btn btn-light" onclick="showDetail(${r.id})">Detail</button>
-          ${r.is_active==1 ? `<button class="btn btn-primary" onclick="openMutasi(${r.id}, '${escapeHtml(r.nama)}', ${JSON.stringify(r.assignments||[]).replace(/'/g, '&apos;')})">${(r.assignments||[]).length === 0 ? '📍 Assign Outlet' : '🔄 Mutasi'}</button>` : ''}
+          ${r.is_active==1 ? `<button class="btn btn-primary" onclick="openMutasiById(${r.id})">${hasOutlet ? '🔄 Mutasi' : '📍 Assign Outlet'}</button>` : ''}
         </div>
       </div>
     `;
   }).join('');
+}
+
+// Wrapper: lookup karyawan dari cache lalu buka modal — cara aman tanpa JSON di attribute
+function openMutasiById(id) {
+  const k = (window._karyawanCache || {})[id];
+  if (!k) { alert('Data karyawan tidak ditemukan, refresh halaman.'); return; }
+  openMutasi(k.id, k.nama, k.assignments || []);
 }
 
 async function showDetail(id){
