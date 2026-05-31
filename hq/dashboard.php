@@ -106,7 +106,7 @@ if (($_GET['action'] ?? '') === 'ai_briefing') {
     }
 
     // HQ adalah tenant-level → cek effective coin (shared pool + trial coins dari outlet trial)
-    $costBriefing = CoinLedger::COSTS['ai_briefing_hq'] ?? 80;
+    $costBriefing = CoinLedger::getHarga('ai_briefing_hq');
     $tenantCoin   = (int)($hqTenant['coin_balance'] ?? 0);
 
     // Hitung trial coin pool dari semua outlet yang masih trial

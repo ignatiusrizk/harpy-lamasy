@@ -104,7 +104,7 @@ if ($action === 'briefing') {
 
     // Cek coin
     if (!CoinLedger::canAfford('ai_briefing_hq')) {
-        ai_err('Coin tidak cukup untuk AI Briefing (butuh '.CoinLedger::COSTS['ai_briefing_hq'].' coin)');
+        ai_err('Coin tidak cukup untuk AI Briefing (butuh '.CoinLedger::getHarga('ai_briefing_hq').' coin)');
     }
 
     // ── Kumpul data hari ini ──
@@ -245,7 +245,7 @@ if ($action === 'laporan_analyze' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     if (mb_strlen($pertanyaan) > 500) ai_err('Pertanyaan terlalu panjang (maks 500 karakter)');
 
     if (!CoinLedger::canAfford('ai_chat_data')) {
-        ai_err('Coin tidak cukup (butuh '.CoinLedger::COSTS['ai_chat_data'].' coin)');
+        ai_err('Coin tidak cukup (butuh '.CoinLedger::getHarga('ai_chat_data').' coin)');
     }
 
     $tipe    = (string)($body['tipe'] ?? 'harian');
@@ -317,7 +317,7 @@ if ($action === 'upselling' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (!CoinLedger::canAfford('ai_upselling')) {
-        ai_err('Coin tidak cukup (butuh '.CoinLedger::COSTS['ai_upselling'].' coin)');
+        ai_err('Coin tidak cukup (butuh '.CoinLedger::getHarga('ai_upselling').' coin)');
     }
 
     // Ambil profil + history

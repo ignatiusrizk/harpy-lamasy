@@ -22,7 +22,7 @@ if ($action === 'check_coin') {
     header('Content-Type: application/json');
     $tipe    = $_GET['tipe'] ?? 'retail';
     $feature = $tipe === 'b2b' ? 'generate_invoice' : 'generate_nota';
-    $cost    = CoinLedger::COSTS[$feature] ?? 0;
+    $cost    = CoinLedger::getHarga($feature);
     echo json_encode([
         'can_afford' => CoinLedger::canAfford($feature),
         'balance'    => CoinLedger::getBalance(),
@@ -52,7 +52,7 @@ if ($action === 'generate') {
         if (!CoinLedger::canAfford($feature)) {
             http_response_code(402);
             header('Content-Type: application/json');
-            $cost = CoinLedger::COSTS[$feature] ?? 0;
+            $cost = CoinLedger::getHarga($feature);
             echo json_encode([
                 'error'   => 'Coin tidak cukup untuk generate ' . ($tipe === 'b2b' ? 'invoice' : 'nota') . ". Dibutuhkan {$cost} coin.",
                 'code'    => 'insufficient_coin',
@@ -93,7 +93,7 @@ if ($action === 'generate_invoice') {
     if (!$isPreview && !CoinLedger::canAfford('generate_invoice')) {
         http_response_code(402);
         header('Content-Type: application/json');
-        $cost = CoinLedger::COSTS['generate_invoice'] ?? 200;
+        $cost = CoinLedger::getHarga('generate_invoice');
         echo json_encode([
             'error'   => "Coin tidak cukup. Dibutuhkan {$cost} coin untuk generate invoice.",
             'code'    => 'insufficient_coin',

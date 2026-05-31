@@ -14,7 +14,9 @@
 
 class CoinLedger
 {
-    // ── Biaya per fitur (dalam coin) ──────────────────
+    // ── Fallback hardcoded ──────────────────────────────
+    // Dipakai HANYA kalau tabel saas_coin_pricing belum ada / belum di-seed.
+    // Pricing live di-manage via super admin → DB (saas_coin_pricing).
     const COSTS = [
         'generate_nota'      =>  50,
         'send_wa_notif'      => 100,
@@ -27,23 +29,88 @@ class CoinLedger
         'ai_chat_data'       =>  50,
         'ai_churn_message'   =>  30,
         'ai_briefing_hq'     =>  80,
-        // Owner POV (BAGIAN 7)
-        'daily_report'       => 100,   // per kirim laporan harian ke owner
-        'alert_anomali'      =>  50,   // per alert anomali ke owner
-        'invoice_b2b'        => 200,   // per invoice B2B
-        'reminder_piutang'   => 100,   // per reminder piutang
+        'daily_report'       => 100,
+        'alert_anomali'      =>  50,
+        'invoice_b2b'        => 200,
+        'reminder_piutang'   => 100,
         'generate_invoice'   => 200,
         'wa_blast'           => 100,
         'export_pdf'         => 500,
-        // Migration (self-service) — 1.000 coin per AI mapping
-        // Jika assisted (Rp 200.000) atau mapping dari cache → 0 coin
         'ai_migration_mapping' => 1000,
     ];
 
-    // ── Cek saldo (dari cache, tanpa query DB) ─────────
+    // ── Pricing cache (loaded dari saas_coin_pricing) ──
+    private static ?array $pricing = null;
+    private static int    $cacheExpiry = 0;
+    const CACHE_TTL = 300; // 5 menit
+
+    // Load pricing dari DB dengan cache 5 menit. Idempotent.
+    private static function loadPricing(): void
+    {
+        $now = time();
+        if (self::$pricing !== null && $now < self::$cacheExpiry) return;
+
+        try {
+            $rows = Database::get()
+                ->query("SELECT feature_key, harga_coin, is_active FROM saas_coin_pricing")
+                ->fetchAll();
+            self::$pricing = [];
+            foreach ($rows as $row) {
+                self::$pricing[$row['feature_key']] = [
+                    'harga'     => (int)$row['harga_coin'],
+                    'is_active' => (bool)$row['is_active'],
+                ];
+            }
+            self::$cacheExpiry = $now + self::CACHE_TTL;
+        } catch (Throwable $e) {
+            // Tabel belum ada / DB error → pakai fallback COSTS
+            self::$pricing = [];
+            foreach (self::COSTS as $k => $v) {
+                self::$pricing[$k] = ['harga' => $v, 'is_active' => true];
+            }
+            self::$cacheExpiry = $now + 60; // cache pendek supaya cepat retry
+        }
+    }
+
+    // Ambil harga fitur (live dari DB / fallback)
+    public static function getHarga(string $feature): int
+    {
+        self::loadPricing();
+        if (isset(self::$pricing[$feature])) {
+            return self::$pricing[$feature]['harga'];
+        }
+        return self::COSTS[$feature] ?? 0;
+    }
+
+    // Cek apakah fitur aktif platform-wide
+    public static function isFeatureActive(string $feature): bool
+    {
+        self::loadPricing();
+        if (isset(self::$pricing[$feature])) {
+            return self::$pricing[$feature]['is_active'];
+        }
+        return true; // default aktif kalau belum ter-seed
+    }
+
+    // Invalidate cache (dipanggil setelah admin update harga)
+    public static function invalidateCache(): void
+    {
+        self::$pricing = null;
+        self::$cacheExpiry = 0;
+    }
+
+    // Get all pricing untuk tampil di UI (admin & tenant)
+    public static function getAllPricing(): array
+    {
+        self::loadPricing();
+        return self::$pricing ?? [];
+    }
+
+    // ── Cek saldo (live dari DB pricing) ──────────────
     public static function canAfford(string $feature): bool
     {
-        $cost = self::COSTS[$feature] ?? 0;
+        if (!self::isFeatureActive($feature)) return false;
+        $cost = self::getHarga($feature);
         if ($cost === 0) return true;
         return TenantResolver::coinBalance() >= $cost;
     }
@@ -57,7 +124,10 @@ class CoinLedger
         string  $feature,
         ?string $refId = null
     ): bool {
-        $cost = self::COSTS[$feature] ?? 0;
+        // Fitur dinonaktifkan platform-wide → tolak
+        if (!self::isFeatureActive($feature)) return false;
+
+        $cost = self::getHarga($feature);
         if ($cost === 0) return true;
 
         $tenantId  = TenantResolver::id();
