@@ -1,9 +1,24 @@
 <?php
 // ══════════════════════════════════════════════════════
-// harpy/landing.php — Marketing Landing Page
-// Harpy Laundry ERP — Halaman Utama
+// landing.php — Marketing Landing Page LAMASY
+//
+// CATATAN:
+// URL /landing tetap aktif sampai Senin 1 Juni 2026, 12:00 WIB
+// (untuk story WhatsApp & Instagram launch). Setelah itu
+// /landing redirect ke / supaya URL bersih kembali.
+// Akses via root URL "/" tidak terpengaruh — tetap tampilkan landing.
 // ══════════════════════════════════════════════════════
 date_default_timezone_set('Asia/Jakarta');
+
+// Expiration: hanya jika diakses langsung via /landing URL
+$_isDirectLanding = str_contains($_SERVER['REQUEST_URI'] ?? '', '/landing');
+if ($_isDirectLanding) {
+    $_deadline = strtotime('2026-06-01 12:00:00'); // Senin 12:00 WIB
+    if (time() > $_deadline) {
+        header('Location: /', true, 301);
+        exit;
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="id">
