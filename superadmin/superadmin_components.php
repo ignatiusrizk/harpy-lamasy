@@ -474,9 +474,10 @@ function saRenderNavClose(): void { ?>
       document.body.style.overflow='';
     }
     function saFetch(url, opts={}){
+      // ⚠️ Spread opts DULU, lalu headers — supaya CSRF header tidak ter-overwrite
       return fetch(url, {
+        ...opts,
         headers: { 'X-CSRF-Token': saCsrf(), 'X-Requested-With': 'XMLHttpRequest', ...(opts.headers||{}) },
-        ...opts
       });
     }
     function saPost(url, data){
