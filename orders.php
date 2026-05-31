@@ -550,6 +550,9 @@ if ($action) {
         $sisaFmt  = "Rp " . number_format(floatval($t['sisa_bayar']), 0, ',', '.');
         $est      = $t['estimasi_selesai'] ? date('d M Y', strtotime($t['estimasi_selesai'])) : '-';
 
+        $appUrl   = defined('APP_URL') ? APP_URL : 'https://lamasy.harpy.id';
+        $trackUrl = $appUrl . '/track.php?order=' . urlencode($t['no_order']);
+
         if ($tipe === 'siap') {
             $msg = "Halo *{$t['nama_pelanggan']}* 👋\n\n"
                  . "Laundry Anda di *Harpy Laundry* sudah *✅ SIAP DIAMBIL!*\n\n"
@@ -558,6 +561,7 @@ if ($action) {
                  . "💰 *Total:* {$totalFmt}\n"
                  . ($t['sisa_bayar'] > 0 ? "⚠️ *Sisa Bayar:* {$sisaFmt}\n" : "✅ *Status Bayar:* Lunas\n")
                  . "\n📍 Silakan diambil di:\nJl. Rawa Selatan IV No.1, Johar Baru, Jakarta Pusat\n"
+                 . "\n🔍 Cek detail order: {$trackUrl}\n"
                  . "\nTerima kasih sudah mempercayakan cucian Anda kepada kami 🙏\n_Harpy Laundry | harpy.id_";
         } elseif ($tipe === 'lunas_reminder') {
             $msg = "Halo *{$t['nama_pelanggan']}* 👋\n\n"
@@ -565,6 +569,7 @@ if ($action) {
                  . "📋 *No. Order:* {$t['no_order']}\n"
                  . "💰 *Total:* {$totalFmt}\n"
                  . "⚠️ *Sisa yang harus dibayar:* {$sisaFmt}\n\n"
+                 . "🔍 Detail order: {$trackUrl}\n\n"
                  . "Mohon segera dilunasi saat pengambilan ya 🙏\n"
                  . "\nTerima kasih!\n_Harpy Laundry | harpy.id_";
         } else {
@@ -577,7 +582,7 @@ if ($action) {
                  . "🔄 *Status:* {$stLabel}\n"
                  . "📅 *Est. Selesai:* {$est}\n"
                  . "🧺 *Layanan:*{$itemList}\n\n"
-                 . "Cek status real-time: " . (defined('APP_URL') ? APP_URL : 'https://lamasy.harpy.id') . "/track.php?order={$t['no_order']}\n\n"
+                 . "🔍 Cek status real-time: {$trackUrl}\n\n"
                  . "Terima kasih 🙏\n_Harpy Laundry | harpy.id_";
         }
 
