@@ -1286,7 +1286,8 @@ INSERT INTO superadmin_logs (superadmin_id,action,target_tenant_id,description,i
 -- ══════════════════════════════════════════════════════════════════
 -- PLATFORM HEALTH — 29 hari terakhir
 -- ══════════════════════════════════════════════════════════════════
-INSERT INTO saas_platform_health
+-- INSERT IGNORE — saas_platform_health punya UNIQUE (tanggal), skip kalau sudah ada
+INSERT IGNORE INTO saas_platform_health
 (tanggal,total_tenant_aktif,total_tenant_trial,total_tenant_grace,
  tenant_login_hari_ini,total_transaksi,total_wa_terkirim,total_ai_calls,
  total_ai_cost_coin,total_coin_terjual,total_coin_dipakai,
