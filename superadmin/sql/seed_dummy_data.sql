@@ -1223,15 +1223,17 @@ INSERT INTO coin_ledger (tenant_id,outlet_id,type,amount,feature_used,descriptio
 -- ══════════════════════════════════════════════════════════════════
 -- PAYMENTS & SAAS MANUAL PAYMENTS
 -- ══════════════════════════════════════════════════════════════════
-INSERT INTO payments (tenant_id,outlet_id,type,amount,coin_amount,gateway_ref,notes,status,paid_at) VALUES
-(@T2,@O2A,'setup_fee',500000,60000,'TRF-BCA-20230101','Setup paket Growth + coin awal','success','2023-01-01 09:00:00'),
-(@T2,@O2A,'coin_topup',250000,60000,NULL,'Beli Popular Pack Mei 2026','success','2026-05-01 11:00:00'),
-(@T3,@O3,'setup_fee',300000,30000,'QRIS-20260515','Setup Starter (self-service)','success','2026-05-15 10:00:00'),
-(@T4,@O4,'setup_fee',300000,30000,'TRF-BCA-20260425','Setup Starter','success','2026-04-25 10:00:00'),
-(@T5,@O5A,'setup_fee',500000,60000,'TRF-MDR-20260130','Setup paket Growth','success','2026-01-30 09:00:00'),
-(@T5,@O5A,'coin_topup',250000,60000,'TRF-MDR-20260301','Popular Pack Maret','success','2026-03-01 10:00:00'),
-(@T5,@O5A,'coin_topup',250000,60000,'TRF-MDR-20260501','Popular Pack Mei','success','2026-05-01 10:00:00'),
-(@T6,@O6,'setup_fee',300000,30000,'TRF-BCA-20251115','Setup Starter','success','2025-11-15 09:00:00');
+-- payments table actual schema: tenant_id, outlet_id, type, amount, gateway_ref, status, payload, created_at
+-- coin_amount + notes disimpan di JSON payload
+INSERT INTO payments (tenant_id,outlet_id,type,amount,gateway_ref,status,payload,created_at) VALUES
+(@T2,@O2A,'setup_fee',500000,'TRF-BCA-20230101','success','{"coin_amount":60000,"notes":"Setup paket Growth + coin awal"}','2023-01-01 09:00:00'),
+(@T2,@O2A,'coin_topup',250000,NULL,'success','{"coin_amount":60000,"notes":"Beli Popular Pack Mei 2026"}','2026-05-01 11:00:00'),
+(@T3,@O3,'setup_fee',300000,'QRIS-20260515','success','{"coin_amount":30000,"notes":"Setup Starter (self-service)"}','2026-05-15 10:00:00'),
+(@T4,@O4,'setup_fee',300000,'TRF-BCA-20260425','success','{"coin_amount":30000,"notes":"Setup Starter"}','2026-04-25 10:00:00'),
+(@T5,@O5A,'setup_fee',500000,'TRF-MDR-20260130','success','{"coin_amount":60000,"notes":"Setup paket Growth"}','2026-01-30 09:00:00'),
+(@T5,@O5A,'coin_topup',250000,'TRF-MDR-20260301','success','{"coin_amount":60000,"notes":"Popular Pack Maret"}','2026-03-01 10:00:00'),
+(@T5,@O5A,'coin_topup',250000,'TRF-MDR-20260501','success','{"coin_amount":60000,"notes":"Popular Pack Mei"}','2026-05-01 10:00:00'),
+(@T6,@O6,'setup_fee',300000,'TRF-BCA-20251115','success','{"coin_amount":30000,"notes":"Setup Starter"}','2025-11-15 09:00:00');
 
 INSERT INTO saas_manual_payments (tenant_id,superadmin_id,type,nominal_dibayar,coin_dikreditkan,metode,nama_pengirim,ref_transfer,tanggal_bayar,catatan,status,notif_wa_sent,notif_wa_sent_at) VALUES
 (@T2,@SAID,'setup_fee',500000,60000,'transfer_bca','Budi Hartono','BCA-REF-20230101-7891234','2023-01-01','Setup awal — 3 outlet Yogyakarta','confirmed',1,'2023-01-01 10:30:00'),
