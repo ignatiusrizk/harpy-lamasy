@@ -207,8 +207,9 @@ SET @O6 := LAST_INSERT_ID();
 -- ══════════════════════════════════════════════════════════════════
 
 -- T2 Outlet A (Malioboro) ─────────────────────────────────
-INSERT INTO hl_users (tenant_id,outlet_id,username,password,nama,role,jabatan,telepon,tgl_masuk,gaji_pokok,is_active) VALUES
-(@T2,@O2A,'budi.owner',  @PASS,'Budi Hartono',    'owner','Pemilik Usaha','08123456789','2023-01-01',0,1);
+-- Owner: include email + email_verified supaya login HQ pakai email jalan
+INSERT INTO hl_users (tenant_id,outlet_id,username,email,email_verified,password,nama,role,jabatan,telepon,tgl_masuk,gaji_pokok,is_active) VALUES
+(@T2,@O2A,'budi.owner','budi.hartono@gmail.com',1,@PASS,'Budi Hartono','owner','Pemilik Usaha','08123456789','2023-01-01',0,1);
 SET @U_BUDI := LAST_INSERT_ID();
 INSERT INTO hl_users (tenant_id,outlet_id,username,password,nama,role,jabatan,telepon,tgl_masuk,gaji_pokok,is_active) VALUES
 (@T2,@O2A,'dewi.manager',@PASS,'Dewi Rahayu',     'manager','Manager Outlet','08234567890','2023-02-01',3500000,1);
@@ -240,24 +241,24 @@ INSERT INTO hl_users (tenant_id,outlet_id,username,password,nama,role,jabatan,te
 SET @U_YULI := LAST_INSERT_ID();
 
 -- T3 Fresh Laundry ────────────────────────────────────────
-INSERT INTO hl_users (tenant_id,outlet_id,username,password,nama,role,jabatan,telepon,tgl_masuk,gaji_pokok,is_active) VALUES
-(@T3,@O3,'maya.owner', @PASS,'Maya Putri Ariani','owner','Pemilik Usaha','08567891234','2026-05-15',0,1);
+INSERT INTO hl_users (tenant_id,outlet_id,username,email,email_verified,password,nama,role,jabatan,telepon,tgl_masuk,gaji_pokok,is_active) VALUES
+(@T3,@O3,'maya.owner','maya@freshlaundry.id',1,@PASS,'Maya Putri Ariani','owner','Pemilik Usaha','08567891234','2026-05-15',0,1);
 SET @U_MAYA := LAST_INSERT_ID();
 INSERT INTO hl_users (tenant_id,outlet_id,username,password,nama,role,jabatan,telepon,tgl_masuk,gaji_pokok,is_active) VALUES
 (@T3,@O3,'andi.kasir3',@PASS,'Andi Setiawan',    'kasir','Kasir',         '08678902345','2026-05-15',2300000,1);
 SET @U_ANDI := LAST_INSERT_ID();
 
 -- T4 Express Maju ─────────────────────────────────────────
-INSERT INTO hl_users (tenant_id,outlet_id,username,password,nama,role,jabatan,telepon,tgl_masuk,gaji_pokok,is_active) VALUES
-(@T4,@O4,'hendra.owner',@PASS,'Hendra Kurniawan','owner','Pemilik Usaha','08139876543',  '2026-04-25',0,1);
+INSERT INTO hl_users (tenant_id,outlet_id,username,email,email_verified,password,nama,role,jabatan,telepon,tgl_masuk,gaji_pokok,is_active) VALUES
+(@T4,@O4,'hendra.owner','hendra.laundry@gmail.com',1,@PASS,'Hendra Kurniawan','owner','Pemilik Usaha','08139876543','2026-04-25',0,1);
 SET @U_HENDRA := LAST_INSERT_ID();
 INSERT INTO hl_users (tenant_id,outlet_id,username,password,nama,role,jabatan,telepon,tgl_masuk,gaji_pokok,is_active) VALUES
 (@T4,@O4,'tono.staff',  @PASS,'Sutono',          'staff','Operator',     '08912345678',  '2026-04-25',2100000,1);
 SET @U_TONO := LAST_INSERT_ID();
 
 -- T5 Outlet A (Manyar) ────────────────────────────────────
-INSERT INTO hl_users (tenant_id,outlet_id,username,password,nama,role,jabatan,telepon,tgl_masuk,gaji_pokok,is_active) VALUES
-(@T5,@O5A,'sari.bunda',  @PASS,'Sari Indrawati','owner','Pemilik','08156789012','2026-01-30',0,1);
+INSERT INTO hl_users (tenant_id,outlet_id,username,email,email_verified,password,nama,role,jabatan,telepon,tgl_masuk,gaji_pokok,is_active) VALUES
+(@T5,@O5A,'sari.bunda','sari.bunda@bundawangilaundry.com',1,@PASS,'Sari Indrawati','owner','Pemilik','08156789012','2026-01-30',0,1);
 SET @U_SARIB := LAST_INSERT_ID();
 INSERT INTO hl_users (tenant_id,outlet_id,username,password,nama,role,jabatan,telepon,tgl_masuk,gaji_pokok,is_active) VALUES
 (@T5,@O5A,'wahyu.mgr5',  @PASS,'Wahyu Hidayat','manager','Manager Outlet','08167890123','2026-02-01',3400000,1);
@@ -275,8 +276,8 @@ INSERT INTO hl_users (tenant_id,outlet_id,username,password,nama,role,jabatan,te
 SET @U_MIRA := LAST_INSERT_ID();
 
 -- T6 Quick Wash (SUSPENDED — user dimatikan) ──────────────
-INSERT INTO hl_users (tenant_id,outlet_id,username,password,nama,role,jabatan,telepon,tgl_masuk,gaji_pokok,is_active) VALUES
-(@T6,@O6,'deni.owner',@PASS,'Deni Setiawan','owner','Pemilik','08123456111','2025-11-15',0,0);
+INSERT INTO hl_users (tenant_id,outlet_id,username,email,email_verified,password,nama,role,jabatan,telepon,tgl_masuk,gaji_pokok,is_active) VALUES
+(@T6,@O6,'deni.owner','deni.quickwash@gmail.com',1,@PASS,'Deni Setiawan','owner','Pemilik','08123456111','2025-11-15',0,0);
 SET @U_DENI := LAST_INSERT_ID();
 INSERT INTO hl_users (tenant_id,outlet_id,username,password,nama,role,jabatan,telepon,tgl_masuk,gaji_pokok,is_active) VALUES
 (@T6,@O6,'aris.kasir6',@PASS,'Aris Pratama','kasir','Kasir','08123456222','2025-11-15',2400000,0);
