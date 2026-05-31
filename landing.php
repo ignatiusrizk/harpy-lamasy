@@ -879,7 +879,7 @@ img { max-width: 100%; }
   <p class="hero-sub">POS, laporan keuangan SAK EMKM, AI briefing harian, integrasi WhatsApp lengkap — semua dalam 1 platform. Bayar sesuai pemakaian, tanpa langganan bulanan yang mengikat.</p>
 
   <div class="hero-btns">
-    <a href="/register.php" class="btn-primary">&#128640; Coba Gratis 30 Hari</a>
+    <a href="/register.php" class="btn-primary">&#128640; Coba Gratis 7 Hari</a>
     <a href="#fitur" class="btn-secondary">&#9654; Lihat Fitur</a>
   </div>
 
@@ -952,7 +952,7 @@ img { max-width: 100%; }
 <div class="stats-bar">
   <div class="stats-inner">
     <div class="stat-item">
-      <div class="stat-num">30 Hari</div>
+      <div class="stat-num">7 Hari</div>
       <div class="stat-label">Trial Gratis</div>
     </div>
     <div class="stat-item">
@@ -1235,7 +1235,7 @@ img { max-width: 100%; }
       <div class="step-card">
         <div class="step-num-wrap">1</div>
         <h3>Daftar Akun</h3>
-        <p>Isi form registrasi sederhana. Akun trial 30 hari langsung aktif dengan 1.000 coin gratis. Tidak perlu kartu kredit.</p>
+        <p>Isi form registrasi sederhana. Akun trial 7 hari langsung aktif dengan 10.000 coin gratis. Tidak perlu kartu kredit.</p>
       </div>
       <div class="step-card">
         <div class="step-num-wrap">2</div>
@@ -1300,14 +1300,14 @@ img { max-width: 100%; }
     <div class="pricing-card" style="display:flex;flex-direction:column;">
       <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:rgba(53,232,213,.7);margin-bottom:8px;">Coba Dulu</div>
       <div class="pricing-name">Trial Gratis</div>
-      <div class="pricing-price">Rp 0<div class="per">30 hari penuh, semua fitur</div></div>
+      <div class="pricing-price">Rp 0<div class="per">7 hari, semua fitur terbuka</div></div>
       <div class="pricing-desc">Daftar 3 langkah, langsung pakai. Tidak perlu kartu kredit, tidak ada komitmen.</div>
       <div class="pricing-divider"></div>
       <ul class="pricing-features" style="flex:1;">
         <li>Semua fitur (POS, Keuangan, Karyawan)</li>
-        <li><strong>1.000 coin</strong> gratis untuk coba AI &amp; WA</li>
+        <li><strong>10.000 coin</strong> gratis untuk coba AI &amp; WA</li>
         <li>1 outlet, unlimited transaksi</li>
-        <li>30 hari penuh — bukan trial 7 hari pelit</li>
+        <li>Coin sisa trial <strong>di-carry over</strong> kalau aktivasi</li>
         <li>Support via WhatsApp</li>
       </ul>
       <a href="/register.php" class="btn-pricing btn-pricing-outline" style="margin-top:auto;">Mulai Trial Gratis</a>
@@ -1315,16 +1315,20 @@ img { max-width: 100%; }
 
     <!-- Aktivasi Card -->
     <div class="pricing-card featured" style="display:flex;flex-direction:column;">
-      <div class="pricing-badge">⭐ Setelah Trial</div>
+      <div class="pricing-badge">⭐ Promo Launching</div>
       <div class="pricing-name">Aktivasi Outlet</div>
-      <div class="pricing-price"><sup>Rp</sup>300<span style="font-size:24px;font-weight:600;">rb</span><div class="per">1× per outlet · tanpa langganan bulanan</div></div>
-      <div class="pricing-desc">Setup fee sekali bayar untuk aktivasi outlet permanen. Topup coin sesuai pemakaian — kapan saja, berapa saja.</div>
+      <div class="pricing-price">
+        <div style="font-size:14px;color:rgba(255,255,255,.4);text-decoration:line-through;font-weight:500;margin-bottom:4px;">Rp 1.000.000</div>
+        <sup>Rp</sup>800<span style="font-size:24px;font-weight:600;">rb</span>
+        <div class="per">1× per outlet · permanen, tanpa langganan</div>
+      </div>
+      <div class="pricing-desc">Aktivasi outlet permanen — dapat <strong>100.000 coin</strong>. Sisa coin trial otomatis ditambahkan ke saldo aktivasi.</div>
       <div class="pricing-divider"></div>
       <ul class="pricing-features" style="flex:1;">
         <li><strong>Semua fitur Trial</strong> + AI tools lanjutan</li>
-        <li><strong>30.000 coin</strong> bonus aktivasi awal</li>
+        <li><strong>100.000 coin</strong> bonus aktivasi</li>
+        <li>+ <strong>sisa coin trial</strong> ditransfer otomatis</li>
         <li>Outlet aktif permanen (no expiry)</li>
-        <li>Topup coin self-service kapan saja</li>
         <li>Onboarding 1-on-1 (30 menit via WA/Zoom)</li>
         <li>Support prioritas + dedicated WA</li>
       </ul>
@@ -1341,7 +1345,7 @@ img { max-width: 100%; }
     <div style="flex:1;min-width:200px;">
       <div style="font-size:14px;font-weight:700;color:#C4B5FD;margin-bottom:4px;">Punya 2+ outlet atau franchise?</div>
       <div style="font-size:13px;color:rgba(255,255,255,.7);line-height:1.55;">
-        Setup fee tetap Rp 300rb/outlet, plus akses HQ Dashboard konsolidasi gratis. Diskon volume mulai 5 outlet — diskusi dengan tim kami.
+        Aktivasi tetap Rp 800rb/outlet (promo launching), plus akses HQ Dashboard konsolidasi gratis. Diskon volume mulai 3 outlet — diskusi dengan tim kami.
       </div>
     </div>
     <a href="https://wa.me/6285121519302?text=Halo+Tim+LAMASY%2C+saya+ingin+diskusi+pricing+untuk+multi-outlet."
@@ -1482,10 +1486,10 @@ img { max-width: 100%; }
     <?php
     $faqs = [
       ['Apakah LAMASY benar-benar gratis di awal?',
-       'Trial <strong>30 hari penuh</strong> dan benar-benar gratis — tidak perlu kartu kredit, tidak ada biaya tersembunyi. Semua fitur (POS, Keuangan, Karyawan, AI, WA) bisa dicoba. Setelah trial, aktivasi outlet permanen dengan setup fee Rp 300rb sekali bayar.'],
+       'Trial <strong>7 hari</strong> benar-benar gratis — tidak perlu kartu kredit, tidak ada biaya tersembunyi. Semua fitur (POS, Keuangan, Karyawan, AI, WA) terbuka. Dapat <strong>10.000 coin gratis</strong> untuk coba fitur AI &amp; WA. Setelah trial, aktivasi outlet permanen Rp 800rb (promo launching, normal Rp 1jt) sekali bayar.'],
 
       ['Bagaimana sistem pricing-nya? Saya bingung soal coin.',
-       'Simpel: <strong>1× setup fee Rp 300rb per outlet</strong> untuk aktivasi permanen, sisanya pay-per-use via Coin. Contoh: 1× WA notif = 50 coin, 1× AI Chat = 50 coin, 1× AI Briefing = 500 coin. Topup coin self-service (mulai Rp 50rb / 10.000 coin). <strong>Tidak ada langganan bulanan wajib</strong> — kamu yang kontrol pemakaian.'],
+       'Simpel: <strong>1× aktivasi Rp 800rb per outlet</strong> (promo launching) untuk akses permanen, sisanya pay-per-use via Coin. Saat aktivasi dapat <strong>100.000 coin bonus</strong> — plus sisa coin trial kamu otomatis ditambahkan ke saldo. Contoh harga fitur: WA notif = 50 coin, AI Chat = 50 coin, AI Briefing = 500 coin. Topup self-service mulai Rp 50rb / 10.000 coin. <strong>Tidak ada langganan bulanan wajib</strong> — kamu yang kontrol pemakaian.'],
 
       ['Apa bedanya dengan aplikasi laundry lain?',
        'Tiga hal utama: <strong>(1)</strong> Pricing transparan pay-per-use — tidak ada paket bertingkat yang membatasi fitur. <strong>(2)</strong> AI terintegrasi — briefing pagi, chat dengan data laporan, deteksi pelanggan dormant. <strong>(3)</strong> Laporan keuangan formal SAK EMKM (Laba Rugi, Neraca, Arus Kas) — siap pajak, tanpa perlu akuntan.'],
@@ -1500,7 +1504,7 @@ img { max-width: 100%; }
        'LAMASY dirancang <strong>mobile-first</strong> — semua halaman responsif. Kasir bisa pakai HP, owner cek dashboard dari mana saja, kurir update status order via HP. Tidak perlu install aplikasi, cukup buka browser dan login.'],
 
       ['Punya 2+ outlet. Bagaimana managementnya?',
-       'Owner dapat akses HQ Dashboard otomatis — konsolidasi omzet semua outlet, drilldown per outlet, transfer coin antar-outlet, mutasi karyawan, audit log lintas-outlet. Karyawan bisa di-assign multi-outlet (Area Coordinator, kurir antar-outlet, perbantuan weekend). Setup fee Rp 300rb/outlet.'],
+       'Owner dapat akses HQ Dashboard otomatis — konsolidasi omzet semua outlet, drilldown per outlet, transfer coin antar-outlet, mutasi karyawan, audit log lintas-outlet. Karyawan bisa di-assign multi-outlet (Area Coordinator, kurir antar-outlet, perbantuan weekend). Aktivasi tetap Rp 800rb/outlet (promo launching) — diskon volume mulai 3 outlet, diskusi langsung dengan tim kami.'],
 
       ['Bisa tambah karyawan dengan role berbeda?',
        'Ya. Role bawaan: Owner, Manager, Kasir, Staff (operator cuci), Kurir, Mitra (drop point). Setiap role punya akses & tampilan sesuai tugas — kasir cuma lihat POS+orders, manager lihat laporan outlet, owner lihat semua. Custom role + permission juga bisa di-atur.'],
@@ -1509,7 +1513,7 @@ img { max-width: 100%; }
        'AI di LAMASY fokus ke 4 hal konkret: <strong>(1) Briefing pagi</strong> — ringkasan kondisi outlet otomatis. <strong>(2) Chat dengan Data</strong> — tanya pakai bahasa natural, AI baca laporan. <strong>(3) Pesan retensi</strong> — generate WA personal untuk pelanggan dormant. <strong>(4) Upselling di POS</strong> — saran cross-sell saat kasir input order. Semua opt-in, bisa di-skip kalau nggak perlu.'],
 
       ['Bagaimana jika trial habis dan belum aktivasi?',
-       'Setelah trial 30 hari, outlet masuk periode <strong>grace 30 hari</strong> — data masih bisa dilihat (read-only) tapi tidak bisa input order baru. Setelah grace berakhir, outlet ditangguhkan tapi data tetap tersimpan 90 hari. Kamu bisa aktivasi kapan saja tanpa kehilangan data.'],
+       'Setelah trial 7 hari, outlet masuk periode <strong>grace 7 hari</strong> — data masih bisa dilihat (read-only) tapi tidak bisa input order baru. Setelah grace berakhir, outlet ditangguhkan tapi data tetap tersimpan 30 hari. Kamu bisa aktivasi kapan saja tanpa kehilangan data — sisa coin trial juga tetap tersimpan.'],
 
       ['Apakah ada kontrak jangka panjang?',
        'Tidak ada. Tidak ada kontrak bulanan/tahunan. Setup fee dibayar sekali untuk aktivasi outlet permanen, sisanya kamu yang kontrol via topup coin. Berhenti pakai? Coin tersimpan sampai kamu aktif lagi, tidak ada penalti.'],
@@ -1544,9 +1548,9 @@ img { max-width: 100%; }
 <div class="cta-banner">
   <div class="cta-inner">
     <h2>Siap Digitalisasi Laundry Anda?</h2>
-    <p>Mulai trial 30 hari penuh sekarang — semua fitur, tanpa kartu kredit, tanpa komitmen. Setelah cocok, aktivasi outlet permanen cuma Rp 300rb sekali bayar.</p>
+    <p>Mulai trial 7 hari sekarang dengan 10.000 coin gratis — semua fitur, tanpa kartu kredit. Setelah cocok, aktivasi outlet permanen <strong>Rp 800rb</strong> (promo launching, normal Rp 1jt) + 100rb coin bonus.</p>
     <div class="cta-btns">
-      <a href="/register.php" class="btn-primary">&#128640; Mulai Trial 30 Hari Gratis</a>
+      <a href="/register.php" class="btn-primary">&#128640; Mulai Trial 7 Hari Gratis</a>
       <a href="https://wa.me/6285121519302?text=Halo+saya+ingin+tahu+lebih+lanjut+tentang+LAMASY" target="_blank" class="btn-secondary">&#128172; Chat WhatsApp</a>
     </div>
   </div>
