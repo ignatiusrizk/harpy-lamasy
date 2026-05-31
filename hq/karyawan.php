@@ -873,7 +873,7 @@ async function loadList(){
         <div class="kr-outlets">${outlets}</div>
         <div class="kr-actions">
           <button class="btn btn-light" onclick="showDetail(${r.id})">Detail</button>
-          ${r.is_active==1 ? `<button class="btn btn-primary" onclick="openMutasi(${r.id}, '${escapeHtml(r.nama)}', ${JSON.stringify(r.assignments||[]).replace(/'/g, '&apos;')})">🔄 Mutasi</button>` : ''}
+          ${r.is_active==1 ? `<button class="btn btn-primary" onclick="openMutasi(${r.id}, '${escapeHtml(r.nama)}', ${JSON.stringify(r.assignments||[]).replace(/'/g, '&apos;')})">${(r.assignments||[]).length === 0 ? '📍 Assign Outlet' : '🔄 Mutasi'}</button>` : ''}
         </div>
       </div>
     `;
@@ -956,7 +956,7 @@ async function showDetail(id){
     </div>
 
     <div class="section">
-      <div class="section-label">📜 Riwayat Mutasi</div>
+      <div class="section-label">📜 Riwayat Penugasan</div>
       ${histHtml}
     </div>
 
