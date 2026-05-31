@@ -384,6 +384,76 @@ if ($action) {
         echo json_encode($t); exit;
     }
 
+    // GENERATE WA NOTA — kirim struk via WA setelah order tersimpan
+    if ($action === 'wa_nota') {
+        require_once ROOT . '/core/CoinLedger.php';
+        require_once ROOT . '/core/WaLogger.php';
+
+        $id = (int)($_GET['id'] ?? 0);
+        if ($id <= 0) { echo json_encode(['error'=>'id wajib']); exit; }
+
+        $t = TenantQuery::rawOne(
+            "SELECT * FROM hl_transaksi WHERE tenant_id=? AND outlet_id=? AND id=?", [$tid, $oid, $id]
+        );
+        if (!$t) { echo json_encode(['error'=>'Order tidak ditemukan']); exit; }
+
+        $phone = preg_replace('/[^0-9]/', '', $t['telepon'] ?? '');
+        if (!$phone) { echo json_encode(['error'=>'Nomor HP pelanggan kosong']); exit; }
+        if (substr($phone, 0, 1) === '0') $phone = '62' . substr($phone, 1);
+
+        // Cek coin balance
+        if (!CoinLedger::canAfford('send_wa_nota')) {
+            echo json_encode(['error'=>'Koin tidak cukup untuk WA Nota (butuh 150 koin).']);
+            exit;
+        }
+
+        // Load items, tenant info, outlet info
+        $t['items'] = TenantQuery::raw(
+            "SELECT * FROM hl_transaksi_item WHERE tenant_id=? AND outlet_id=? AND transaksi_id=? ORDER BY id",
+            [$tid, $oid, $id]
+        );
+
+        $tenant      = TenantResolver::getTenant();
+        $outlet      = TenantResolver::getOutlet();
+        $brandName   = $tenant['nama_perusahaan'] ?: ($outlet['nama_outlet'] ?? 'Laundry');
+        $outletNama  = $outlet['nama_outlet'] ?? $brandName;
+        $alamat      = trim(($outlet['alamat'] ?? '') . ($outlet['kota'] ? ', ' . $outlet['kota'] : ''));
+
+        $itemList = '';
+        foreach ($t['items'] as $item) {
+            $itemList .= "\n   • " . $item['nama_layanan'] . " — " . floatval($item['jumlah']) . " " . $item['satuan'];
+        }
+
+        $totalFmt = "Rp " . number_format(floatval($t['total']), 0, ',', '.');
+        $dpFmt    = "Rp " . number_format(floatval($t['dp']), 0, ',', '.');
+        $sisaFmt  = "Rp " . number_format(floatval($t['sisa_bayar']), 0, ',', '.');
+        $tgl      = $t['tanggal'] ? date('d M Y', strtotime($t['tanggal'])) : '-';
+        $est      = $t['estimasi_selesai'] ? date('d M Y', strtotime($t['estimasi_selesai'])) : '-';
+        $metode   = ['cash'=>'Cash','transfer'=>'Transfer','qris'=>'QRIS'][$t['metode_bayar']] ?? $t['metode_bayar'];
+        $trackUrl = (defined('APP_URL') ? APP_URL : 'https://lamasy.harpy.id') . '/track.php?order=' . urlencode($t['no_order']);
+
+        $msg = "Halo *{$t['nama_pelanggan']}* 👋\n\n"
+             . "Pesanan Anda di *{$brandName}* sudah kami terima ✅\n\n"
+             . "📋 *No. Order:* {$t['no_order']}\n"
+             . "📅 *Tanggal:* {$tgl}\n"
+             . "🧺 *Layanan:*{$itemList}\n\n"
+             . "💰 *Total:* {$totalFmt}\n"
+             . "💵 *Bayar ({$metode}):* {$dpFmt}\n"
+             . ($t['sisa_bayar'] > 0 ? "⚠️ *Sisa Bayar:* {$sisaFmt}\n" : "✅ *Status Bayar:* Lunas\n")
+             . "📅 *Est. Selesai:* {$est}\n\n"
+             . "🔍 Cek status real-time:\n{$trackUrl}\n\n"
+             . ($alamat ? "📍 *Alamat outlet:*\n{$outletNama}\n{$alamat}\n\n" : "")
+             . "Terima kasih sudah mempercayakan cucian Anda kepada kami 🙏\n"
+             . "_" . $brandName . "_";
+
+        // Deduct coin + log
+        CoinLedger::deduct('send_wa_nota', $t['no_order']);
+        WaLogger::log('wa_nota', $phone, mb_substr($msg, 0, 200), $tid, $oid);
+
+        echo json_encode(['ok'=>true, 'message'=>$msg, 'phone'=>$phone, 'no_order'=>$t['no_order']]);
+        exit;
+    }
+
     echo json_encode(['error'=>'Unknown action']); exit;
 }
 ?>
@@ -859,6 +929,7 @@ textarea{resize:vertical;min-height:64px}
     <div class="modal-footer" style="gap:6px;flex-wrap:wrap">
       <button class="btn btn-outline" onclick="closeModal()">Tutup</button>
       <button class="btn btn-green" onclick="printStruk()">🖨️ Print Struk</button>
+      <button class="btn btn-teal-sm" onclick="kirimNotaWA()" title="Kirim nota via WhatsApp (150 koin)">📲 Kirim WA</button>
       <a id="openStrukBtn" href="#" target="_blank" class="btn btn-teal-sm">↗ Buka Penuh</a>
       <button class="btn btn-teal-sm" onclick="window.location.href='/orders'">📋 Orders</button>
     </div>
@@ -1460,6 +1531,25 @@ function printStruk() {
   }
 }
 function closeModal()  { document.getElementById('modalStruk').classList.remove('open'); }
+
+// ── Kirim Nota via WA (150 koin) ──
+async function kirimNotaWA() {
+  if (!lastSaved || !lastSaved.id) { showToast('⚠️ Order belum tersimpan', 'error'); return; }
+  if (!confirm('Kirim nota via WhatsApp ke pelanggan?\n\n💰 Biaya: 150 koin')) return;
+
+  try {
+    const r = await fetch('pos.php?action=wa_nota&id=' + lastSaved.id);
+    const d = await r.json();
+    if (d.error) { showToast('❌ ' + d.error, 'error'); return; }
+
+    // Buka WhatsApp dengan pesan
+    const url = 'https://wa.me/' + d.phone + '?text=' + encodeURIComponent(d.message);
+    window.open(url, '_blank');
+    showToast('📲 WhatsApp dibuka — 150 koin terpotong', 'success');
+  } catch (e) {
+    showToast('❌ Gagal kirim WA: ' + e.message, 'error');
+  }
+}
 
 let appliedVoucher = null;
 

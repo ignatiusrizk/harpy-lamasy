@@ -553,37 +553,45 @@ if ($action) {
         $appUrl   = defined('APP_URL') ? APP_URL : 'https://lamasy.harpy.id';
         $trackUrl = $appUrl . '/track.php?order=' . urlencode($t['no_order']);
 
+        // Dinamis: nama brand + alamat outlet dari DB
+        $tenant      = TenantResolver::getTenant();
+        $outlet      = TenantResolver::getOutlet();
+        $brandName   = $tenant['nama_perusahaan'] ?: ($outlet['nama_outlet'] ?? 'Laundry');
+        $outletNama  = $outlet['nama_outlet'] ?? $brandName;
+        $alamatLine  = trim(($outlet['alamat'] ?? '') . ($outlet['kota'] ? ', ' . $outlet['kota'] : ''));
+        $alamatBlock = $alamatLine ? "{$outletNama}\n{$alamatLine}" : $outletNama;
+
         if ($tipe === 'siap') {
             $msg = "Halo *{$t['nama_pelanggan']}* 👋\n\n"
-                 . "Laundry Anda di *Harpy Laundry* sudah *✅ SIAP DIAMBIL!*\n\n"
+                 . "Laundry Anda di *{$brandName}* sudah *✅ SIAP DIAMBIL!*\n\n"
                  . "📋 *No. Order:* {$t['no_order']}\n"
                  . "🧺 *Layanan:*{$itemList}\n"
                  . "💰 *Total:* {$totalFmt}\n"
                  . ($t['sisa_bayar'] > 0 ? "⚠️ *Sisa Bayar:* {$sisaFmt}\n" : "✅ *Status Bayar:* Lunas\n")
-                 . "\n📍 Silakan diambil di:\nJl. Rawa Selatan IV No.1, Johar Baru, Jakarta Pusat\n"
+                 . "\n📍 Silakan diambil di:\n{$alamatBlock}\n"
                  . "\n🔍 Cek detail order: {$trackUrl}\n"
-                 . "\nTerima kasih sudah mempercayakan cucian Anda kepada kami 🙏\n_Harpy Laundry | harpy.id_";
+                 . "\nTerima kasih sudah mempercayakan cucian Anda kepada kami 🙏\n_{$brandName}_";
         } elseif ($tipe === 'lunas_reminder') {
             $msg = "Halo *{$t['nama_pelanggan']}* 👋\n\n"
-                 . "Ini pengingat untuk pelunasan laundry Anda di *Harpy Laundry*.\n\n"
+                 . "Ini pengingat untuk pelunasan laundry Anda di *{$brandName}*.\n\n"
                  . "📋 *No. Order:* {$t['no_order']}\n"
                  . "💰 *Total:* {$totalFmt}\n"
                  . "⚠️ *Sisa yang harus dibayar:* {$sisaFmt}\n\n"
                  . "🔍 Detail order: {$trackUrl}\n\n"
                  . "Mohon segera dilunasi saat pengambilan ya 🙏\n"
-                 . "\nTerima kasih!\n_Harpy Laundry | harpy.id_";
+                 . "\nTerima kasih!\n_{$brandName}_";
         } else {
             $statusLabel = ['masuk'=>'Diterima','cuci'=>'Sedang Dicuci','kering'=>'Sedang Dikeringkan',
                 'setrika'=>'Sedang Disetrika','siap'=>'Siap Diambil','diambil'=>'Sudah Diambil'];
             $stLabel = $statusLabel[$t['status_proses']] ?? $t['status_proses'];
             $msg = "Halo *{$t['nama_pelanggan']}* 👋\n\n"
-                 . "Update status laundry Anda di *Harpy Laundry*:\n\n"
+                 . "Update status laundry Anda di *{$brandName}*:\n\n"
                  . "📋 *No. Order:* {$t['no_order']}\n"
                  . "🔄 *Status:* {$stLabel}\n"
                  . "📅 *Est. Selesai:* {$est}\n"
                  . "🧺 *Layanan:*{$itemList}\n\n"
                  . "🔍 Cek status real-time: {$trackUrl}\n\n"
-                 . "Terima kasih 🙏\n_Harpy Laundry | harpy.id_";
+                 . "Terima kasih 🙏\n_{$brandName}_";
         }
 
         $phone = preg_replace('/[^0-9]/', '', $t['telepon'] ?? '');
@@ -1075,11 +1083,24 @@ textarea{resize:vertical;min-height:64px}
   </div>
 </div>
 
+<?php
+// Tenant + outlet info untuk template struk (dinamis per tenant)
+$_tenantInfo  = TenantResolver::getTenant();
+$_outletInfo  = TenantResolver::getOutlet();
+$_brandName   = $_tenantInfo['nama_perusahaan'] ?: ($_outletInfo['nama_outlet'] ?? 'Laundry');
+$_outletNama  = $_outletInfo['nama_outlet'] ?? $_brandName;
+$_outletAddr  = trim(($_outletInfo['alamat'] ?? '') . ($_outletInfo['kota'] ? ', ' . $_outletInfo['kota'] : ''));
+$_outletTelp  = $_outletInfo['telepon'] ?? '';
+?>
 <script>
 let searchTimer = null;
 let currentEditId = null;
 let editItems = [];
 let layananAll = [];
+const BRAND_NAME   = <?= json_encode($_brandName) ?>;
+const OUTLET_NAMA  = <?= json_encode($_outletNama) ?>;
+const OUTLET_ADDR  = <?= json_encode($_outletAddr) ?>;
+const OUTLET_TELP  = <?= json_encode($_outletTelp) ?>;
 const CAN_BAYAR      = <?= hasPermission('orders.bayar')         ? 'true' : 'false' ?>;
 const CAN_EDIT_ORDER = <?= hasPermission('orders.edit')           ? 'true' : 'false' ?>;
 const CAN_DEL_ORDER  = <?= hasPermission('orders.delete')         ? 'true' : 'false' ?>;
@@ -1609,10 +1630,9 @@ async function cetakUlang(id) {
   document.getElementById('strukCetakUlang').innerHTML = `
     <div class="struk">
       <div class="struk-header">
-        <h2>🫧 HARPY LAUNDRY</h2>
-        <p>Jl. Rawa Selatan IV No.1, Johar Baru</p>
-        <p>Jakarta Pusat | +62 896-1525-9302</p>
-        <p>harpy.id</p>
+        <h2>🫧 ${BRAND_NAME.toUpperCase()}</h2>
+        ${OUTLET_ADDR ? `<p>${OUTLET_ADDR}</p>` : ''}
+        ${OUTLET_TELP ? `<p>${OUTLET_TELP}</p>` : ''}
         <p style="margin-top:4px;font-size:10px">— SALINAN NOTA —</p>
       </div>
       <div class="struk-row"><span>No. Order</span><span>${d.no_order}</span></div>
@@ -1636,7 +1656,7 @@ async function cetakUlang(id) {
         <p>Status: ${isFull ? '✅ LUNAS' : '⚡ Belum Lunas'}</p>
         <p>Cek status: lamasy.harpy.id/track.php</p>
         <p>Terima kasih telah mempercayakan</p>
-        <p>cucian Anda kepada Harpy Laundry!</p>
+        <p>cucian Anda kepada ${BRAND_NAME}!</p>
       </div>
     </div>`;
 }
