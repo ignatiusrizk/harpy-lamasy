@@ -155,7 +155,9 @@ function renderTopbar(string $activePage = '', bool $minimalMode = false): void 
         'hr' => [
             'label' => 'HR',
             'items' => [
-                'karyawan'  => ['label'=>'Karyawan',  'url'=>'/karyawan',  'perm'=>'karyawan.view'],
+                // Owner kelola karyawan terpusat di HQ (assign multi-outlet) → sembunyikan
+                // di app outlet supaya tidak redundant. Manager (tanpa akses HQ) tetap lihat.
+                'karyawan'  => ['label'=>'Karyawan',  'url'=>'/karyawan',  'perm'=>'karyawan.view', 'hide_roles'=>['owner']],
                 'absensi'   => ['label'=>'Absensi',   'url'=>'/absensi',   'perms'=>['absensi.view','absensi.clock']],
                 'droppoint' => ['label'=>'Drop Point','url'=>'/droppoint',
                                 'roles'=>['owner','superadmin','admin','manager']],
@@ -182,6 +184,11 @@ function renderTopbar(string $activePage = '', bool $minimalMode = false): void 
 
     // Cek visibilitas satu menu item: permission-based dulu, role-based sebagai fallback
     function navItemVisible(array $item, array $user): bool {
+        // hide_roles: sembunyikan untuk role tertentu walau punya permission
+        // (mis. owner — karena ada menu setara di HQ)
+        if (!empty($item['hide_roles']) && in_array($user['role'] ?? '', $item['hide_roles'], true)) {
+            return false;
+        }
         if (array_key_exists('perm', $item)) {
             if ($item['perm'] === null) return true;           // selalu tampil
             return hasPermission($item['perm']);

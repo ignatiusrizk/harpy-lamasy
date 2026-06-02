@@ -157,6 +157,20 @@ input:checked + .toggle-slider::before{transform:translateX(18px)}
 <?php renderTopbar('layanan'); ?>
 <div class="hl-main">
 
+  <!-- #3 Flag penjelas hierarki master → outlet -->
+  <div style="display:flex;align-items:flex-start;gap:10px;background:#EFF6FF;border:1px solid #BFDBFE;
+              border-radius:10px;padding:11px 14px;margin-bottom:16px;font-size:13px;color:#1E40AF;line-height:1.55">
+    <span style="font-size:16px;flex-shrink:0">🧺</span>
+    <div>
+      <strong>Layanan khusus outlet ini.</strong>
+      Daftar &amp; harga dasar dikelola terpusat di <strong>Master Katalog (HQ)</strong> lalu di-push ke outlet.
+      Di sini kamu bisa lihat &amp; sesuaikan harga khusus outlet ini.
+      <?php if (($user['role'] ?? '') === 'owner'): ?>
+        <a href="/hq/layanan" style="color:#1D4ED8;font-weight:700;text-decoration:underline">Buka Master Katalog →</a>
+      <?php endif; ?>
+    </div>
+  </div>
+
   <div class="hl-stat-grid-4" style="margin-bottom:20px">
     <div class="hl-stat-card teal"><div class="hl-stat-num" id="sTotal">-</div><div class="hl-stat-label">🧺 Layanan Aktif</div></div>
     <div class="hl-stat-card navy"><div class="hl-stat-num" id="sKat">-</div><div class="hl-stat-label">📂 Kategori</div></div>
