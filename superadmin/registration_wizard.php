@@ -34,6 +34,10 @@ if (isset($_GET['new']) || empty($_SESSION['sa_wizard'])) {
         $_SESSION['sa_wizard']['kota']             = $regRow['kota'] ?? '';
         $_SESSION['sa_wizard']['source']           = $regRow['source'] ?? 'assisted';
         $_SESSION['sa_wizard']['notes']            = $regRow['notes'] ?? '';
+        // Kalau registrasi sudah punya tenant/outlet (self-service yang sudah daftar
+        // & buat trial outlet) → simpan supaya provisioning AKTIFKAN, bukan buat baru.
+        $_SESSION['sa_wizard']['existing_tenant_id'] = (int)($regRow['tenant_id'] ?? 0);
+        $_SESSION['sa_wizard']['existing_outlet_id'] = (int)($regRow['outlet_id'] ?? 0);
     }
 }
 
@@ -113,10 +117,120 @@ if ($step === 5 && !$result && !empty($wiz['result'])) {
 }
 
 // ── Provisioning ──────────────────────────────────────
+/**
+ * Aktifkan tenant + outlet yang SUDAH ADA (self-service registration).
+ * Tidak membuat tenant/outlet baru — hanya ubah status → active, topup coin,
+ * catat pembayaran, tandai registrasi selesai.
+ */
+function activateExistingTenant(PDO $db, int $saId, array $wizard, int $tenantId): array
+{
+    $db->beginTransaction();
+    try {
+        // Cari outlet: prioritas outlet dari registrasi, lalu outlet utama, lalu pertama
+        $outletId = (int)($wizard['existing_outlet_id'] ?? 0);
+        if ($outletId <= 0) {
+            $o = $db->prepare("SELECT id FROM outlets WHERE tenant_id=? ORDER BY is_main DESC, id ASC LIMIT 1");
+            $o->execute([$tenantId]);
+            $outletId = (int)$o->fetchColumn();
+        }
+        if ($outletId <= 0) {
+            $db->rollBack();
+            return ['success' => false, 'error' => 'Outlet untuk tenant ini tidak ditemukan.'];
+        }
+
+        $payStatus    = $wizard['payment_status'] ?? 'belum_bayar';
+        $isActiveNow  = ($payStatus === 'sudah_bayar' || $payStatus === 'gratis');
+        $outletStatus = $isActiveNow ? 'active' : 'pending';
+
+        // Aktifkan outlet + tenant (idempotent)
+        $db->prepare("UPDATE outlets SET status=?, activated_at=COALESCE(activated_at,NOW()) WHERE id=? AND tenant_id=?")
+           ->execute([$outletStatus, $outletId, $tenantId]);
+        $db->prepare("UPDATE tenants SET status=? WHERE id=?")
+           ->execute([$isActiveNow ? 'active' : 'trial', $tenantId]);
+
+        // Tandai registrasi selesai
+        if (!empty($wizard['reg_id'])) {
+            $db->prepare("UPDATE registration_requests SET status='completed', tenant_id=?, outlet_id=?, handled_by=?, updated_at=NOW() WHERE id=?")
+               ->execute([$tenantId, $outletId, $saId ?: null, (int)$wizard['reg_id']]);
+        }
+
+        logSuperAdminAction('activate_existing_tenant', $tenantId,
+            "Aktivasi self-service: outlet #$outletId, payment=$payStatus");
+
+        $db->commit();
+
+        // ── Coin topup + payment record (setelah commit utama) ──
+        $coinAwal = (int)($wizard['coin_awal'] ?? 0);
+        if ($payStatus === 'sudah_bayar') {
+            $smp = $db->prepare(
+                "INSERT INTO saas_manual_payments
+                   (tenant_id,superadmin_id,type,nominal_dibayar,coin_dikreditkan,metode,
+                    nama_pengirim,ref_transfer,tanggal_bayar,catatan,status,created_at)
+                 VALUES (?,?,'setup_fee',?,?,?,?,?,?,?,'confirmed',NOW())"
+            );
+            $smp->execute([$tenantId,$saId,(int)($wizard['setup_fee']??0),$coinAwal,
+                $wizard['metode']??'transfer_bca',$wizard['nama_pengirim']??null,
+                $wizard['ref_transfer']?:null,$wizard['tanggal_bayar']?:date('Y-m-d'),$wizard['catatan']?:null]);
+            if ($coinAwal > 0) {
+                _inlineCoinTopup($db,$tenantId,$outletId,$coinAwal,$wizard['coin_mode']??'shared','SMP-'.$db->lastInsertId(),'Coin aktivasi outlet');
+            }
+        } elseif ($payStatus === 'gratis') {
+            $adjReason = $wizard['adjustment_reason'] ?? 'promo';
+            $smp = $db->prepare(
+                "INSERT INTO saas_manual_payments
+                   (tenant_id,superadmin_id,type,nominal_dibayar,coin_dikreditkan,metode,
+                    catatan,adjustment_reason,status,tanggal_bayar,created_at)
+                 VALUES (?,?,'adjustment',0,?,'lainnya',?,?,'confirmed',?,NOW())"
+            );
+            $smp->execute([$tenantId,$saId,$coinAwal,$wizard['catatan']?:'Gratis/promo aktivasi',$adjReason,date('Y-m-d')]);
+            if ($coinAwal > 0) {
+                _inlineCoinTopup($db,$tenantId,$outletId,$coinAwal,$wizard['coin_mode']??'shared','SMP-'.$db->lastInsertId(),'Coin gratis/promo — '.$adjReason);
+            }
+        }
+
+        // ── WA message (akun sudah ada, tidak kirim password baru) ──
+        $tn = $db->prepare("SELECT owner_name, owner_wa FROM tenants WHERE id=?");
+        $tn->execute([$tenantId]);
+        $t = $tn->fetch(PDO::FETCH_ASSOC) ?: [];
+        $coinLine = ($payStatus !== 'belum_bayar' && $coinAwal > 0)
+            ? "\n🪙 Coin       : +" . number_format($coinAwal,0,',','.') . " coin" : "";
+        $waMsg = "Halo *" . ($t['owner_name'] ?? '') . "*!\n\n"
+            . "Outlet Anda di *LaMaSy* sudah *AKTIF* 🎉" . $coinLine . "\n\n"
+            . "Silakan lanjut operasional di " . (defined('APP_URL') ? APP_URL : 'https://lamasy.harpy.id') . "/login\n"
+            . "(pakai akun yang sudah Anda daftarkan)\n\n_Tim LaMaSy — Harpy Group_";
+
+        return [
+            'success'           => true,
+            'tenant_id'         => $tenantId,
+            'outlet_id'         => $outletId,
+            'username'          => '(akun sudah terdaftar)',
+            'password'          => '(tidak berubah)',
+            'coin_credited'     => ($payStatus !== 'belum_bayar') ? $coinAwal : 0,
+            'payment_status'    => $payStatus,
+            'activated_existing'=> true,
+            'wa_message'        => $waMsg,
+            'wa_number'         => preg_replace('/[^0-9]/', '', $t['owner_wa'] ?? ''),
+        ];
+    } catch (Throwable $e) {
+        if ($db->inTransaction()) $db->rollBack();
+        error_log('[activateExistingTenant] ' . $e->getMessage());
+        return ['success' => false, 'error' => $e->getMessage()];
+    }
+}
+
 function provisionTenant(array $wizard): array
 {
     $db = Database::get();
     $saId = (int)($_SESSION['superadmin_id'] ?? 0);
+
+    // ── GUARD: registrasi self-service yang TENANT-nya sudah ada (sudah daftar
+    // + buat trial outlet). JANGAN buat tenant/outlet baru → aktifkan yang ada.
+    // Tanpa ini, wizard bikin outlet duplikat.
+    $existingTenantId = (int)($wizard['existing_tenant_id'] ?? 0);
+    if ($existingTenantId > 0) {
+        return activateExistingTenant($db, $saId, $wizard, $existingTenantId);
+    }
+
     $db->beginTransaction();
     try {
         // 1. Unique slug
