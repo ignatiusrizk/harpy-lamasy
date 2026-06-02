@@ -1485,13 +1485,25 @@ function renderKeuNeraca(d) {
   if (d.ekuitas.laba_ditahan) lH += row('Laba Ditahan', d.ekuitas.laba_ditahan, 'indent');
   lH += row('Laba Periode Berjalan', d.ekuitas.laba_periode||0, 'indent');
   if ((d.ekuitas.prive||0) > 0) lH += row('(−) Prive / Penarikan Owner', d.ekuitas.prive, 'indent');
+  if (Math.abs(d.ekuitas.penyesuaian||0) >= 1) lH += row('Modal Awal / Penyesuaian', d.ekuitas.penyesuaian, 'indent');
   lH += row('Total Ekuitas', d.ekuitas.total_ekuitas||0, 'subtotal');
   lH += row('TOTAL LIABILITAS + EKUITAS', d.total_liab_ekuitas||0, 'total');
+
+  // Penjelasan kalau penyesuaian besar — bantu owner paham
+  let note = '';
+  if (d.penyesuaian_warning) {
+    note = `<div style="margin-top:14px;padding:12px 14px;background:#FEF3C7;border:1px solid #FCD34D;border-radius:8px;font-size:12px;color:#92400E;line-height:1.6">
+      <strong>ℹ️ Tentang "Modal Awal / Penyesuaian" (${fmtRp(d.ekuitas.penyesuaian)})</strong><br>
+      Angka ini menyeimbangkan neraca dari saldo awal yang belum tercatat lengkap.
+      Untuk angka yang lebih akurat, pastikan setiap aset/pinjaman juga punya entri pasangannya
+      (mis. aset dibeli dari Modal Disetor atau Kas). Catat lewat tab <strong>Jurnal Manual</strong>.
+    </div>`;
+  }
 
   box.innerHTML = `<div class="keu-grid2">
     <div style="padding-right:12px;border-right:1px solid #F3F4F6">${aH}</div>
     <div style="padding-left:6px">${lH}</div>
-  </div>`;
+  </div>${note}`;
 }
 
 // ── ARUS KAS ──────────────────────────────────────────

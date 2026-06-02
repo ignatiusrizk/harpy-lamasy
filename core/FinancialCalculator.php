@@ -261,7 +261,10 @@ class FinancialCalculator
         $persediaan  = self::getSaldoManual($tenantId, $outletId, 'persediaan',  $endDate);
         $biayaDimuka = self::getSaldoManual($tenantId, $outletId, 'biaya_dimuka', $endDate);
 
-        $totalAsetLancar = max(0, $kasTunai) + $kasBank + $piutang + $persediaan + $biayaDimuka;
+        // Jangan floor kas ke 0 — saldo kas negatif (kas keluar > masuk) harus
+        // tetap dihitung apa adanya supaya neraca tidak timpang. Floor ke 0
+        // sebelumnya bikin selisih = besarnya saldo kas negatif.
+        $totalAsetLancar = $kasTunai + $kasBank + $piutang + $persediaan + $biayaDimuka;
 
         // Aset tetap (nilai buku)
         $asetTetap = self::hitungNilaiBukuAset($tenantId, $outletId, $endDate);
@@ -300,15 +303,24 @@ class FinancialCalculator
         $prive        = self::getSaldoManual($tenantId, $outletId, 'prive',         $endDate);
         $labaDitahan  = self::hitungLabaDitahan($tenantId, $outletId, $periode);
         $labaPeriode  = self::labaRugi($tenantId, $outletId, $periode)['laba_bersih'];
-        $totalEkuitas = $modalDisetor - $prive + $labaDitahan + $labaPeriode;
+        $ekuitasReal  = $modalDisetor - $prive + $labaDitahan + $labaPeriode;
+
+        // Neraca ini disusun (constructed) dari beberapa sumber, bukan ledger
+        // double-entry penuh. Aset (kas/piutang/aset tetap) & liabilitas bisa
+        // diinput tanpa entry pasangannya, jadi sisi tidak otomatis seimbang.
+        // Solusi standar tool akuntansi ringan (Opening Balance Equity): selisih
+        // dimasukkan sebagai "Modal Awal / Penyesuaian" supaya neraca seimbang,
+        // sekaligus jadi sinyal kalau angkanya besar (ada entry yang belum lengkap).
+        $penyesuaian  = $totalAset - $totalLiab - $ekuitasReal;
+        $totalEkuitas = $ekuitasReal + $penyesuaian;
 
         $totalLiabEkuitas = $totalLiab + $totalEkuitas;
-        $selisih = $totalAset - $totalLiabEkuitas;
+        $selisih = $totalAset - $totalLiabEkuitas; // ≈ 0 setelah penyesuaian
 
         return [
             'periode'       => $periode,
             'aset'          => [
-                'kas_tunai'          => max(0, $kasTunai),
+                'kas_tunai'          => $kasTunai,
                 'kas_bank'           => $kasBank,
                 'piutang'            => $piutang,
                 'persediaan'         => $persediaan,
@@ -331,11 +343,14 @@ class FinancialCalculator
                 'prive'          => $prive,
                 'laba_ditahan'   => $labaDitahan,
                 'laba_periode'   => $labaPeriode,
+                'penyesuaian'    => $penyesuaian,
                 'total_ekuitas'  => $totalEkuitas,
             ],
             'total_liab_ekuitas' => $totalLiabEkuitas,
             'is_balanced'        => abs($selisih) < 1000,
             'selisih'            => $selisih,
+            // Sinyal ke UI: kalau |penyesuaian| besar, ada entry belum lengkap
+            'penyesuaian_warning' => abs($penyesuaian) >= 1000,
         ];
     }
 
