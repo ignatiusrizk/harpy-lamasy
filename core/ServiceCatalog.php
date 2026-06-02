@@ -82,6 +82,100 @@ class ServiceCatalog
         }
     }
 
+    /**
+     * Import massal master layanan dari array baris (hasil parse Excel/CSV).
+     * Kolom dikenali fleksibel (nama/name, harga/price, kategori/category, satuan/unit, segmen).
+     *
+     * @return array {imported:int, errors:[{baris:int, error:string, data:array}]}
+     */
+    public static function importMaster(int $tenantId, array $rows): array
+    {
+        $imported = 0;
+        $errors   = [];
+
+        // Peta header fleksibel → field internal
+        $map = [
+            'nama'     => ['nama','name','layanan','nama layanan','nama_layanan','service'],
+            'kategori' => ['kategori','category','jenis','kelompok'],
+            'satuan'   => ['satuan','unit','uom'],
+            'harga'    => ['harga','price','harga_default','harga default','tarif','harga satuan'],
+            'segmen'   => ['segmen','segment','tipe','type'],
+        ];
+
+        // Normalisasi: ambil nilai dari baris berdasarkan kemungkinan nama kolom
+        $pick = function(array $row, array $aliases) {
+            foreach ($row as $k => $v) {
+                $key = strtolower(trim((string)$k));
+                if (in_array($key, $aliases, true)) return trim((string)$v);
+            }
+            return '';
+        };
+
+        $validSegmen = ['kiloan','self_service','b2b','satuan','lainnya'];
+
+        foreach ($rows as $i => $row) {
+            $baris = $i + 2; // +1 header, +1 ke 1-based
+            if (!is_array($row)) continue;
+
+            $nama  = $pick($row, $map['nama']);
+            $hargaRaw = $pick($row, $map['harga']);
+            // Bersihkan harga: buang Rp, titik ribuan, spasi
+            $harga = (float)preg_replace('/[^0-9.]/', '', str_replace(',', '', $hargaRaw));
+
+            // Skip baris kosong total
+            if ($nama === '' && $hargaRaw === '') continue;
+
+            if ($nama === '') {
+                $errors[] = ['baris'=>$baris, 'error'=>'Nama layanan kosong', 'data'=>$row];
+                continue;
+            }
+            if ($harga <= 0) {
+                $errors[] = ['baris'=>$baris, 'error'=>'Harga tidak valid / kosong', 'data'=>$row];
+                continue;
+            }
+
+            $segmen = strtolower($pick($row, $map['segmen']));
+            if (!in_array($segmen, $validSegmen, true)) $segmen = 'kiloan';
+
+            try {
+                self::saveMaster($tenantId, [
+                    'nama'          => $nama,
+                    'kategori'      => $pick($row, $map['kategori']) ?: 'Umum',
+                    'satuan'        => $pick($row, $map['satuan']) ?: 'kg',
+                    'harga_default' => $harga,
+                    'segmen'        => $segmen,
+                    'is_active'     => 1,
+                ]);
+                $imported++;
+            } catch (Throwable $e) {
+                $errors[] = ['baris'=>$baris, 'error'=>$e->getMessage(), 'data'=>$row];
+            }
+        }
+
+        return ['imported'=>$imported, 'errors'=>$errors];
+    }
+
+    /**
+     * Push BANYAK master ke BANYAK outlet sekaligus.
+     * @return array {total_push:int, created:int, updated:int, skipped_override:int}
+     */
+    public static function pushManyToOutlets(int $tenantId, array $masterIds, array $outletIds, bool $overwriteOverrides = false): array
+    {
+        $sum = ['total_push'=>0, 'created'=>0, 'updated'=>0, 'skipped_override'=>0];
+        foreach ($masterIds as $mid) {
+            $mid = (int)$mid;
+            if ($mid <= 0) continue;
+            try {
+                $r = self::pushToOutlets($tenantId, $mid, $outletIds, $overwriteOverrides);
+                $sum['total_push']++;
+                $sum['created']          += $r['created'];
+                $sum['updated']          += $r['updated'];
+                $sum['skipped_override'] += $r['skipped_override'];
+            } catch (Throwable) { /* skip master invalid */ }
+        }
+        return $sum;
+    }
+
     /** Soft-delete master + (opsional) cabut dari outlet */
     public static function deleteMaster(int $tenantId, int $id, bool $removeFromOutlets = true): void
     {

@@ -11,6 +11,7 @@ $pageTitle  = 'Master Katalog Layanan';
 define('ROOT', dirname(__DIR__));
 require_once ROOT . '/middleware/hq_guard.php';
 require_once ROOT . '/core/ServiceCatalog.php';
+require_once ROOT . '/core/MigrationImporter.php';
 
 $db   = Database::get();
 $tid  = (int)$hqTenant['id'];
@@ -105,6 +106,62 @@ if ($action === 'push' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     exit;
 }
 
+// ── API: bulk push (banyak master → banyak outlet) ───
+if ($action === 'push_many' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    header('Content-Type: application/json');
+    if (empty($hqIsOwner) && empty($hqIsManager)) { echo json_encode(['error'=>'Akses ditolak']); exit; }
+    $d = json_decode(file_get_contents('php://input'), true) ?: [];
+    $masterIds = array_map('intval', (array)($d['master_ids'] ?? []));
+    $outletIds = array_map('intval', (array)($d['outlet_ids'] ?? []));
+    $overwrite = !empty($d['overwrite_overrides']);
+    if (!$masterIds || !$outletIds) { echo json_encode(['error'=>'Pilih minimal 1 layanan & 1 outlet.']); exit; }
+    try {
+        $res = ServiceCatalog::pushManyToOutlets($tid, $masterIds, $outletIds, $overwrite);
+        try { logAudit('push_many', 'layanan_master', count($masterIds)." layanan → ".count($outletIds)." outlet"); } catch (Throwable) {}
+        echo json_encode(['ok'=>true, 'result'=>$res]);
+    } catch (Throwable $e) { echo json_encode(['error'=>$e->getMessage()]); }
+    exit;
+}
+
+// ── API: import massal dari Excel/CSV ────────────────
+if ($action === 'import' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    header('Content-Type: application/json');
+    if (empty($hqIsOwner) && empty($hqIsManager)) { echo json_encode(['error'=>'Akses ditolak']); exit; }
+    if (empty($_FILES['file']['tmp_name'])) { echo json_encode(['error'=>'File tidak ada.']); exit; }
+
+    $f   = $_FILES['file'];
+    $ext = strtolower(pathinfo($f['name'], PATHINFO_EXTENSION));
+    if (!in_array($ext, ['csv','xlsx','xls'], true)) {
+        echo json_encode(['error'=>'Format harus CSV, XLSX, atau XLS.']); exit;
+    }
+    if ($f['size'] > 5 * 1024 * 1024) { echo json_encode(['error'=>'File maksimal 5 MB.']); exit; }
+
+    try {
+        $rows = MigrationImporter::parseFile($f['tmp_name'], $ext);
+        if (empty($rows)) { echo json_encode(['error'=>'File kosong atau tidak ada data.']); exit; }
+        $res = ServiceCatalog::importMaster($tid, $rows);
+        try { logAudit('import', 'layanan_master', "Import {$res['imported']} layanan dari Excel"); } catch (Throwable) {}
+        echo json_encode(['ok'=>true, 'result'=>$res]);
+    } catch (Throwable $e) {
+        echo json_encode(['error'=>'Gagal baca file: '.$e->getMessage()]);
+    }
+    exit;
+}
+
+// ── Download template Excel/CSV ──────────────────────
+if ($action === 'template') {
+    header('Content-Type: text/csv; charset=UTF-8');
+    header('Content-Disposition: attachment; filename="template_layanan.csv"');
+    $out = fopen('php://output', 'w');
+    fputs($out ?? STDOUT, "\xEF\xBB\xBF"); // BOM utf-8
+    fputcsv($out, ['nama','kategori','satuan','harga','segmen']);
+    fputcsv($out, ['Cuci Kiloan','Kiloan','kg','7000','kiloan']);
+    fputcsv($out, ['Cuci Express','Express','kg','12000','kiloan']);
+    fputcsv($out, ['Cuci Sepatu','Khusus','pasang','35000','satuan']);
+    fclose($out);
+    exit;
+}
+
 // Outlets untuk push selector
 $outlets = $db->prepare("SELECT id, nama_outlet FROM outlets WHERE tenant_id=? AND status IN ('trial','grace','active') ORDER BY is_main DESC, nama_outlet");
 $outlets->execute([$tid]);
@@ -163,8 +220,20 @@ require __DIR__ . '/_layout_open.php';
     <p>Kelola layanan & harga default dari pusat, lalu push ke outlet yang dipilih.</p>
   </div>
   <?php if ($canEdit): ?>
-  <button class="btn btn-primary" onclick="openForm()">+ Layanan Baru</button>
+  <div style="display:flex;gap:8px;flex-wrap:wrap">
+    <button class="btn btn-light" onclick="openImport()">📥 Import Excel</button>
+    <button class="btn btn-primary" onclick="openForm()">+ Layanan Baru</button>
+  </div>
   <?php endif; ?>
+</div>
+
+<!-- Bulk action bar (muncul saat ada layanan dipilih) -->
+<div id="bulkBar" style="display:none;align-items:center;gap:12px;background:#0F1C3A;color:#fff;
+     border-radius:10px;padding:10px 16px;margin-bottom:14px">
+  <span><strong id="bulkCount">0</strong> layanan dipilih</span>
+  <div style="flex:1"></div>
+  <button class="btn btn-primary btn-sm" onclick="openPushMany()">📤 Push ke Outlet</button>
+  <button class="btn btn-light btn-sm" onclick="clearBulk()">Batal</button>
 </div>
 
 <div id="lynListWrap">
@@ -261,6 +330,27 @@ require __DIR__ . '/_layout_open.php';
   </div>
 </div>
 
+<!-- IMPORT MODAL -->
+<div class="modal-bg" id="importModal">
+  <div class="modal">
+    <h3>📥 Import Layanan dari Excel</h3>
+    <p style="font-size:13px;color:#6B7280;margin-bottom:12px">
+      Upload file .xlsx / .csv berisi daftar layanan. Kolom yang dikenali:
+      <strong>nama, kategori, satuan, harga, segmen</strong>.
+    </p>
+    <a href="/hq/layanan.php?action=template" class="btn btn-light btn-sm" style="margin-bottom:14px;display:inline-block">⬇️ Download Template</a>
+    <div class="fld">
+      <input type="file" id="importFile" accept=".xlsx,.xls,.csv"
+             style="width:100%;padding:9px 12px;border:1px solid #E5E9F2;border-radius:8px;font-size:13px">
+    </div>
+    <div id="importResult" style="margin-top:10px"></div>
+    <div class="modal-actions">
+      <button class="btn btn-light" onclick="closeModal('importModal')">Tutup</button>
+      <button class="btn btn-primary" id="importBtn" onclick="doImport()">📥 Import</button>
+    </div>
+  </div>
+</div>
+
 <script>
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const fmtRp = n => 'Rp ' + Number(n||0).toLocaleString('id-ID');
@@ -281,10 +371,12 @@ async function loadList(){
     wrap.innerHTML = `
       <table class="lyn-table">
         <thead><tr>
+          ${CAN_EDIT?'<th style="width:34px"><input type="checkbox" id="cbAll" onchange="toggleAll(this)"></th>':''}
           <th>Layanan</th><th>Harga Default</th><th>Override</th><th>Coverage Outlet</th><th style="text-align:right">Aksi</th>
         </tr></thead>
         <tbody>${d.master.map(rowHtml).join('')}</tbody>
       </table>`;
+    updateBulkBar();
   } catch (e) {
     wrap.innerHTML = `<div class="empty"><div class="ico">⚠️</div>Gagal: ${esc(e.message)}</div>`;
   }
@@ -297,6 +389,7 @@ function rowHtml(m){
     : `<span class="tag tag-off">terkunci</span>`;
   return `
     <tr>
+      ${CAN_EDIT?`<td><input type="checkbox" class="cb-row" value="${m.id}" data-nama="${esc(m.nama)}" onchange="updateBulkBar()"></td>`:''}
       <td>
         <div class="lyn-nama">${esc(m.nama)} ${m.is_active==0?'<span class="tag tag-off">nonaktif</span>':''}</div>
         <div class="lyn-kat">${esc(m.kategori)} · per ${esc(m.satuan)}</div>
@@ -374,38 +467,125 @@ async function delMaster(id, nama){
 }
 
 // ── PUSH ──
+let pushMode = 'single';      // 'single' | 'bulk'
+let pushBulkIds = [];
+
 function openPush(mid, nama){
+  pushMode = 'single';
   document.getElementById('pushMasterId').value = mid;
   document.getElementById('pushSubtitle').textContent = `Layanan: ${nama}`;
-  const wrap = document.getElementById('pushOutlets');
-  wrap.innerHTML = OUTLETS.map(o => `
+  renderPushOutlets();
+  document.getElementById('pushModal').classList.add('open');
+}
+function renderPushOutlets(){
+  document.getElementById('pushOutlets').innerHTML = OUTLETS.map(o => `
     <label class="push-outlet">
       <input type="checkbox" class="push-cb" value="${o.id}" checked>
       ${esc(o.nama_outlet)}
     </label>`).join('');
   document.getElementById('pushOverwrite').checked = false;
-  document.getElementById('pushModal').classList.add('open');
 }
 function toggleAllOutlets(state){
   document.querySelectorAll('.push-cb').forEach(cb => cb.checked = state);
 }
 async function doPush(){
-  const mid = document.getElementById('pushMasterId').value;
   const ids = [...document.querySelectorAll('.push-cb:checked')].map(cb => cb.value);
   if (ids.length === 0) { alert('Pilih minimal 1 outlet'); return; }
-  const fd = new FormData();
-  fd.append('master_id', mid);
-  ids.forEach(id => fd.append('outlet_ids[]', id));
-  fd.append('overwrite_overrides', document.getElementById('pushOverwrite').checked ? 1 : 0);
+  const overwrite = document.getElementById('pushOverwrite').checked ? 1 : 0;
   try {
-    const r = await fetch('/hq/layanan.php?action=push', {method:'POST', body:fd});
-    const d = await r.json();
-    if (d.error) { alert('⚠️ ' + d.error); return; }
-    const res = d.result;
-    alert(`✅ Push selesai!\nBaru: ${res.created} · Update: ${res.updated} · Skip (override): ${res.skipped_override}`);
+    let d;
+    if (pushMode === 'bulk') {
+      const r = await fetch('/hq/layanan.php?action=push_many', {
+        method:'POST', headers:{'Content-Type':'application/json','X-CSRF-Token':'<?= htmlspecialchars(getCsrfToken()) ?>'},
+        body: JSON.stringify({ master_ids: pushBulkIds, outlet_ids: ids, overwrite_overrides: overwrite })
+      });
+      d = await r.json();
+      if (d.error) { alert('⚠️ ' + d.error); return; }
+      const res = d.result;
+      alert(`✅ Push selesai!\n${res.total_push} layanan → ${ids.length} outlet\nBaru: ${res.created} · Update: ${res.updated} · Skip (override): ${res.skipped_override}`);
+    } else {
+      const fd = new FormData();
+      fd.append('master_id', document.getElementById('pushMasterId').value);
+      ids.forEach(id => fd.append('outlet_ids[]', id));
+      fd.append('overwrite_overrides', overwrite);
+      const r = await fetch('/hq/layanan.php?action=push', {method:'POST', body:fd});
+      d = await r.json();
+      if (d.error) { alert('⚠️ ' + d.error); return; }
+      const res = d.result;
+      alert(`✅ Push selesai!\nBaru: ${res.created} · Update: ${res.updated} · Skip (override): ${res.skipped_override}`);
+    }
     closeModal('pushModal');
+    clearBulk();
     loadList();
   } catch (e) { alert('Gagal: ' + e.message); }
+}
+
+// ── Bulk selection ──
+function toggleAll(cb){
+  document.querySelectorAll('.cb-row').forEach(c => c.checked = cb.checked);
+  updateBulkBar();
+}
+function selectedIds(){
+  return [...document.querySelectorAll('.cb-row:checked')].map(c => c.value);
+}
+function updateBulkBar(){
+  const ids = selectedIds();
+  const bar = document.getElementById('bulkBar');
+  document.getElementById('bulkCount').textContent = ids.length;
+  bar.style.display = ids.length > 0 ? 'flex' : 'none';
+  const cbAll = document.getElementById('cbAll');
+  if (cbAll) {
+    const total = document.querySelectorAll('.cb-row').length;
+    cbAll.checked = total > 0 && ids.length === total;
+  }
+}
+function clearBulk(){
+  document.querySelectorAll('.cb-row, #cbAll').forEach(c => c.checked = false);
+  updateBulkBar();
+}
+function openPushMany(){
+  pushBulkIds = selectedIds();
+  if (pushBulkIds.length === 0) { alert('Pilih minimal 1 layanan'); return; }
+  pushMode = 'bulk';
+  document.getElementById('pushSubtitle').textContent = `${pushBulkIds.length} layanan dipilih → pilih outlet tujuan`;
+  renderPushOutlets();
+  document.getElementById('pushModal').classList.add('open');
+}
+
+// ── Import ──
+function openImport(){
+  document.getElementById('importFile').value = '';
+  document.getElementById('importResult').innerHTML = '';
+  document.getElementById('importBtn').disabled = false;
+  document.getElementById('importModal').classList.add('open');
+}
+async function doImport(){
+  const file = document.getElementById('importFile').files[0];
+  const box = document.getElementById('importResult');
+  if (!file) { alert('Pilih file dulu'); return; }
+  document.getElementById('importBtn').disabled = true;
+  box.innerHTML = '<div style="color:#6B7280;font-size:13px">⏳ Memproses…</div>';
+  const fd = new FormData();
+  fd.append('file', file);
+  try {
+    const r = await fetch('/hq/layanan.php?action=import', {method:'POST', body:fd});
+    const d = await r.json();
+    if (d.error) { box.innerHTML = `<div style="color:#991B1B;font-size:13px">⚠️ ${esc(d.error)}</div>`; document.getElementById('importBtn').disabled=false; return; }
+    const res = d.result;
+    let html = `<div style="background:#ECFDF5;border:1px solid #A7F3D0;border-radius:8px;padding:10px 12px;font-size:13px;color:#065F46">
+      ✅ <strong>${res.imported} layanan</strong> berhasil di-import.</div>`;
+    if (res.errors && res.errors.length){
+      html += `<div style="background:#FEF2F2;border:1px solid #FECACA;border-radius:8px;padding:10px 12px;font-size:12px;color:#991B1B;margin-top:8px">
+        ⚠️ ${res.errors.length} baris dilewati:<ul style="margin:6px 0 0 16px">
+        ${res.errors.slice(0,8).map(e=>`<li>Baris ${e.baris}: ${esc(e.error)}</li>`).join('')}
+        ${res.errors.length>8?`<li>…dan ${res.errors.length-8} lainnya</li>`:''}</ul></div>`;
+    }
+    box.innerHTML = html;
+    loadList();
+  } catch (e) {
+    box.innerHTML = `<div style="color:#991B1B;font-size:13px">Gagal: ${esc(e.message)}</div>`;
+    document.getElementById('importBtn').disabled = false;
+  }
 }
 
 loadList();
