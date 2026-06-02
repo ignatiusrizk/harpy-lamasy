@@ -183,11 +183,26 @@ require __DIR__ . '/_layout_open.php';
     <div class="fld-row">
       <div class="fld">
         <label>Kategori</label>
-        <input type="text" id="fKategori" placeholder="Kiloan" value="Umum">
+        <input type="text" id="fKategori" placeholder="Kiloan" value="Umum" list="katRekomendasi">
+        <datalist id="katRekomendasi">
+          <option value="Kiloan"><option value="Satuan"><option value="Express">
+          <option value="Setrika"><option value="Cuci Kering"><option value="Dry Clean">
+          <option value="Khusus"><option value="Sepatu"><option value="Bedcover & Selimut">
+          <option value="Karpet & Gorden"><option value="B2B / Korporat"><option value="Umum">
+        </datalist>
       </div>
       <div class="fld">
         <label>Satuan</label>
-        <input type="text" id="fSatuan" placeholder="kg" value="kg">
+        <select id="fSatuan" style="width:100%;padding:9px 12px;border:1px solid #E5E9F2;border-radius:8px;font-family:inherit;font-size:14px">
+          <option value="kg">kg (kiloan)</option>
+          <option value="pcs">pcs (potong/satuan)</option>
+          <option value="item">item</option>
+          <option value="pasang">pasang (sepatu/sandal)</option>
+          <option value="set">set</option>
+          <option value="lembar">lembar (selimut/sprei)</option>
+          <option value="meter">meter (gorden/karpet)</option>
+          <option value="kodi">kodi</option>
+        </select>
       </div>
     </div>
     <div class="fld">

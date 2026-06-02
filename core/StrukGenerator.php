@@ -134,10 +134,10 @@ class StrukGenerator
         ];
         $poin = ['poin' => 4, 'balance_after' => 47];
         $outlet = TenantResolver::getOutlet() ?: [
-            'nama_outlet' => 'Harpy Laundry',
-            'alamat'      => 'Jl. Rawa Selatan No. 12',
-            'kota'        => 'Jakarta',
-            'telepon'     => '021-1234567',
+            'nama_outlet' => TenantResolver::getTenant()['nama_perusahaan'] ?? 'Outlet Laundry',
+            'alamat'      => 'Jl. Contoh No. 1',
+            'kota'        => 'Indonesia',
+            'telepon'     => '',
             'email'       => '',
         ];
 

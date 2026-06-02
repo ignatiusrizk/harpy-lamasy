@@ -217,10 +217,14 @@ input:checked + .toggle-slider::before{transform:translateX(18px)}
         <div class="hl-form-group">
           <label class="hl-label">Satuan</label>
           <select id="f_satuan" class="hl-input">
-            <option value="kg">kg</option>
-            <option value="pcs">pcs</option>
+            <option value="kg">kg (kiloan)</option>
+            <option value="pcs">pcs (potong/satuan)</option>
+            <option value="item">item</option>
+            <option value="pasang">pasang (sepatu/sandal)</option>
             <option value="set">set</option>
-            <option value="pasang">pasang</option>
+            <option value="lembar">lembar (selimut/sprei)</option>
+            <option value="meter">meter (gorden/karpet)</option>
+            <option value="kodi">kodi</option>
           </select>
         </div>
       </div>
@@ -265,13 +269,18 @@ async function loadStats() {
   document.getElementById('sTerlaris').textContent = d.terlaris;
 }
 
+// Rekomendasi kategori umum laundry — digabung dengan kategori yang sudah dipakai
+const KAT_REKOMENDASI = ['Kiloan','Satuan','Express','Setrika','Cuci Kering','Dry Clean','Khusus','Sepatu','Bedcover & Selimut','Karpet & Gorden','B2B / Korporat'];
+
 async function loadLayanan() {
   const r = await fetch('layanan.php?action=list');
   allLayanan = await r.json();
   const kats = [...new Set(allLayanan.map(l=>l.kategori).filter(Boolean))].sort();
   const fKat = document.getElementById('fKat');
   fKat.innerHTML = '<option value="">Semua Kategori</option>' + kats.map(k=>`<option>${k}</option>`).join('');
-  document.getElementById('katList').innerHTML = kats.map(k=>`<option value="${k}">`).join('');
+  // datalist input kategori: gabung rekomendasi + yang sudah dipakai (unik)
+  const katOpts = [...new Set([...kats, ...KAT_REKOMENDASI])];
+  document.getElementById('katList').innerHTML = katOpts.map(k=>`<option value="${k}">`).join('');
   renderLayanan();
 }
 

@@ -444,7 +444,7 @@ function renderForm(tipe, t) {
   <div class="form-field">
     <label>Nama Outlet <span style="font-weight:400;font-size:11px;color:var(--gray)">(kosongkan = pakai nama outlet)</span></label>
     <input type="text" id="f_nama_outlet" value="${escHtml(v('nama_outlet'))}" maxlength="100"
-           placeholder="cth: Harpy Laundry Cabang Pusat" oninput="onFieldChange()">
+           placeholder="cth: Bersih Laundry Cabang Pusat" oninput="onFieldChange()">
   </div>
   <div class="form-field">
     <label>Tagline</label>
@@ -508,7 +508,7 @@ function renderForm(tipe, t) {
   <div class="form-field">
     <label>Atas Nama</label>
     <input type="text" id="f_rekening_atas_nama" value="${escHtml(v('rekening_atas_nama'))}" maxlength="100"
-           placeholder="cth: Harpy Laundry" oninput="onFieldChange()">
+           placeholder="cth: Bersih Laundry" oninput="onFieldChange()">
   </div>
   ` : ''}
 

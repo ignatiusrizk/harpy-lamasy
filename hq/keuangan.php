@@ -766,7 +766,7 @@ async function loadAset() {
             <div class="persen-bar"><div class="persen-fill ${clr}" style="width:${pct}%"></div></div>
           </td>
           <td>
-            <button class="btn btn-outline btn-sm" onclick="disposeAset(${a.id},'${esc(a.nama)}')">Dispose</button>
+            <button class="btn btn-outline btn-sm" onclick="disposeAset(${a.id},'${esc(a.nama)}')">Lepas Aset</button>
           </td>
         </tr>`;
     }).join('');
@@ -791,11 +791,14 @@ async function submitAset() {
 }
 
 async function disposeAset(id, nama) {
-    const status = prompt(`Status dispose untuk "${nama}":\ndijual / rusak / disposed`, 'disposed');
-    if (!status) return;
+    // Pilihan: dijual / rusak / dilepas (disimpan ke DB sbg dijual/rusak/disposed)
+    const pilihan = prompt(`Pelepasan aset "${nama}".\nKetik salah satu:\n• jual  — aset dijual\n• rusak — aset rusak/tidak terpakai\n• lepas — dihapuskan dari pembukuan`, 'lepas');
+    if (!pilihan) return;
+    const map = { jual: 'dijual', rusak: 'rusak', lepas: 'disposed' };
+    const status = map[pilihan.trim().toLowerCase()] || 'disposed';
     const nilaiJual = status === 'dijual' ? prompt('Nilai jual (Rp)?', '0') : '0';
     const d = await api('dispose_aset', { id, status, nilai_jual: unFmt(nilaiJual), tanggal_dispose: new Date().toISOString().slice(0,10) }, 'POST');
-    if (d.ok) { toast('Aset di-dispose'); loadAset(); }
+    if (d.ok) { toast('Aset berhasil dilepas'); loadAset(); }
     else toast(d.error || 'Gagal', false);
 }
 

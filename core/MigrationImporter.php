@@ -402,17 +402,33 @@ class MigrationImporter
 
         $rowsData = [];
         foreach ($sheet->sheetData->row ?? [] as $row) {
+            // PENTING: Excel menghilangkan <c> untuk sel kosong. Kalau dibaca
+            // positional, sel kosong di tengah bikin kolom geser & misalign
+            // dengan header (gejala: "harga/nama tidak terbaca"). Maka kita
+            // pakai atribut `r` (mis. "B2") untuk taruh nilai di kolom yang benar.
             $rowArr = [];
             foreach ($row->c as $cell) {
+                $colIdx = self::colRefToIndex((string)($cell['r'] ?? ''));
                 $t = (string)($cell['t'] ?? '');
                 $v = (string)($cell->v ?? '');
                 if ($t === 's') {
-                    $rowArr[] = $sharedStrings[(int)$v] ?? '';
+                    $val = $sharedStrings[(int)$v] ?? '';
                 } elseif ($t === 'inlineStr') {
-                    $rowArr[] = (string)($cell->is->t ?? '');
+                    $val = (string)($cell->is->t ?? '');
                 } else {
-                    $rowArr[] = $v;
+                    $val = $v;
                 }
+                if ($colIdx >= 0) $rowArr[$colIdx] = $val;
+                else              $rowArr[] = $val;
+            }
+            // Isi gap kolom kosong dengan '' lalu re-index 0..N
+            if ($rowArr) {
+                $maxCol = max(array_keys($rowArr));
+                for ($i = 0; $i <= $maxCol; $i++) {
+                    if (!isset($rowArr[$i])) $rowArr[$i] = '';
+                }
+                ksort($rowArr);
+                $rowArr = array_values($rowArr);
             }
             $rowsData[] = $rowArr;
         }
@@ -426,6 +442,18 @@ class MigrationImporter
             $out[] = array_combine($headers, array_slice($row, 0, count($headers)));
         }
         return $out;
+    }
+
+    /** Konversi referensi kolom Excel ("A","B",...,"AA") → index 0-based. -1 kalau invalid. */
+    private static function colRefToIndex(string $ref): int
+    {
+        if (!preg_match('/^([A-Za-z]+)/', $ref, $m)) return -1;
+        $letters = strtoupper($m[1]);
+        $idx = 0;
+        for ($i = 0, $n = strlen($letters); $i < $n; $i++) {
+            $idx = $idx * 26 + (ord($letters[$i]) - 64);
+        }
+        return $idx - 1;
     }
 
     private static function detectEncoding(string $path): string
