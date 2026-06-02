@@ -162,10 +162,18 @@ if ($action) {
         $freeSource = in_array($mapResult['source'] ?? '', ['cache','heuristic'], true);
         $fromCache  = $freeSource;
 
-        // Deduct coin HANYA jika perlu AI (bukan cache/heuristic) dan bukan assisted
-        if (!$freeSource && !$job['is_assisted']) {
+        // Mapping dianggap GAGAL/tidak berguna kalau AI error ATAU masih ada
+        // field wajib yang belum terpetakan → JANGAN potong coin (user harus
+        // mapping manual / ulang, AI tidak memberi hasil yang bisa dipakai).
+        $aiFailed      = ($mapResult['source'] ?? '') === 'ai_failed';
+        $missingReq    = !empty($mapResult['missing_required']);
+        $mappingUsable = !$aiFailed && !$missingReq;
+
+        $coinUsed = 0;
+        // Deduct HANYA jika: perlu AI (bukan gratis) + bukan assisted + hasil
+        // mapping benar-benar bisa dipakai.
+        if (!$freeSource && !$job['is_assisted'] && $mappingUsable) {
             if (!CoinLedger::canAfford('ai_migration_mapping')) {
-                // Kembalikan status ke uploaded
                 $db->prepare("UPDATE hl_migration_jobs SET status='uploaded' WHERE id=?")->execute([$jobId]);
                 echo json_encode([
                     'error' => 'Coin tidak cukup untuk AI mapping. Dibutuhkan 1.000 coin.',
@@ -174,6 +182,7 @@ if ($action) {
                 ]); exit;
             }
             CoinLedger::deduct('ai_migration_mapping', $jobId);
+            $coinUsed = 1000;
         }
 
         // Simpan mapping ke job
@@ -186,7 +195,7 @@ if ($action) {
         echo json_encode(array_merge($mapResult, [
             'job_id'     => $jobId,
             'from_cache' => $fromCache,
-            'coin_used'  => $fromCache ? 0 : 1000,
+            'coin_used'  => $coinUsed,
         ]));
         exit;
     }

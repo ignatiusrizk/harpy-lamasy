@@ -515,13 +515,21 @@ if ($action === 'ai_insight') {
     exit;
 }
 
-// ── API: deduct coin untuk export PDF ───────────────────
+// ── API: cek/deduct coin untuk export PDF ───────────────
+// mode=check → hanya cek saldo (sebelum generate)
+// mode=deduct → potong coin (HANYA dipanggil setelah PDF berhasil dibuat)
 if ($action === 'deduct_export_pdf' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     header('Content-Type: application/json');
     verifyCsrf();
     $coin = new CoinLedger();
     if (!$coin->canAfford('export_pdf')) {
         echo json_encode(['ok' => false, 'error' => 'Koin tidak cukup untuk Export PDF (butuh 500 koin).']);
+        exit;
+    }
+    $mode = $_GET['mode'] ?? 'deduct';
+    if ($mode === 'check') {
+        // Hanya validasi saldo — belum potong
+        echo json_encode(['ok' => true, 'checked' => true]);
         exit;
     }
     $coin->deduct('export_pdf');
@@ -1285,20 +1293,28 @@ function drillDown(outletId){
 }
 
 // ── Coin gate: deduct export_pdf sebelum generate ──
-async function deductExportPdf() {
-  const r = await fetch('/hq/laporan?action=deduct_export_pdf', {
-    method: 'POST',
-    headers: { 'X-CSRF-Token': KEU_CSRF }
+// Cek saldo SEBELUM generate (belum potong)
+async function checkExportPdf() {
+  const r = await fetch('/hq/laporan?action=deduct_export_pdf&mode=check', {
+    method: 'POST', headers: { 'X-CSRF-Token': KEU_CSRF }
   });
   const j = await r.json();
   if (!j.ok) { alert(j.error || 'Koin tidak cukup untuk Export PDF.'); return false; }
   return true;
 }
+// Potong coin SETELAH PDF berhasil dibuat
+async function deductExportPdf() {
+  try {
+    await fetch('/hq/laporan?action=deduct_export_pdf&mode=deduct', {
+      method: 'POST', headers: { 'X-CSRF-Token': KEU_CSRF }
+    });
+  } catch (e) { /* best-effort: PDF sudah jadi, jangan ganggu user */ }
+}
 
 // ── Download PDF native (html2pdf.js) ──
 async function downloadPdf(){
   if (typeof html2pdf === 'undefined') { alert('Library PDF belum dimuat. Coba refresh halaman.'); return; }
-  if (!await deductExportPdf()) return;
+  if (!await checkExportPdf()) return;        // cek saldo dulu, belum potong
   const target = document.querySelector('.hq-content-inner');
   if (!target) return;
 
@@ -1328,6 +1344,7 @@ async function downloadPdf(){
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
       pagebreak: { mode: ['avoid-all','css','legacy'] }
     }).save();
+    await deductExportPdf();   // potong coin HANYA setelah PDF sukses
   } catch(e){ alert('Gagal generate PDF: ' + e.message); }
   finally {
     document.body.classList.remove('pdf-mode');
@@ -1725,7 +1742,7 @@ async function loadKeuAiInsight() {
 // ── Export PDF SAK EMKM ────────────────────────────────
 async function exportKeuPdf() {
   if (typeof html2pdf === 'undefined') { alert('Library PDF belum dimuat. Refresh halaman.'); return; }
-  if (!await deductExportPdf()) return;
+  if (!await checkExportPdf()) return;        // cek saldo dulu, belum potong
   const periode    = document.getElementById('keuPeriode').value;
   const outletSel  = document.getElementById('keuOutlet');
   const outletName = outletSel.options[outletSel.selectedIndex].text.replace(/[^\w-]/g,'_');
@@ -1767,6 +1784,7 @@ async function exportKeuPdf() {
       jsPDF:{unit:'mm',format:'a4',orientation:'portrait'},
       pagebreak:{mode:['avoid-all','css','legacy']},
     }).save();
+    await deductExportPdf();   // potong coin HANYA setelah PDF sukses
   } catch(e) { alert('Gagal PDF: ' + e.message); }
   finally { overlay.classList.remove('show'); pdfTarget.innerHTML = ''; }
 }

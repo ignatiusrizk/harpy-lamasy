@@ -85,16 +85,17 @@ class StrukGenerator
         $tmpl   = self::loadTemplate($tid, $oid, $tipe);
         $format = $format ?? $tmpl['format'];
 
-        // ── Deduct coin ───────────────────────────────
+        // ── Render dulu ───────────────────────────────
+        $outlet = TenantResolver::getOutlet();
+        $html = self::render($trx, $items, $tmpl, $pelanggan, $poin, $outlet, $format);
+
+        // ── Deduct coin SETELAH render sukses ─────────
+        // (kalau render gagal/exception, baris ini tidak tercapai → tidak potong)
         if ($deductCoin) {
             $feature = ($tipe === 'b2b') ? self::COIN_B2B : self::COIN_RETAIL;
-            // Non-blocking: gagal potong coin tidak hentikan generate
             try { CoinLedger::deduct($feature, (string)$transaksiId); } catch (Throwable) {}
         }
-
-        // ── Render ────────────────────────────────────
-        $outlet = TenantResolver::getOutlet();
-        return self::render($trx, $items, $tmpl, $pelanggan, $poin, $outlet, $format);
+        return $html;
     }
 
     // ══════════════════════════════════════════════════
@@ -234,11 +235,12 @@ class StrukGenerator
         $tmpl   = self::loadTemplate($tid, $oid, 'b2b');
         $outlet = TenantResolver::getOutlet();
 
+        // Render dulu — deduct hanya kalau invoice berhasil dibuat
+        $html = self::render($trx, $items, $tmpl, $pelanggan, null, $outlet, $tmpl['format'] ?? 'a4');
         if ($deductCoin) {
             try { CoinLedger::deduct(self::COIN_B2B, (string)$piutangId); } catch (Throwable) {}
         }
-
-        return self::render($trx, $items, $tmpl, $pelanggan, null, $outlet, $tmpl['format'] ?? 'a4');
+        return $html;
     }
 
     // ══════════════════════════════════════════════════
