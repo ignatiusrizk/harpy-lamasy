@@ -18,6 +18,7 @@ require_once ROOT . '/middleware/tenant_guard.php';
 require_once ROOT . '/components.php';
 require_once ROOT . '/core/AIMigrationMapper.php';
 require_once ROOT . '/core/MigrationImporter.php';
+require_once ROOT . '/core/AIBudget.php';
 
 date_default_timezone_set('Asia/Jakarta');
 
@@ -158,8 +159,9 @@ if ($action) {
         // Panggil AI mapping (cek cache dulu di dalam mapper)
         $mapResult = AIMigrationMapper::map($job['entity_type'], $headers, $sampleRows);
 
-        // 'cache' & 'heuristic' = gratis (tidak panggil AI)
-        $freeSource = in_array($mapResult['source'] ?? '', ['cache','heuristic'], true);
+        // Hanya 'cache' yang gratis (format pernah diimport). 'ai' = bayar,
+        // 'ai_failed' = AI down → fallback heuristik, tidak dibayar.
+        $freeSource = ($mapResult['source'] ?? '') === 'cache';
         $fromCache  = $freeSource;
 
         // Mapping dianggap GAGAL/tidak berguna kalau AI error ATAU masih ada
@@ -183,6 +185,16 @@ if ($action) {
             }
             CoinLedger::deduct('ai_migration_mapping', $jobId);
             $coinUsed = 1000;
+            // Track ke dashboard AI usage super admin (best-effort)
+            if (class_exists('AIBudget')) {
+                try {
+                    AIBudget::record(
+                        TenantResolver::id(), TenantResolver::outletId(), 'ai_migration_mapping',
+                        (int)($mapResult['tokens_in'] ?? 0), (int)($mapResult['tokens_out'] ?? 0),
+                        1000, $mapResult['model'] ?? null, false
+                    );
+                } catch (Throwable) {}
+            }
         }
 
         // Simpan mapping ke job
@@ -434,7 +446,8 @@ if ($action) {
       Import data dari Smartlink, iLaundry, Excel, atau format apapun — AI mapping otomatis.
     </p>
     <div style="margin-top:8px;background:#FFFBEB;border:1px solid #FDE68A;border-radius:8px;padding:10px 14px;font-size:12.5px;color:#92400E;display:inline-block;">
-      💡 AI mapping menggunakan <strong>1.000 coin</strong>. Gratis jika format sudah dikenal dari cache.
+      🧠 <strong>AI menganalisa isi data &amp; memetakan kolom otomatis</strong> — <strong>1.000 coin</strong> per format baru.
+      Gratis kalau format file sudah pernah diimport (dikenali dari cache). Coin hanya dipotong kalau mapping berhasil.
       Saldo kamu: <strong id="coinBalance"><?= number_format(TenantResolver::coinBalance()) ?> coin</strong>
     </div>
   </div>

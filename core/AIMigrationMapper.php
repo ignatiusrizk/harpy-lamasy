@@ -104,20 +104,10 @@ class AIMigrationMapper
             ]);
         }
 
-        // 1b. Heuristic gratis — cocokkan header standar (Nama, Harga, dll) tanpa AI.
-        // Kalau semua field wajib sudah ter-cover, langsung pakai (hemat 1.000 coin).
+        // Heuristic dihitung sebagai JARING PENGAMAN — dipakai kalau AI gagal
+        // (API down) supaya import tetap jalan. Untuk format baru, AI tetap
+        // jadi engine utama (Opsi A — analisa data genuine via Claude).
         $heuristic = self::heuristicMap($entityType, $headers);
-        if (empty(self::checkMissing($entityType, $heuristic))) {
-            return [
-                'mapping'                => $heuristic,
-                'missing_required'       => [],
-                'warnings'               => ['Kolom dikenali otomatis — tidak perlu AI mapping (gratis).'],
-                'source_system_detected' => 'excel',
-                'overall_confidence'     => 0.95,
-                'source'                 => 'heuristic',
-                'from_cache'             => false,
-            ];
-        }
 
         // 2. Pastikan ada AnthropicClient
         if (!class_exists('AnthropicClient')) {
@@ -136,20 +126,27 @@ class AIMigrationMapper
           . 'Selalu respond dengan JSON valid saja — tidak ada teks lain.'
         );
 
-        $prompt = "File data laundry ini memiliki kolom-kolom berikut:\n"
-            . "Headers: " . implode(', ', array_map(fn($h) => "\"$h\"", $headers)) . "\n\n"
+        $prompt = "Kamu menganalisa file data laundry untuk migrasi ke sistem LaMaSy.\n\n"
+            . "Headers (nama kolom): " . implode(', ', array_map(fn($h) => "\"$h\"", $headers)) . "\n\n"
             . "Sample data (3 baris pertama):\n$sampleStr\n\n"
             . "Target schema untuk entitas [{$entityType}]:\n"
             . json_encode($schema, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) . "\n\n"
             . ($sourceSystem ? "Petunjuk: file ini kemungkinan dari sistem \"$sourceSystem\".\n\n" : '')
             . "Field yang wajib ada: $requiredList\n\n"
+            . "ANALISA DULU ISI DATANYA, bukan cuma nama kolom:\n"
+            . "- Lihat NILAI di sample. Kolom berisi '08xxx'/'+62xxx' = telepon, walau headernya aneh/kosong.\n"
+            . "- Nilai '15/03/2024', '2024-03-15', '15 Mar 2024' = tanggal → action transform.\n"
+            . "- Nilai 'Rp 7.000', '7000', '7.000' = harga/uang → action transform.\n"
+            . "- Header singkatan/typo/bahasa lain (nm_lyn, service_name, hrg) → pahami dari nilainya.\n"
+            . "- Kalau 1 kolom berisi gabungan (mis. 'Budi - 08123'), tetap map ke field paling relevan + catat di transform_note.\n\n"
             . "Instruksi mapping:\n"
-            . "1. Untuk setiap header, tentukan target_field yang paling cocok (atau null jika tidak ada yang sesuai)\n"
-            . "2. action: \"map\" = petakan langsung, \"transform\" = butuh konversi, \"skip\" = abaikan\n"
-            . "3. Nomor HP: normalkan ke format 08xx (hapus +62, 62, spasi, tanda baca)\n"
-            . "4. Harga/uang: hapus Rp, titik ribuan, koma desimal → integer\n"
-            . "5. Tanggal: konversi ke YYYY-MM-DD\n"
-            . "6. confidence: 0.0–1.0 seberapa yakin mapping ini benar\n\n"
+            . "1. Untuk setiap header, tentukan target_field paling cocok (atau null kalau tidak ada).\n"
+            . "2. action: \"map\" = langsung, \"transform\" = butuh konversi, \"skip\" = abaikan.\n"
+            . "3. Nomor HP: normalkan ke 08xx (hapus +62, 62, spasi, tanda baca).\n"
+            . "4. Harga/uang: hapus Rp, titik ribuan, koma → integer.\n"
+            . "5. Tanggal: konversi ke YYYY-MM-DD.\n"
+            . "6. confidence: 0.0–1.0 berdasar kecocokan header DAN nilai data.\n"
+            . "7. Di warnings: catat masalah data yang terlihat (nilai kosong, format tidak konsisten, kemungkinan duplikat).\n\n"
             . "Respond HANYA JSON ini:\n"
             . "{\n"
             . "  \"mapping\": {\n"
@@ -192,8 +189,26 @@ class AIMigrationMapper
         $result['source']     = 'ai';
         $result['from_cache'] = false;
         $result['mapping']    = $result['mapping'] ?? [];
-        $result['missing_required'] = $result['missing_required'] ?? self::checkMissing($entityType, $result['mapping']);
-        $result['warnings']   = $result['warnings'] ?? [];
+        $result['tokens_in']  = (int)($resp['tokens_in'] ?? 0);
+        $result['tokens_out'] = (int)($resp['tokens_out'] ?? 0);
+        $result['model']      = $resp['model'] ?? null;
+
+        // Gap-filler: kalau AI masih ada field wajib yang kelewat, tambal dgn
+        // heuristik (best of both — AI utama, heuristik jaring pengaman).
+        $missingAfterAi = self::checkMissing($entityType, $result['mapping']);
+        if (!empty($missingAfterAi) && !empty($heuristic)) {
+            $aiTargets = array_filter(array_column(array_values($result['mapping']), 'target_field'));
+            foreach ($heuristic as $hdr => $hinfo) {
+                $tf = $hinfo['target_field'] ?? null;
+                if ($tf && in_array($tf, $missingAfterAi, true) && !in_array($tf, $aiTargets, true)) {
+                    $result['mapping'][$hdr] = $hinfo;       // tambal kolom yang AI lewatkan
+                    $aiTargets[] = $tf;
+                }
+            }
+        }
+
+        $result['missing_required']   = self::checkMissing($entityType, $result['mapping']);
+        $result['warnings']           = $result['warnings'] ?? [];
         $result['overall_confidence'] = (float)($result['overall_confidence'] ?? 0.0);
 
         // 3. Cache jika confidence tinggi
