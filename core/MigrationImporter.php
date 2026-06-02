@@ -507,12 +507,13 @@ class MigrationImporter
             return 'skip';
         }
 
+        // Kolom hl_layanan: nama, kategori, satuan, harga, urutan, is_active
+        // (TIDAK ada 'keterangan' — jangan di-insert)
         TenantQuery::insert('hl_layanan', [
             'nama'      => substr($nama, 0, 100),
             'harga'     => (int)preg_replace('/[^0-9]/', '', $d['harga'] ?? '0'),
             'satuan'    => substr($d['satuan'] ?? 'kg', 0, 20),
-            'kategori'  => substr($d['kategori'] ?? '', 0, 50) ?: null,
-            'keterangan'=> substr($d['keterangan'] ?? '', 0, 255) ?: null,
+            'kategori'  => substr($d['kategori'] ?? 'Umum', 0, 50) ?: 'Umum',
             'is_active' => 1,
         ]);
         return 'ok';
