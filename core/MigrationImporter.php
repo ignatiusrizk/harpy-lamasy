@@ -265,10 +265,7 @@ class MigrationImporter
 
     private static function parseCsv(string $path): array
     {
-        $rows    = [];
-        $headers = null;
-        $enc     = self::detectEncoding($path);
-
+        $enc    = self::detectEncoding($path);
         $handle = fopen($path, 'r');
         if (!$handle) throw new RuntimeException("Tidak bisa buka file CSV.");
 
@@ -276,60 +273,41 @@ class MigrationImporter
         $bom = fread($handle, 3);
         if ($bom !== "\xEF\xBB\xBF") rewind($handle);
 
+        $raw   = [];
+        $first = true;
         while (($data = fgetcsv($handle, 4096, ',')) !== false) {
-            // Coba delimiter ; jika baris pertama hanya 1 kolom
-            if ($headers === null && count($data) === 1) {
-                rewind($handle);
-                fread($handle, 3); // skip BOM again if needed
-                // Restart dengan delimiter ;
+            // Kalau baris pertama cuma 1 kolom → kemungkinan delimiter ';'
+            if ($first && count($data) === 1) {
                 fclose($handle);
                 return self::parseCsvDelimited($path, ';');
             }
-
-            if ($headers === null) {
-                $headers = array_map('trim', $data);
-                // Convert encoding jika perlu
-                if ($enc !== 'UTF-8') {
-                    $headers = array_map(fn($h) => mb_convert_encoding($h, 'UTF-8', $enc), $headers);
-                }
-                continue;
-            }
-
-            // Pad row jika kolom kurang
-            while (count($data) < count($headers)) $data[] = '';
-            $row = array_combine($headers, array_slice($data, 0, count($headers)));
-
+            $first = false;
             if ($enc !== 'UTF-8') {
-                $row = array_map(fn($v) => mb_convert_encoding((string)$v, 'UTF-8', $enc), $row);
+                $data = array_map(fn($v) => mb_convert_encoding((string)$v, 'UTF-8', $enc), $data);
             }
-
-            $rows[] = $row;
+            $raw[] = $data;
         }
         fclose($handle);
-        return $rows;
+        if (empty($raw)) return [];
+        // Auto-deteksi header (lewati preamble laporan) — sama dgn xlsx
+        return self::rowsToAssoc($raw);
     }
 
     private static function parseCsvDelimited(string $path, string $delim): array
     {
-        $rows    = [];
-        $headers = null;
-        $handle  = fopen($path, 'r');
+        $handle = fopen($path, 'r');
         if (!$handle) throw new RuntimeException("Tidak bisa buka file CSV.");
 
-        // Skip BOM
         $bom = fread($handle, 3);
         if ($bom !== "\xEF\xBB\xBF") rewind($handle);
 
+        $raw = [];
         while (($data = fgetcsv($handle, 4096, $delim)) !== false) {
-            if ($headers === null) {
-                $headers = array_map('trim', $data);
-                continue;
-            }
-            while (count($data) < count($headers)) $data[] = '';
-            $rows[] = array_combine($headers, array_slice($data, 0, count($headers)));
+            $raw[] = $data;
         }
         fclose($handle);
-        return $rows;
+        if (empty($raw)) return [];
+        return self::rowsToAssoc($raw);
     }
 
     private static function parseExcel(string $path, string $type): array
@@ -339,15 +317,10 @@ class MigrationImporter
         if (class_exists('SimpleXLSX')) {
             $xlsx = SimpleXLSX::parse($path);
             if (!$xlsx) throw new RuntimeException('File Excel tidak bisa dibaca (SimpleXLSX).');
-            $data    = $xlsx->rows();
-            $headers = array_map('trim', (array)array_shift($data));
-            $rows    = [];
-            foreach ($data as $row) {
-                while (count($row) < count($headers)) $row[] = '';
-                $r = array_combine($headers, array_slice($row, 0, count($headers)));
-                $rows[] = array_map('strval', $r);
-            }
-            return $rows;
+            $raw = array_map(fn($r) => array_map('strval', (array)$r), $xlsx->rows());
+            if (empty($raw)) return [];
+            // Auto-deteksi header (lewati preamble laporan)
+            return self::rowsToAssoc($raw);
         }
 
         // Minimal XLSX parser tanpa library
@@ -434,14 +407,67 @@ class MigrationImporter
         }
 
         if (empty($rowsData)) return [];
+        return self::rowsToAssoc($rowsData);
+    }
 
-        $headers = array_map('trim', array_shift($rowsData));
-        $out     = [];
-        foreach ($rowsData as $row) {
+    /**
+     * Ubah array baris mentah → array asosiatif (header => nilai).
+     * Auto-deteksi baris header: lewati preamble (judul/metadata/ringkasan)
+     * yang umum di file export laporan. Header = baris pertama yang "lebar"
+     * & mayoritas teks, diikuti baris data.
+     */
+    private static function rowsToAssoc(array $rowsData): array
+    {
+        $headerIdx = self::detectHeaderRow($rowsData);
+        $headers   = array_map('trim', $rowsData[$headerIdx] ?? []);
+
+        // Pastikan nama header unik & tidak kosong (kolom kosong → "kolom_N")
+        $seen = [];
+        foreach ($headers as $i => $h) {
+            $h = trim((string)$h);
+            if ($h === '') $h = 'kolom_' . ($i + 1);
+            if (isset($seen[$h])) { $seen[$h]++; $h .= '_' . $seen[$h]; }
+            else $seen[$h] = 0;
+            $headers[$i] = $h;
+        }
+
+        $out = [];
+        $n   = count($rowsData);
+        for ($r = $headerIdx + 1; $r < $n; $r++) {
+            $row = $rowsData[$r];
+            // skip baris kosong total
+            if (!array_filter($row, fn($v) => trim((string)$v) !== '')) continue;
             while (count($row) < count($headers)) $row[] = '';
             $out[] = array_combine($headers, array_slice($row, 0, count($headers)));
         }
         return $out;
+    }
+
+    /**
+     * Deteksi index baris header: scan 30 baris pertama, pilih baris dengan
+     * banyak sel terisi DAN mayoritas teks (bukan angka) — ciri baris header,
+     * bukan judul (1 sel) / metadata (2 sel) / data (banyak angka).
+     */
+    private static function detectHeaderRow(array $rows): int
+    {
+        $bestIdx = 0; $bestScore = -1.0;
+        $scan = min(30, count($rows));
+        for ($i = 0; $i < $scan; $i++) {
+            $nonEmpty = array_values(array_filter($rows[$i], fn($v) => trim((string)$v) !== ''));
+            $cnt = count($nonEmpty);
+            if ($cnt < 3) continue; // judul/metadata → lewati
+            $textCnt = 0;
+            foreach ($nonEmpty as $v) {
+                $vs = trim((string)$v);
+                // anggap teks kalau bukan angka murni (setelah buang Rp/titik/koma)
+                if (!is_numeric(str_replace(['Rp','.',',',' '], '', $vs))) $textCnt++;
+            }
+            $textRatio = $textCnt / $cnt;
+            // header: banyak kolom + mayoritas teks. Data row biasanya banyak angka.
+            $score = $textRatio >= 0.6 ? $cnt * (1 + $textRatio) : $cnt * 0.2;
+            if ($score > $bestScore) { $bestScore = $score; $bestIdx = $i; }
+        }
+        return $bestIdx;
     }
 
     /** Konversi referensi kolom Excel ("A","B",...,"AA") → index 0-based. -1 kalau invalid. */
