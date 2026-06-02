@@ -531,20 +531,20 @@ class MigrationImporter
             return 'skip'; // duplikat WA — skip bukan error (AC#7)
         }
 
-        // Tipe bayar: normalkan ke 'langsung' atau 'bulanan'
-        $tipeBayar = 'langsung';
-        $rawTipe   = strtolower($d['tipe_bayar'] ?? '');
+        // Metode bayar: normalkan ke 'langsung' atau 'bulanan' (kolom yang dibaca app)
+        $metodeBayar = 'langsung';
+        $rawTipe     = strtolower(($d['tipe_bayar'] ?? '') . ' ' . ($d['metode_bayar'] ?? ''));
         if (str_contains($rawTipe, 'bulanan') || str_contains($rawTipe, 'monthly')) {
-            $tipeBayar = 'bulanan';
+            $metodeBayar = 'bulanan';
         }
 
         TenantQuery::insert('hl_pelanggan', [
-            'nama'          => $nama,
-            'telepon'       => $telepon ?: null,
-            'alamat'        => substr($d['alamat'] ?? '', 0, 300) ?: null,
-            'tipe_bayar'    => $tipeBayar,
-            'catatan_tetap' => substr($d['catatan'] ?? '', 0, 255) ?: null,
-            'is_active'     => 1,
+            'nama'         => $nama,
+            'telepon'      => $telepon ?: null,
+            'alamat'       => substr($d['alamat'] ?? '', 0, 300) ?: null,
+            'metode_bayar' => $metodeBayar,
+            'catatan'      => substr($d['catatan'] ?? '', 0, 300) ?: null,
+            'is_active'    => 1,
         ]);
         return 'ok';
     }
@@ -565,7 +565,13 @@ class MigrationImporter
 
         $telepon = self::normalizePhone($d['telepon'] ?? '');
 
-        TenantQuery::insert('hl_users', [
+        // username WAJIB & UNIK (global) — generate dari nama + suffix unik.
+        $base     = preg_replace('/[^a-z0-9]/', '', strtolower($nama)) ?: 'staff';
+        $username = substr($base, 0, 16) . '_' . substr(md5($tid . $nama . microtime(true)), 0, 5);
+
+        $newId = TenantQuery::insert('hl_users', [
+            'outlet_id'  => $oid,
+            'username'   => $username,
             'nama'       => $nama,
             'telepon'    => $telepon ?: null,
             'role'       => $role,
@@ -574,6 +580,18 @@ class MigrationImporter
             'password'   => password_hash('lamasy123', PASSWORD_DEFAULT),
             'is_active'  => 1,
         ]);
+
+        // Assign ke outlet aktif supaya muncul di daftar karyawan outlet (best-effort)
+        try {
+            $kid = (int)(is_numeric($newId) ? $newId : Database::get()->lastInsertId());
+            if ($kid > 0) {
+                Database::get()->prepare(
+                    "INSERT INTO hl_karyawan_outlet (tenant_id, karyawan_id, outlet_id, is_active, assigned_at)
+                     VALUES (?,?,?,1,NOW())"
+                )->execute([$tid, $kid, $oid]);
+            }
+        } catch (Throwable) { /* tabel mungkin belum ada */ }
+
         return 'ok';
     }
 
@@ -644,16 +662,18 @@ class MigrationImporter
 
         $trxId = (int)$db->lastInsertId();
 
-        // Insert item layanan
+        // Insert item layanan — kolom sesuai schema: satuan + jumlah (bukan qty/berat_kg)
         if ($trxId && !empty($namaLayanan)) {
+            $satuan = $beratKg ? 'kg' : 'pcs';
+            $jumlah = $beratKg ?: 1;
             $db->prepare("
                 INSERT INTO hl_transaksi_item
                   (tenant_id, outlet_id, transaksi_id, nama_layanan,
-                   qty, berat_kg, harga_satuan, subtotal)
-                VALUES (?,?,?,?, 1,?,?,?)
+                   satuan, jumlah, harga_satuan, subtotal)
+                VALUES (?,?,?,?, ?,?,?,?)
             ")->execute([
                 $tid, $oid, $trxId, $namaLayanan,
-                $beratKg, $total, $total,
+                $satuan, $jumlah, $total, $total,
             ]);
         }
 
