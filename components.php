@@ -90,11 +90,14 @@ function renderDemoBanner(): void {
     <?php
 }
 
-function renderHead(string $title = 'Harpy'): void {
+function renderHead(string $title = 'LAMASY'): void {
     $csrf = getCsrfToken(); ?>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <meta name="csrf-token" content="<?= htmlspecialchars($csrf) ?>"/>
+    <link rel="icon" type="image/png" href="/assets/logo.png"/>
+    <link rel="apple-touch-icon" href="/assets/logo.png"/>
+    <meta name="theme-color" content="#0F1C3A"/>
     <title><?= htmlspecialchars($title) ?> — LAMASY</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -227,7 +230,7 @@ function renderTopbar(string $activePage = '', bool $minimalMode = false): void 
       <!-- ── SIDEBAR ── -->
       <aside class="ol-side">
         <div class="ol-side-brand">
-          <div class="ol-side-logo">LAMASY</div>
+          <div class="ol-side-logo"><img src="/assets/logo.png" alt="LAMASY" style="height:24px;vertical-align:middle;margin-right:6px">LAMASY</div>
           <div class="ol-side-sub" title="<?= htmlspecialchars($brandNama) ?>">
             <?= htmlspecialchars($brandNama) ?>
           </div>
