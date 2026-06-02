@@ -158,10 +158,12 @@ if ($action) {
         // Panggil AI mapping (cek cache dulu di dalam mapper)
         $mapResult = AIMigrationMapper::map($job['entity_type'], $headers, $sampleRows);
 
-        $fromCache = ($mapResult['source'] ?? '') === 'cache';
+        // 'cache' & 'heuristic' = gratis (tidak panggil AI)
+        $freeSource = in_array($mapResult['source'] ?? '', ['cache','heuristic'], true);
+        $fromCache  = $freeSource;
 
-        // Deduct coin HANYA jika bukan cache dan bukan assisted
-        if (!$fromCache && !$job['is_assisted']) {
+        // Deduct coin HANYA jika perlu AI (bukan cache/heuristic) dan bukan assisted
+        if (!$freeSource && !$job['is_assisted']) {
             if (!CoinLedger::canAfford('ai_migration_mapping')) {
                 // Kembalikan status ke uploaded
                 $db->prepare("UPDATE hl_migration_jobs SET status='uploaded' WHERE id=?")->execute([$jobId]);

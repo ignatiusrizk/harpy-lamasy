@@ -571,7 +571,7 @@ if ($isHqMode) {
             <?php if (($d['mode'] ?? 'trial') === 'paid'): ?>
               <span class="rv-val" style="color:#F59E0B">⚡ Aktivasi Langsung</span>
             <?php else: ?>
-              <span class="rv-val" style="color:var(--teal-d)">🎁 Trial 7 Hari + 1.000 Coin</span>
+              <span class="rv-val" style="color:var(--teal-d)">🎁 Trial 7 Hari + 10.000 Coin</span>
             <?php endif; ?>
           </div>
           <div class="review-row">

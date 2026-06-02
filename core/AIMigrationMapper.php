@@ -104,6 +104,21 @@ class AIMigrationMapper
             ]);
         }
 
+        // 1b. Heuristic gratis — cocokkan header standar (Nama, Harga, dll) tanpa AI.
+        // Kalau semua field wajib sudah ter-cover, langsung pakai (hemat 1.000 coin).
+        $heuristic = self::heuristicMap($entityType, $headers);
+        if (empty(self::checkMissing($entityType, $heuristic))) {
+            return [
+                'mapping'                => $heuristic,
+                'missing_required'       => [],
+                'warnings'               => ['Kolom dikenali otomatis — tidak perlu AI mapping (gratis).'],
+                'source_system_detected' => 'excel',
+                'overall_confidence'     => 0.95,
+                'source'                 => 'heuristic',
+                'from_cache'             => false,
+            ];
+        }
+
         // 2. Pastikan ada AnthropicClient
         if (!class_exists('AnthropicClient')) {
             require_once dirname(__FILE__) . '/AnthropicClient.php';
@@ -160,10 +175,12 @@ class AIMigrationMapper
             $result = $resp['json'];
         } catch (Throwable $e) {
             error_log('[AIMigrationMapper] AI error: ' . $e->getMessage());
+            // AI gagal → tetap kembalikan hasil heuristik (kolom yang sempat dikenali),
+            // supaya user bisa lanjut mapping manual untuk sisanya, bukan tabel kosong.
             return [
-                'mapping'               => [],
-                'missing_required'      => array_keys(array_filter($schema, fn($f) => $f['required'])),
-                'warnings'              => ['AI mapping gagal: ' . $e->getMessage()],
+                'mapping'               => $heuristic,
+                'missing_required'      => self::checkMissing($entityType, $heuristic),
+                'warnings'              => ['AI mapping gagal, dipakai pengenalan kolom otomatis. Lengkapi mapping manual di bawah.'],
                 'source_system_detected'=> 'unknown',
                 'overall_confidence'    => 0.0,
                 'source'                => 'ai_failed',
@@ -204,6 +221,62 @@ class AIMigrationMapper
             fn($v) => !empty($v)
         );
         return array_values(array_diff($required, $mapped));
+    }
+
+    /**
+     * Heuristic gratis: cocokkan header ke target field via alias umum
+     * (Indonesia + Inggris). Tanpa AI, tanpa coin.
+     */
+    private static function heuristicMap(string $entityType, array $headers): array
+    {
+        $schema = self::SCHEMAS[$entityType] ?? [];
+
+        // Alias per target field (lowercase). Urutan exact-match diutamakan.
+        $aliases = [
+            'nama'           => ['nama','name','nama layanan','nama_layanan','layanan','service','produk','item'],
+            'harga'          => ['harga','price','tarif','harga satuan','harga_default','harga jual','cost'],
+            'satuan'         => ['satuan','unit','uom'],
+            'kategori'       => ['kategori','category','jenis','kelompok','grup','group'],
+            'keterangan'     => ['keterangan','deskripsi','description','catatan','note','notes'],
+            'telepon'        => ['telepon','telp','hp','no hp','no. hp','nomor hp','wa','whatsapp','no wa','phone','no_hp','nohp','kontak'],
+            'alamat'         => ['alamat','address','almt'],
+            'tipe_bayar'     => ['tipe bayar','tipe_bayar','metode bayar','metode_bayar','payment','pembayaran'],
+            'catatan'        => ['catatan','note','notes','keterangan','remark'],
+            'role'           => ['role','jabatan','posisi','position','peran'],
+            'gaji_pokok'     => ['gaji','gaji pokok','gaji_pokok','salary','upah'],
+            'tgl_masuk'      => ['tgl masuk','tanggal masuk','tgl_masuk','tanggal_masuk','join date','mulai kerja'],
+            'nama_pelanggan' => ['nama pelanggan','nama_pelanggan','customer','pelanggan','nama customer','nama'],
+            'nama_layanan'   => ['nama layanan','nama_layanan','layanan','service','paket'],
+            'berat_kg'       => ['berat','berat kg','berat_kg','kg','weight','qty kg'],
+            'total'          => ['total','grand total','total bayar','jumlah','amount','total harga'],
+            'tanggal'        => ['tanggal','tgl','date','tanggal order','tgl order'],
+            'status'         => ['status','status order','keterangan status'],
+            'metode_bayar'   => ['metode bayar','metode_bayar','payment method','pembayaran','cara bayar'],
+            'saldo_poin'     => ['saldo poin','poin','point','saldo_poin','points','poin pelanggan'],
+        ];
+
+        $mapping = [];
+        $used    = [];
+        foreach ($headers as $h) {
+            $hl = strtolower(trim((string)$h));
+            if ($hl === '') continue;
+            $matched = null;
+            foreach ($schema as $field => $def) {
+                if (isset($used[$field])) continue;
+                $al = $aliases[$field] ?? [$field, str_replace('_', ' ', $field)];
+                if (in_array($hl, $al, true)) { $matched = $field; break; }
+            }
+            if ($matched) {
+                $mapping[$h] = [
+                    'target_field'  => $matched,
+                    'action'        => 'map',
+                    'transform_note'=> '',
+                    'confidence'    => 0.92,
+                ];
+                $used[$matched] = true;
+            }
+        }
+        return $mapping;
     }
 
     // ─────────────────────────────────────────────────
