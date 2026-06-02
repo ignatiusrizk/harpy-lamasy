@@ -1,7 +1,7 @@
 <?php
 // ══════════════════════════════════════════════════════
 // add-outlet.php — Wizard tambah outlet
-// Outlet 1: trial 7 hari gratis, 1000 coin
+// Outlet 1: trial 7 hari gratis, 10000 coin
 // Outlet 2+: (fase berikutnya — butuh payment)
 // ══════════════════════════════════════════════════════
 
@@ -138,7 +138,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['step2_submit'])) {
         // Trial outlet = trial (langsung aktif dengan masa trial 7 hari)
         $trialStatus = $isPaid ? 'pending' : 'trial';
         $trialEnds   = $isPaid ? null : date('Y-m-d H:i:s', time() + 7 * 86400);
-        $trialCoins  = (!$isPaid && $isFirstOutlet) ? 1000 : 0;
+        $trialCoins  = (!$isPaid && $isFirstOutlet) ? 10000 : 0;
 
         $db->prepare("
             INSERT INTO outlets
@@ -409,7 +409,7 @@ if ($isHqMode) {
           <h1>Outlet Berhasil Ditambahkan!</h1>
           <p>
             <strong><?= htmlspecialchars($outletName ?? '') ?></strong> sudah aktif dan siap digunakan.<br>
-            Kamu mendapat <strong>1.000 coin trial</strong> gratis untuk 7 hari ke depan.
+            Kamu mendapat <strong>10.000 coin trial</strong> gratis untuk 7 hari ke depan.
           </p>
           <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
             <a href="/dashboard" class="hl-btn hl-btn-primary" style="padding:13px 32px">
@@ -507,7 +507,7 @@ if ($isHqMode) {
                      onchange="switchMode(this.value)">
               <div class="mode-body">
                 <div class="mode-title">🎁 Trial 7 Hari — Gratis</div>
-                <div class="mode-desc">Coba semua fitur selama 7 hari tanpa biaya. Dapat 1.000 coin gratis.</div>
+                <div class="mode-desc">Coba semua fitur selama 7 hari tanpa biaya. Dapat 10.000 coin gratis.</div>
               </div>
             </label>
             <label class="mode-card <?= ($d['mode'] ?? '') === 'paid' ? 'selected' : '' ?>" id="cardPaid">

@@ -168,31 +168,35 @@ if ($action) {
             // Update header.
             // tgl_selesai distempel saat status pertama kali jadi siap/diambil/selesai.
             // handled_by distempel saat status pertama kali keluar dari 'masuk' (mulai dikerjakan).
-            $stmt = $db->prepare("UPDATE hl_transaksi SET
-                status_proses=?, status_bayar=?,
-                catatan=?, catatan_internal=?,
-                metode_bayar=?, dp=?, sisa_bayar=?,
-                diskon=?, total=?, subtotal=?,
-                estimasi_selesai=?,
-                tgl_selesai = CASE
-                    WHEN ? IN ('siap','diambil','selesai') AND tgl_selesai IS NULL THEN CURDATE()
-                    ELSE tgl_selesai END,
-                handled_by = CASE
-                    WHEN ? NOT IN ('masuk') AND handled_by IS NULL THEN ?
-                    ELSE handled_by END
-                WHERE tenant_id=? AND outlet_id=? AND id=?");
-            $stmt->execute([
-                $data['status_proses'],
-                $sbayar,
-                $data['catatan'] ?? '',
-                $data['catatan_internal'] ?? '',
+            // Stamp dihitung di PHP supaya tidak ada perbandingan `? IN (...)` di SQL
+            // (penyebab error collation 1271 di sebagian konfigurasi MariaDB).
+            $sp           = $data['status_proses'];
+            $stampSelesai = in_array($sp, ['siap','diambil','selesai'], true);
+            $stampHandled = ($sp !== 'masuk');
+
+            $setParts = [
+                'status_proses=?', 'status_bayar=?', 'catatan=?', 'catatan_internal=?',
+                'metode_bayar=?', 'dp=?', 'sisa_bayar=?', 'diskon=?', 'total=?',
+                'subtotal=?', 'estimasi_selesai=?',
+            ];
+            $params = [
+                $sp, $sbayar,
+                $data['catatan'] ?? '', $data['catatan_internal'] ?? '',
                 $data['metode_bayar'] ?? 'cash',
                 $dp, $sisa, $diskon, $total, $subtotal > 0 ? $subtotal : null,
                 $data['estimasi'] ?: null,
-                $data['status_proses'],
-                $data['status_proses'], (int)$user['id'],
-                $tid, $oid, $id
-            ]);
+            ];
+            if ($stampSelesai) {
+                $setParts[] = 'tgl_selesai = CASE WHEN tgl_selesai IS NULL THEN CURDATE() ELSE tgl_selesai END';
+            }
+            if ($stampHandled) {
+                $setParts[] = 'handled_by = CASE WHEN handled_by IS NULL THEN ? ELSE handled_by END';
+                $params[]   = (int)$user['id'];
+            }
+            $params = [...$params, $tid, $oid, $id];
+            $stmt = $db->prepare("UPDATE hl_transaksi SET " . implode(', ', $setParts)
+                 . " WHERE tenant_id=? AND outlet_id=? AND id=?");
+            $stmt->execute($params);
 
             // Update items jika ada
             if (!empty($data['items'])) {
@@ -432,15 +436,23 @@ if ($action) {
         $db->beginTransaction();
         try {
             $ph = implode(',', array_fill(0, count($ids), '?'));
-            // Update + handled_by stamp + tgl_selesai stamp
-            $sql = "UPDATE hl_transaksi
-                       SET status_proses=?,
-                           handled_by = CASE WHEN ? IN ('cuci','kering','setrika','siap','diambil','selesai')
-                                              AND handled_by IS NULL THEN ? ELSE handled_by END,
-                           tgl_selesai = CASE WHEN ? IN ('siap','diambil','selesai') AND tgl_selesai IS NULL
-                                              THEN NOW() ELSE tgl_selesai END
-                     WHERE tenant_id=? AND outlet_id=? AND id IN ($ph)";
-            $params = [$status, $status, $user['id'], $status, $tid, $oid, ...$ids];
+            // Status sudah divalidasi di PHP → tentukan stamp di PHP, hindari
+            // perbandingan `? IN (...)` di SQL (penyebab error collation 1271).
+            $stampHandled = in_array($status, ['cuci','kering','setrika','siap','diambil','selesai'], true);
+            $stampSelesai = in_array($status, ['siap','diambil','selesai'], true);
+
+            $setParts = ['status_proses=?'];
+            $params   = [$status];
+            if ($stampHandled) {
+                $setParts[] = 'handled_by = CASE WHEN handled_by IS NULL THEN ? ELSE handled_by END';
+                $params[]   = $user['id'];
+            }
+            if ($stampSelesai) {
+                $setParts[] = 'tgl_selesai = CASE WHEN tgl_selesai IS NULL THEN NOW() ELSE tgl_selesai END';
+            }
+            $sql = "UPDATE hl_transaksi SET " . implode(', ', $setParts)
+                 . " WHERE tenant_id=? AND outlet_id=? AND id IN ($ph)";
+            $params = [...$params, $tid, $oid, ...$ids];
             $stmt = $db->prepare($sql);
             $stmt->execute($params);
             $affected = $stmt->rowCount();

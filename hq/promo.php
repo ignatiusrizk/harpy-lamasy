@@ -292,8 +292,8 @@ if ($action) {
         try {
             $chk = $db->prepare("SELECT id FROM hl_voucher WHERE kode=? LIMIT 1");
             $ins = $db->prepare("INSERT INTO hl_voucher
-                                   (tenant_id, outlet_id, promo_id, kode, is_used, nama_penerima, telepon, expired_at, created_at)
-                                 VALUES (?,0,?,?,0,?,?,?,NOW())");
+                                   (tenant_id, promo_id, kode, is_used, nama_penerima, telepon, expired_at, created_at)
+                                 VALUES (?,?,?,0,?,?,?,NOW())");
             for ($i = 0; $i < $jumlah; $i++) {
                 $kode = null;
                 for ($try = 0; $try < 5; $try++) {

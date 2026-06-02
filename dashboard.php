@@ -115,6 +115,8 @@ if ($action) {
         $isStaff = ($user['role'] === 'staff');
 
         if ($isStaff) {
+            // Staff (operator) memproses order, bukan membuatnya — tampilkan order
+            // yang dia buat ATAU yang dia tangani (handled_by), bukan cuma created_by.
             $orderData = TenantQuery::rawOne(
                 "SELECT COUNT(*) as total_order,
                         COALESCE(SUM(total),0) as omset,
@@ -122,8 +124,9 @@ if ($action) {
                         SUM(CASE WHEN status_bayar != 'lunas' THEN 1 ELSE 0 END) as belum_lunas,
                         SUM(CASE WHEN status_proses = 'siap' THEN 1 ELSE 0 END) as siap_diambil
                  FROM hl_transaksi
-                 WHERE tenant_id = ? AND outlet_id = ? AND DATE(tanggal) = ? AND created_by = ?",
-                [$tid, $oid, $today, $user['id']]
+                 WHERE tenant_id = ? AND outlet_id = ? AND DATE(tanggal) = ?
+                   AND (created_by = ? OR handled_by = ?)",
+                [$tid, $oid, $today, $user['id'], $user['id']]
             );
         } else {
             $orderData = TenantQuery::rawOne(

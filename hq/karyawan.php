@@ -22,11 +22,12 @@ $action = $_GET['action'] ?? '';
 
 // ── Helper: log audit (best-effort) ───────────────────
 function hqAudit(PDO $db, int $tid, int $uid, string $action, string $detail): void {
+    // Tulis ke hl_audit_log (tenant audit) — superadmin_logs hanya untuk super admin.
     try {
         $db->prepare(
-            "INSERT INTO superadmin_logs (action, target_type, target_id, details, created_at)
-             VALUES (?,'karyawan',?,?,NOW())"
-        )->execute([$action, $tid, json_encode(['by'=>$uid,'detail'=>$detail])]);
+            "INSERT INTO hl_audit_log (tenant_id, user_id, modul, aksi, keterangan, created_at)
+             VALUES (?,?,'karyawan',?,?,NOW())"
+        )->execute([$tid, $uid, $action, $detail]);
     } catch (Throwable $e) { error_log('[hq audit] '.$e->getMessage()); }
 }
 

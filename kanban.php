@@ -89,11 +89,22 @@ if ($action) {
             if (!$cur) { echo json_encode(['error'=>'Order tidak ditemukan']); exit; }
 
             // Update: stamp tgl_selesai + handled_by (mirror logic orders.php save)
-            $upd = $db->prepare("UPDATE hl_transaksi SET status_proses=?,
-                tgl_selesai = CASE WHEN ? IN ('siap','diambil','selesai') AND tgl_selesai IS NULL THEN CURDATE() ELSE tgl_selesai END,
-                handled_by  = CASE WHEN ? NOT IN ('masuk') AND handled_by IS NULL THEN ? ELSE handled_by END
-                WHERE id=? AND tenant_id=? AND outlet_id=?");
-            $upd->execute([$next, $next, $next, (int)$user['id'], $id, $tid, $oid]);
+            // Stamp dihitung di PHP — hindari `? IN (...)` (collation error 1271).
+            $stampSelesai = in_array($next, ['siap','diambil','selesai'], true);
+            $stampHandled = ($next !== 'masuk');
+            $setParts = ['status_proses=?'];
+            $params   = [$next];
+            if ($stampSelesai) {
+                $setParts[] = 'tgl_selesai = CASE WHEN tgl_selesai IS NULL THEN CURDATE() ELSE tgl_selesai END';
+            }
+            if ($stampHandled) {
+                $setParts[] = 'handled_by = CASE WHEN handled_by IS NULL THEN ? ELSE handled_by END';
+                $params[]   = (int)$user['id'];
+            }
+            $params = [...$params, $id, $tid, $oid];
+            $upd = $db->prepare("UPDATE hl_transaksi SET " . implode(', ', $setParts)
+                 . " WHERE id=? AND tenant_id=? AND outlet_id=?");
+            $upd->execute($params);
 
             // Log status change
             try {
