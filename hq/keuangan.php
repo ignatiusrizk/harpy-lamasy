@@ -317,6 +317,133 @@ if (!empty($_SERVER['HTTP_X_REQUESTED_WITH'])) {
         exit;
     }
 
+    // ── #10: Tambah akun COA baru (kode auto-generate) ──
+    if ($action === 'add_coa' && $_SERVER['REQUEST_METHOD']==='POST') {
+        requirePermission('keuangan.edit');
+        $nama = trim($_POST['nama'] ?? '');
+        $tipe = $_POST['tipe'] ?? '';
+        $prefixMap = [
+            'aset_lancar'=>'1-1', 'aset_tetap'=>'1-2',
+            'liabilitas_lancar'=>'2-1', 'liabilitas_jangka_panjang'=>'2-2',
+            'ekuitas'=>'3-1', 'pendapatan'=>'4-1', 'pendapatan_lain'=>'4-1',
+            'beban_pokok'=>'5-1', 'beban_operasional'=>'5-1', 'beban_lain'=>'5-1',
+        ];
+        if ($nama === '' || !isset($prefixMap[$tipe])) {
+            echo json_encode(['error'=>'Nama & tipe akun wajib diisi.']); exit;
+        }
+        $prefix = $prefixMap[$tipe];
+        // Cari kode terakhir dgn prefix sama → increment 3 digit terakhir
+        $s = $db->prepare("SELECT kode FROM hl_coa WHERE tenant_id=? AND kode LIKE ? ORDER BY kode DESC LIMIT 1");
+        $s->execute([$tid, $prefix.'%']);
+        $last = $s->fetchColumn();
+        $lastNum = $last ? (int)substr(preg_replace('/\D/','',$last), -3) : 0;
+        $kode = $prefix . str_pad($lastNum + 1, 3, '0', STR_PAD_LEFT);
+        try {
+            $db->prepare("INSERT INTO hl_coa (tenant_id, outlet_id, kode, nama, tipe, is_auto, is_active, urutan)
+                          VALUES (?, NULL, ?, ?, ?, 0, 1, 99)")
+               ->execute([$tid, $kode, $nama, $tipe]);
+            $newId = (int)$db->lastInsertId();
+            logAudit('tambah','keuangan_coa',"Akun COA: $kode $nama ($tipe)");
+            echo json_encode(['ok'=>true, 'data'=>['id'=>$newId,'kode'=>$kode,'nama'=>$nama,'tipe'=>$tipe]]);
+        } catch (Throwable $e) {
+            echo json_encode(['error'=>'Gagal: '.$e->getMessage()]);
+        }
+        exit;
+    }
+
+    // ── #11: Import Aset Tetap dari Excel/CSV ──
+    if ($action === 'import_aset' && $_SERVER['REQUEST_METHOD']==='POST') {
+        requirePermission('keuangan.edit');
+        requireNotGrace();
+        if (empty($_FILES['file']['tmp_name'])) { echo json_encode(['error'=>'File tidak ada.']); exit; }
+        $f   = $_FILES['file'];
+        $ext = strtolower(pathinfo($f['name'], PATHINFO_EXTENSION));
+        if (!in_array($ext, ['csv','xlsx','xls'], true)) { echo json_encode(['error'=>'Format harus CSV/XLSX/XLS.']); exit; }
+        if ($f['size'] > 5*1024*1024) { echo json_encode(['error'=>'File maksimal 5 MB.']); exit; }
+
+        require_once ROOT . '/core/MigrationImporter.php';
+        try {
+            $rows = MigrationImporter::parseFile($f['tmp_name'], $ext);
+        } catch (Throwable $e) { echo json_encode(['error'=>'Gagal baca file: '.$e->getMessage()]); exit; }
+        if (empty($rows)) { echo json_encode(['error'=>'File kosong.']); exit; }
+
+        // COA aset tetap & outlet untuk matching
+        $coaList = $db->prepare("SELECT id,kode,nama FROM hl_coa WHERE tenant_id=? AND tipe='aset_tetap' AND is_active=1");
+        $coaList->execute([$tid]);
+        $coas = $coaList->fetchAll(PDO::FETCH_ASSOC);
+        if (!$coas) { echo json_encode(['error'=>'Belum ada akun COA Aset Tetap. Tambahkan dulu via "+ Akun baru".']); exit; }
+        $defaultCoa = (int)$coas[0]['id'];
+
+        $outletList = $db->prepare("SELECT id,nama_outlet,is_main FROM outlets WHERE tenant_id=? AND status!='closed'");
+        $outletList->execute([$tid]);
+        $outs = $outletList->fetchAll(PDO::FETCH_ASSOC);
+        $defaultOutlet = 0;
+        foreach ($outs as $o) { if ($o['is_main']) { $defaultOutlet = (int)$o['id']; break; } }
+        if (!$defaultOutlet && $outs) $defaultOutlet = (int)$outs[0]['id'];
+
+        $pick = function(array $row, array $aliases) {
+            foreach ($row as $k=>$v) { if (in_array(strtolower(trim((string)$k)), $aliases, true)) return trim((string)$v); }
+            return '';
+        };
+        $matchCoa = function(string $kat) use ($coas, $defaultCoa) {
+            $kat = strtolower(trim($kat));
+            if ($kat === '') return $defaultCoa;
+            foreach ($coas as $c) { if (stripos($c['nama'], $kat) !== false || strtolower($c['nama']) === $kat || $c['kode'] === $kat) return (int)$c['id']; }
+            return $defaultCoa;
+        };
+        $matchOutlet = function(string $on) use ($outs, $defaultOutlet) {
+            $on = strtolower(trim($on));
+            if ($on === '') return $defaultOutlet;
+            foreach ($outs as $o) { if (stripos($o['nama_outlet'], $on) !== false) return (int)$o['id']; }
+            return $defaultOutlet;
+        };
+        $toDate = function(string $s) {
+            $s = trim($s);
+            if ($s === '') return date('Y-m-d');
+            if (preg_match('/^\d{4}-\d{2}-\d{2}/', $s)) return substr($s,0,10);
+            $t = strtotime($s);
+            return $t ? date('Y-m-d', $t) : date('Y-m-d');
+        };
+
+        $imported = 0; $errors = [];
+        $ins = $db->prepare("INSERT INTO hl_aset_tetap
+            (tenant_id,outlet_id,coa_id,nama,tanggal_perolehan,nilai_perolehan,nilai_sisa,umur_ekonomis,metode_penyusutan,keterangan,created_by)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?)");
+        foreach ($rows as $i=>$row) {
+            $baris = $i + 2;
+            if (!is_array($row)) continue;
+            $nama = $pick($row, ['nama','name','aset','nama aset','nama_aset','asset']);
+            $perolRaw = $pick($row, ['nilai_perolehan','nilai perolehan','harga','harga perolehan','nilai','perolehan','cost']);
+            $perol = (int)preg_replace('/\D/','', $perolRaw);
+            if ($nama==='' && $perolRaw==='') continue;
+            if ($nama==='') { $errors[]=['baris'=>$baris,'error'=>'Nama aset kosong']; continue; }
+            if ($perol<=0) { $errors[]=['baris'=>$baris,'error'=>'Nilai perolehan tidak valid']; continue; }
+            $sisa  = (int)preg_replace('/\D/','', $pick($row, ['nilai_sisa','nilai sisa','residu','salvage']));
+            $umur  = (int)preg_replace('/\D/','', $pick($row, ['umur_ekonomis','umur','umur ekonomis','umur (bulan)','masa manfaat'])) ?: 60;
+            $metode = stripos($pick($row, ['metode','metode_penyusutan','penyusutan']), 'menurun') !== false ? 'saldo_menurun' : 'garis_lurus';
+            $coaId  = $matchCoa($pick($row, ['kategori','coa','akun','jenis','category']));
+            $oid    = $matchOutlet($pick($row, ['outlet','cabang','lokasi']));
+            $tgl    = $toDate($pick($row, ['tanggal_perolehan','tanggal','tgl','tgl_perolehan','date']));
+            try {
+                $ins->execute([$tid,$oid,$coaId,$nama,$tgl,$perol,$sisa,$umur,$metode,'',$uid]);
+                $imported++;
+            } catch (Throwable $e) { $errors[]=['baris'=>$baris,'error'=>$e->getMessage()]; }
+        }
+        logAudit('import','keuangan_aset',"Import $imported aset tetap dari Excel");
+        echo json_encode(['ok'=>true,'result'=>['imported'=>$imported,'errors'=>$errors]]);
+        exit;
+    }
+
+    if ($action === 'template_aset') {
+        header('Content-Type: text/csv; charset=UTF-8');
+        header('Content-Disposition: attachment; filename="template_aset_tetap.csv"');
+        $out = fopen('php://output','w'); fputs($out,"\xEF\xBB\xBF");
+        fputcsv($out, ['nama','kategori','outlet','tanggal_perolehan','nilai_perolehan','nilai_sisa','umur_ekonomis','metode']);
+        fputcsv($out, ['Mesin Cuci LG 20kg','Mesin Cuci','','2024-01-15','15000000','1500000','60','garis_lurus']);
+        fputcsv($out, ['Motor Kurir Honda','Kendaraan','','2023-06-01','18000000','3000000','48','garis_lurus']);
+        fclose($out); exit;
+    }
+
     http_response_code(400);
     echo json_encode(['error'=>'Action tidak dikenal']);
     exit;
@@ -444,6 +571,7 @@ foreach ($coaJurnal as $c) {
         <select class="outlet-sel" id="asetOutlet" style="margin-bottom:0" onchange="loadAset()">
           <?= $outletOptHtml ?>
         </select>
+        <button class="btn btn-light btn-sm" onclick="openImportAset()">📥 Import</button>
         <button class="btn btn-teal btn-sm" onclick="openModal('modalAset')">+ Tambah Aset</button>
       </div>
     </div>
@@ -576,6 +704,58 @@ foreach ($coaJurnal as $c) {
 
 <!-- ══════════════ MODALS ══════════════ -->
 
+<!-- Modal: Tambah Akun COA (#10) -->
+<div class="modal-bg" id="modalAddCoa">
+  <div class="modal" style="max-width:380px">
+    <h4>➕ Tambah Akun COA</h4>
+    <div class="keu-form">
+      <div>
+        <label>Nama Akun</label>
+        <input type="text" id="addCoaNama" placeholder="Mis: Mesin Cuci Samsung / Pinjaman Koperasi">
+      </div>
+      <div>
+        <label>Tipe Akun</label>
+        <select id="addCoaTipe">
+          <option value="aset_tetap">Aset Tetap</option>
+          <option value="aset_lancar">Aset Lancar</option>
+          <option value="liabilitas_jangka_panjang">Pinjaman Jangka Panjang</option>
+          <option value="liabilitas_lancar">Liabilitas Lancar</option>
+          <option value="ekuitas">Ekuitas</option>
+          <option value="pendapatan">Pendapatan</option>
+          <option value="beban_operasional">Beban Operasional</option>
+        </select>
+        <div style="font-size:11px;color:#9CA3AF;margin-top:4px">Kode akun dibuat otomatis sesuai tipe.</div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-light" onclick="closeModal('modalAddCoa')">Batal</button>
+      <button class="btn btn-teal" onclick="submitAddCoa()">Simpan Akun</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Import Aset Tetap (#11) -->
+<div class="modal-bg" id="modalImportAset">
+  <div class="modal" style="max-width:440px">
+    <h4>📥 Import Aset Tetap dari Excel</h4>
+    <p style="font-size:13px;color:#6B7280;margin:6px 0 12px">
+      Kolom dikenali: <strong>nama, kategori, outlet, tanggal_perolehan, nilai_perolehan,
+      nilai_sisa, umur_ekonomis, metode</strong>. Kategori dicocokkan ke Akun COA Aset Tetap;
+      outlet dicocokkan ke nama outlet (default: outlet utama).
+    </p>
+    <a href="keuangan.php?action=template_aset" class="btn btn-light btn-sm" style="margin-bottom:12px;display:inline-block">⬇️ Download Template</a>
+    <div class="keu-form">
+      <input type="file" id="importAsetFile" accept=".xlsx,.xls,.csv"
+             style="width:100%;padding:9px 12px;border:1px solid #E5E9F2;border-radius:8px;font-size:13px">
+    </div>
+    <div id="importAsetResult" style="margin-top:10px"></div>
+    <div class="modal-actions">
+      <button class="btn btn-light" onclick="closeModal('modalImportAset')">Tutup</button>
+      <button class="btn btn-teal" id="importAsetBtn" onclick="doImportAset()">📥 Import</button>
+    </div>
+  </div>
+</div>
+
 <!-- Modal: Tambah Aset Tetap -->
 <div class="modal-bg" id="modalAset">
   <div class="modal">
@@ -583,7 +763,7 @@ foreach ($coaJurnal as $c) {
     <div class="keu-form">
       <div class="row2">
         <div><label>Outlet</label><select id="mAsetOutlet"><?= $outletOptHtml ?></select></div>
-        <div><label>Akun COA</label><select id="mAsetCoa"><?= $coaAsetOpts ?></select></div>
+        <div><label>Akun COA <a href="javascript:" onclick="openAddCoa('aset_tetap','mAsetCoa')" style="font-size:11px;color:#0891B2;font-weight:600">+ Akun baru</a></label><select id="mAsetCoa"><?= $coaAsetOpts ?></select></div>
       </div>
       <div><label>Nama Aset</label><input type="text" id="mAsetNama" placeholder="Mis: Mesin Cuci LG 20kg #1"></div>
       <div class="row2">
@@ -616,7 +796,7 @@ foreach ($coaJurnal as $c) {
     <div class="keu-form">
       <div class="row2">
         <div><label>Outlet</label><select id="mPinjOutlet"><?= $outletOptHtml ?></select></div>
-        <div><label>Akun COA</label><select id="mPinjCoa"><?= $coaPinjOpts ?></select></div>
+        <div><label>Akun COA <a href="javascript:" onclick="openAddCoa('liabilitas_jangka_panjang','mPinjCoa')" style="font-size:11px;color:#0891B2;font-weight:600">+ Akun baru</a></label><select id="mPinjCoa"><?= $coaPinjOpts ?></select></div>
       </div>
       <div class="row2">
         <div><label>Nama Pinjaman</label><input type="text" id="mPinjNama" placeholder="Mis: KUR BRI 2025"></div>
@@ -714,6 +894,64 @@ function toast(msg, ok = true) {
 
 function openModal(id)  { document.getElementById(id).classList.add('open'); }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+// ── #10: Tambah akun COA baru on-the-fly ──
+let _addCoaTarget = null; // id select tujuan
+function openAddCoa(tipe, targetSelectId){
+  _addCoaTarget = targetSelectId;
+  document.getElementById('addCoaTipe').value = tipe;
+  document.getElementById('addCoaNama').value = '';
+  openModal('modalAddCoa');
+  setTimeout(()=>document.getElementById('addCoaNama').focus(), 100);
+}
+async function submitAddCoa(){
+  const nama = document.getElementById('addCoaNama').value.trim();
+  const tipe = document.getElementById('addCoaTipe').value;
+  if (!nama) { alert('Nama akun wajib diisi'); return; }
+  const d = await api('add_coa', { nama, tipe }, 'POST');
+  if (d.error) { alert('⚠️ ' + d.error); return; }
+  // Tambahkan opsi baru ke select tujuan + pilih otomatis
+  const c = d.data;
+  if (_addCoaTarget) {
+    const sel = document.getElementById(_addCoaTarget);
+    const opt = new Option(`[${c.kode}] ${c.nama}`, c.id, true, true);
+    sel.add(opt);
+  }
+  closeModal('modalAddCoa');
+}
+
+// ── #11: Import Aset Tetap ──
+function openImportAset(){
+  document.getElementById('importAsetFile').value = '';
+  document.getElementById('importAsetResult').innerHTML = '';
+  document.getElementById('importAsetBtn').disabled = false;
+  openModal('modalImportAset');
+}
+async function doImportAset(){
+  const file = document.getElementById('importAsetFile').files[0];
+  const box  = document.getElementById('importAsetResult');
+  if (!file) { alert('Pilih file dulu'); return; }
+  document.getElementById('importAsetBtn').disabled = true;
+  box.innerHTML = '<div style="color:#6B7280;font-size:13px">⏳ Memproses…</div>';
+  const fd = new FormData();
+  fd.append('_csrf', CSRF);
+  fd.append('file', file);
+  try {
+    const r = await fetch('keuangan.php?action=import_aset', {method:'POST', body:fd, headers:{'X-Requested-With':'XMLHttpRequest'}});
+    const d = await r.json();
+    if (d.error) { box.innerHTML = `<div style="color:#991B1B;font-size:13px">⚠️ ${d.error}</div>`; document.getElementById('importAsetBtn').disabled=false; return; }
+    const res = d.result;
+    let html = `<div style="background:#ECFDF5;border:1px solid #A7F3D0;border-radius:8px;padding:10px 12px;font-size:13px;color:#065F46">✅ <strong>${res.imported} aset</strong> berhasil di-import.</div>`;
+    if (res.errors && res.errors.length){
+      html += `<div style="background:#FEF2F2;border:1px solid #FECACA;border-radius:8px;padding:10px 12px;font-size:12px;color:#991B1B;margin-top:8px">⚠️ ${res.errors.length} baris dilewati:<ul style="margin:6px 0 0 16px">${res.errors.slice(0,8).map(e=>`<li>Baris ${e.baris}: ${e.error}</li>`).join('')}${res.errors.length>8?`<li>…dan ${res.errors.length-8} lainnya</li>`:''}</ul></div>`;
+    }
+    box.innerHTML = html;
+    loadAset();
+  } catch(e){
+    box.innerHTML = `<div style="color:#991B1B;font-size:13px">Gagal: ${e.message}</div>`;
+    document.getElementById('importAsetBtn').disabled = false;
+  }
+}
 
 function fmtInput(el) {
     const raw = el.value.replace(/\D/g, '');
