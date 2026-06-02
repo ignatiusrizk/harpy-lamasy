@@ -51,9 +51,9 @@ class AIMigrationMapper
         'transaksi' => [
             'nama_pelanggan' => ['required'=>true,  'type'=>'string',  'desc'=>'Nama pelanggan'],
             'telepon'        => ['required'=>false, 'type'=>'phone',   'desc'=>'Nomor HP / WA pelanggan'],
-            'nama_layanan'   => ['required'=>true,  'type'=>'string',  'desc'=>'Nama layanan yang dibeli'],
+            'nama_layanan'   => ['required'=>false, 'type'=>'string',  'desc'=>'Nama layanan (opsional — default "Layanan" kalau kosong)'],
             'berat_kg'       => ['required'=>false, 'type'=>'decimal', 'desc'=>'Berat dalam kg (angka, bisa desimal)'],
-            'total'          => ['required'=>true,  'type'=>'integer', 'desc'=>'Total harga transaksi dalam Rupiah'],
+            'total'          => ['required'=>true,  'type'=>'integer', 'desc'=>'Total harga transaksi dalam Rupiah (mis. Total Tagihan)'],
             'tanggal'        => ['required'=>true,  'type'=>'date',    'desc'=>'Tanggal transaksi (YYYY-MM-DD)'],
             'status'         => ['required'=>false, 'type'=>'string',  'desc'=>'Status transaksi: selesai, proses, dll'],
             'metode_bayar'   => ['required'=>false, 'type'=>'string',  'desc'=>'Metode bayar: cash, transfer, dll'],
@@ -96,6 +96,7 @@ class AIMigrationMapper
         // 1. Cek cache — header signature yang sama tidak perlu re-call AI
         $cached = self::findCached($entityType, $headers);
         if ($cached) {
+            $cached['mapping'] = self::fillUnmappedHeaders($cached['mapping'] ?? [], $headers);
             return array_merge($cached, [
                 'source'     => 'cache',
                 'from_cache' => true,
@@ -175,7 +176,7 @@ class AIMigrationMapper
             // AI gagal → tetap kembalikan hasil heuristik (kolom yang sempat dikenali),
             // supaya user bisa lanjut mapping manual untuk sisanya, bukan tabel kosong.
             return [
-                'mapping'               => $heuristic,
+                'mapping'               => self::fillUnmappedHeaders($heuristic, $headers),
                 'missing_required'      => self::checkMissing($entityType, $heuristic),
                 'warnings'              => ['AI mapping gagal, dipakai pengenalan kolom otomatis. Lengkapi mapping manual di bawah.'],
                 'source_system_detected'=> 'unknown',
@@ -207,6 +208,8 @@ class AIMigrationMapper
             }
         }
 
+        // Pastikan SEMUA kolom file muncul (yang AI lewatkan = skip) → user bisa map manual
+        $result['mapping']            = self::fillUnmappedHeaders($result['mapping'], $headers);
         $result['missing_required']   = self::checkMissing($entityType, $result['mapping']);
         $result['warnings']           = $result['warnings'] ?? [];
         $result['overall_confidence'] = (float)($result['overall_confidence'] ?? 0.0);
@@ -236,6 +239,22 @@ class AIMigrationMapper
             fn($v) => !empty($v)
         );
         return array_values(array_diff($required, $mapped));
+    }
+
+    /**
+     * Pastikan SEMUA header punya entri di mapping — kolom yang AI lewatkan
+     * tetap muncul (action 'skip') supaya user bisa map manual di UI.
+     */
+    private static function fillUnmappedHeaders(array $mapping, array $headers): array
+    {
+        foreach ($headers as $h) {
+            $h = (string)$h;
+            if ($h === '') continue;
+            if (!isset($mapping[$h])) {
+                $mapping[$h] = ['target_field' => null, 'action' => 'skip', 'transform_note' => '', 'confidence' => 0];
+            }
+        }
+        return $mapping;
     }
 
     /**

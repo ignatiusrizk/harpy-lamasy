@@ -628,9 +628,11 @@ class MigrationImporter
         $namaPel   = substr(trim($d['nama_pelanggan'] ?? ''), 0, 100);
         $total     = (int)preg_replace('/[^0-9]/', '', $d['total'] ?? '0');
         $tanggal   = self::normalizeDate($d['tanggal'] ?? '') ?: date('Y-m-d');
-        $namaLayanan = substr(trim($d['nama_layanan'] ?? ''), 0, 100);
+        // nama_layanan opsional — banyak export taruh layanan di sub-baris terpisah
+        $namaLayanan = substr(trim($d['nama_layanan'] ?? ''), 0, 100) ?: 'Layanan';
 
-        if (empty($namaPel) || empty($namaLayanan)) return 'skip';
+        // Skip hanya kalau identitas inti tidak ada (pelanggan + total)
+        if (empty($namaPel) || $total <= 0) return 'skip';
 
         $db      = Database::get();
         $telepon = self::normalizePhone($d['telepon'] ?? '');
