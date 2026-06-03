@@ -161,7 +161,7 @@ class MigrationImporter
         // Currency / rupiah
         if (str_contains($note, 'currency') || str_contains($note, 'rupiah')
             || str_contains($note, 'harga') || str_contains($note, 'rp')) {
-            return (int)preg_replace('/[^0-9]/', '', $value);
+            return self::parseAmount($value);
         }
 
         // Phone normalization
@@ -176,6 +176,30 @@ class MigrationImporter
         }
 
         return $value;
+    }
+
+    // ─────────────────────────────────────────────────
+    // Parse nominal uang → integer (handle ribuan & desimal)
+    //   '13130.00'      → 13130   (. = desimal)
+    //   '31.994.426,50' → 31994426 (. ribuan, , desimal)
+    //   '7.000' / 'Rp 7.000' → 7000 (. ribuan)
+    // ─────────────────────────────────────────────────
+    public static function parseAmount(string $v): int
+    {
+        $v = preg_replace('/[^0-9.,]/', '', $v);
+        if ($v === '') return 0;
+        $lastDot   = strrpos($v, '.');
+        $lastComma = strrpos($v, ',');
+        $decPos    = max($lastDot === false ? -1 : $lastDot, $lastComma === false ? -1 : $lastComma);
+        if ($decPos >= 0) {
+            $decimals = substr($v, $decPos + 1);
+            // 1-2 digit setelah separator paling kanan = desimal → buang
+            $intPart  = (strlen($decimals) <= 2 && ctype_digit($decimals))
+                        ? substr($v, 0, $decPos) : $v;
+        } else {
+            $intPart = $v;
+        }
+        return (int)preg_replace('/[^0-9]/', '', $intPart);
     }
 
     // ─────────────────────────────────────────────────
@@ -537,7 +561,7 @@ class MigrationImporter
         // (TIDAK ada 'keterangan' — jangan di-insert)
         TenantQuery::insert('hl_layanan', [
             'nama'      => substr($nama, 0, 100),
-            'harga'     => (int)preg_replace('/[^0-9]/', '', $d['harga'] ?? '0'),
+            'harga'     => self::parseAmount($d['harga'] ?? '0'),
             'satuan'    => substr($d['satuan'] ?? 'kg', 0, 20),
             'kategori'  => substr($d['kategori'] ?? 'Umum', 0, 50) ?: 'Umum',
             'is_active' => 1,
@@ -602,7 +626,7 @@ class MigrationImporter
             'nama'       => $nama,
             'telepon'    => $telepon ?: null,
             'role'       => $role,
-            'gaji_pokok' => (int)preg_replace('/[^0-9]/', '', $d['gaji_pokok'] ?? '0'),
+            'gaji_pokok' => self::parseAmount($d['gaji_pokok'] ?? '0'),
             'tgl_masuk'  => self::normalizeDate($d['tgl_masuk'] ?? '') ?: null,
             'password'   => password_hash('lamasy123', PASSWORD_DEFAULT),
             'is_active'  => 1,
@@ -626,7 +650,7 @@ class MigrationImporter
     private static function importTransaksi(array $d, int $tid, int $oid, int $jobId): string
     {
         $namaPel   = substr(trim($d['nama_pelanggan'] ?? ''), 0, 100);
-        $total     = (int)preg_replace('/[^0-9]/', '', $d['total'] ?? '0');
+        $total     = self::parseAmount($d['total'] ?? '0');
         $tanggal   = self::normalizeDate($d['tanggal'] ?? '') ?: date('Y-m-d');
         // nama_layanan opsional — banyak export taruh layanan di sub-baris terpisah
         $namaLayanan = substr(trim($d['nama_layanan'] ?? ''), 0, 100) ?: 'Layanan';
@@ -713,7 +737,7 @@ class MigrationImporter
     private static function importPoinPelanggan(array $d, int $tid, int $oid): string
     {
         $telepon   = self::normalizePhone($d['telepon'] ?? '');
-        $saldoPoin = (int)preg_replace('/[^0-9]/', '', $d['saldo_poin'] ?? '0');
+        $saldoPoin = self::parseAmount($d['saldo_poin'] ?? '0');
 
         if (empty($telepon) || $saldoPoin <= 0) return 'skip';
 
