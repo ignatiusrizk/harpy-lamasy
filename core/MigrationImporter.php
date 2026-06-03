@@ -243,8 +243,13 @@ class MigrationImporter
         $errors = [];
         $schema = AIMigrationMapper::SCHEMAS[$entityType] ?? [];
 
+        // Untuk transaksi: kalau ada no_order, baris ini bisa jadi sub-item
+        // (lanjutan baris parent). Skip required check, importer yang handle.
+        $isMultiItem = ($entityType === 'transaksi') && !empty($data['no_order']);
+
         foreach ($schema as $field => $def) {
             if (!$def['required']) continue;
+            if ($isMultiItem) continue; // sub-row → importer yang validasi
             if (empty($data[$field])) {
                 $errors[] = "Field '$field' wajib ada dan tidak boleh kosong";
             }
@@ -647,78 +652,103 @@ class MigrationImporter
     }
 
     // ── Transaksi ─────────────────────────────────────
+    // Mendukung file MULTI-ITEM (1 nota = beberapa baris layanan):
+    //   • Baris parent: ada nama_pelanggan + total + nama_layanan (item 1 inline)
+    //   • Baris sub-item: nama_pelanggan ada (terisi gabungan dari Excel),
+    //     no_order sama dgn parent, tapi total=0; punya nama_layanan + jumlah_item
+    // Dedupe via no_order: baris pertama buat hl_transaksi, baris berikutnya
+    // hanya menambah hl_transaksi_item ke transaksi yang sudah ada.
     private static function importTransaksi(array $d, int $tid, int $oid, int $jobId): string
     {
-        $namaPel   = substr(trim($d['nama_pelanggan'] ?? ''), 0, 100);
-        $total     = self::parseAmount($d['total'] ?? '0');
-        $tanggal   = self::normalizeDate($d['tanggal'] ?? '') ?: date('Y-m-d');
-        // nama_layanan opsional — banyak export taruh layanan di sub-baris terpisah
-        $namaLayanan = substr(trim($d['nama_layanan'] ?? ''), 0, 100) ?: 'Layanan';
-
-        // Skip hanya kalau identitas inti tidak ada (pelanggan + total)
-        if (empty($namaPel) || $total <= 0) return 'skip';
-
         $db      = Database::get();
-        $telepon = self::normalizePhone($d['telepon'] ?? '');
+        $namaPel = substr(trim($d['nama_pelanggan'] ?? ''), 0, 100);
+        $noOrder = substr(trim($d['no_order'] ?? ''), 0, 30);
+        $total   = self::parseAmount($d['total'] ?? '0');
+        $tanggal = self::normalizeDate($d['tanggal'] ?? '') ?: date('Y-m-d');
 
-        // Cari atau buat pelanggan
-        $pel = null;
-        if (!empty($telepon)) {
-            $q = $db->prepare("SELECT id FROM hl_pelanggan WHERE tenant_id=? AND telepon=? LIMIT 1");
-            $q->execute([$tid, $telepon]);
-            $pel = $q->fetch(PDO::FETCH_ASSOC);
+        // ── Cari transaksi yang sudah ada (lewat no_order) ──
+        $trxId  = 0;
+        $trxRow = null;
+        if ($noOrder !== '') {
+            $q = $db->prepare("SELECT id, pelanggan_id, nama_pelanggan, total
+                                 FROM hl_transaksi
+                                WHERE tenant_id=? AND outlet_id=? AND no_order=? LIMIT 1");
+            $q->execute([$tid, $oid, $noOrder]);
+            $trxRow = $q->fetch(PDO::FETCH_ASSOC);
+            $trxId  = (int)($trxRow['id'] ?? 0);
         }
-        if (!$pel) {
-            $q2 = $db->prepare("SELECT id FROM hl_pelanggan WHERE tenant_id=? AND nama=? LIMIT 1");
-            $q2->execute([$tid, $namaPel]);
-            $pel = $q2->fetch(PDO::FETCH_ASSOC);
-        }
-        if (!$pel) {
-            TenantQuery::insert('hl_pelanggan', [
-                'nama'      => $namaPel,
-                'telepon'   => $telepon ?: null,
-                'is_active' => 1,
+
+        // ── Kalau belum ada transaksi: butuh pelanggan minimal ──
+        if ($trxId === 0) {
+            if ($namaPel === '') return 'skip'; // sub-baris tanpa pelanggan
+            $telepon = self::normalizePhone($d['telepon'] ?? '');
+            // Pelanggan: cari by telepon → nama → buat baru
+            $pelId = 0;
+            if ($telepon !== '') {
+                $p = $db->prepare("SELECT id FROM hl_pelanggan WHERE tenant_id=? AND telepon=? LIMIT 1");
+                $p->execute([$tid, $telepon]);
+                $pelId = (int)$p->fetchColumn();
+            }
+            if ($pelId === 0) {
+                $p = $db->prepare("SELECT id FROM hl_pelanggan WHERE tenant_id=? AND nama=? LIMIT 1");
+                $p->execute([$tid, $namaPel]);
+                $pelId = (int)$p->fetchColumn();
+            }
+            if ($pelId === 0) {
+                TenantQuery::insert('hl_pelanggan', [
+                    'nama' => $namaPel, 'telepon' => $telepon ?: null, 'is_active' => 1,
+                ]);
+                $pelId = (int)$db->lastInsertId();
+            }
+
+            // Auto-generate no_order kalau file tidak menyediakan
+            if ($noOrder === '') {
+                $noOrder = 'IMP-' . strtoupper(substr(md5($tid.$oid.$tanggal.$namaPel.microtime()), 0, 10));
+            }
+
+            $statusProses = 'diambil';   // data historis
+            $statusBayar  = stripos($d['status'] ?? '', 'belum') !== false ? 'belum_bayar' : 'lunas';
+            $metodeBayar  = strtolower($d['metode_bayar'] ?? 'cash') ?: 'cash';
+
+            $db->prepare("
+                INSERT INTO hl_transaksi
+                  (tenant_id, outlet_id, no_order, tanggal,
+                   pelanggan_id, nama_pelanggan, telepon,
+                   subtotal, diskon, total, dp, sisa_bayar,
+                   metode_bayar, status_bayar, status_proses,
+                   catatan, is_imported, migration_job_id, created_by)
+                VALUES (?,?,?,?, ?,?,?, ?,?,?,?,?, ?,?,?, ?,1,?,0)
+            ")->execute([
+                $tid, $oid, $noOrder, $tanggal,
+                $pelId, $namaPel, $telepon ?: null,
+                $total, 0, $total, $statusBayar === 'lunas' ? $total : 0,
+                $statusBayar === 'lunas' ? 0 : $total,
+                $metodeBayar, $statusBayar, $statusProses,
+                substr($d['catatan'] ?? '', 0, 255) ?: null,
+                $jobId,
             ]);
-            $pelId = (int)$db->lastInsertId();
+            $trxId = (int)$db->lastInsertId();
         } else {
-            $pelId = (int)$pel['id'];
+            // Transaksi sudah ada (multi-item lanjutan). Update total kalau
+            // baris ini bawa total > yang tersimpan (baris parent kemungkinan
+            // diproses setelah sub-baris).
+            if ($total > 0 && $total > (int)($trxRow['total'] ?? 0)) {
+                $db->prepare("UPDATE hl_transaksi SET total=?, subtotal=?, dp=?, sisa_bayar=0
+                               WHERE id=? AND tenant_id=?")
+                   ->execute([$total, $total, $total, $trxId, $tid]);
+            }
         }
 
-        // Buat no_order unik untuk data import
-        $noOrder = 'IMP-' . strtoupper(substr(md5($tid.$oid.$tanggal.$namaPel.$namaLayanan.microtime()), 0, 8));
+        // ── Insert ITEM kalau ada nama_layanan di baris ini ──
+        $namaLayanan = substr(trim($d['nama_layanan'] ?? ''), 0, 100);
+        if ($namaLayanan !== '') {
+            $jumlah   = (float)str_replace(',', '.', (string)($d['jumlah_item'] ?? '1')) ?: 1;
+            $satuan   = strtolower(substr(trim($d['satuan_item'] ?? 'pcs'), 0, 20)) ?: 'pcs';
+            $subtotal = self::parseAmount($d['subtotal_item'] ?? '0');
+            // Fallback: subtotal item = total transaksi kalau item-level total kosong
+            if ($subtotal <= 0 && $total > 0) $subtotal = $total;
+            $harga = $jumlah > 0 ? (int)round($subtotal / $jumlah) : $subtotal;
 
-        // Berat
-        $beratKg = isset($d['berat_kg']) ? (float)str_replace(',', '.', $d['berat_kg']) : null;
-
-        // Status proses — semua data lama = sudah selesai
-        $statusProses = 'diambil';
-        $statusBayar  = 'lunas';
-        $metodeBayar  = strtolower($d['metode_bayar'] ?? 'cash');
-
-        $db->prepare("
-            INSERT INTO hl_transaksi
-              (tenant_id, outlet_id, no_order, tanggal,
-               pelanggan_id, nama_pelanggan, telepon,
-               subtotal, diskon, total, dp, sisa_bayar,
-               metode_bayar, status_bayar, status_proses,
-               catatan, is_imported, migration_job_id, created_by)
-            VALUES
-              (?,?,?,?, ?,?,?, ?,?,?,?,?, ?,?,?, ?,1,?,0)
-        ")->execute([
-            $tid, $oid, $noOrder, $tanggal,
-            $pelId, $namaPel, $telepon ?: null,
-            $total, 0, $total, $total, 0,
-            $metodeBayar ?: 'cash', $statusBayar, $statusProses,
-            substr($d['catatan'] ?? '', 0, 255) ?: null,
-            $jobId,
-        ]);
-
-        $trxId = (int)$db->lastInsertId();
-
-        // Insert item layanan — kolom sesuai schema: satuan + jumlah (bukan qty/berat_kg)
-        if ($trxId && !empty($namaLayanan)) {
-            $satuan = $beratKg ? 'kg' : 'pcs';
-            $jumlah = $beratKg ?: 1;
             $db->prepare("
                 INSERT INTO hl_transaksi_item
                   (tenant_id, outlet_id, transaksi_id, nama_layanan,
@@ -726,7 +756,7 @@ class MigrationImporter
                 VALUES (?,?,?,?, ?,?,?,?)
             ")->execute([
                 $tid, $oid, $trxId, $namaLayanan,
-                $satuan, $jumlah, $total, $total,
+                $satuan, $jumlah, $harga, $subtotal,
             ]);
         }
 
