@@ -19,6 +19,9 @@
 
 class AIMigrationMapper
 {
+    // Bump kalau prompt/schema berubah — cache lama auto-invalidate.
+    const MAPPER_VERSION = 3;
+
     // ── Target schema per entitas ─────────────────────
     // Deskripsi dipakai sebagai konteks untuk Claude.
     // required: true → wajib ada mapping-nya.
@@ -95,11 +98,13 @@ class AIMigrationMapper
         string  $entityType,
         array   $headers,
         array   $sampleRows,
-        ?string $sourceSystem = null
+        ?string $sourceSystem = null,
+        bool    $ignoreCache = false
     ): array
     {
-        // 1. Cek cache — header signature yang sama tidak perlu re-call AI
-        $cached = self::findCached($entityType, $headers);
+        // 1. Cek cache — header signature yang sama tidak perlu re-call AI.
+        //    Bisa di-skip (ignoreCache=true) ketika user paksa "Run ulang AI".
+        $cached = $ignoreCache ? null : self::findCached($entityType, $headers);
         if ($cached) {
             $cached['mapping'] = self::fillUnmappedHeaders($cached['mapping'] ?? [], $headers);
             return array_merge($cached, [
@@ -134,30 +139,51 @@ class AIMigrationMapper
 
         $prompt = "Kamu menganalisa file data laundry untuk migrasi ke sistem LaMaSy.\n\n"
             . "Headers (nama kolom): " . implode(', ', array_map(fn($h) => "\"$h\"", $headers)) . "\n\n"
-            . "Sample data (3 baris pertama):\n$sampleStr\n\n"
+            . "Sample data (per kolom, 5 nilai pertama — format `[nama_kolom]: nilai1 | nilai2 | ...`):\n$sampleStr\n"
             . "Target schema untuk entitas [{$entityType}]:\n"
             . json_encode($schema, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) . "\n\n"
             . ($sourceSystem ? "Petunjuk: file ini kemungkinan dari sistem \"$sourceSystem\".\n\n" : '')
             . "Field yang wajib ada: $requiredList\n\n"
-            . "ANALISA DULU ISI DATANYA, bukan cuma nama kolom:\n"
-            . "- Lihat NILAI di sample. Kolom berisi '08xxx'/'+62xxx' = telepon, walau headernya aneh/kosong.\n"
-            . "- Nilai '15/03/2024', '2024-03-15', '15 Mar 2024' = tanggal → action transform.\n"
-            . "- Nilai 'Rp 7.000', '7000', '7.000' = harga/uang → action transform.\n"
-            . "- Header singkatan/typo/bahasa lain (nm_lyn, service_name, hrg) → pahami dari nilainya.\n"
-            . "- Kalau 1 kolom berisi gabungan (mis. 'Budi - 08123'), tetap map ke field paling relevan + catat di transform_note.\n\n"
-            . ($entityType === 'transaksi' ? "PENTING — file transaksi sering punya STRUKTUR MULTI-ITEM (1 nota = beberapa layanan):\n"
-                . "- Bedakan 'Total Tagihan' / 'Grand Total' (= total transaksi) vs 'Total' / 'Subtotal' kolom item (= subtotal_item per layanan).\n"
-                . "- 'No Nota' / 'Invoice' → no_order (kunci grouping multi-item).\n"
-                . "- 'Customer' / 'Pelanggan' → nama_pelanggan; 'Nama' (di bagian detail layanan) → nama_layanan.\n"
-                . "- 'Jumlah' / 'Qty' (per item) → jumlah_item; 'Satuan' item → satuan_item.\n\n" : '')
+            . "═══ PRINSIP UTAMA ═══\n"
+            . "ANALISA ISI DATA, JANGAN CUMA LIHAT NAMA KOLOM. Banyak file ekspor pakai header singkat/asing/kosong.\n\n"
+            . "Pola nilai → field:\n"
+            . "- '08xxx', '+62xxx', '62 8xx' → telepon (transform ke 08xx).\n"
+            . "- '15/03/2024', '2024-03-15', '15 Mar 2024 14:30' → tanggal (transform YYYY-MM-DD).\n"
+            . "- 'Rp 7.000', '7000', '7.000', '13130.00' → field harga/total/subtotal (transform → integer).\n"
+            . "- 'UIM260...', 'TKJ123...', 'INV/2024/001' → no_order/invoice number.\n"
+            . "- 'Selimut/Sprei Single', 'Cuci Setrika', 'Bedcover King' → nama_layanan.\n"
+            . "- 'kg', 'pcs', 'PCS', 'lembar', 'set' → satuan/satuan_item.\n"
+            . "- '1.00', '2.5', '0.75' (angka kecil, decimal) → jumlah_item/jumlah.\n\n"
+            . "═══ KOLOM BERNAMA GENERIK (kolom_1, kolom_23, dll) ═══\n"
+            . "Kolom yang headernya 'kolom_N' artinya header file kosong/merged-cell.\n"
+            . "WAJIB infer 100% dari sample data. JANGAN langsung skip.\n"
+            . "Contoh: kolom_23 dengan sample ['Selimut/Sprei Single','Bedcover King','Selimut Queen'] → ini jelas nama_layanan.\n"
+            . "kolom_24 dengan sample ['1.00','2.00','1.50'] → jumlah_item.\n"
+            . "Hanya skip kalau sample benar-benar kosong atau tidak relevan untuk schema target.\n\n"
+            . "═══ ANTI-PATTERN (HINDARI) ═══\n"
+            . "- 'Progres Pengerjaan' dengan sample '11%', '50%', '100%' → ini PERCENTAGE, JANGAN map ke status. Skip atau catatan.\n"
+            . "- 'Subtotal' kolom transaksi-level (sebelum diskon) ≠ subtotal_item (per layanan). Lihat konteks.\n"
+            . "- 'Tambahan Express', 'Biaya Service', 'Pajak' → biasanya tidak ada di schema target → skip (atau catat di transform_note).\n"
+            . "- 'Outlet', 'Pembuat Nota', 'Kasir' → metadata sumber, skip (sudah ada outlet_id otomatis).\n\n"
+            . ($entityType === 'transaksi' ? "═══ TRANSAKSI MULTI-ITEM ═══\n"
+                . "1 nota bisa punya beberapa baris layanan. KUNCI: kolom no_order/no_nota wajib diidentifikasi — itu yang group multi-item.\n"
+                . "- 'No Nota', 'No Order', 'Invoice', 'No. Order' → no_order (WAJIB cari di file ini!).\n"
+                . "- 'Customer', 'Pelanggan', 'Nama Customer' → nama_pelanggan.\n"
+                . "- 'Total Tagihan', 'Grand Total', 'Total Bayar' → total (transaksi-level).\n"
+                . "- 'Tgl Terima', 'Tanggal', 'Tgl Order' → tanggal.\n"
+                . "- Di bagian DETAIL ITEM (sering kolom paling kanan):\n"
+                . "  • 'Nama' / kolom dengan sample nama-layanan → nama_layanan\n"
+                . "  • 'Jumlah' / 'Qty' (per item) → jumlah_item\n"
+                . "  • 'Satuan' (pcs/kg/set) → satuan_item\n"
+                . "  • 'Total' / 'Subtotal' kolom item (BUKAN total transaksi) → subtotal_item\n\n" : '')
             . "Instruksi mapping:\n"
-            . "1. Untuk setiap header, tentukan target_field paling cocok (atau null kalau tidak ada).\n"
+            . "1. Untuk setiap header, tentukan target_field paling cocok (atau null kalau benar-benar tidak ada).\n"
             . "2. action: \"map\" = langsung, \"transform\" = butuh konversi, \"skip\" = abaikan.\n"
             . "3. Nomor HP: normalkan ke 08xx (hapus +62, 62, spasi, tanda baca).\n"
             . "4. Harga/uang: hapus Rp, titik ribuan, koma → integer.\n"
             . "5. Tanggal: konversi ke YYYY-MM-DD.\n"
             . "6. confidence: 0.0–1.0 berdasar kecocokan header DAN nilai data.\n"
-            . "7. Di warnings: catat masalah data yang terlihat (nilai kosong, format tidak konsisten, kemungkinan duplikat).\n\n"
+            . "7. Di warnings: catat masalah data (nilai kosong, format tidak konsisten, kolom yang sengaja di-skip & alasannya).\n\n"
             . "Respond HANYA JSON ini:\n"
             . "{\n"
             . "  \"mapping\": {\n"
@@ -336,15 +362,24 @@ class AIMigrationMapper
     // ─────────────────────────────────────────────────
     private static function formatSample(array $headers, array $rows): string
     {
+        // Format kolom-by-kolom (lebih mudah dianalisa AI daripada baris-by-baris)
+        // — AI lebih mudah lihat pola "kolom A semuanya nomor telepon" kalau
+        // disajikan vertikal per kolom.
+        $sample = array_slice($rows, 0, 5);
+        if (empty($sample)) return '(tidak ada data sample)';
+
         $out = '';
-        foreach (array_slice($rows, 0, 3) as $i => $row) {
+        foreach ($headers as $h) {
             $vals = [];
-            foreach ($headers as $h) {
-                $vals[] = ($row[$h] ?? $row[array_keys($row)[$i] ?? 0] ?? '');
+            foreach ($sample as $row) {
+                $v = trim((string)($row[$h] ?? ''));
+                if ($v === '') $v = '(kosong)';
+                if (mb_strlen($v) > 40) $v = mb_substr($v, 0, 37) . '...';
+                $vals[] = $v;
             }
-            $out .= 'Baris ' . ($i + 1) . ': ' . implode(' | ', $vals) . "\n";
+            $out .= "  [{$h}]: " . implode(' | ', $vals) . "\n";
         }
-        return $out ?: '(tidak ada data sample)';
+        return $out;
     }
 
     // ─────────────────────────────────────────────────
@@ -364,6 +399,13 @@ class AIMigrationMapper
             $row = $stmt->fetch(PDO::FETCH_ASSOC);
             if (!$row) return null;
 
+            // Validasi versi mapper — kalau cache dari versi prompt/schema
+            // lama, ignore (akan di-overwrite dengan hasil AI run baru).
+            $mappingArr = json_decode($row['mapping'], true) ?: [];
+            $cachedVer  = (int)($mappingArr['_v'] ?? 0);
+            if ($cachedVer !== self::MAPPER_VERSION) return null;
+            unset($mappingArr['_v']);
+
             // Increment usage_count
             Database::get()->prepare("
                 UPDATE hl_migration_mapping_templates
@@ -372,7 +414,7 @@ class AIMigrationMapper
             ")->execute([$entityType, $sig]);
 
             return [
-                'mapping'               => json_decode($row['mapping'], true) ?: [],
+                'mapping'               => $mappingArr,
                 'source_system_detected'=> $row['source_system'] ?? 'unknown',
                 'overall_confidence'    => 1.0,
             ];
@@ -393,6 +435,8 @@ class AIMigrationMapper
     ): void {
         try {
             $sig = self::signature($headers);
+            // Embed versi mapper di mapping JSON utk invalidasi cache otomatis
+            $mapping['_v'] = self::MAPPER_VERSION;
             Database::get()->prepare("
                 INSERT INTO hl_migration_mapping_templates
                   (entity_type, source_system, header_signature, mapping, usage_count)

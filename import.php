@@ -146,18 +146,32 @@ if ($action) {
 
         if (!$job) { echo json_encode(['error' => 'Job tidak ditemukan.']); exit; }
 
+        $ignoreCache = !empty($_POST['ignore_cache']);
+
+        // Selalu parse ulang file supaya kalau parser di-update (mis. deteksi
+        // header 2-tingkat), header baru ikut terpakai, bukan yang lama yang
+        // disimpan di raw_headers saat upload.
+        $sampleRows = [];
         $headers    = json_decode($job['raw_headers'], true) ?: [];
-        $sampleRows = []; // Baca ulang dari file untuk sample
         try {
             $all        = MigrationImporter::parseFile($job['file_path'], $job['file_type']);
             $sampleRows = array_slice($all, 0, 5);
+            if (!empty($sampleRows)) {
+                $freshHeaders = array_keys($sampleRows[0]);
+                if (!empty($freshHeaders)) {
+                    $headers = $freshHeaders;
+                    // Update raw_headers job kalau berubah
+                    $db->prepare("UPDATE hl_migration_jobs SET raw_headers=? WHERE id=?")
+                       ->execute([json_encode($headers), $jobId]);
+                }
+            }
         } catch (Throwable) {}
 
         // Cek apakah mapping dari cache (gratis) atau perlu AI (bayar coin)
         $db->prepare("UPDATE hl_migration_jobs SET status='ai_mapping' WHERE id=?")->execute([$jobId]);
 
-        // Panggil AI mapping (cek cache dulu di dalam mapper)
-        $mapResult = AIMigrationMapper::map($job['entity_type'], $headers, $sampleRows);
+        // Panggil AI mapping (cek cache dulu di dalam mapper, kecuali user paksa)
+        $mapResult = AIMigrationMapper::map($job['entity_type'], $headers, $sampleRows, null, $ignoreCache);
 
         // Hanya 'cache' yang gratis (format pernah diimport). 'ai' = bayar,
         // 'ai_failed' = AI down → fallback heuristik, tidak dibayar.
@@ -595,11 +609,16 @@ if ($action) {
         <!-- Preview 3 baris -->
         <div id="previewSection" style="margin-top:20px;"></div>
 
-        <div style="margin-top:20px;display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;">
-          <button class="hl-btn hl-btn-outline" onclick="goStep(2)">← Upload Ulang</button>
-          <button class="hl-btn hl-btn-primary" id="importBtn" onclick="doImport()">
-            ▶ Mulai Import
+        <div style="margin-top:20px;display:flex;gap:10px;justify-content:space-between;flex-wrap:wrap;align-items:center;">
+          <button class="hl-btn hl-btn-outline" id="rerunAiBtn" onclick="rerunAiMapping()" title="Paksa AI analisa ulang, abaikan cache mapping sebelumnya">
+            🔄 Run AI Lagi
           </button>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <button class="hl-btn hl-btn-outline" onclick="goStep(2)">← Upload Ulang</button>
+            <button class="hl-btn hl-btn-primary" id="importBtn" onclick="doImport()">
+              ▶ Mulai Import
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -757,19 +776,22 @@ async function doUpload() {
 // ────────────────────────────────────────────────────
 // Step 3 — AI Mapping
 // ────────────────────────────────────────────────────
-async function doAiMapping() {
+async function doAiMapping(ignoreCache = false) {
     const tbody = document.getElementById('mappingTbody');
     tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:32px;color:#6B7280;">
-        <span class="spinner"></span>&nbsp; AI sedang menganalisa file Anda...
+        <span class="spinner"></span>&nbsp; ${ignoreCache ? 'AI menganalisa ulang (paksa, abaikan cache)...' : 'AI sedang menganalisa file Anda...'}
     </td></tr>`;
     document.getElementById('mappingMeta').innerHTML = '';
     document.getElementById('missingWarning').style.display = 'none';
     document.getElementById('previewSection').innerHTML = '';
     document.getElementById('importBtn').disabled = true;
+    const rerunBtn = document.getElementById('rerunAiBtn');
+    if (rerunBtn) rerunBtn.disabled = true;
 
     const fd = new FormData();
     fd.append('job_id', currentJobId);
     fd.append('_csrf', CSRF);
+    if (ignoreCache) fd.append('ignore_cache', '1');
 
     try {
         const resp = await fetch('?action=ai_map', { method:'POST', body:fd });
@@ -789,7 +811,14 @@ async function doAiMapping() {
 
     } catch(e) {
         tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:32px;color:#DC2626;">Gagal: ${esc(e.message)}</td></tr>`;
+    } finally {
+        if (rerunBtn) rerunBtn.disabled = false;
     }
+}
+
+async function rerunAiMapping() {
+    if (!confirm('Paksa AI analisa ulang file ini?\n\nCache mapping sebelumnya akan diabaikan. Jika hasil bagus (semua field wajib terpetakan), 1.000 coin akan dipotong.')) return;
+    await doAiMapping(true);
 }
 
 function renderMapping(d) {

@@ -448,7 +448,46 @@ class MigrationImporter
     private static function rowsToAssoc(array $rowsData): array
     {
         $headerIdx = self::detectHeaderRow($rowsData);
-        $headers   = array_map('trim', $rowsData[$headerIdx] ?? []);
+        $headerRow = $rowsData[$headerIdx] ?? [];
+        $dataStart = $headerIdx + 1;
+
+        // ── Deteksi header 2-tingkat ──
+        // Banyak export laundry pakai parent-header (mis. "Detail Transaksi"
+        // merged) di row N + sub-header per kolom di row N+1. Kalau parent
+        // banyak slot kosong DAN row berikutnya semua teks → merge: slot
+        // kosong di parent diisi sub-header, lalu data mulai N+2.
+        if (isset($rowsData[$headerIdx + 1])) {
+            $subRow   = $rowsData[$headerIdx + 1];
+            $maxCols  = max(count($headerRow), count($subRow));
+            $emptyInParentWithSub = 0;
+            $colsInSub = 0;
+            $textInSub = 0;
+            for ($i = 0; $i < $maxCols; $i++) {
+                $p = trim((string)($headerRow[$i] ?? ''));
+                $s = trim((string)($subRow[$i]    ?? ''));
+                if ($p === '' && $s !== '') $emptyInParentWithSub++;
+                if ($s !== '') {
+                    $colsInSub++;
+                    if (!is_numeric(str_replace(['Rp','.',',',' '], '', $s))) $textInSub++;
+                }
+            }
+            $subIsHeaderish = $colsInSub >= 3
+                && ($textInSub / max(1, $colsInSub)) >= 0.7;
+            // Butuh ≥2 slot parent kosong yang diisi sub → tanda multi-tier nyata,
+            // bukan kebetulan baris pertama data mayoritas teks.
+            if ($subIsHeaderish && $emptyInParentWithSub >= 2) {
+                for ($i = 0; $i < $maxCols; $i++) {
+                    $p = trim((string)($headerRow[$i] ?? ''));
+                    $s = trim((string)($subRow[$i]    ?? ''));
+                    if ($p === '' && $s !== '') $headerRow[$i] = $s;
+                    // kalau parent & sub sama-sama ada → tetap pakai parent
+                    // (parent biasanya label utama; sub fallback)
+                }
+                $dataStart = $headerIdx + 2;
+            }
+        }
+
+        $headers = array_map('trim', $headerRow);
 
         // Pastikan nama header unik & tidak kosong (kolom kosong → "kolom_N")
         $seen = [];
@@ -462,7 +501,7 @@ class MigrationImporter
 
         $out = [];
         $n   = count($rowsData);
-        for ($r = $headerIdx + 1; $r < $n; $r++) {
+        for ($r = $dataStart; $r < $n; $r++) {
             $row = $rowsData[$r];
             // skip baris kosong total
             if (!array_filter($row, fn($v) => trim((string)$v) !== '')) continue;
