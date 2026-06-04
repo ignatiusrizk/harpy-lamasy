@@ -135,6 +135,47 @@ if ($action) {
         exit;
     }
 
+    // ── Pre-check sebelum AI dipanggil ────────────────
+    // Frontend pakai ini buat tau: format ini sudah pernah di-map (cache)
+    // jadi gratis, atau format baru sehingga butuh AI (1.000 coin).
+    // Tujuan: minta approval user sebelum coin kepotong.
+    if ($action === 'check_cache' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+        verifyCsrf();
+        $jobId = (int)($_POST['job_id'] ?? 0);
+        $jobQ  = $db->prepare("SELECT * FROM hl_migration_jobs WHERE id=? AND tenant_id=? LIMIT 1");
+        $jobQ->execute([$jobId, $tid]);
+        $job = $jobQ->fetch(PDO::FETCH_ASSOC);
+        if (!$job) { echo json_encode(['error' => 'Job tidak ditemukan.']); exit; }
+
+        // Parse ulang utk dapatkan headers yang akurat (parser bisa di-update)
+        $headers = json_decode($job['raw_headers'], true) ?: [];
+        try {
+            $all = MigrationImporter::parseFile($job['file_path'], $job['file_type']);
+            if (!empty($all)) {
+                $fresh = array_keys($all[0]);
+                if (!empty($fresh)) {
+                    $headers = $fresh;
+                    $db->prepare("UPDATE hl_migration_jobs SET raw_headers=? WHERE id=?")
+                       ->execute([json_encode($headers), $jobId]);
+                }
+            }
+        } catch (Throwable) {}
+
+        $cached  = AIMigrationMapper::hasCachedMapping($job['entity_type'], $headers);
+        $balance = TenantResolver::coinBalance();
+        $cost    = CoinLedger::getHarga('ai_migration_mapping');
+        if ($cost <= 0) $cost = 1000;
+
+        echo json_encode([
+            'cached'       => $cached,
+            'coin_cost'    => $cost,
+            'coin_balance' => $balance,
+            'can_afford'   => $balance >= $cost,
+            'headers'      => $headers,
+        ]);
+        exit;
+    }
+
     // ── AI Mapping ────────────────────────────────────
     if ($action === 'ai_map' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         verifyCsrf();
@@ -461,7 +502,7 @@ if ($action) {
     </p>
     <div style="margin-top:8px;background:#FFFBEB;border:1px solid #FDE68A;border-radius:8px;padding:10px 14px;font-size:12.5px;color:#92400E;display:inline-block;">
       🧠 <strong>AI menganalisa isi data &amp; memetakan kolom otomatis</strong> — <strong>1.000 coin</strong> per format baru.
-      Gratis kalau format file sudah pernah diimport (dikenali dari cache). Coin hanya dipotong kalau mapping berhasil.
+      Gratis kalau format file sudah pernah diimport (dikenali dari cache). Kamu akan diminta konfirmasi sebelum coin dipotong.
       Saldo kamu: <strong id="coinBalance"><?= number_format(TenantResolver::coinBalance()) ?> coin</strong>
     </div>
   </div>
@@ -765,12 +806,93 @@ async function doUpload() {
         uploadedSample   = d.sample;
 
         goStep(3);
-        await doAiMapping();
+        await checkCacheThenMap();
 
     } catch(e) {
         showToast('Upload gagal: ' + e.message, 'error');
         btn.disabled=false; txt.textContent='📤 Upload & Analisa AI';
     }
+}
+
+// Cek cache dulu — kalau hit, mapping gratis (auto-run). Kalau miss → format
+// baru, prompt user untuk approve pemakaian AI (1.000 coin).
+async function checkCacheThenMap() {
+    const tbody = document.getElementById('mappingTbody');
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:32px;color:#6B7280;">
+        <span class="spinner"></span>&nbsp; Mengecek format file...
+    </td></tr>`;
+    document.getElementById('importBtn').disabled = true;
+
+    const fd = new FormData();
+    fd.append('job_id', currentJobId);
+    fd.append('_csrf', CSRF);
+
+    try {
+        const resp = await fetch('?action=check_cache', { method:'POST', body:fd });
+        const d    = await resp.json();
+        if (d.error) {
+            tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:32px;color:#DC2626;">${esc(d.error)}</td></tr>`;
+            return;
+        }
+
+        if (d.cached) {
+            // Format pernah di-map → gratis, jalan langsung
+            await doAiMapping(false);
+            return;
+        }
+
+        // Format baru → minta approval pakai AI
+        showAiCostPrompt(d.coin_cost, d.coin_balance, d.can_afford, /*isRerun*/false);
+
+    } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:32px;color:#DC2626;">Gagal cek format: ${esc(e.message)}</td></tr>`;
+    }
+}
+
+// Tampilkan modal konfirmasi pemakaian AI + coin.
+function showAiCostPrompt(cost, balance, canAfford, isRerun) {
+    const fmt = n => Number(n).toLocaleString('id-ID');
+    const title = isRerun ? 'Run AI Ulang?' : 'Format Baru Terdeteksi';
+    const intro = isRerun
+        ? 'AI akan dipanggil ulang untuk menganalisa file ini (cache sebelumnya diabaikan).'
+        : 'File ini punya format yang belum pernah di-import. AI Claude akan menganalisa kolom & mapping otomatis ke schema LaMaSy.';
+
+    const tbody = document.getElementById('mappingTbody');
+    tbody.innerHTML = `
+      <tr><td colspan="5" style="padding:24px;">
+        <div style="max-width:520px;margin:0 auto;background:#F9FAFB;border:1px solid #E5E7EB;border-radius:12px;padding:24px;">
+          <h3 style="margin:0 0 8px;font-size:16px;color:#111827;">🤖 ${title}</h3>
+          <p style="margin:0 0 16px;font-size:13px;color:#4B5563;line-height:1.5;">${intro}</p>
+
+          <div style="background:#fff;border:1px solid #E5E7EB;border-radius:8px;padding:14px 16px;margin-bottom:16px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;font-size:13px;">
+              <span style="color:#6B7280;">Biaya AI Mapping</span>
+              <strong style="color:#0F7B6C;">${fmt(cost)} coin</strong>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;font-size:13px;">
+              <span style="color:#6B7280;">Saldo coin kamu</span>
+              <strong style="color:${canAfford ? '#111827' : '#DC2626'};">${fmt(balance)} coin</strong>
+            </div>
+          </div>
+
+          <div style="background:#FEFCE8;border:1px solid #FDE68A;border-radius:6px;padding:10px 12px;margin-bottom:16px;font-size:12px;color:#854D0E;line-height:1.5;">
+            ℹ️ Coin hanya dipotong kalau mapping berhasil (semua field wajib terpetakan). Kalau AI gagal, coin tidak terpotong.<br>
+            Format yang sama tidak akan dicharge lagi di import berikutnya (auto-cache).
+          </div>
+
+          <div style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;">
+            <button class="hl-btn hl-btn-outline" onclick="goStep(2)">← Batal</button>
+            <button class="hl-btn hl-btn-primary" onclick="confirmAiRun(${isRerun ? 'true' : 'false'})" ${canAfford ? '' : 'disabled title="Coin tidak cukup"'}>
+              ${canAfford ? `▶ Lanjut & Pakai ${fmt(cost)} Coin` : '⚠️ Coin Tidak Cukup'}
+            </button>
+          </div>
+          ${!canAfford ? `<div style="text-align:right;margin-top:8px;"><a href="/billing" style="color:#0F7B6C;font-size:12px;">Topup Coin →</a></div>` : ''}
+        </div>
+      </td></tr>`;
+}
+
+async function confirmAiRun(isRerun) {
+    await doAiMapping(isRerun);
 }
 
 // ────────────────────────────────────────────────────
@@ -817,8 +939,18 @@ async function doAiMapping(ignoreCache = false) {
 }
 
 async function rerunAiMapping() {
-    if (!confirm('Paksa AI analisa ulang file ini?\n\nCache mapping sebelumnya akan diabaikan. Jika hasil bagus (semua field wajib terpetakan), 1.000 coin akan dipotong.')) return;
-    await doAiMapping(true);
+    // Ambil harga & saldo terkini supaya modal akurat
+    const fd = new FormData();
+    fd.append('job_id', currentJobId);
+    fd.append('_csrf', CSRF);
+    try {
+        const resp = await fetch('?action=check_cache', { method:'POST', body:fd });
+        const d    = await resp.json();
+        if (d.error) { showToast(d.error, 'error'); return; }
+        showAiCostPrompt(d.coin_cost, d.coin_balance, d.can_afford, /*isRerun*/true);
+    } catch (e) {
+        showToast('Gagal cek saldo: ' + e.message, 'error');
+    }
 }
 
 function renderMapping(d) {

@@ -263,6 +263,16 @@ class AIMigrationMapper
         return $result;
     }
 
+    /**
+     * Cek apakah header signature ini sudah pernah berhasil di-map (cached).
+     * Dipakai UI untuk minta approval coin sebelum panggil AI: kalau cache
+     * hit → mapping gratis, kalau miss → tenant prompt konfirmasi 1.000 coin.
+     */
+    public static function hasCachedMapping(string $entityType, array $headers): bool
+    {
+        return self::findCached($entityType, $headers) !== null;
+    }
+
     // ─────────────────────────────────────────────────
     // Cek missing required fields dari mapping
     // ─────────────────────────────────────────────────
