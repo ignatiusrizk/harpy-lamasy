@@ -231,8 +231,56 @@ class MigrationImporter
             return substr($val, 0, 10);
         }
 
-        $ts = strtotime($val);
+        // Translate nama bulan Indonesia → Inggris supaya strtotime bisa parse
+        // "2 Jun 2026" sudah OK, tapi "Mei", "Agu", "Okt", "Des" perlu translate
+        $idMonths = [
+            'januari'=>'January','pebruari'=>'February','februari'=>'February','maret'=>'March',
+            'april'=>'April','mei'=>'May','juni'=>'June','juli'=>'July','agustus'=>'August',
+            'september'=>'September','oktober'=>'October','nopember'=>'November','november'=>'November','desember'=>'December',
+            'jan'=>'Jan','peb'=>'Feb','feb'=>'Feb','mar'=>'Mar','apr'=>'Apr','jun'=>'Jun','jul'=>'Jul',
+            'agu'=>'Aug','agt'=>'Aug','sep'=>'Sep','okt'=>'Oct','nop'=>'Nov','nov'=>'Nov','des'=>'Dec',
+        ];
+        $valEn = $val;
+        foreach ($idMonths as $id => $en) {
+            $valEn = preg_replace('/\b' . preg_quote($id, '/') . '\b/i', $en, $valEn);
+        }
+
+        $ts = strtotime($valEn);
         return $ts ? date('Y-m-d', $ts) : null;
+    }
+
+    /**
+     * Normalisasi status pembayaran dari teks file → enum DB.
+     * Map: "Lunas"→lunas, "Belum Lunas"/"Belum Bayar"→belum_bayar, "DP"→dp.
+     */
+    public static function normalizeStatusBayar(string $raw): string
+    {
+        $raw = strtolower(trim($raw));
+        if ($raw === '') return 'lunas'; // historis dianggap selesai
+        if (str_contains($raw, 'belum') || str_contains($raw, 'unpaid')) return 'belum_bayar';
+        if (str_contains($raw, 'dp') || str_contains($raw, 'down')) return 'dp';
+        if (str_contains($raw, 'lunas') || str_contains($raw, 'paid') || str_contains($raw, 'selesai')) return 'lunas';
+        return 'lunas';
+    }
+
+    /**
+     * Normalisasi status proses dari teks file → enum DB.
+     * Map: "Sudah Diambil"/"Selesai"/"Diambil"→diambil,
+     *      "Belum Diambil" + ada tgl_selesai estimasi→siap,
+     *      default historis dgn tgl_selesai filled→diambil, lainnya→masuk.
+     */
+    public static function normalizeStatusProses(string $raw, bool $tglDiambilFilled, bool $estSelesaiFilled): string
+    {
+        $raw = strtolower(trim($raw));
+        if ($tglDiambilFilled) return 'diambil';
+        if ($raw === '') return $estSelesaiFilled ? 'siap' : 'diambil'; // historis
+        if (str_contains($raw, 'belum')) return $estSelesaiFilled ? 'siap' : 'masuk';
+        if (str_contains($raw, 'sudah') || str_contains($raw, 'diambil') || str_contains($raw, 'selesai') || str_contains($raw, 'done')) return 'diambil';
+        if (str_contains($raw, 'cuci')) return 'cuci';
+        if (str_contains($raw, 'kering')) return 'kering';
+        if (str_contains($raw, 'setrika')) return 'setrika';
+        if (str_contains($raw, 'siap')) return 'siap';
+        return 'diambil'; // safe default utk import historis
     }
 
     // ─────────────────────────────────────────────────
@@ -705,6 +753,19 @@ class MigrationImporter
         $total   = self::parseAmount($d['total'] ?? '0');
         $tanggal = self::normalizeDate($d['tanggal'] ?? '') ?: date('Y-m-d');
 
+        // Field baru dari schema yang diperluas
+        $subtotalTrx = self::parseAmount($d['subtotal'] ?? '0');
+        $diskon      = self::parseAmount($d['diskon']   ?? '0');
+        $dp          = self::parseAmount($d['dp']       ?? '0');
+        $estSelesai  = self::normalizeDate($d['estimasi_selesai'] ?? '');
+        $tglSelesai  = self::normalizeDate($d['tgl_selesai']      ?? '');
+
+        // Status: kalau eksplisit di file, pakai. Kalau tidak, derive.
+        $sbRaw = strtolower(trim((string)($d['status_bayar'] ?? $d['status'] ?? '')));
+        $spRaw = strtolower(trim((string)($d['status_proses'] ?? '')));
+        $statusBayar = self::normalizeStatusBayar($sbRaw);
+        $statusProses= self::normalizeStatusProses($spRaw, !empty($tglSelesai), !empty($estSelesai));
+
         // ── Cari transaksi yang sudah ada (lewat no_order) ──
         $trxId  = 0;
         $trxRow = null;
@@ -745,9 +806,20 @@ class MigrationImporter
                 $noOrder = 'IMP-' . strtoupper(substr(md5($tid.$oid.$tanggal.$namaPel.microtime()), 0, 10));
             }
 
-            $statusProses = 'diambil';   // data historis
-            $statusBayar  = stripos($d['status'] ?? '', 'belum') !== false ? 'belum_bayar' : 'lunas';
             $metodeBayar  = strtolower($d['metode_bayar'] ?? 'cash') ?: 'cash';
+            // Subtotal: kalau file gak isi, fallback ke total
+            $subtotalUse  = $subtotalTrx > 0 ? $subtotalTrx : $total;
+            // DP & sisa: kalau lunas → DP=total; kalau dp explicit dari file → pakai itu
+            if ($statusBayar === 'lunas') {
+                $dpUse    = $total;
+                $sisa     = 0;
+            } elseif ($dp > 0) {
+                $dpUse    = min($dp, $total);
+                $sisa     = max(0, $total - $dpUse);
+            } else {
+                $dpUse    = 0;
+                $sisa     = $total;
+            }
 
             $db->prepare("
                 INSERT INTO hl_transaksi
@@ -755,14 +827,15 @@ class MigrationImporter
                    pelanggan_id, nama_pelanggan, telepon,
                    subtotal, diskon, total, dp, sisa_bayar,
                    metode_bayar, status_bayar, status_proses,
+                   estimasi_selesai, tgl_selesai,
                    catatan, is_imported, migration_job_id, created_by)
-                VALUES (?,?,?,?, ?,?,?, ?,?,?,?,?, ?,?,?, ?,1,?,0)
+                VALUES (?,?,?,?, ?,?,?, ?,?,?,?,?, ?,?,?, ?,?, ?,1,?,0)
             ")->execute([
                 $tid, $oid, $noOrder, $tanggal,
                 $pelId, $namaPel, $telepon ?: null,
-                $total, 0, $total, $statusBayar === 'lunas' ? $total : 0,
-                $statusBayar === 'lunas' ? 0 : $total,
+                $subtotalUse, $diskon, $total, $dpUse, $sisa,
                 $metodeBayar, $statusBayar, $statusProses,
+                $estSelesai ?: null, $tglSelesai ?: null,
                 substr($d['catatan'] ?? '', 0, 255) ?: null,
                 $jobId,
             ]);
@@ -772,9 +845,12 @@ class MigrationImporter
             // baris ini bawa total > yang tersimpan (baris parent kemungkinan
             // diproses setelah sub-baris).
             if ($total > 0 && $total > (int)($trxRow['total'] ?? 0)) {
-                $db->prepare("UPDATE hl_transaksi SET total=?, subtotal=?, dp=?, sisa_bayar=0
+                $subtotalUse = $subtotalTrx > 0 ? $subtotalTrx : $total;
+                $sisa = $statusBayar === 'lunas' ? 0 : max(0, $total - $dp);
+                $db->prepare("UPDATE hl_transaksi
+                                 SET total=?, subtotal=?, diskon=?, dp=?, sisa_bayar=?
                                WHERE id=? AND tenant_id=?")
-                   ->execute([$total, $total, $total, $trxId, $tid]);
+                   ->execute([$total, $subtotalUse, $diskon, $dp, $sisa, $trxId, $tid]);
             }
         }
 

@@ -20,7 +20,7 @@
 class AIMigrationMapper
 {
     // Bump kalau prompt/schema berubah — cache lama auto-invalidate.
-    const MAPPER_VERSION = 3;
+    const MAPPER_VERSION = 4;
 
     // ── Target schema per entitas ─────────────────────
     // Deskripsi dipakai sebagai konteks untuk Claude.
@@ -52,20 +52,29 @@ class AIMigrationMapper
         ],
 
         'transaksi' => [
-            // Identitas transaksi
-            'no_order'       => ['required'=>false, 'type'=>'string',  'desc'=>'Nomor nota/invoice — PENTING untuk multi-item per nota (1 nota bisa punya beberapa layanan/baris)'],
-            'nama_pelanggan' => ['required'=>true,  'type'=>'string',  'desc'=>'Nama pelanggan'],
-            'telepon'        => ['required'=>false, 'type'=>'phone',   'desc'=>'Nomor HP/WA pelanggan'],
-            'total'          => ['required'=>false, 'type'=>'integer', 'desc'=>'Total tagihan transaksi (mis. "Total Tagihan", "Grand Total") — BUKAN total per item'],
-            'tanggal'        => ['required'=>true,  'type'=>'date',    'desc'=>'Tanggal transaksi (mis. "Tgl Terima")'],
-            'status'         => ['required'=>false, 'type'=>'string',  'desc'=>'Status order'],
-            'metode_bayar'   => ['required'=>false, 'type'=>'string',  'desc'=>'Metode bayar'],
-            'catatan'        => ['required'=>false, 'type'=>'string',  'desc'=>'Catatan order'],
-            // Detail item (per baris layanan dalam nota)
-            'nama_layanan'   => ['required'=>false, 'type'=>'string',  'desc'=>'Nama layanan per baris item (mis. kolom "Nama" pada detail layanan)'],
-            'jumlah_item'    => ['required'=>false, 'type'=>'decimal', 'desc'=>'Jumlah/qty per item (mis. kolom "Jumlah")'],
-            'satuan_item'    => ['required'=>false, 'type'=>'string',  'desc'=>'Satuan per item (kg, pcs, M2, dll)'],
-            'subtotal_item'  => ['required'=>false, 'type'=>'integer', 'desc'=>'Subtotal PER ITEM (bukan Total Tagihan — ini total layanan tsb saja)'],
+            // ── Identitas transaksi ──
+            'no_order'         => ['required'=>false, 'type'=>'string',  'desc'=>'Nomor nota/invoice (mis. "No Nota", "No Order") — PENTING utk multi-item per nota'],
+            'nama_pelanggan'   => ['required'=>true,  'type'=>'string',  'desc'=>'Nama pelanggan (mis. "Customer", "Pelanggan")'],
+            'telepon'          => ['required'=>false, 'type'=>'phone',   'desc'=>'Nomor HP/WA pelanggan'],
+            // ── Tanggal ──
+            'tanggal'          => ['required'=>true,  'type'=>'date',    'desc'=>'Tanggal transaksi masuk (mis. "Tgl Terima", "Tanggal Order")'],
+            'estimasi_selesai' => ['required'=>false, 'type'=>'date',    'desc'=>'Estimasi/tanggal selesai cucian (mis. "Tgl Selesai", "Estimasi Selesai")'],
+            'tgl_selesai'      => ['required'=>false, 'type'=>'date',    'desc'=>'Tanggal nota DIAMBIL pelanggan (mis. "Tgl Pengambilan", "Tgl Diambil")'],
+            // ── Nominal uang (transaksi-level) ──
+            'subtotal'         => ['required'=>false, 'type'=>'integer', 'desc'=>'Subtotal sebelum diskon (mis. kolom "Subtotal") — BUKAN subtotal per item'],
+            'diskon'           => ['required'=>false, 'type'=>'integer', 'desc'=>'Diskon transaksi (mis. "Diskon", "Potongan")'],
+            'total'            => ['required'=>false, 'type'=>'integer', 'desc'=>'Total tagihan akhir (mis. "Total Tagihan", "Grand Total")'],
+            'dp'               => ['required'=>false, 'type'=>'integer', 'desc'=>'Uang muka / DP yang sudah dibayar'],
+            // ── Status & metode ──
+            'status_bayar'     => ['required'=>false, 'type'=>'enum',    'desc'=>'Status pembayaran. Map: "Lunas"→lunas, "Belum Lunas"/"Belum Bayar"→belum_bayar, "DP"→dp. Kolom "Pembayaran" biasanya isi ini.'],
+            'status_proses'    => ['required'=>false, 'type'=>'enum',    'desc'=>'Status proses. Map: "Sudah Diambil"/"Diambil"→diambil, "Belum Diambil"+ada tgl selesai→siap, lainnya→masuk. Kolom "Pengambilan" biasanya isi ini.'],
+            'metode_bayar'     => ['required'=>false, 'type'=>'string',  'desc'=>'Metode bayar (cash/transfer/qris)'],
+            'catatan'          => ['required'=>false, 'type'=>'string',  'desc'=>'Catatan order (mis. "Keterangan Nota")'],
+            // ── Detail item (per baris layanan dalam nota) ──
+            'nama_layanan'     => ['required'=>false, 'type'=>'string',  'desc'=>'Nama layanan per baris item (kolom "Nama" di bagian detail layanan, mis. "Selimut Single", "Cuci Setrika")'],
+            'jumlah_item'      => ['required'=>false, 'type'=>'decimal', 'desc'=>'Jumlah/qty per item (kolom "Jumlah" / "Qty")'],
+            'satuan_item'      => ['required'=>false, 'type'=>'string',  'desc'=>'Satuan per item (kg, pcs, set, lembar)'],
+            'subtotal_item'    => ['required'=>false, 'type'=>'integer', 'desc'=>'Subtotal PER ITEM (kolom "Total" di bagian detail — BUKAN Total Tagihan transaksi)'],
         ],
 
         'poin_pelanggan' => [
@@ -165,17 +174,33 @@ class AIMigrationMapper
             . "- 'Subtotal' kolom transaksi-level (sebelum diskon) ≠ subtotal_item (per layanan). Lihat konteks.\n"
             . "- 'Tambahan Express', 'Biaya Service', 'Pajak' → biasanya tidak ada di schema target → skip (atau catat di transform_note).\n"
             . "- 'Outlet', 'Pembuat Nota', 'Kasir' → metadata sumber, skip (sudah ada outlet_id otomatis).\n\n"
-            . ($entityType === 'transaksi' ? "═══ TRANSAKSI MULTI-ITEM ═══\n"
-                . "1 nota bisa punya beberapa baris layanan. KUNCI: kolom no_order/no_nota wajib diidentifikasi — itu yang group multi-item.\n"
-                . "- 'No Nota', 'No Order', 'Invoice', 'No. Order' → no_order (WAJIB cari di file ini!).\n"
-                . "- 'Customer', 'Pelanggan', 'Nama Customer' → nama_pelanggan.\n"
-                . "- 'Total Tagihan', 'Grand Total', 'Total Bayar' → total (transaksi-level).\n"
-                . "- 'Tgl Terima', 'Tanggal', 'Tgl Order' → tanggal.\n"
-                . "- Di bagian DETAIL ITEM (sering kolom paling kanan):\n"
-                . "  • 'Nama' / kolom dengan sample nama-layanan → nama_layanan\n"
-                . "  • 'Jumlah' / 'Qty' (per item) → jumlah_item\n"
-                . "  • 'Satuan' (pcs/kg/set) → satuan_item\n"
-                . "  • 'Total' / 'Subtotal' kolom item (BUKAN total transaksi) → subtotal_item\n\n" : '')
+            . ($entityType === 'transaksi' ? "═══ TRANSAKSI — PETUNJUK KHUSUS ═══\n"
+                . "File transaksi sering punya BANYAK kolom yang bisa di-map. Map SEMUA yang ada padanannya di schema, jangan skip kalau ada field target yang cocok.\n\n"
+                . "Identitas & tanggal:\n"
+                . "- 'No Nota', 'No Order', 'Invoice' → no_order (WAJIB cari — kunci grouping multi-item).\n"
+                . "- 'Customer', 'Pelanggan' → nama_pelanggan.\n"
+                . "- 'Tgl Terima', 'Tanggal' → tanggal (transaksi masuk).\n"
+                . "- 'Tgl Selesai', 'Estimasi Selesai' → estimasi_selesai (target selesai cucian).\n"
+                . "- 'Tgl Pengambilan', 'Tgl Diambil' → tgl_selesai (kapan pelanggan ambil).\n\n"
+                . "Nominal (HATI-HATI bedakan transaksi-level vs item-level):\n"
+                . "- 'Subtotal' (kolom di main, sebelum diskon/biaya) → subtotal (transaksi-level).\n"
+                . "- 'Diskon', 'Potongan' → diskon.\n"
+                . "- 'Total Tagihan', 'Grand Total' → total (final tagihan transaksi).\n"
+                . "- 'DP', 'Uang Muka' → dp.\n"
+                . "- 'Subtotal'/'Total' di BAGIAN DETAIL ITEM (biasanya kolom paling kanan, dalam grup detail layanan) → subtotal_item.\n"
+                . "  → Tanda kolom 'item-level': muncul SETELAH header parent 'Detail Transaksi' atau berdekatan dgn 'Nama'/'Jumlah'/'Satuan' item.\n\n"
+                . "Status (penting — ada 2 status terpisah):\n"
+                . "- 'Pembayaran' / 'Status Bayar' (sample: 'Lunas', 'Belum Lunas', 'DP') → status_bayar.\n"
+                . "- 'Pengambilan' / 'Status Proses' (sample: 'Belum Diambil', 'Sudah Diambil') → status_proses.\n\n"
+                . "Detail item (per baris layanan):\n"
+                . "- 'Nama' / sample nama-layanan (Selimut, Bedcover, Cuci Setrika) → nama_layanan.\n"
+                . "- 'Jumlah' / 'Qty' per item → jumlah_item.\n"
+                . "- 'Satuan' (pcs, kg, set) → satuan_item.\n\n"
+                . "Yang boleh skip (tidak ada field target):\n"
+                . "- 'Progres Pengerjaan' kalau isinya % → skip.\n"
+                . "- 'Tambahan Express', 'Biaya Service', 'Pajak' → skip (tidak ada field terpisah; sudah include di total).\n"
+                . "- 'Outlet', 'Pembuat Nota', 'Kasir', 'No' (row number), 'Alamat Customer' → skip (metadata sumber atau bukan field transaksi).\n"
+                . "- 'Jenis' (Reguler/Express) kalau cuma kategori → skip.\n\n" : '')
             . "Instruksi mapping:\n"
             . "1. Untuk setiap header, tentukan target_field paling cocok (atau null kalau benar-benar tidak ada).\n"
             . "2. action: \"map\" = langsung, \"transform\" = butuh konversi, \"skip\" = abaikan.\n"
@@ -327,18 +352,30 @@ class AIMigrationMapper
             'role'           => ['role','jabatan','posisi','position','peran'],
             'gaji_pokok'     => ['gaji','gaji pokok','gaji_pokok','salary','upah'],
             'tgl_masuk'      => ['tgl masuk','tanggal masuk','tgl_masuk','tanggal_masuk','join date','mulai kerja'],
-            // Transaksi — Customer & No Nota dipisah jelas
-            'nama_pelanggan' => ['nama pelanggan','nama_pelanggan','customer','pelanggan','nama customer'],
-            'no_order'       => ['no order','no_order','no nota','no_nota','nota','invoice','invoice no','no invoice','order id'],
-            'total'          => ['total tagihan','total_tagihan','grand total','total bayar','total harga','amount','tagihan'],
-            'tanggal'        => ['tanggal','tgl','date','tgl terima','tanggal terima','tgl order','tanggal order'],
-            'status'         => ['status','status order','progres pengerjaan','progres','pembayaran','status bayar'],
-            'metode_bayar'   => ['metode bayar','metode_bayar','payment method','cara bayar'],
-            // Item detail per baris (sub-row)
-            'nama_layanan'   => ['nama layanan','nama_layanan','layanan','service','paket','detail layanan'],
-            'jumlah_item'    => ['jumlah','qty','quantity','kuantitas','jumlah item'],
-            'satuan_item'    => ['satuan item','satuan_item'],
-            'subtotal_item'  => ['subtotal','total item','total_item','subtotal_item','sub_total','subtotal layanan'],
+            // Transaksi — identitas
+            'nama_pelanggan'   => ['nama pelanggan','nama_pelanggan','customer','pelanggan','nama customer'],
+            'no_order'         => ['no order','no_order','no nota','no_nota','nota','invoice','invoice no','no invoice','order id','no. nota','no order'],
+            // Tanggal
+            'tanggal'          => ['tanggal','tgl','date','tgl terima','tanggal terima','tgl order','tanggal order'],
+            'estimasi_selesai' => ['tgl selesai','tanggal selesai','estimasi selesai','estimasi','est selesai','target selesai'],
+            'tgl_selesai'      => ['tgl pengambilan','tanggal pengambilan','tgl diambil','tanggal diambil','pickup date','tgl ambil'],
+            // Nominal transaksi-level
+            'subtotal'         => ['subtotal','sub total','sub_total','subtotal nota'],
+            'diskon'           => ['diskon','discount','potongan','disc'],
+            'total'            => ['total tagihan','total_tagihan','grand total','total bayar','total harga','amount','tagihan'],
+            'dp'               => ['dp','uang muka','down payment','um','panjar'],
+            // Status & metode
+            'status_bayar'     => ['pembayaran','status bayar','status pembayaran','status_bayar','payment status'],
+            'status_proses'    => ['pengambilan','status proses','status order','status_proses','progress','status pengerjaan'],
+            'metode_bayar'     => ['metode bayar','metode_bayar','payment method','cara bayar'],
+            'status'           => ['status'], // generic fallback
+            // Item detail per baris (sub-row) — 'nama' polos akan disambiguasi
+            // di disambiguateHeuristic() setelah loop: kalau ada 'customer' di
+            // file, "Nama" → nama_layanan; kalau tidak, → nama_pelanggan.
+            'nama_layanan'     => ['nama layanan','nama_layanan','layanan','service','paket','detail layanan','nama'],
+            'jumlah_item'      => ['jumlah','qty','quantity','kuantitas','jumlah item'],
+            'satuan_item'      => ['satuan','satuan item','satuan_item','unit'],
+            'subtotal_item'    => ['total item','total_item','subtotal_item','subtotal layanan'],
             'berat_kg'       => ['berat','berat kg','berat_kg','weight','qty kg'],
             'saldo_poin'     => ['saldo poin','poin','point','saldo_poin','points','poin pelanggan'],
         ];
