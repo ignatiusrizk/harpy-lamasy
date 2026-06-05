@@ -240,50 +240,47 @@ if ($action) {
                 $redeemPoin = 0;
             }
 
-            // Total final (diskon manual + nilai redeem)
+            // Biaya tambahan (express, jemput, dll) + tipe order
+            $biayaTbh   = floatval($data['biaya_tambahan'] ?? 0);
+            $tipeOrder  = in_array($data['tipe_order'] ?? '', ['reguler','express','kilat','custom'], true)
+                          ? $data['tipe_order'] : 'reguler';
+
+            // Total final (subtotal − diskon + biaya tambahan)
             $diskonTotal = $diskon + $redeemValue;
-            $total    = max(0, $subtotal - $diskonTotal);
+            $total    = max(0, $subtotal - $diskonTotal + $biayaTbh);
             $dp       = floatval($data['dp'] ?? 0);
             $sisa     = $total - $dp;
             $status_b = $dp >= $total ? 'lunas' : ($dp > 0 ? 'dp' : 'belum_bayar');
+
+            // Cek apakah kolom biaya_tambahan & tipe_order sudah ada (migration applied?)
+            $hasBiayaTipe = true;
+            try { $db->query("SELECT biaya_tambahan, tipe_order FROM hl_transaksi LIMIT 1"); }
+            catch (Throwable) { $hasBiayaTipe = false; }
 
             // Foto masuk (optional, dari upload_foto endpoint)
             $fotoMasuk = trim($data['foto_masuk'] ?? '');
             $hasFotoMasuk = true;
             try { $db->query("SELECT foto_masuk FROM hl_transaksi LIMIT 1"); } catch (Throwable) { $hasFotoMasuk = false; }
 
-            // Insert transaksi header (with estimasi_jam kalau kolom ada)
+            // Insert transaksi header
+            // Kolom opsional: estimasi_jam (lama), biaya_tambahan + tipe_order (baru Phase 2)
             $hasEstJam = true;
             try { $db->query("SELECT estimasi_jam FROM hl_transaksi LIMIT 1"); } catch (Throwable) { $hasEstJam = false; }
-            if ($hasEstJam) {
-                $stmt = $db->prepare(
-                    "INSERT INTO hl_transaksi
-                     (tenant_id,outlet_id,no_order,tanggal,pelanggan_id,nama_pelanggan,telepon,
-                      subtotal,diskon,total,dp,sisa_bayar,metode_bayar,status_bayar,
-                      status_proses,estimasi_selesai,estimasi_jam,catatan,created_by)
-                     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
-                );
-                $stmt->execute([
-                    $tid, $oid, $no, $tanggal, $pel_id, $nama_pel, $telepon,
-                    $subtotal, $diskonTotal, $total, $dp, $sisa,
-                    $data['metode_bayar'] ?? 'cash', $status_b,
-                    'masuk', $estimasi, $estimasiJam, $catatan, $user['id']
-                ]);
-            } else {
-                $stmt = $db->prepare(
-                    "INSERT INTO hl_transaksi
-                     (tenant_id,outlet_id,no_order,tanggal,pelanggan_id,nama_pelanggan,telepon,
-                      subtotal,diskon,total,dp,sisa_bayar,metode_bayar,status_bayar,
-                      status_proses,estimasi_selesai,catatan,created_by)
-                     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
-                );
-                $stmt->execute([
-                    $tid, $oid, $no, $tanggal, $pel_id, $nama_pel, $telepon,
-                    $subtotal, $diskonTotal, $total, $dp, $sisa,
-                    $data['metode_bayar'] ?? 'cash', $status_b,
-                    'masuk', $estimasi, $catatan, $user['id']
-                ]);
-            }
+
+            // Bangun INSERT dinamis sesuai kolom yg tersedia
+            $cols   = ['tenant_id','outlet_id','no_order','tanggal','pelanggan_id','nama_pelanggan','telepon',
+                       'subtotal','diskon','total','dp','sisa_bayar','metode_bayar','status_bayar',
+                       'status_proses','estimasi_selesai','catatan','created_by'];
+            $vals   = [$tid,$oid,$no,$tanggal,$pel_id,$nama_pel,$telepon,
+                       $subtotal,$diskonTotal,$total,$dp,$sisa,
+                       $data['metode_bayar'] ?? 'cash', $status_b,
+                       'masuk',$estimasi,$catatan,$user['id']];
+            if ($hasEstJam)    { $cols[] = 'estimasi_jam';   $vals[] = $estimasiJam; }
+            if ($hasBiayaTipe) { $cols[] = 'biaya_tambahan'; $vals[] = $biayaTbh;
+                                 $cols[] = 'tipe_order';     $vals[] = $tipeOrder; }
+            $placeholders = implode(',', array_fill(0, count($cols), '?'));
+            $stmt = $db->prepare("INSERT INTO hl_transaksi (".implode(',', $cols).") VALUES ($placeholders)");
+            $stmt->execute($vals);
             $trx_id = $db->lastInsertId();
 
             // Simpan foto_masuk kalau kolom & data ada
@@ -474,6 +471,7 @@ if ($action) {
 
 /* FORM */
 .form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.form-row.cols2{grid-template-columns:1fr 1fr}
 .form-row.cols3{grid-template-columns:1fr 1fr 1fr}
 .form-group{display:flex;flex-direction:column;gap:5px}
 .form-group.full{grid-column:1/-1}
@@ -772,6 +770,10 @@ textarea{resize:vertical;min-height:64px}
               <span class="sum-label">Diskon</span>
               <span class="sum-value" style="color:#FCA5A5">- Rp <span id="sumDiskon">0</span></span>
             </div>
+            <div class="sum-row" id="sumBiayaRow" style="display:none">
+              <span class="sum-label">Biaya Tambahan</span>
+              <span class="sum-value" style="color:#FCD34D">+ Rp <span id="sumBiaya">0</span></span>
+            </div>
             <div class="sum-row total">
               <span style="font-weight:700;color:white">TOTAL</span>
               <span class="sum-value big" id="sumTotal">Rp 0</span>
@@ -828,6 +830,23 @@ textarea{resize:vertical;min-height:64px}
                 <button type="button" class="btn btn-teal-sm" onclick="redeemMax()" style="margin-bottom:1px;white-space:nowrap">Max</button>
               </div>
               <div id="redeemInfo" style="font-size:11px;color:#0891B2;margin-top:5px;display:none"></div>
+            </div>
+
+            <div class="form-row cols2">
+              <div class="form-group">
+                <label>Tipe Order</label>
+                <select id="f_tipe_order">
+                  <option value="reguler">⏱️ Reguler</option>
+                  <option value="express">⚡ Express</option>
+                  <option value="kilat">🚀 Kilat</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Biaya Tambahan (Rp)
+                  <span style="font-size:10px;color:var(--gray);font-weight:400;">— express/jemput/antar</span>
+                </label>
+                <input type="number" id="f_biaya_tambahan" value="0" min="0" oninput="recalc()"/>
+              </div>
             </div>
 
             <div class="form-row cols3">
@@ -1120,6 +1139,7 @@ function renderItems() {
 function recalc() {
   const subtotal = items.reduce((s,i) => s + i.jumlah*i.harga_satuan, 0);
   const diskon   = parseFloat(document.getElementById('f_diskon').value)||0;
+  const biayaTbh = parseFloat(document.getElementById('f_biaya_tambahan')?.value)||0;
 
   // Loyalty redeem → diskon
   let redeemValue = 0, redeemPoin = 0;
@@ -1135,12 +1155,15 @@ function recalc() {
     }
   }
 
-  const total    = Math.max(subtotal - diskon - redeemValue, 0);
+  // Total = subtotal − diskon − redeem + biaya tambahan
+  const total    = Math.max(subtotal - diskon - redeemValue + biayaTbh, 0);
   const dp       = parseFloat(document.getElementById('f_dp').value)||0;
   const sisa     = total - dp;
 
   document.getElementById('sumSubtotal').textContent = 'Rp ' + subtotal.toLocaleString('id-ID');
   document.getElementById('sumDiskon').textContent   = (diskon + redeemValue).toLocaleString('id-ID');
+  document.getElementById('sumBiaya').textContent    = biayaTbh.toLocaleString('id-ID');
+  document.getElementById('sumBiayaRow').style.display = biayaTbh > 0 ? 'flex' : 'none';
   document.getElementById('sumTotal').textContent    = 'Rp ' + total.toLocaleString('id-ID');
   document.getElementById('sumDP').textContent       = 'Rp ' + dp.toLocaleString('id-ID');
   document.getElementById('sumSisa').textContent     = 'Rp ' + sisa.toLocaleString('id-ID');
@@ -1403,6 +1426,8 @@ async function doSaveTransaksi() {
     telepon:        document.getElementById('f_telepon').value,
     catatan:        document.getElementById('f_catatan').value,
     diskon:         document.getElementById('f_diskon').value,
+    biaya_tambahan: document.getElementById('f_biaya_tambahan').value,
+    tipe_order:     document.getElementById('f_tipe_order').value,
     redeem_poin:    (LOYALTY.enabled && currentPelangganId) ? (parseInt(document.getElementById('f_redeem_poin')?.value||0)||0) : 0,
     dp:             document.getElementById('f_dp').value,
     metode_bayar:   document.getElementById('f_metode').value,

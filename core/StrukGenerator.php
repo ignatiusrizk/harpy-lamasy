@@ -467,11 +467,21 @@ body {
         $h .= "<hr class='sep'>\n";
 
         // ── Totals ────────────────────────────────────
-        if (!empty($tmpl['show_subtotal']) && (float)($trx['diskon'] ?? 0) > 0) {
+        $biayaTbh = (float)($trx['biaya_tambahan'] ?? 0);
+        $hasBreakdown = (float)($trx['diskon'] ?? 0) > 0 || $biayaTbh > 0;
+        if (!empty($tmpl['show_subtotal']) && $hasBreakdown) {
             $h .= self::tRow('Subtotal', 'Rp ' . self::rpNum($trx['subtotal']), $maxChar);
         }
         if (!empty($tmpl['show_diskon']) && (float)($trx['diskon'] ?? 0) > 0) {
             $h .= self::tRow('Diskon', '-Rp ' . self::rpNum($trx['diskon']), $maxChar);
+        }
+        if ($biayaTbh > 0) {
+            $tipeLabel = match($trx['tipe_order'] ?? 'reguler') {
+                'express' => 'Biaya Express',
+                'kilat'   => 'Biaya Kilat',
+                default   => 'Biaya Tambahan',
+            };
+            $h .= self::tRow($tipeLabel, 'Rp ' . self::rpNum($biayaTbh), $maxChar);
         }
         if (!empty($tmpl['show_total'])) {
             $h .= "<div class='row b'>"
@@ -759,11 +769,21 @@ tbody tr:nth-child(even) td { background: #f8faff; }
 <div class='totals'>
 <table>\n";
 
-        if (!empty($tmpl['show_subtotal']) && (float)($trx['diskon'] ?? 0) > 0) {
+        $biayaTbhPdf = (float)($trx['biaya_tambahan'] ?? 0);
+        $hasBreakdownPdf = (float)($trx['diskon'] ?? 0) > 0 || $biayaTbhPdf > 0;
+        if (!empty($tmpl['show_subtotal']) && $hasBreakdownPdf) {
             $h .= "  <tr><td>Subtotal</td><td class='r'>Rp " . self::rpNum($trx['subtotal']) . "</td></tr>\n";
         }
         if (!empty($tmpl['show_diskon']) && (float)($trx['diskon'] ?? 0) > 0) {
             $h .= "  <tr><td>Diskon</td><td class='r'>−Rp " . self::rpNum($trx['diskon']) . "</td></tr>\n";
+        }
+        if ($biayaTbhPdf > 0) {
+            $tipeLabel = match($trx['tipe_order'] ?? 'reguler') {
+                'express' => 'Biaya Express',
+                'kilat'   => 'Biaya Kilat',
+                default   => 'Biaya Tambahan',
+            };
+            $h .= "  <tr><td>" . htmlspecialchars($tipeLabel) . "</td><td class='r'>+Rp " . self::rpNum($biayaTbhPdf) . "</td></tr>\n";
         }
         if (!empty($tmpl['show_total'])) {
             $h .= "  <tr class='grand'><td>TOTAL</td><td class='r'>Rp " . self::rpNum($trx['total']) . "</td></tr>\n";
