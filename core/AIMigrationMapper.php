@@ -20,7 +20,7 @@
 class AIMigrationMapper
 {
     // Bump kalau prompt/schema berubah — cache lama auto-invalidate.
-    const MAPPER_VERSION = 4;
+    const MAPPER_VERSION = 5;
 
     // ── Target schema per entitas ─────────────────────
     // Deskripsi dipakai sebagai konteks untuk Claude.
@@ -63,8 +63,10 @@ class AIMigrationMapper
             // ── Nominal uang (transaksi-level) ──
             'subtotal'         => ['required'=>false, 'type'=>'integer', 'desc'=>'Subtotal sebelum diskon (mis. kolom "Subtotal") — BUKAN subtotal per item'],
             'diskon'           => ['required'=>false, 'type'=>'integer', 'desc'=>'Diskon transaksi (mis. "Diskon", "Potongan")'],
+            'biaya_tambahan'   => ['required'=>false, 'type'=>'integer', 'desc'=>'Biaya tambahan: express, biaya service, jemput, antar (mis. "Tambahan Express", "Biaya Service", "Biaya Antar"). Kalau ada beberapa kolom biaya tambahan, jumlahkan semua ke field ini.'],
             'total'            => ['required'=>false, 'type'=>'integer', 'desc'=>'Total tagihan akhir (mis. "Total Tagihan", "Grand Total")'],
             'dp'               => ['required'=>false, 'type'=>'integer', 'desc'=>'Uang muka / DP yang sudah dibayar'],
+            'tipe_order'       => ['required'=>false, 'type'=>'string',  'desc'=>'Tipe/kategori order (mis. "Jenis": Reguler/Express/Kilat). Map: "Reguler"→reguler, "Express"→express, "Kilat"→kilat, lainnya→custom.'],
             // ── Status & metode ──
             'status_bayar'     => ['required'=>false, 'type'=>'enum',    'desc'=>'Status pembayaran. Map: "Lunas"→lunas, "Belum Lunas"/"Belum Bayar"→belum_bayar, "DP"→dp. Kolom "Pembayaran" biasanya isi ini.'],
             'status_proses'    => ['required'=>false, 'type'=>'enum',    'desc'=>'Status proses. Map: "Sudah Diambil"/"Diambil"→diambil, "Belum Diambil"+ada tgl selesai→siap, lainnya→masuk. Kolom "Pengambilan" biasanya isi ini.'],
@@ -185,10 +187,13 @@ class AIMigrationMapper
                 . "Nominal (HATI-HATI bedakan transaksi-level vs item-level):\n"
                 . "- 'Subtotal' (kolom di main, sebelum diskon/biaya) → subtotal (transaksi-level).\n"
                 . "- 'Diskon', 'Potongan' → diskon.\n"
+                . "- 'Tambahan Express', 'Biaya Service', 'Biaya Jemput', 'Biaya Antar' → biaya_tambahan. Kalau ADA BEBERAPA kolom biaya, gabung mapping-nya ke biaya_tambahan (importer akan menjumlahkan).\n"
                 . "- 'Total Tagihan', 'Grand Total' → total (final tagihan transaksi).\n"
                 . "- 'DP', 'Uang Muka' → dp.\n"
                 . "- 'Subtotal'/'Total' di BAGIAN DETAIL ITEM (biasanya kolom paling kanan, dalam grup detail layanan) → subtotal_item.\n"
                 . "  → Tanda kolom 'item-level': muncul SETELAH header parent 'Detail Transaksi' atau berdekatan dgn 'Nama'/'Jumlah'/'Satuan' item.\n\n"
+                . "Tipe order:\n"
+                . "- 'Jenis', 'Tipe Order', 'Kategori' dgn sample 'Reguler'/'Express'/'Kilat' → tipe_order.\n\n"
                 . "Status (penting — ada 2 status terpisah):\n"
                 . "- 'Pembayaran' / 'Status Bayar' (sample: 'Lunas', 'Belum Lunas', 'DP') → status_bayar.\n"
                 . "- 'Pengambilan' / 'Status Proses' (sample: 'Belum Diambil', 'Sudah Diambil') → status_proses.\n\n"
@@ -198,9 +203,8 @@ class AIMigrationMapper
                 . "- 'Satuan' (pcs, kg, set) → satuan_item.\n\n"
                 . "Yang boleh skip (tidak ada field target):\n"
                 . "- 'Progres Pengerjaan' kalau isinya % → skip.\n"
-                . "- 'Tambahan Express', 'Biaya Service', 'Pajak' → skip (tidak ada field terpisah; sudah include di total).\n"
-                . "- 'Outlet', 'Pembuat Nota', 'Kasir', 'No' (row number), 'Alamat Customer' → skip (metadata sumber atau bukan field transaksi).\n"
-                . "- 'Jenis' (Reguler/Express) kalau cuma kategori → skip.\n\n" : '')
+                . "- 'Pajak' / 'PPN' → skip (tidak ada field terpisah; sudah include di total).\n"
+                . "- 'Outlet', 'Pembuat Nota', 'Kasir', 'No' (row number), 'Alamat Customer' → skip (metadata sumber atau bukan field transaksi).\n\n" : '')
             . "Instruksi mapping:\n"
             . "1. Untuk setiap header, tentukan target_field paling cocok (atau null kalau benar-benar tidak ada).\n"
             . "2. action: \"map\" = langsung, \"transform\" = butuh konversi, \"skip\" = abaikan.\n"
@@ -362,8 +366,10 @@ class AIMigrationMapper
             // Nominal transaksi-level
             'subtotal'         => ['subtotal','sub total','sub_total','subtotal nota'],
             'diskon'           => ['diskon','discount','potongan','disc'],
+            'biaya_tambahan'   => ['tambahan express','biaya service','biaya tambahan','biaya jemput','biaya antar','tambahan','express fee','service fee'],
             'total'            => ['total tagihan','total_tagihan','grand total','total bayar','total harga','amount','tagihan'],
             'dp'               => ['dp','uang muka','down payment','um','panjar'],
+            'tipe_order'       => ['jenis','tipe','tipe order','jenis order','kategori order','type','order type'],
             // Status & metode
             'status_bayar'     => ['pembayaran','status bayar','status pembayaran','status_bayar','payment status'],
             'status_proses'    => ['pengambilan','status proses','status order','status_proses','progress','status pengerjaan'],

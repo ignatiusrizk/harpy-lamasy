@@ -109,10 +109,12 @@ CREATE TABLE IF NOT EXISTS hl_transaksi (
   telepon          VARCHAR(20)  DEFAULT NULL,
   subtotal         DECIMAL(12,2) DEFAULT 0,
   diskon           DECIMAL(12,2) DEFAULT 0,
+  biaya_tambahan   DECIMAL(12,2) DEFAULT 0,
   total            DECIMAL(12,2) DEFAULT 0,
   dp               DECIMAL(12,2) DEFAULT 0,
   sisa_bayar       DECIMAL(12,2) DEFAULT 0,
   metode_bayar     VARCHAR(30)  DEFAULT 'cash',
+  tipe_order       VARCHAR(20)  DEFAULT 'reguler',
   status_bayar     ENUM('belum_bayar','dp','lunas') DEFAULT 'belum_bayar',
   status_proses    ENUM('masuk','cuci','kering','setrika','siap','diambil') DEFAULT 'masuk',
   estimasi_selesai DATE         DEFAULT NULL,
@@ -127,6 +129,7 @@ CREATE TABLE IF NOT EXISTS hl_transaksi (
   INDEX idx_tanggal       (tanggal),
   INDEX idx_status_proses (status_proses),
   INDEX idx_status_bayar  (status_bayar),
+  INDEX idx_tipe_order    (tipe_order),
   INDEX idx_pelanggan     (pelanggan_id),
   FOREIGN KEY (pelanggan_id) REFERENCES hl_pelanggan(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

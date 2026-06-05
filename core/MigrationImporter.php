@@ -146,7 +146,18 @@ class MigrationImporter
                 $val = self::transform($val, $transformNote);
             }
 
-            $out[$targetField] = $val;
+            // Sumable fields: kalau beberapa kolom file di-map ke target yang
+            // sama (mis. "Tambahan Express" + "Biaya Service" → biaya_tambahan),
+            // jumlahkan, bukan overwrite. Berlaku utk field nominal yang
+            // semantik-nya akumulatif.
+            $sumableFields = ['biaya_tambahan'];
+            if (in_array($targetField, $sumableFields, true) && isset($out[$targetField])) {
+                $prev = self::parseAmount((string)$out[$targetField]);
+                $curr = self::parseAmount((string)$val);
+                $out[$targetField] = (string)($prev + $curr);
+            } else {
+                $out[$targetField] = $val;
+            }
         }
         return $out;
     }
@@ -261,6 +272,19 @@ class MigrationImporter
         if (str_contains($raw, 'dp') || str_contains($raw, 'down')) return 'dp';
         if (str_contains($raw, 'lunas') || str_contains($raw, 'paid') || str_contains($raw, 'selesai')) return 'lunas';
         return 'lunas';
+    }
+
+    /**
+     * Normalisasi tipe order: 'reguler' (default) / 'express' / 'kilat' / 'custom'.
+     */
+    public static function normalizeTipeOrder(string $raw): string
+    {
+        $raw = strtolower(trim($raw));
+        if ($raw === '') return 'reguler';
+        if (str_contains($raw, 'reguler') || str_contains($raw, 'regular') || str_contains($raw, 'standar')) return 'reguler';
+        if (str_contains($raw, 'express') || str_contains($raw, 'expres')) return 'express';
+        if (str_contains($raw, 'kilat') || str_contains($raw, 'super')) return 'kilat';
+        return 'custom';
     }
 
     /**
@@ -756,9 +780,11 @@ class MigrationImporter
         // Field baru dari schema yang diperluas
         $subtotalTrx = self::parseAmount($d['subtotal'] ?? '0');
         $diskon      = self::parseAmount($d['diskon']   ?? '0');
+        $biayaTbh    = self::parseAmount($d['biaya_tambahan'] ?? '0');
         $dp          = self::parseAmount($d['dp']       ?? '0');
         $estSelesai  = self::normalizeDate($d['estimasi_selesai'] ?? '');
         $tglSelesai  = self::normalizeDate($d['tgl_selesai']      ?? '');
+        $tipeOrder   = self::normalizeTipeOrder($d['tipe_order']  ?? '');
 
         // Status: kalau eksplisit di file, pakai. Kalau tidak, derive.
         $sbRaw = strtolower(trim((string)($d['status_bayar'] ?? $d['status'] ?? '')));
@@ -825,16 +851,16 @@ class MigrationImporter
                 INSERT INTO hl_transaksi
                   (tenant_id, outlet_id, no_order, tanggal,
                    pelanggan_id, nama_pelanggan, telepon,
-                   subtotal, diskon, total, dp, sisa_bayar,
-                   metode_bayar, status_bayar, status_proses,
+                   subtotal, diskon, biaya_tambahan, total, dp, sisa_bayar,
+                   metode_bayar, tipe_order, status_bayar, status_proses,
                    estimasi_selesai, tgl_selesai,
                    catatan, is_imported, migration_job_id, created_by)
-                VALUES (?,?,?,?, ?,?,?, ?,?,?,?,?, ?,?,?, ?,?, ?,1,?,0)
+                VALUES (?,?,?,?, ?,?,?, ?,?,?,?,?,?, ?,?,?,?, ?,?, ?,1,?,0)
             ")->execute([
                 $tid, $oid, $noOrder, $tanggal,
                 $pelId, $namaPel, $telepon ?: null,
-                $subtotalUse, $diskon, $total, $dpUse, $sisa,
-                $metodeBayar, $statusBayar, $statusProses,
+                $subtotalUse, $diskon, $biayaTbh, $total, $dpUse, $sisa,
+                $metodeBayar, $tipeOrder, $statusBayar, $statusProses,
                 $estSelesai ?: null, $tglSelesai ?: null,
                 substr($d['catatan'] ?? '', 0, 255) ?: null,
                 $jobId,
