@@ -16,9 +16,16 @@ class MigrationImporter
      * Jalankan proses import untuk satu migration job.
      * Satu baris gagal tidak menghentikan baris lain.
      */
+    // ── State antar-row utk transaksi multi-item ──
+    // Smartlink (dan banyak format lain) sering pakai SUB-ROW: baris
+    // setelah parent yg cuma punya detail item, tanpa no_order/customer.
+    // Kita track last transaksi id selama loop & pakai sbg fallback.
+    private static int $lastTrxId = 0;
+
     public static function process(int $jobId): array
     {
         $db = Database::get();
+        self::$lastTrxId = 0; // reset state setiap process()
 
         // Ambil job
         $jobQ = $db->prepare("SELECT * FROM hl_migration_jobs WHERE id = ? LIMIT 1");
@@ -315,9 +322,15 @@ class MigrationImporter
         $errors = [];
         $schema = AIMigrationMapper::SCHEMAS[$entityType] ?? [];
 
-        // Untuk transaksi: kalau ada no_order, baris ini bisa jadi sub-item
-        // (lanjutan baris parent). Skip required check, importer yang handle.
-        $isMultiItem = ($entityType === 'transaksi') && !empty($data['no_order']);
+        // Untuk transaksi, baris ini bisa jadi:
+        // a) Sub-item dgn no_order yg sama → importer dedup
+        // b) Sub-row Smartlink: no_order kosong, customer kosong, hanya
+        //    nama_layanan terisi → importer pakai $lastTrxId
+        // Keduanya: skip required check, biar importer yang handle.
+        $isMultiItem = ($entityType === 'transaksi') && (
+            !empty($data['no_order']) ||
+            (empty($data['no_order']) && empty($data['nama_pelanggan']) && !empty($data['nama_layanan']))
+        );
 
         foreach ($schema as $field => $def) {
             if (!$def['required']) continue;
@@ -804,9 +817,18 @@ class MigrationImporter
             $trxId  = (int)($trxRow['id'] ?? 0);
         }
 
+        $namaLayanan = substr(trim($d['nama_layanan'] ?? ''), 0, 100);
+
+        // ── SUB-ROW handling: kalau row ini gak punya no_order & namaPel
+        //    tapi punya nama_layanan → ini SUB-ROW dari transaksi sebelumnya
+        //    (pattern Smartlink dll). Attach item ke last transaksi id.
+        if ($trxId === 0 && $noOrder === '' && $namaPel === '' && $namaLayanan !== '' && self::$lastTrxId > 0) {
+            $trxId = self::$lastTrxId;
+        }
+
         // ── Kalau belum ada transaksi: butuh pelanggan minimal ──
         if ($trxId === 0) {
-            if ($namaPel === '') return 'skip'; // sub-baris tanpa pelanggan
+            if ($namaPel === '') return 'skip'; // sub-baris tanpa pelanggan & tanpa context
             $telepon = self::normalizePhone($d['telepon'] ?? '');
             // Pelanggan: cari by telepon → nama → buat baru
             $pelId = 0;
@@ -881,7 +903,7 @@ class MigrationImporter
         }
 
         // ── Insert ITEM kalau ada nama_layanan di baris ini ──
-        $namaLayanan = substr(trim($d['nama_layanan'] ?? ''), 0, 100);
+        // ($namaLayanan sudah di-declare di atas utk sub-row detection)
         if ($namaLayanan !== '') {
             $jumlah   = (float)str_replace(',', '.', (string)($d['jumlah_item'] ?? '1')) ?: 1;
             $satuan   = strtolower(substr(trim($d['satuan_item'] ?? 'pcs'), 0, 20)) ?: 'pcs';
@@ -900,6 +922,9 @@ class MigrationImporter
                 $satuan, $jumlah, $harga, $subtotal,
             ]);
         }
+
+        // Track last trx id utk sub-row di baris berikutnya
+        if ($trxId > 0) self::$lastTrxId = $trxId;
 
         return 'ok';
     }

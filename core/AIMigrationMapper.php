@@ -20,7 +20,7 @@
 class AIMigrationMapper
 {
     // Bump kalau prompt/schema berubah — cache lama auto-invalidate.
-    const MAPPER_VERSION = 5;
+    const MAPPER_VERSION = 6;
 
     // ── Target schema per entitas ─────────────────────
     // Deskripsi dipakai sebagai konteks untuk Claude.

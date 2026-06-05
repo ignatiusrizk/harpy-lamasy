@@ -710,11 +710,25 @@ const ENTITY_NAMES = {
     transaksi: 'Transaksi', poin_pelanggan: 'Poin Pelanggan',
 };
 
+// Daftar field target per entity — HARUS MATCH dengan
+// core/AIMigrationMapper.php::SCHEMAS supaya AI bisa map ke sini DAN
+// user bisa pilih manual via dropdown.
 const TARGET_FIELDS = {
     layanan:        ['nama','harga','satuan','kategori','keterangan'],
     pelanggan:      ['nama','telepon','alamat','tipe_bayar','catatan'],
     karyawan:       ['nama','telepon','role','gaji_pokok','tgl_masuk'],
-    transaksi:      ['nama_pelanggan','telepon','nama_layanan','berat_kg','total','tanggal','metode_bayar','catatan'],
+    transaksi: [
+        // Identitas
+        'no_order','nama_pelanggan','telepon',
+        // Tanggal
+        'tanggal','estimasi_selesai','tgl_selesai',
+        // Nominal
+        'subtotal','diskon','biaya_tambahan','total','dp',
+        // Status & metode
+        'status_bayar','status_proses','tipe_order','metode_bayar','catatan',
+        // Detail item (per baris layanan)
+        'nama_layanan','jumlah_item','satuan_item','subtotal_item',
+    ],
     poin_pelanggan: ['telepon','nama_pelanggan','saldo_poin'],
 };
 
