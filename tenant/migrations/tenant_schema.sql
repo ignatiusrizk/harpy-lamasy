@@ -115,6 +115,7 @@ CREATE TABLE IF NOT EXISTS hl_transaksi (
   sisa_bayar       DECIMAL(12,2) DEFAULT 0,
   metode_bayar     VARCHAR(30)  DEFAULT 'cash',
   tipe_order       VARCHAR(20)  DEFAULT 'reguler',
+  express_tier_nama VARCHAR(50) DEFAULT NULL,
   status_bayar     ENUM('belum_bayar','dp','lunas') DEFAULT 'belum_bayar',
   status_proses    ENUM('masuk','cuci','kering','setrika','siap','diambil') DEFAULT 'masuk',
   estimasi_selesai DATE         DEFAULT NULL,
@@ -132,6 +133,23 @@ CREATE TABLE IF NOT EXISTS hl_transaksi (
   INDEX idx_tipe_order    (tipe_order),
   INDEX idx_pelanggan     (pelanggan_id),
   FOREIGN KEY (pelanggan_id) REFERENCES hl_pelanggan(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ── Tier Express per Layanan ────────────────────────
+CREATE TABLE IF NOT EXISTS hl_layanan_express_tier (
+  id              INT          AUTO_INCREMENT PRIMARY KEY,
+  layanan_id      INT          NOT NULL,
+  nama_tier       VARCHAR(50)  NOT NULL,    -- "Express 12 Jam", "Kilat 3 Jam"
+  estimasi_jam    INT          NOT NULL,    -- jam dari masuk → siap
+  tipe_biaya      ENUM('flat','percent') NOT NULL DEFAULT 'percent',
+  nilai_biaya     DECIMAL(12,2) NOT NULL,
+  is_active       TINYINT(1)   DEFAULT 1,
+  urutan          INT          DEFAULT 0,
+  created_at      TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
+  updated_at      TIMESTAMP    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY uniq_layanan_tier (layanan_id, nama_tier),
+  INDEX idx_layanan (layanan_id, is_active),
+  FOREIGN KEY (layanan_id) REFERENCES hl_layanan(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS hl_transaksi_item (

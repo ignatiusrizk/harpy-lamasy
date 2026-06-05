@@ -476,11 +476,14 @@ body {
             $h .= self::tRow('Diskon', '-Rp ' . self::rpNum($trx['diskon']), $maxChar);
         }
         if ($biayaTbh > 0) {
-            $tipeLabel = match($trx['tipe_order'] ?? 'reguler') {
-                'express' => 'Biaya Express',
-                'kilat'   => 'Biaya Kilat',
-                default   => 'Biaya Tambahan',
-            };
+            // Prioritas: express_tier_nama (snapshot tier) → tipe_order generic
+            $tipeLabel = !empty($trx['express_tier_nama'])
+                ? 'Biaya ' . $trx['express_tier_nama']
+                : match($trx['tipe_order'] ?? 'reguler') {
+                    'express' => 'Biaya Express',
+                    'kilat'   => 'Biaya Kilat',
+                    default   => 'Biaya Tambahan',
+                  };
             $h .= self::tRow($tipeLabel, 'Rp ' . self::rpNum($biayaTbh), $maxChar);
         }
         if (!empty($tmpl['show_total'])) {
@@ -778,11 +781,13 @@ tbody tr:nth-child(even) td { background: #f8faff; }
             $h .= "  <tr><td>Diskon</td><td class='r'>−Rp " . self::rpNum($trx['diskon']) . "</td></tr>\n";
         }
         if ($biayaTbhPdf > 0) {
-            $tipeLabel = match($trx['tipe_order'] ?? 'reguler') {
-                'express' => 'Biaya Express',
-                'kilat'   => 'Biaya Kilat',
-                default   => 'Biaya Tambahan',
-            };
+            $tipeLabel = !empty($trx['express_tier_nama'])
+                ? 'Biaya ' . $trx['express_tier_nama']
+                : match($trx['tipe_order'] ?? 'reguler') {
+                    'express' => 'Biaya Express',
+                    'kilat'   => 'Biaya Kilat',
+                    default   => 'Biaya Tambahan',
+                  };
             $h .= "  <tr><td>" . htmlspecialchars($tipeLabel) . "</td><td class='r'>+Rp " . self::rpNum($biayaTbhPdf) . "</td></tr>\n";
         }
         if (!empty($tmpl['show_total'])) {
