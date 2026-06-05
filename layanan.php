@@ -105,6 +105,94 @@ if ($action) {
         TenantQuery::update('hl_layanan', ['is_active'=>intval($d['is_active'])], 'id = ?', [intval($d['id'])]);
         echo json_encode(['success'=>true]); exit;
     }
+
+    // ── Tier Express CRUD ──
+    if ($action === 'tier_list') {
+        $lid = (int)($_GET['layanan_id'] ?? 0);
+        // Verifikasi layanan milik tenant ini sebelum return tier-nya
+        $own = TenantQuery::rawOne("SELECT id FROM hl_layanan WHERE id=? AND tenant_id=? AND outlet_id=?",
+                                    [$lid, $tid, $oid]);
+        if (!$own) { echo json_encode(['error'=>'Layanan tidak ditemukan']); exit; }
+        try {
+            $st = Database::get()->prepare(
+                "SELECT id, nama_tier, estimasi_jam, tipe_biaya, nilai_biaya, is_active, urutan
+                   FROM hl_layanan_express_tier
+                  WHERE layanan_id = ? ORDER BY urutan ASC, estimasi_jam DESC"
+            );
+            $st->execute([$lid]);
+            echo json_encode(['tiers' => $st->fetchAll(PDO::FETCH_ASSOC)]);
+        } catch (Throwable $e) {
+            echo json_encode(['error' => 'Tabel tier belum ada. Run migration: layanan_express_tier_migration.sql', 'tiers' => []]);
+        }
+        exit;
+    }
+
+    if ($action === 'tier_save' && $_SERVER['REQUEST_METHOD']==='POST') {
+        if (!hasPermission('layanan.edit') && !hasPermission('layanan.create')) {
+            echo json_encode(['error'=>'Akses ditolak']); exit;
+        }
+        verifyCsrf();
+        $d   = json_decode(file_get_contents('php://input'), true);
+        $lid = (int)($d['layanan_id'] ?? 0);
+        $own = TenantQuery::rawOne("SELECT id FROM hl_layanan WHERE id=? AND tenant_id=? AND outlet_id=?",
+                                    [$lid, $tid, $oid]);
+        if (!$own) { echo json_encode(['error'=>'Layanan tidak valid']); exit; }
+
+        $nama   = substr(trim((string)($d['nama_tier'] ?? '')), 0, 50);
+        $jam    = max(1, (int)($d['estimasi_jam'] ?? 0));
+        $tipe   = in_array($d['tipe_biaya'] ?? '', ['flat','percent'], true) ? $d['tipe_biaya'] : 'percent';
+        $nilai  = max(0, (float)($d['nilai_biaya'] ?? 0));
+        $aktif  = (int)($d['is_active'] ?? 1) ? 1 : 0;
+        $urut   = (int)($d['urutan'] ?? 0);
+        if ($nama === '' || $jam <= 0 || $nilai < 0) {
+            echo json_encode(['error'=>'Nama tier, estimasi jam, dan nilai wajib diisi (jam > 0)']); exit;
+        }
+
+        $db = Database::get();
+        try {
+            if (!empty($d['id'])) {
+                $st = $db->prepare("UPDATE hl_layanan_express_tier
+                                       SET nama_tier=?, estimasi_jam=?, tipe_biaya=?, nilai_biaya=?,
+                                           is_active=?, urutan=?
+                                     WHERE id=? AND layanan_id=?");
+                $st->execute([$nama, $jam, $tipe, $nilai, $aktif, $urut, (int)$d['id'], $lid]);
+            } else {
+                $st = $db->prepare("INSERT INTO hl_layanan_express_tier
+                                       (tenant_id, outlet_id, layanan_id, nama_tier, estimasi_jam,
+                                        tipe_biaya, nilai_biaya, is_active, urutan)
+                                     VALUES (?,?,?,?,?,?,?,?,?)");
+                $st->execute([$tid, $oid, $lid, $nama, $jam, $tipe, $nilai, $aktif, $urut]);
+            }
+            echo json_encode(['success'=>true]);
+        } catch (Throwable $e) {
+            $msg = $e->getMessage();
+            if (str_contains($msg, 'uniq_layanan_tier') || str_contains($msg, 'Duplicate')) {
+                echo json_encode(['error'=>'Nama tier "'.$nama.'" sudah ada di layanan ini']);
+            } else {
+                echo json_encode(['error'=>'Gagal simpan: '.$msg]);
+            }
+        }
+        exit;
+    }
+
+    if ($action === 'tier_delete' && $_SERVER['REQUEST_METHOD']==='POST') {
+        if (!hasPermission('layanan.delete') && !hasPermission('layanan.edit')) {
+            echo json_encode(['error'=>'Akses ditolak']); exit;
+        }
+        verifyCsrf();
+        $d = json_decode(file_get_contents('php://input'), true);
+        $tierId = (int)($d['id'] ?? 0);
+        // Verifikasi tier milik layanan tenant ini
+        $own = TenantQuery::rawOne(
+            "SELECT t.id FROM hl_layanan_express_tier t
+               JOIN hl_layanan l ON l.id = t.layanan_id
+              WHERE t.id=? AND l.tenant_id=? AND l.outlet_id=?",
+            [$tierId, $tid, $oid]
+        );
+        if (!$own) { echo json_encode(['error'=>'Tier tidak ditemukan']); exit; }
+        Database::get()->prepare("DELETE FROM hl_layanan_express_tier WHERE id=?")->execute([$tierId]);
+        echo json_encode(['success'=>true]); exit;
+    }
     if ($action === 'stats') {
         $total    = TenantQuery::count('hl_layanan', 'is_active=1');
         $kat      = TenantQuery::raw("SELECT COUNT(DISTINCT kategori) as c FROM hl_layanan WHERE tenant_id=? AND is_active=1", [$tid]);
@@ -266,6 +354,75 @@ input:checked + .toggle-slider::before{transform:translateX(18px)}
     </div>
   </div>
 </div>
+<!-- ════ Modal Tier Express ════ -->
+<div class="hl-modal-overlay" id="modalTier">
+  <div class="hl-modal" style="max-width:680px">
+    <div class="hl-modal-header">
+      <span class="hl-modal-title">⚡ Tier Express — <span id="tierLayananNama"></span></span>
+      <button class="hl-modal-close" onclick="closeTierModal()">✕</button>
+    </div>
+    <div class="hl-modal-body">
+      <input type="hidden" id="tier_layanan_id"/>
+
+      <div style="background:#FEF3C7;border:1px solid #FDE68A;border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#92400E;line-height:1.5;">
+        💡 Atur tier express untuk layanan ini. Saat POS membuat nota dengan layanan ini, kasir bisa pilih tier yang sesuai → biaya tambahan & estimasi selesai dihitung otomatis.
+      </div>
+
+      <!-- List tier -->
+      <div id="tierList" style="margin-bottom:16px;"></div>
+
+      <!-- Form tambah/edit tier -->
+      <div style="background:#F9FAFB;border:1px solid #E5E7EB;border-radius:10px;padding:14px;">
+        <div style="font-weight:600;font-size:13px;color:#374151;margin-bottom:10px;" id="tierFormTitle">➕ Tambah Tier Baru</div>
+        <input type="hidden" id="tf_id"/>
+        <div class="hl-form-row">
+          <div class="hl-form-group">
+            <label class="hl-label">Nama Tier <span class="req">*</span></label>
+            <input type="text" id="tf_nama" class="hl-input" placeholder="Express 12 Jam" maxlength="50"/>
+          </div>
+          <div class="hl-form-group">
+            <label class="hl-label">Estimasi Selesai (jam) <span class="req">*</span></label>
+            <input type="number" id="tf_jam" class="hl-input" placeholder="12" min="1" max="168"/>
+          </div>
+        </div>
+        <div class="hl-form-row">
+          <div class="hl-form-group">
+            <label class="hl-label">Tipe Biaya</label>
+            <select id="tf_tipe" class="hl-input" onchange="updateNilaiUnit()">
+              <option value="percent">Percent (% dari subtotal item)</option>
+              <option value="flat">Flat (Rp tetap)</option>
+            </select>
+          </div>
+          <div class="hl-form-group">
+            <label class="hl-label">Nilai <span class="req">*</span> <span id="nilaiUnit" style="color:var(--gray);font-weight:400;">(%)</span></label>
+            <input type="number" id="tf_nilai" class="hl-input" placeholder="30" min="0" step="any"/>
+          </div>
+        </div>
+        <div class="hl-form-row">
+          <div class="hl-form-group">
+            <label class="hl-label">Urutan</label>
+            <input type="number" id="tf_urutan" class="hl-input" value="0" min="0"/>
+          </div>
+          <div class="hl-form-group">
+            <label class="hl-label">Status</label>
+            <select id="tf_active" class="hl-input">
+              <option value="1">✅ Aktif</option>
+              <option value="0">⏸️ Nonaktif</option>
+            </select>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:10px;">
+          <button class="hl-btn hl-btn-outline hl-btn-sm" onclick="resetTierForm()">↺ Reset</button>
+          <button class="hl-btn hl-btn-primary hl-btn-sm" onclick="saveTier()">💾 Simpan Tier</button>
+        </div>
+      </div>
+    </div>
+    <div class="hl-modal-footer">
+      <button class="hl-btn hl-btn-outline" onclick="closeTierModal()">Tutup</button>
+    </div>
+  </div>
+</div>
+
 <?php renderToast(); ?>
 <script>
 let allLayanan = [];
@@ -338,6 +495,7 @@ function renderLayanan() {
     } else {
       actions = '';
       if (CAN_EDIT)   actions += `<button class="hl-btn hl-btn-outline hl-btn-sm" onclick="editLayanan(${l.id})">✏️ Edit</button>`;
+      if (CAN_EDIT)   actions += `<button class="hl-btn hl-btn-outline hl-btn-sm" onclick="openTierModal(${l.id}, ${JSON.stringify(l.nama).replace(/"/g,'&quot;')})" title="Atur tier express (12 jam, 6 jam, dll)">⚡ Tier</button>`;
       if (CAN_DELETE) actions += `<button class="hl-btn hl-btn-danger hl-btn-sm" onclick="deleteLayanan(${l.id})">🗑️</button>`;
       if (!actions)   actions  = `<span style="font-size:11px;color:var(--gray)">view only</span>`;
     }
@@ -372,6 +530,146 @@ function openModal(data=null) {
 }
 function editLayanan(id) { openModal(allLayanan.find(l=>l.id==id)); }
 function closeModal() { document.getElementById('modalLayanan').classList.remove('open'); }
+
+// ── Tier Express CRUD ──
+async function openTierModal(layananId, layananNama) {
+  document.getElementById('tier_layanan_id').value = layananId;
+  document.getElementById('tierLayananNama').textContent = layananNama || '';
+  resetTierForm();
+  document.getElementById('modalTier').classList.add('open');
+  await loadTiers(layananId);
+}
+function closeTierModal() { document.getElementById('modalTier').classList.remove('open'); }
+
+async function loadTiers(layananId) {
+  const list = document.getElementById('tierList');
+  list.innerHTML = '<div style="text-align:center;padding:14px;color:var(--gray);font-size:12px;">Memuat...</div>';
+  try {
+    const r = await fetch(`?action=tier_list&layanan_id=${layananId}`);
+    const d = await r.json();
+    if (d.error && d.tiers === undefined) { showToast(d.error, 'error'); list.innerHTML = ''; return; }
+    if (d.error) showToast(d.error, 'info');
+    renderTierList(d.tiers || []);
+  } catch (e) {
+    showToast('Gagal load tier: ' + e.message, 'error');
+    list.innerHTML = '';
+  }
+}
+
+function renderTierList(tiers) {
+  const list = document.getElementById('tierList');
+  if (!tiers.length) {
+    list.innerHTML = '<div style="text-align:center;padding:24px;color:var(--gray);font-size:13px;background:#F9FAFB;border:1px dashed #E5E7EB;border-radius:8px;">⚡ Belum ada tier. Tambah pakai form di bawah ↓</div>';
+    return;
+  }
+  list.innerHTML = `
+    <table style="width:100%;border-collapse:collapse;font-size:13px;">
+      <thead>
+        <tr style="background:#F3F4F6;text-align:left;">
+          <th style="padding:8px 10px;">Nama Tier</th>
+          <th style="padding:8px 10px;">Estimasi</th>
+          <th style="padding:8px 10px;">Biaya</th>
+          <th style="padding:8px 10px;">Status</th>
+          <th style="padding:8px 10px;text-align:right;">Aksi</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${tiers.map(t => `
+          <tr style="border-bottom:1px solid #F3F4F6;">
+            <td style="padding:10px;">⚡ <strong>${esc(t.nama_tier)}</strong></td>
+            <td style="padding:10px;color:#4B5563;">${t.estimasi_jam} jam</td>
+            <td style="padding:10px;">
+              ${t.tipe_biaya === 'flat'
+                ? '+Rp ' + Math.round(t.nilai_biaya).toLocaleString('id-ID')
+                : '+' + parseFloat(t.nilai_biaya) + '%'}
+            </td>
+            <td style="padding:10px;">${t.is_active == 1 ? '<span style="color:#059669;">● Aktif</span>' : '<span style="color:#9CA3AF;">○ Off</span>'}</td>
+            <td style="padding:10px;text-align:right;white-space:nowrap;">
+              <button class="hl-btn hl-btn-outline hl-btn-sm" onclick='editTier(${JSON.stringify(t)})'>✏️</button>
+              <button class="hl-btn hl-btn-danger hl-btn-sm" onclick="deleteTier(${t.id})">🗑️</button>
+            </td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>`;
+}
+
+function updateNilaiUnit() {
+  const tipe = document.getElementById('tf_tipe').value;
+  document.getElementById('nilaiUnit').textContent = tipe === 'flat' ? '(Rp)' : '(%)';
+  const input = document.getElementById('tf_nilai');
+  input.placeholder = tipe === 'flat' ? '5000' : '30';
+}
+
+function resetTierForm() {
+  document.getElementById('tf_id').value     = '';
+  document.getElementById('tf_nama').value   = '';
+  document.getElementById('tf_jam').value    = '';
+  document.getElementById('tf_tipe').value   = 'percent';
+  document.getElementById('tf_nilai').value  = '';
+  document.getElementById('tf_urutan').value = 0;
+  document.getElementById('tf_active').value = 1;
+  document.getElementById('tierFormTitle').textContent = '➕ Tambah Tier Baru';
+  updateNilaiUnit();
+}
+
+function editTier(t) {
+  document.getElementById('tf_id').value     = t.id;
+  document.getElementById('tf_nama').value   = t.nama_tier;
+  document.getElementById('tf_jam').value    = t.estimasi_jam;
+  document.getElementById('tf_tipe').value   = t.tipe_biaya;
+  document.getElementById('tf_nilai').value  = t.nilai_biaya;
+  document.getElementById('tf_urutan').value = t.urutan;
+  document.getElementById('tf_active').value = t.is_active;
+  document.getElementById('tierFormTitle').textContent = '✏️ Edit Tier';
+  updateNilaiUnit();
+}
+
+async function saveTier() {
+  const lid = document.getElementById('tier_layanan_id').value;
+  const payload = {
+    layanan_id:   parseInt(lid),
+    id:           document.getElementById('tf_id').value || null,
+    nama_tier:    document.getElementById('tf_nama').value.trim(),
+    estimasi_jam: parseInt(document.getElementById('tf_jam').value) || 0,
+    tipe_biaya:   document.getElementById('tf_tipe').value,
+    nilai_biaya:  parseFloat(document.getElementById('tf_nilai').value) || 0,
+    is_active:    parseInt(document.getElementById('tf_active').value),
+    urutan:       parseInt(document.getElementById('tf_urutan').value) || 0,
+  };
+  if (!payload.nama_tier || payload.estimasi_jam <= 0) {
+    showToast('Nama tier & estimasi jam wajib diisi', 'error'); return;
+  }
+  try {
+    const r = await fetch('?action=tier_save', {
+      method:'POST', headers:{'Content-Type':'application/json','X-CSRF-Token':csrfToken()},
+      body: JSON.stringify(payload)
+    });
+    const d = await r.json();
+    if (d.error) { showToast(d.error, 'error'); return; }
+    showToast('Tier tersimpan', 'success');
+    resetTierForm();
+    await loadTiers(lid);
+  } catch(e) {
+    showToast('Gagal simpan: ' + e.message, 'error');
+  }
+}
+
+async function deleteTier(id) {
+  if (!confirm('Hapus tier ini? Aksi tidak bisa di-undo.')) return;
+  try {
+    const r = await fetch('?action=tier_delete', {
+      method:'POST', headers:{'Content-Type':'application/json','X-CSRF-Token':csrfToken()},
+      body: JSON.stringify({id})
+    });
+    const d = await r.json();
+    if (d.error) { showToast(d.error, 'error'); return; }
+    showToast('Tier dihapus', 'success');
+    await loadTiers(document.getElementById('tier_layanan_id').value);
+  } catch(e) {
+    showToast('Gagal hapus: ' + e.message, 'error');
+  }
+}
 
 // ── Adjust harga (override) untuk layanan dari master ──
 async function openAdjust(l){
