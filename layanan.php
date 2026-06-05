@@ -106,23 +106,21 @@ if ($action) {
         echo json_encode(['success'=>true]); exit;
     }
 
-    // ── Tier Express CRUD ──
+    // ── Tier Express CRUD (GLOBAL per tenant) ──
     if ($action === 'tier_list') {
-        $lid = (int)($_GET['layanan_id'] ?? 0);
-        // Verifikasi layanan milik tenant ini sebelum return tier-nya
-        $own = TenantQuery::rawOne("SELECT id FROM hl_layanan WHERE id=? AND tenant_id=? AND outlet_id=?",
-                                    [$lid, $tid, $oid]);
-        if (!$own) { echo json_encode(['error'=>'Layanan tidak ditemukan']); exit; }
         try {
             $st = Database::get()->prepare(
                 "SELECT id, nama_tier, estimasi_jam, tipe_biaya, nilai_biaya, is_active, urutan
-                   FROM hl_layanan_express_tier
-                  WHERE layanan_id = ? ORDER BY urutan ASC, estimasi_jam DESC"
+                   FROM hl_express_tier
+                  WHERE tenant_id = ? ORDER BY urutan ASC, estimasi_jam DESC"
             );
-            $st->execute([$lid]);
+            $st->execute([$tid]);
             echo json_encode(['tiers' => $st->fetchAll(PDO::FETCH_ASSOC)]);
         } catch (Throwable $e) {
-            echo json_encode(['error' => 'Tabel tier belum ada. Run migration: layanan_express_tier_migration.sql', 'tiers' => []]);
+            echo json_encode([
+                'error' => 'Tabel tier belum ada. Run migration: express_tier_global_migration.sql',
+                'tiers' => []
+            ]);
         }
         exit;
     }
@@ -132,12 +130,7 @@ if ($action) {
             echo json_encode(['error'=>'Akses ditolak']); exit;
         }
         verifyCsrf();
-        $d   = json_decode(file_get_contents('php://input'), true);
-        $lid = (int)($d['layanan_id'] ?? 0);
-        $own = TenantQuery::rawOne("SELECT id FROM hl_layanan WHERE id=? AND tenant_id=? AND outlet_id=?",
-                                    [$lid, $tid, $oid]);
-        if (!$own) { echo json_encode(['error'=>'Layanan tidak valid']); exit; }
-
+        $d      = json_decode(file_get_contents('php://input'), true);
         $nama   = substr(trim((string)($d['nama_tier'] ?? '')), 0, 50);
         $jam    = max(1, (int)($d['estimasi_jam'] ?? 0));
         $tipe   = in_array($d['tipe_biaya'] ?? '', ['flat','percent'], true) ? $d['tipe_biaya'] : 'percent';
@@ -151,23 +144,25 @@ if ($action) {
         $db = Database::get();
         try {
             if (!empty($d['id'])) {
-                $st = $db->prepare("UPDATE hl_layanan_express_tier
-                                       SET nama_tier=?, estimasi_jam=?, tipe_biaya=?, nilai_biaya=?,
-                                           is_active=?, urutan=?
-                                     WHERE id=? AND layanan_id=?");
-                $st->execute([$nama, $jam, $tipe, $nilai, $aktif, $urut, (int)$d['id'], $lid]);
+                $st = $db->prepare(
+                    "UPDATE hl_express_tier
+                        SET nama_tier=?, estimasi_jam=?, tipe_biaya=?, nilai_biaya=?, is_active=?, urutan=?
+                      WHERE id=? AND tenant_id=?"
+                );
+                $st->execute([$nama, $jam, $tipe, $nilai, $aktif, $urut, (int)$d['id'], $tid]);
             } else {
-                $st = $db->prepare("INSERT INTO hl_layanan_express_tier
-                                       (tenant_id, outlet_id, layanan_id, nama_tier, estimasi_jam,
-                                        tipe_biaya, nilai_biaya, is_active, urutan)
-                                     VALUES (?,?,?,?,?,?,?,?,?)");
-                $st->execute([$tid, $oid, $lid, $nama, $jam, $tipe, $nilai, $aktif, $urut]);
+                $st = $db->prepare(
+                    "INSERT INTO hl_express_tier
+                        (tenant_id, outlet_id, nama_tier, estimasi_jam, tipe_biaya, nilai_biaya, is_active, urutan)
+                     VALUES (?,?,?,?,?,?,?,?)"
+                );
+                $st->execute([$tid, $oid, $nama, $jam, $tipe, $nilai, $aktif, $urut]);
             }
             echo json_encode(['success'=>true]);
         } catch (Throwable $e) {
             $msg = $e->getMessage();
-            if (str_contains($msg, 'uniq_layanan_tier') || str_contains($msg, 'Duplicate')) {
-                echo json_encode(['error'=>'Nama tier "'.$nama.'" sudah ada di layanan ini']);
+            if (str_contains($msg, 'uniq_tenant_tier') || str_contains($msg, 'Duplicate')) {
+                echo json_encode(['error'=>'Nama tier "'.$nama.'" sudah ada']);
             } else {
                 echo json_encode(['error'=>'Gagal simpan: '.$msg]);
             }
@@ -182,15 +177,8 @@ if ($action) {
         verifyCsrf();
         $d = json_decode(file_get_contents('php://input'), true);
         $tierId = (int)($d['id'] ?? 0);
-        // Verifikasi tier milik layanan tenant ini
-        $own = TenantQuery::rawOne(
-            "SELECT t.id FROM hl_layanan_express_tier t
-               JOIN hl_layanan l ON l.id = t.layanan_id
-              WHERE t.id=? AND l.tenant_id=? AND l.outlet_id=?",
-            [$tierId, $tid, $oid]
-        );
-        if (!$own) { echo json_encode(['error'=>'Tier tidak ditemukan']); exit; }
-        Database::get()->prepare("DELETE FROM hl_layanan_express_tier WHERE id=?")->execute([$tierId]);
+        Database::get()->prepare("DELETE FROM hl_express_tier WHERE id=? AND tenant_id=?")
+                       ->execute([$tierId, $tid]);
         echo json_encode(['success'=>true]); exit;
     }
     if ($action === 'stats') {
@@ -266,6 +254,7 @@ input:checked + .toggle-slider::before{transform:translateX(18px)}
     <div class="hl-stat-card purple">
       <?php if (hasPermission('layanan.create')): ?>
       <button class="hl-btn hl-btn-primary hl-btn-full" onclick="openModal()" style="margin-top:4px">+ Tambah Layanan</button>
+      <button class="hl-btn hl-btn-outline hl-btn-full" onclick="openTierModal()" style="margin-top:6px;background:rgba(255,255,255,0.1);border-color:rgba(255,255,255,0.3);color:#fff;" title="Atur tier express: 12 jam, 6 jam, kilat, dll">⚡ Kelola Tier Express</button>
       <?php else: ?>
       <span style="font-size:12px;color:rgba(255,255,255,.55)">View Only</span>
       <?php endif; ?>
@@ -354,18 +343,17 @@ input:checked + .toggle-slider::before{transform:translateX(18px)}
     </div>
   </div>
 </div>
-<!-- ════ Modal Tier Express ════ -->
+<!-- ════ Modal Tier Express GLOBAL ════ -->
 <div class="hl-modal-overlay" id="modalTier">
   <div class="hl-modal" style="max-width:680px">
     <div class="hl-modal-header">
-      <span class="hl-modal-title">⚡ Tier Express — <span id="tierLayananNama"></span></span>
+      <span class="hl-modal-title">⚡ Kelola Tier Express</span>
       <button class="hl-modal-close" onclick="closeTierModal()">✕</button>
     </div>
     <div class="hl-modal-body">
-      <input type="hidden" id="tier_layanan_id"/>
 
       <div style="background:#FEF3C7;border:1px solid #FDE68A;border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#92400E;line-height:1.5;">
-        💡 Atur tier express untuk layanan ini. Saat POS membuat nota dengan layanan ini, kasir bisa pilih tier yang sesuai → biaya tambahan & estimasi selesai dihitung otomatis.
+        💡 Tier ini berlaku untuk semua layanan. Di POS, kasir bisa pilih tier per item baris — 1 nota bisa campur reguler &amp; express. Biaya tambahan dihitung otomatis (flat atau % dari subtotal item).
       </div>
 
       <!-- List tier -->
@@ -495,7 +483,6 @@ function renderLayanan() {
     } else {
       actions = '';
       if (CAN_EDIT)   actions += `<button class="hl-btn hl-btn-outline hl-btn-sm" onclick="editLayanan(${l.id})">✏️ Edit</button>`;
-      if (CAN_EDIT)   actions += `<button class="hl-btn hl-btn-outline hl-btn-sm" onclick="openTierModal(${l.id}, ${JSON.stringify(l.nama).replace(/"/g,'&quot;')})" title="Atur tier express (12 jam, 6 jam, dll)">⚡ Tier</button>`;
       if (CAN_DELETE) actions += `<button class="hl-btn hl-btn-danger hl-btn-sm" onclick="deleteLayanan(${l.id})">🗑️</button>`;
       if (!actions)   actions  = `<span style="font-size:11px;color:var(--gray)">view only</span>`;
     }
@@ -531,21 +518,19 @@ function openModal(data=null) {
 function editLayanan(id) { openModal(allLayanan.find(l=>l.id==id)); }
 function closeModal() { document.getElementById('modalLayanan').classList.remove('open'); }
 
-// ── Tier Express CRUD ──
-async function openTierModal(layananId, layananNama) {
-  document.getElementById('tier_layanan_id').value = layananId;
-  document.getElementById('tierLayananNama').textContent = layananNama || '';
+// ── Tier Express GLOBAL CRUD ──
+async function openTierModal() {
   resetTierForm();
   document.getElementById('modalTier').classList.add('open');
-  await loadTiers(layananId);
+  await loadTiers();
 }
 function closeTierModal() { document.getElementById('modalTier').classList.remove('open'); }
 
-async function loadTiers(layananId) {
+async function loadTiers() {
   const list = document.getElementById('tierList');
   list.innerHTML = '<div style="text-align:center;padding:14px;color:var(--gray);font-size:12px;">Memuat...</div>';
   try {
-    const r = await fetch(`?action=tier_list&layanan_id=${layananId}`);
+    const r = await fetch(`?action=tier_list`);
     const d = await r.json();
     if (d.error && d.tiers === undefined) { showToast(d.error, 'error'); list.innerHTML = ''; return; }
     if (d.error) showToast(d.error, 'info');
@@ -626,9 +611,7 @@ function editTier(t) {
 }
 
 async function saveTier() {
-  const lid = document.getElementById('tier_layanan_id').value;
   const payload = {
-    layanan_id:   parseInt(lid),
     id:           document.getElementById('tf_id').value || null,
     nama_tier:    document.getElementById('tf_nama').value.trim(),
     estimasi_jam: parseInt(document.getElementById('tf_jam').value) || 0,
@@ -649,7 +632,7 @@ async function saveTier() {
     if (d.error) { showToast(d.error, 'error'); return; }
     showToast('Tier tersimpan', 'success');
     resetTierForm();
-    await loadTiers(lid);
+    await loadTiers();
   } catch(e) {
     showToast('Gagal simpan: ' + e.message, 'error');
   }
@@ -665,7 +648,7 @@ async function deleteTier(id) {
     const d = await r.json();
     if (d.error) { showToast(d.error, 'error'); return; }
     showToast('Tier dihapus', 'success');
-    await loadTiers(document.getElementById('tier_layanan_id').value);
+    await loadTiers();
   } catch(e) {
     showToast('Gagal hapus: ' + e.message, 'error');
   }

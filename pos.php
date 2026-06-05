@@ -26,20 +26,9 @@ if ($action) {
         echo json_encode($rows); exit;
     }
 
-    // Ambil union tier express dari beberapa layanan (dipakai POS dropdown)
-    if ($action === 'express_tiers' && $_SERVER['REQUEST_METHOD'] === 'POST') {
-        $body  = json_decode(file_get_contents('php://input'), true) ?: [];
-        $lids  = array_values(array_filter(array_map('intval', $body['layanan_ids'] ?? [])));
-        $tiers = ExpressTier::unionForLayananIds($lids);
-        echo json_encode(['tiers' => $tiers]); exit;
-    }
-
-    // Hitung biaya_tambahan + estimasi utk satu set items + nama tier
-    if ($action === 'calc_tier' && $_SERVER['REQUEST_METHOD'] === 'POST') {
-        $body  = json_decode(file_get_contents('php://input'), true) ?: [];
-        $items = $body['items']     ?? [];
-        $tier  = (string)($body['tier_name'] ?? '');
-        echo json_encode(ExpressTier::calculate($items, $tier)); exit;
+    // Ambil semua tier express GLOBAL utk tenant ini (dipakai POS dropdown per item)
+    if ($action === 'express_tiers') {
+        echo json_encode(['tiers' => ExpressTier::forTenant($tid)]); exit;
     }
 
     // SEARCH pelanggan — TENANT-SCOPED (lintas outlet)
@@ -257,22 +246,37 @@ if ($action) {
                 $redeemPoin = 0;
             }
 
-            // Biaya tambahan (express, jemput, dll) + tipe order
-            $biayaTbh   = floatval($data['biaya_tambahan'] ?? 0);
-            $tipeOrderRaw = trim((string)($data['tipe_order'] ?? 'reguler'));
-            // tipe_order sekarang DINAMIS — nama tier dari hl_layanan_express_tier
-            // (mis. "Express 12 Jam"). Untuk backward-compat, kalau valuenya
-            // 'reguler'/'express'/'kilat'/'custom' (Phase 2 lama), tetap valid.
-            // Kalau format baru (nama tier custom), simpan ke express_tier_nama
-            // dan derive tipe_order = 'express' (label group).
-            $stdTipe   = ['reguler','express','kilat','custom'];
-            if (in_array(strtolower($tipeOrderRaw), $stdTipe, true)) {
-                $tipeOrder       = strtolower($tipeOrderRaw);
-                $expressTierNama = null;
-            } else {
-                $tipeOrder       = 'express'; // group label
-                $expressTierNama = substr($tipeOrderRaw, 0, 50);
+            // Biaya tambahan = SUM dari per-item biaya_express (server-side
+            // re-compute supaya gak bisa di-tamper dari frontend).
+            // Load tier list global tenant sekali utk lookup cepat.
+            $tierMap = [];
+            foreach (ExpressTier::forTenant($tid) as $t) {
+                $tierMap[$t['nama_tier']] = $t;
             }
+            $biayaTbh = 0.0;
+            $itemsWithTier = [];
+            foreach ($items as $i => $item) {
+                $itTier = trim((string)($item['express_tier_nama'] ?? ''));
+                $itFee  = 0;
+                if ($itTier !== '' && isset($tierMap[$itTier])) {
+                    $t = $tierMap[$itTier];
+                    $sub = floatval($item['jumlah']) * floatval($item['harga_satuan']);
+                    $itFee = $t['tipe_biaya'] === 'flat'
+                        ? (float)$t['nilai_biaya']
+                        : round($sub * ((float)$t['nilai_biaya'] / 100));
+                    $biayaTbh += $itFee;
+                } else {
+                    $itTier = ''; // invalid tier name → drop
+                }
+                $itemsWithTier[$i] = ['express_tier_nama' => $itTier ?: null, 'biaya_express' => $itFee];
+            }
+            // Derive tipe_order + express_tier_nama dominant utk header
+            $dom = ExpressTier::dominantTier(array_map(
+                fn($i, $x) => array_merge($i, $x),
+                $items, $itemsWithTier
+            ));
+            $tipeOrder       = $dom['tipe_order'];
+            $expressTierNama = $dom['nama'];
 
             // Total final (subtotal − diskon + biaya tambahan)
             $diskonTotal = $diskon + $redeemValue;
@@ -329,15 +333,26 @@ if ($action) {
                 Loyalty::redeemInTx($db, $tid, $oid, (int)$pel_id, $redeemPoin, (int)$trx_id, $user['id']);
             }
 
-            // Insert items
-            $istmt = $db->prepare(
-                "INSERT INTO hl_transaksi_item
-                 (tenant_id,outlet_id,transaksi_id,layanan_id,nama_layanan,satuan,jumlah,harga_satuan,subtotal,catatan_item)
-                 VALUES (?,?,?,?,?,?,?,?,?,?)"
-            );
-            foreach ($items as $item) {
+            // Insert items — cek kolom tier ada (Phase 3 rebuild)
+            $hasItemTier = true;
+            try { $db->query("SELECT express_tier_nama, biaya_express FROM hl_transaksi_item LIMIT 1"); }
+            catch (Throwable) { $hasItemTier = false; }
+
+            $istmt = $hasItemTier
+                ? $db->prepare(
+                    "INSERT INTO hl_transaksi_item
+                     (tenant_id,outlet_id,transaksi_id,layanan_id,nama_layanan,satuan,jumlah,harga_satuan,subtotal,catatan_item,express_tier_nama,biaya_express)
+                     VALUES (?,?,?,?,?,?,?,?,?,?,?,?)"
+                  )
+                : $db->prepare(
+                    "INSERT INTO hl_transaksi_item
+                     (tenant_id,outlet_id,transaksi_id,layanan_id,nama_layanan,satuan,jumlah,harga_satuan,subtotal,catatan_item)
+                     VALUES (?,?,?,?,?,?,?,?,?,?)"
+                  );
+
+            foreach ($items as $i => $item) {
                 $sub = floatval($item['jumlah']) * floatval($item['harga_satuan']);
-                $istmt->execute([
+                $vals = [
                     $tid, $oid, $trx_id,
                     $item['layanan_id'] ?: null,
                     substr(trim(strip_tags($item['nama_layanan'])), 0, 100),
@@ -345,8 +360,13 @@ if ($action) {
                     $item['jumlah'],
                     $item['harga_satuan'],
                     $sub,
-                    substr(trim(strip_tags($item['catatan_item'] ?? '')), 0, 255)
-                ]);
+                    substr(trim(strip_tags($item['catatan_item'] ?? '')), 0, 255),
+                ];
+                if ($hasItemTier) {
+                    $vals[] = $itemsWithTier[$i]['express_tier_nama'] ?? null;
+                    $vals[] = $itemsWithTier[$i]['biaya_express']     ?? 0;
+                }
+                $istmt->execute($vals);
             }
 
             // Log status masuk (hl_proses_log tidak punya outlet_id)
@@ -755,6 +775,7 @@ textarea{resize:vertical;min-height:64px}
                   <th style="width:70px">Jumlah</th>
                   <th style="width:100px">Harga/Sat</th>
                   <th style="width:90px">Subtotal</th>
+                  <th style="width:140px">⚡ Express</th>
                   <th style="width:80px">Catatan</th>
                   <th style="width:36px"></th>
                 </tr>
@@ -865,22 +886,12 @@ textarea{resize:vertical;min-height:64px}
               <div id="redeemInfo" style="font-size:11px;color:#0891B2;margin-top:5px;display:none"></div>
             </div>
 
-            <div class="form-row cols2">
-              <div class="form-group">
-                <label>Tipe Order
-                  <span style="font-size:10px;color:var(--gray);font-weight:400;">— tier dari konfigurasi layanan</span>
-                </label>
-                <select id="f_tipe_order" onchange="onTipeOrderChange()">
-                  <option value="reguler">⏱️ Reguler</option>
-                  <!-- Tier express auto-populate via JS sesuai layanan yang dipilih -->
-                </select>
-              </div>
-              <div class="form-group">
-                <label>Biaya Tambahan (Rp)
-                  <span id="biayaAutoBadge" style="font-size:10px;color:#0F7B6C;font-weight:600;display:none;">⚡ AUTO</span>
-                </label>
-                <input type="number" id="f_biaya_tambahan" value="0" min="0" oninput="onBiayaManualEdit()"/>
-              </div>
+            <!-- Biaya Tambahan now auto-derived dari per-item tier (read-only display) -->
+            <div class="form-group" id="biayaTambahanBox" style="display:none;background:#FEF3C7;border:1px solid #FDE68A;border-radius:8px;padding:10px 14px;margin-bottom:8px;font-size:12.5px;color:#92400E;">
+              ⚡ <strong>Total Biaya Express:</strong> Rp <span id="biayaTotalDisplay">0</span>
+              <span style="display:block;font-size:11px;color:#A16207;margin-top:2px;">Otomatis dari pilihan tier di tiap baris item</span>
+              <input type="hidden" id="f_biaya_tambahan" value="0"/>
+              <input type="hidden" id="f_tipe_order" value="reguler"/>
             </div>
 
             <div class="form-row cols3">
@@ -1025,6 +1036,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Kosongkan estimasi dulu — loadEstimasiHint akan isi otomatis sesuai antrian
   loadLayanan();
   loadEstimasiHint();
+  loadGlobalTiers();
 
   // ── KEYBOARD SHORTCUTS ──
   document.addEventListener('keydown', (e) => {
@@ -1118,28 +1130,28 @@ function addLayananItem(id, nama, satuan, harga) {
   const existIdx = items.findIndex(i => i.layanan_id == id && !i.catatan_item);
   if (existIdx >= 0) {
     items[existIdx].jumlah += 1;
-    renderItems(); recalc(); refreshTierDropdown();
+    renderItems(); recalc();
     showToast('Quantity ' + nama + ' +1', 'success');
     return;
   }
   const existWithNote = items.findIndex(i => i.layanan_id == id && i.catatan_item);
   if (existWithNote >= 0) {
     if (confirm(nama + ' sudah ada di daftar.\n\nOK = Tambah baris baru\nBatal = Tidak jadi')) {
-      items.push({layanan_id:id,nama_layanan:nama,satuan,jumlah:1,harga_satuan:harga,catatan_item:''});
-      renderItems(); recalc(); refreshTierDropdown();
+      items.push({layanan_id:id,nama_layanan:nama,satuan,jumlah:1,harga_satuan:harga,catatan_item:'',express_tier_nama:null,biaya_express:0});
+      renderItems(); recalc();
     }
     return;
   }
-  items.push({layanan_id:id,nama_layanan:nama,satuan,jumlah:1,harga_satuan:harga,catatan_item:''});
-  renderItems(); recalc(); refreshTierDropdown();
+  items.push({layanan_id:id,nama_layanan:nama,satuan,jumlah:1,harga_satuan:harga,catatan_item:'',express_tier_nama:null,biaya_express:0});
+  renderItems(); recalc();
 }
 
 function addEmptyRow() {
-  items.push({layanan_id:null,nama_layanan:'',satuan:'kg',jumlah:1,harga_satuan:0,catatan_item:''});
+  items.push({layanan_id:null,nama_layanan:'',satuan:'kg',jumlah:1,harga_satuan:0,catatan_item:'',express_tier_nama:null,biaya_express:0});
   renderItems();
 }
 
-function removeItem(idx) { items.splice(idx,1); renderItems(); recalc(); refreshTierDropdown(); }
+function removeItem(idx) { items.splice(idx,1); renderItems(); recalc(); }
 
 function renderItems() {
   const tbody = document.getElementById('itemsBody');
@@ -1164,6 +1176,13 @@ function renderItems() {
       <td data-lbl="Harga"><input class="item-input" type="number" value="${item.harga_satuan}" min="0" step="500" style="width:96px"
         oninput="items[${i}].harga_satuan=parseFloat(this.value)||0;recalc()"/></td>
       <td data-lbl="Subtotal" class="item-subtotal">Rp ${(item.jumlah*item.harga_satuan).toLocaleString('id-ID')}</td>
+      <td data-lbl="Express">
+        <select class="item-input" style="width:130px;font-size:11px;" onchange="onItemTierChange(${i}, this.value)">
+          <option value="">⏱️ Reguler</option>
+          ${availableTiers.map(t => `<option value="${esc(t.nama_tier)}" ${item.express_tier_nama===t.nama_tier?'selected':''}>⚡ ${esc(t.nama_tier)}</option>`).join('')}
+        </select>
+        ${item.biaya_express > 0 ? `<div style="font-size:10px;color:#92400E;margin-top:2px;">+Rp ${Math.round(item.biaya_express).toLocaleString('id-ID')}</div>` : ''}
+      </td>
       <td data-lbl="Catatan"><input class="item-input" value="${esc(item.catatan_item)}" placeholder="..."
         style="width:72px" oninput="items[${i}].catatan_item=this.value"/></td>
       <td><button class="btn-remove" onclick="removeItem(${i})">✕ Hapus</button></td>
@@ -1171,100 +1190,107 @@ function renderItems() {
 }
 
 // ────────────────────────────────────────────────────
-// Express Tier — dropdown dinamis + auto-calc biaya & estimasi
+// Express Tier — GLOBAL list, dipilih PER ITEM
 // ────────────────────────────────────────────────────
-let availableTiers   = [];  // {nama_tier, estimasi_jam} dari union layanan
-let lastSelectedTier = 'reguler';
-let biayaManualEdit  = false; // user overwrite manual → jangan auto-replace
+let availableTiers = [];  // {nama_tier, estimasi_jam, tipe_biaya, nilai_biaya}
 
-async function refreshTierDropdown() {
-  const layananIds = [...new Set(items.map(i => parseInt(i.layanan_id)||0).filter(x => x>0))];
-  if (layananIds.length === 0) {
-    availableTiers = [];
-    renderTierDropdown();
-    return;
-  }
+// Load tier sekali saat halaman ready
+async function loadGlobalTiers() {
   try {
-    const r = await fetch('pos.php?action=express_tiers', {
-      method:'POST', headers:{'Content-Type':'application/json','X-CSRF-Token':csrfToken()},
-      body: JSON.stringify({layanan_ids: layananIds})
-    });
+    const r = await fetch('pos.php?action=express_tiers');
     const d = await r.json();
     availableTiers = d.tiers || [];
-    renderTierDropdown();
   } catch(e) {
     availableTiers = [];
-    renderTierDropdown();
   }
 }
 
-function renderTierDropdown() {
-  const sel = document.getElementById('f_tipe_order');
-  if (!sel) return;
-  const prev = sel.value;
-  let html = '<option value="reguler">⏱️ Reguler</option>';
-  availableTiers.forEach(t => {
-    const label = `⚡ ${t.nama_tier} (${t.estimasi_jam}j${t.layanan_count > 1 ? ' • ' + t.layanan_count + ' layanan' : ''})`;
-    html += `<option value="${esc(t.nama_tier)}">${esc(label)}</option>`;
-  });
-  sel.innerHTML = html;
-  // Restore selection kalau masih valid; else fallback ke reguler
-  sel.value = [...sel.options].some(o => o.value === prev) ? prev : 'reguler';
-  if (sel.value !== prev) onTipeOrderChange();
-}
-
-async function onTipeOrderChange() {
-  const sel = document.getElementById('f_tipe_order');
-  const tier = sel.value;
-  lastSelectedTier = tier;
-  // Reset flag manual edit kalau user pilih tier baru — biarkan auto-fill
-  biayaManualEdit = false;
-  document.getElementById('biayaAutoBadge').style.display = tier === 'reguler' ? 'none' : 'inline';
-
-  if (tier === 'reguler' || items.length === 0) {
-    document.getElementById('f_biaya_tambahan').value = 0;
-    recalc();
-    return;
-  }
-
-  try {
-    const r = await fetch('pos.php?action=calc_tier', {
-      method:'POST', headers:{'Content-Type':'application/json','X-CSRF-Token':csrfToken()},
-      body: JSON.stringify({tier_name: tier, items: items.map(i => ({
-        layanan_id: i.layanan_id, jumlah: i.jumlah, harga_satuan: i.harga_satuan
-      }))})
-    });
-    const d = await r.json();
-    document.getElementById('f_biaya_tambahan').value = d.biaya_tambahan || 0;
-    // Update estimasi_selesai (tambah jam dari tier ke tanggal nota)
-    if (d.estimasi_jam > 0) {
-      const tglEl = document.getElementById('f_tanggal');
-      const baseDate = tglEl?.value ? new Date(tglEl.value + 'T08:00:00') : new Date();
-      baseDate.setHours(baseDate.getHours() + d.estimasi_jam);
-      const yyyy = baseDate.getFullYear();
-      const mm   = String(baseDate.getMonth()+1).padStart(2,'0');
-      const dd   = String(baseDate.getDate()).padStart(2,'0');
-      const estEl = document.getElementById('f_estimasi');
-      if (estEl) estEl.value = `${yyyy}-${mm}-${dd}`;
-    }
-    if (d.matched_count === 0) {
-      showToast(`Tier "${tier}" tidak ada di layanan yang dipilih — biaya 0`, 'info');
-    }
-    recalc();
-  } catch(e) {
-    console.error('Gagal calc tier', e);
-  }
-}
-
-function onBiayaManualEdit() {
-  biayaManualEdit = true;
+// Pas user pilih/ubah tier di satu baris item → recompute fee item + total
+function onItemTierChange(idx, tierName) {
+  const item = items[idx];
+  if (!item) return;
+  item.express_tier_nama = tierName || null;
+  item.biaya_express = computeItemFee(item);
+  // Update estimasi nota: ambil max estimasi_jam dari semua tier yg dipilih
+  applyMaxEstimasi();
+  renderItems();
   recalc();
 }
 
+function computeItemFee(item) {
+  if (!item.express_tier_nama) return 0;
+  const tier = availableTiers.find(t => t.nama_tier === item.express_tier_nama);
+  if (!tier) return 0;
+  const sub = (item.jumlah || 0) * (item.harga_satuan || 0);
+  if (tier.tipe_biaya === 'flat') return Math.round(parseFloat(tier.nilai_biaya) || 0);
+  return Math.round(sub * (parseFloat(tier.nilai_biaya) || 0) / 100);
+}
+
+// Re-compute SEMUA item fee (dipanggil saat jumlah/harga item berubah)
+function recomputeAllItemFees() {
+  items.forEach(it => { it.biaya_express = computeItemFee(it); });
+}
+
+// Tanggal estimasi nota = tanggal + jam tier terlama dari item-item yg express
+function applyMaxEstimasi() {
+  let maxJam = 0;
+  items.forEach(it => {
+    if (!it.express_tier_nama) return;
+    const tier = availableTiers.find(t => t.nama_tier === it.express_tier_nama);
+    if (tier && tier.estimasi_jam > maxJam) maxJam = parseInt(tier.estimasi_jam);
+  });
+  if (maxJam <= 0) return; // ada item express? kalau tidak, biarkan estimasi default
+  const tglEl = document.getElementById('f_tanggal');
+  const baseDate = tglEl?.value ? new Date(tglEl.value + 'T08:00:00') : new Date();
+  baseDate.setHours(baseDate.getHours() + maxJam);
+  const yyyy = baseDate.getFullYear();
+  const mm = String(baseDate.getMonth()+1).padStart(2,'0');
+  const dd = String(baseDate.getDate()).padStart(2,'0');
+  const estEl = document.getElementById('f_estimasi');
+  if (estEl) estEl.value = `${yyyy}-${mm}-${dd}`;
+}
+
+// Derive tipe_order dominant utk dikirim ke backend
+function deriveDominantTipeOrder() {
+  const counts = {};
+  items.forEach(it => {
+    if (!it.express_tier_nama) return;
+    counts[it.express_tier_nama] = (counts[it.express_tier_nama] || 0) + 1;
+  });
+  if (Object.keys(counts).length === 0) {
+    return { tipe_order: 'reguler', express_tier_nama: null };
+  }
+  // Ambil yg paling sering
+  const top = Object.entries(counts).sort((a,b) => b[1]-a[1])[0][0];
+  const lower = top.toLowerCase();
+  const tipe = lower.includes('kilat') ? 'kilat' :
+               lower.includes('express') ? 'express' : 'custom';
+  return { tipe_order: tipe, express_tier_nama: top };
+}
+
 function recalc() {
+  // Re-compute item fees (in case jumlah/harga berubah)
+  recomputeAllItemFees();
   const subtotal = items.reduce((s,i) => s + i.jumlah*i.harga_satuan, 0);
   const diskon   = parseFloat(document.getElementById('f_diskon').value)||0;
-  const biayaTbh = parseFloat(document.getElementById('f_biaya_tambahan')?.value)||0;
+  const biayaTbh = items.reduce((s,i) => s + (i.biaya_express || 0), 0);
+  // Sync ke hidden input & display
+  const bhEl = document.getElementById('f_biaya_tambahan');
+  if (bhEl) bhEl.value = biayaTbh;
+  const dominant = deriveDominantTipeOrder();
+  const tipeEl = document.getElementById('f_tipe_order');
+  if (tipeEl) tipeEl.value = dominant.tipe_order;
+  // Box display
+  const box = document.getElementById('biayaTambahanBox');
+  const disp = document.getElementById('biayaTotalDisplay');
+  if (box && disp) {
+    if (biayaTbh > 0) {
+      box.style.display = 'block';
+      disp.textContent = biayaTbh.toLocaleString('id-ID');
+    } else {
+      box.style.display = 'none';
+    }
+  }
 
   // Loyalty redeem → diskon
   let redeemValue = 0, redeemPoin = 0;
@@ -1743,7 +1769,7 @@ function removeVoucher() {
 
 function resetForm() {
   items = []; appliedVoucher = null;
-  renderItems(); recalc(); refreshTierDropdown();
+  renderItems(); recalc();
   ['f_nama','f_telepon','f_catatan'].forEach(id => document.getElementById(id).value='');
   document.getElementById('f_diskon').value='0';
   document.getElementById('f_dp').value='0';

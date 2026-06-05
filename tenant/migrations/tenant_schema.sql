@@ -135,10 +135,9 @@ CREATE TABLE IF NOT EXISTS hl_transaksi (
   FOREIGN KEY (pelanggan_id) REFERENCES hl_pelanggan(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- ── Tier Express per Layanan ────────────────────────
-CREATE TABLE IF NOT EXISTS hl_layanan_express_tier (
+-- ── Tier Express GLOBAL per Tenant ──────────────────
+CREATE TABLE IF NOT EXISTS hl_express_tier (
   id              INT          AUTO_INCREMENT PRIMARY KEY,
-  layanan_id      INT          NOT NULL,
   nama_tier       VARCHAR(50)  NOT NULL,    -- "Express 12 Jam", "Kilat 3 Jam"
   estimasi_jam    INT          NOT NULL,    -- jam dari masuk → siap
   tipe_biaya      ENUM('flat','percent') NOT NULL DEFAULT 'percent',
@@ -147,9 +146,8 @@ CREATE TABLE IF NOT EXISTS hl_layanan_express_tier (
   urutan          INT          DEFAULT 0,
   created_at      TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
   updated_at      TIMESTAMP    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  UNIQUE KEY uniq_layanan_tier (layanan_id, nama_tier),
-  INDEX idx_layanan (layanan_id, is_active),
-  FOREIGN KEY (layanan_id) REFERENCES hl_layanan(id) ON DELETE CASCADE
+  UNIQUE KEY uniq_tenant_tier (nama_tier),
+  INDEX idx_active (is_active, urutan)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS hl_transaksi_item (
@@ -162,6 +160,8 @@ CREATE TABLE IF NOT EXISTS hl_transaksi_item (
   harga_satuan  DECIMAL(12,2) DEFAULT 0,
   subtotal      DECIMAL(12,2) DEFAULT 0,
   catatan_item  TEXT          DEFAULT NULL,
+  express_tier_nama VARCHAR(50) DEFAULT NULL,    -- snapshot tier per item
+  biaya_express DECIMAL(12,2) DEFAULT 0,         -- biaya tambahan per item
   FOREIGN KEY (transaksi_id) REFERENCES hl_transaksi(id) ON DELETE CASCADE,
   FOREIGN KEY (layanan_id)   REFERENCES hl_layanan(id)   ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

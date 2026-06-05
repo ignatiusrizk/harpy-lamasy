@@ -461,6 +461,12 @@ body {
 
                 $h .= "<div>{$nama}</div>\n";
                 $h .= self::tRow("  {$qty} × Rp {$harga}", "Rp {$sub}", $maxChar);
+                // Per-item express tier (Phase 3 rebuild)
+                $itTier = trim((string)($item['express_tier_nama'] ?? ''));
+                $itFee  = (float)($item['biaya_express'] ?? 0);
+                if ($itTier !== '' && $itFee > 0) {
+                    $h .= self::tRow("  ⚡ {$itTier}", "+Rp " . self::rpNum($itFee), $maxChar);
+                }
             }
         }
 
@@ -755,9 +761,14 @@ tbody tr:nth-child(even) td { background: #f8faff; }
         $no = 1;
         foreach ($items as $item) {
             $qty = rtrim(rtrim(number_format((float)$item['jumlah'], 2), '0'), '.') . ' ' . ($item['satuan'] ?? 'kg');
+            $itTier = trim((string)($item['express_tier_nama'] ?? ''));
+            $itFee  = (float)($item['biaya_express'] ?? 0);
+            $tierBadge = ($itTier !== '' && $itFee > 0)
+                ? "<br><small style='color:#92400E;'>⚡ {$itTier} +Rp " . self::rpNum($itFee) . "</small>"
+                : '';
             $h .= "    <tr>
       <td>{$no}</td>
-      <td>" . self::esc($item['nama_layanan']) . "</td>
+      <td>" . self::esc($item['nama_layanan']) . $tierBadge . "</td>
       <td class='r'>{$qty}</td>
       <td class='r'>Rp " . self::rpNum($item['harga_satuan']) . "</td>
       <td class='r'>Rp " . self::rpNum($item['subtotal']) . "</td>
