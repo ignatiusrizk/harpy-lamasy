@@ -254,7 +254,7 @@ input:checked + .toggle-slider::before{transform:translateX(18px)}
     <div class="hl-stat-card purple">
       <?php if (hasPermission('layanan.create')): ?>
       <button class="hl-btn hl-btn-primary hl-btn-full" onclick="openModal()" style="margin-top:4px">+ Tambah Layanan</button>
-      <button class="hl-btn hl-btn-outline hl-btn-full" onclick="openTierModal()" style="margin-top:6px;background:rgba(255,255,255,0.1);border-color:rgba(255,255,255,0.3);color:#fff;" title="Atur tier express: 12 jam, 6 jam, kilat, dll">⚡ Kelola Tier Express</button>
+      <button class="hl-btn hl-btn-full" onclick="openTierModal()" style="margin-top:6px;background:#F59E0B;color:#fff;border:none;" title="Atur tier express: 12 jam, 6 jam, kilat, dll">⚡ Kelola Tier Express</button>
       <?php else: ?>
       <span style="font-size:12px;color:rgba(255,255,255,.55)">View Only</span>
       <?php endif; ?>
