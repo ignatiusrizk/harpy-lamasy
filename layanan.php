@@ -73,8 +73,9 @@ if ($action) {
             TenantQuery::update('hl_layanan', [
                 'nama'     => $nama,
                 'kategori' => $kategori,
-                'satuan'   => $d['satuan'] ?? 'kg',
-                'harga'    => floatval($d['harga'] ?? 0),
+                'satuan'      => $d['satuan'] ?? 'kg',
+                'harga'       => floatval($d['harga'] ?? 0),
+                'qty_minimum' => max(0, floatval($d['qty_minimum'] ?? 0)),
                 'is_active'=> intval($d['is_active'] ?? 1),
                 'urutan'   => intval($d['urutan'] ?? 0),
             ], 'id = ?', [intval($d['id'])]);
@@ -82,8 +83,9 @@ if ($action) {
             TenantQuery::insert('hl_layanan', [
                 'nama'     => $nama,
                 'kategori' => $kategori,
-                'satuan'   => $d['satuan'] ?? 'kg',
-                'harga'    => floatval($d['harga'] ?? 0),
+                'satuan'      => $d['satuan'] ?? 'kg',
+                'harga'       => floatval($d['harga'] ?? 0),
+                'qty_minimum' => max(0, floatval($d['qty_minimum'] ?? 0)),
                 'urutan'   => intval($d['urutan'] ?? 0),
                 'is_active'=> 1,
             ]);
@@ -325,6 +327,12 @@ input:checked + .toggle-slider::before{transform:translateX(18px)}
           <input type="number" id="f_harga" class="hl-input" placeholder="0" min="0" step="500"/>
         </div>
         <div class="hl-form-group">
+          <label class="hl-label">Min. Order <span style="color:var(--gray);font-weight:400;font-size:11px;">— 0 = tidak ada minimum</span></label>
+          <input type="number" id="f_qty_min" class="hl-input" value="0" min="0" step="0.5" placeholder="0"/>
+        </div>
+      </div>
+      <div class="hl-form-row">
+        <div class="hl-form-group">
           <label class="hl-label">Urutan Tampil</label>
           <input type="number" id="f_urutan" class="hl-input" value="0" min="0"/>
         </div>
@@ -510,6 +518,7 @@ function openModal(data=null) {
   document.getElementById('f_kat').value    = data?.kategori || '';
   document.getElementById('f_satuan').value = data?.satuan || 'kg';
   document.getElementById('f_harga').value  = data?.harga || '';
+  document.getElementById('f_qty_min').value = data?.qty_minimum || 0;
   document.getElementById('f_urutan').value = data?.urutan || 0;
   document.getElementById('f_active').value = data?.is_active ?? 1;
   document.getElementById('modalTitle').textContent = data ? '✏️ Edit Layanan' : '➕ Tambah Layanan';
@@ -691,10 +700,11 @@ async function saveLayanan() {
     method:'POST', headers:{'Content-Type':'application/json','X-CSRF-Token':csrfToken()},
     body: JSON.stringify({
       id: document.getElementById('f_id').value, nama, harga,
-      kategori: document.getElementById('f_kat').value,
-      satuan:   document.getElementById('f_satuan').value,
-      urutan:   document.getElementById('f_urutan').value,
-      is_active:document.getElementById('f_active').value,
+      kategori:    document.getElementById('f_kat').value,
+      satuan:      document.getElementById('f_satuan').value,
+      qty_minimum: document.getElementById('f_qty_min').value,
+      urutan:      document.getElementById('f_urutan').value,
+      is_active:   document.getElementById('f_active').value,
     })
   });
   const d = await r.json();

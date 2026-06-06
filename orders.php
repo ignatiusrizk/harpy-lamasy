@@ -133,6 +133,21 @@ if ($action) {
         echo json_encode($t); exit;
     }
 
+    // UPLOAD FOTO PICKUP — dokumentasi saat cucian diambil pelanggan
+    if ($action === 'upload_foto_pickup' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+        if (!hasPermission('orders.edit') && !hasPermission('orders.update_status')) {
+            echo json_encode(['error'=>'Akses ditolak']); exit;
+        }
+        verifyCsrf();
+        require_once ROOT . '/core/FileUpload.php';
+        $f = $_FILES['foto'] ?? null;
+        if (!$f) { echo json_encode(['error'=>'File foto tidak ditemukan']); exit; }
+        $res = FileUpload::uploadImage($f, 'uploads/foto_pickup', 't' . $tid . '_o' . $oid);
+        if (!empty($res['error'])) { echo json_encode(['error'=>$res['error']]); exit; }
+        echo json_encode(['ok'=>true, 'path'=>$res['path']]);
+        exit;
+    }
+
     // UPDATE order
     if ($action === 'update' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!hasPermission('orders.edit') && !hasPermission('orders.update_status')) {
@@ -186,6 +201,17 @@ if ($action) {
                 $dp, $sisa, $diskon, $total, $subtotal > 0 ? $subtotal : null,
                 $data['estimasi'] ?: null,
             ];
+            // Foto pickup — disimpan saat status 'diambil' & ada foto dari upload
+            $fotoPickup = trim((string)($data['foto_pickup'] ?? ''));
+            if ($fotoPickup !== '' && $sp === 'diambil') {
+                $hasFotoPickup = true;
+                try { $db->query("SELECT foto_pickup FROM hl_transaksi LIMIT 1"); }
+                catch (Throwable) { $hasFotoPickup = false; }
+                if ($hasFotoPickup) {
+                    $setParts[] = 'foto_pickup=?';
+                    $params[]   = substr($fotoPickup, 0, 255);
+                }
+            }
             if ($stampSelesai) {
                 $setParts[] = 'tgl_selesai = CASE WHEN tgl_selesai IS NULL THEN CURDATE() ELSE tgl_selesai END';
             }
@@ -1383,6 +1409,16 @@ async function openDetail(id) {
         <input type="date" id="edit_estimasi" value="${d.estimasi_selesai||''}"/>
       </div>
     </div>
+    <div class="section-title">📸 Dokumentasi Pickup <span style="font-size:11px;font-weight:500;color:var(--gray)">— foto bukti saat pelanggan ambil</span></div>
+    <div id="fotoPickupBox" style="margin-bottom:12px;${d.status_proses!=='diambil'?'display:none;':''}">
+      ${d.foto_pickup ? `
+        <div style="margin-bottom:8px"><img src="/${esc(d.foto_pickup)}" alt="Foto Pickup" style="max-width:200px;border-radius:8px;border:1px solid rgba(27,45,90,.1)"/></div>
+      ` : ''}
+      <input type="file" id="edit_foto_pickup_file" accept="image/*" onchange="uploadFotoPickup(this)" style="font-size:12px"/>
+      <input type="hidden" id="edit_foto_pickup_path" value="${d.foto_pickup||''}"/>
+      <div id="fotoPickupStatus" style="font-size:11px;color:var(--gray);margin-top:4px"></div>
+    </div>
+
     <div class="section-title">📝 Catatan</div>
     <div class="form-group">
       <label>Catatan untuk Pelanggan</label>
@@ -1493,6 +1529,31 @@ function setProses(val, el) {
   document.getElementById('edit_status_proses').value = val;
   document.querySelectorAll('.step-btn').forEach(b => b.classList.remove('active'));
   el.classList.add('active');
+  // Show/hide foto pickup section (muncul saat status 'diambil')
+  const fpBox = document.getElementById('fotoPickupBox');
+  if (fpBox) fpBox.style.display = val === 'diambil' ? 'block' : 'none';
+}
+
+// ── FOTO PICKUP UPLOAD ───────────────────────────────
+async function uploadFotoPickup(input) {
+  const file = input.files?.[0];
+  if (!file) return;
+  const status = document.getElementById('fotoPickupStatus');
+  status.textContent = '⏳ Upload foto...';
+  const fd = new FormData();
+  fd.append('foto', file);
+  fd.append('_csrf', csrfToken());
+  try {
+    const r = await fetch('orders.php?action=upload_foto_pickup', {
+      method:'POST', headers:{'X-CSRF-Token':csrfToken()}, body: fd
+    });
+    const d = await r.json();
+    if (d.error) { status.textContent = '❌ ' + d.error; return; }
+    document.getElementById('edit_foto_pickup_path').value = d.path;
+    status.innerHTML = '✅ Foto siap disimpan saat klik Simpan';
+  } catch(e) {
+    status.textContent = '❌ Gagal upload: ' + e.message;
+  }
 }
 
 // ── EDIT ITEMS ────────────────────────────────────────
@@ -1570,6 +1631,7 @@ async function saveEdit() {
     diskon:           document.getElementById('edit_diskon').value,
     dp:               document.getElementById('edit_dp').value,
     estimasi:         document.getElementById('edit_estimasi').value,
+    foto_pickup:      document.getElementById('edit_foto_pickup_path')?.value || '',
     items:            editItems
   };
 

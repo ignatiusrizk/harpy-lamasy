@@ -176,6 +176,25 @@ if ($action) {
             if (empty($item['nama_layanan']))               { echo json_encode(['error'=>'Nama layanan tidak boleh kosong']); exit; }
         }
 
+        // Validasi minimum order per layanan (kalau layanan-nya punya qty_minimum > 0)
+        try {
+            $db = Database::get();
+            foreach ($items as $item) {
+                $lid = (int)($item['layanan_id'] ?? 0);
+                if ($lid <= 0) continue;
+                $minRow = $db->prepare("SELECT qty_minimum, satuan, nama FROM hl_layanan WHERE id=? AND tenant_id=? LIMIT 1");
+                $minRow->execute([$lid, $tid]);
+                $row = $minRow->fetch(PDO::FETCH_ASSOC);
+                if (!$row) continue;
+                $qMin = (float)($row['qty_minimum'] ?? 0);
+                if ($qMin > 0 && (float)$item['jumlah'] < $qMin) {
+                    echo json_encode([
+                        'error' => "Jumlah '{$row['nama']}' di bawah minimum order ({$qMin} {$row['satuan']})"
+                    ]); exit;
+                }
+            }
+        } catch (Throwable) { /* kolom qty_minimum belum ada — skip check */ }
+
         $db = Database::get();
         $db->beginTransaction();
         try {
@@ -1127,6 +1146,12 @@ function filterLayanan(q) {
 }
 
 function addLayananItem(id, nama, satuan, harga) {
+  // Lookup layanan utk qty_minimum
+  const lyn = (layananAll || []).find(l => l.id == id) || {};
+  const qMin = parseFloat(lyn.qty_minimum) || 0;
+  // Default jumlah = qty_minimum kalau ada, else 1
+  const defaultJml = qMin > 0 ? qMin : 1;
+
   const existIdx = items.findIndex(i => i.layanan_id == id && !i.catatan_item);
   if (existIdx >= 0) {
     items[existIdx].jumlah += 1;
@@ -1137,13 +1162,14 @@ function addLayananItem(id, nama, satuan, harga) {
   const existWithNote = items.findIndex(i => i.layanan_id == id && i.catatan_item);
   if (existWithNote >= 0) {
     if (confirm(nama + ' sudah ada di daftar.\n\nOK = Tambah baris baru\nBatal = Tidak jadi')) {
-      items.push({layanan_id:id,nama_layanan:nama,satuan,jumlah:1,harga_satuan:harga,catatan_item:'',express_tier_nama:null,biaya_express:0});
+      items.push({layanan_id:id,nama_layanan:nama,satuan,jumlah:defaultJml,harga_satuan:harga,catatan_item:'',express_tier_nama:null,biaya_express:0,qty_minimum:qMin});
       renderItems(); recalc();
     }
     return;
   }
-  items.push({layanan_id:id,nama_layanan:nama,satuan,jumlah:1,harga_satuan:harga,catatan_item:'',express_tier_nama:null,biaya_express:0});
+  items.push({layanan_id:id,nama_layanan:nama,satuan,jumlah:defaultJml,harga_satuan:harga,catatan_item:'',express_tier_nama:null,biaya_express:0,qty_minimum:qMin});
   renderItems(); recalc();
+  if (qMin > 0) showToast(`Min. order ${nama}: ${qMin} ${satuan}`, 'info');
 }
 
 function addEmptyRow() {
@@ -1171,8 +1197,11 @@ function renderItems() {
       <td data-lbl="Satuan"><select class="item-input" style="width:64px" onchange="items[${i}].satuan=this.value">
         ${['kg','pcs','set','pasang'].map(s=>`<option value="${s}" ${item.satuan===s?'selected':''}>${s}</option>`).join('')}
       </select></td>
-      <td data-lbl="Jumlah"><input class="item-input" type="number" value="${item.jumlah}" min="0.1" step="0.1" style="width:64px"
-        oninput="items[${i}].jumlah=parseFloat(this.value)||0;recalc()"/></td>
+      <td data-lbl="Jumlah">
+        <input class="item-input" type="number" value="${item.jumlah}" min="0.1" step="0.1" style="width:64px;${item.qty_minimum > 0 && item.jumlah < item.qty_minimum ? 'border:1px solid #DC2626;background:#FEF2F2;' : ''}"
+          oninput="items[${i}].jumlah=parseFloat(this.value)||0;recalc()"/>
+        ${item.qty_minimum > 0 ? `<div style="font-size:9px;color:${item.jumlah < item.qty_minimum ? '#DC2626' : '#6B7280'};margin-top:1px;">min ${item.qty_minimum}</div>` : ''}
+      </td>
       <td data-lbl="Harga"><input class="item-input" type="number" value="${item.harga_satuan}" min="0" step="500" style="width:96px"
         oninput="items[${i}].harga_satuan=parseFloat(this.value)||0;recalc()"/></td>
       <td data-lbl="Subtotal" class="item-subtotal">Rp ${(item.jumlah*item.harga_satuan).toLocaleString('id-ID')}</td>
