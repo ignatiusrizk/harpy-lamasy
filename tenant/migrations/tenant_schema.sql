@@ -85,6 +85,39 @@ CREATE TABLE IF NOT EXISTS hl_pelanggan (
   INDEX idx_nama    (nama)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- ── Member Tier ───────────────────────────────────────
+CREATE TABLE IF NOT EXISTS hl_member_tier (
+  id                INT AUTO_INCREMENT PRIMARY KEY,
+  nama_tier         VARCHAR(50)  NOT NULL,
+  masa_aktif_tipe   ENUM('bulan','tahun','seumur') NOT NULL DEFAULT 'bulan',
+  masa_aktif_nilai  INT          NOT NULL DEFAULT 12,
+  biaya_pendaftaran DECIMAL(12,2) NOT NULL DEFAULT 0,
+  diskon_persen     DECIMAL(5,2) NOT NULL DEFAULT 0,
+  is_active         TINYINT(1)   NOT NULL DEFAULT 1,
+  urutan            INT          DEFAULT 0,
+  created_at        TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
+  updated_at        TIMESTAMP    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY uniq_tier (nama_tier)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS hl_pelanggan_member (
+  id              INT AUTO_INCREMENT PRIMARY KEY,
+  pelanggan_id    INT          NOT NULL,
+  member_tier_id  INT          NOT NULL,
+  tgl_mulai       DATE         NOT NULL,
+  tgl_kadaluarsa  DATE         DEFAULT NULL,
+  biaya_dibayar   DECIMAL(12,2) NOT NULL DEFAULT 0,
+  status          ENUM('aktif','expired','dibatalkan') DEFAULT 'aktif',
+  catatan         TEXT         DEFAULT NULL,
+  registered_by   INT          DEFAULT NULL,
+  created_at      TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
+  updated_at      TIMESTAMP    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_pelanggan (pelanggan_id, status),
+  INDEX idx_expiry (tgl_kadaluarsa, status),
+  FOREIGN KEY (pelanggan_id)   REFERENCES hl_pelanggan(id)    ON DELETE CASCADE,
+  FOREIGN KEY (member_tier_id) REFERENCES hl_member_tier(id)  ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 -- ── Layanan & Harga ───────────────────────────────────
 CREATE TABLE IF NOT EXISTS hl_layanan (
   id          INT AUTO_INCREMENT PRIMARY KEY,

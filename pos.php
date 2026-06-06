@@ -4,6 +4,7 @@ define('ROOT', __DIR__);
 require_once ROOT . '/middleware/tenant_guard.php';
 require_once ROOT . '/core/Loyalty.php';
 require_once ROOT . '/core/ExpressTier.php';
+require_once ROOT . '/core/MemberTier.php';
 require_once __DIR__ . '/components.php';
 $user = currentUser();
 requirePermission('pos.view');
@@ -29,6 +30,14 @@ if ($action) {
     // Ambil semua tier express GLOBAL utk tenant ini (dipakai POS dropdown per item)
     if ($action === 'express_tiers') {
         echo json_encode(['tiers' => ExpressTier::forTenant($tid)]); exit;
+    }
+
+    // Cek apakah pelanggan punya membership aktif (utk POS badge & auto-diskon preview)
+    if ($action === 'check_member') {
+        $pid = (int)($_GET['pelanggan_id'] ?? 0);
+        if ($pid <= 0) { echo json_encode(['member' => null]); exit; }
+        $mem = MemberTier::activeForPelanggan($tid, $pid);
+        echo json_encode(['member' => $mem]); exit;
     }
 
     // SEARCH pelanggan — TENANT-SCOPED (lintas outlet)
@@ -297,8 +306,19 @@ if ($action) {
             $tipeOrder       = $dom['tipe_order'];
             $expressTierNama = $dom['nama'];
 
-            // Total final (subtotal − diskon + biaya tambahan)
-            $diskonTotal = $diskon + $redeemValue;
+            // Member auto-discount (kalau pelanggan member dgn tier diskon > 0)
+            $memberDiskon = 0;
+            $memberLabel  = null;
+            if ($pel_id) {
+                [$memberDiskon, $memberLabel] = MemberTier::calcMemberDiscount($tid, (int)$pel_id, (float)$subtotal);
+                if ($memberDiskon > 0) {
+                    $catatanAdd = "Auto-diskon: $memberLabel (-Rp " . number_format($memberDiskon,0,',','.') . ")";
+                    $catatan = $catatan === '' ? $catatanAdd : ($catatan . ' · ' . $catatanAdd);
+                }
+            }
+
+            // Total final (subtotal − diskon − member_diskon + biaya tambahan)
+            $diskonTotal = $diskon + $redeemValue + $memberDiskon;
             $total    = max(0, $subtotal - $diskonTotal + $biayaTbh);
             $dp       = floatval($data['dp'] ?? 0);
             $sisa     = $total - $dp;
@@ -757,6 +777,10 @@ textarea{resize:vertical;min-height:64px}
             <div class="form-group">
               <label>No. Telepon <span class="req">*</span></label>
               <input type="tel" id="f_telepon" placeholder="08xxxxxxxxxx"/>
+            </div>
+            <!-- Member badge — muncul saat pelanggan punya membership aktif -->
+            <div class="form-group full" id="memberBadgeBox" style="display:none;background:#FEF3C7;border:1px solid #FDE68A;border-radius:8px;padding:8px 14px;margin:4px 0;font-size:12.5px;color:#92400E;">
+              <!-- isi auto by loadMemberInfo() -->
             </div>
             <div class="form-group full">
               <label>Catatan Order</label>
@@ -1399,6 +1423,30 @@ function selectPelanggan(id, nama, telp, poin) {
   document.getElementById('aiNotifDot').style.display = 'block';
   // Fetch info detail (poin, tier, segmen, rewards, preferensi)
   loadPelangganInfo(id);
+  // Fetch info member tier (Tier 1b — Smartlink-inspired)
+  loadMemberInfo(id);
+}
+
+// ── Member Tier auto-detect ──
+async function loadMemberInfo(pid) {
+  try {
+    const r = await fetch('pos.php?action=check_member&pelanggan_id=' + pid);
+    const d = await r.json();
+    const box = document.getElementById('memberBadgeBox');
+    if (!box) return;
+    if (d.member && parseFloat(d.member.diskon_persen) > 0) {
+      box.style.display = 'block';
+      box.innerHTML = `⭐ <strong>Member ${esc(d.member.nama_tier)}</strong> — auto-diskon <strong>${parseFloat(d.member.diskon_persen)}%</strong> akan diterapkan otomatis saat simpan.${d.member.tgl_kadaluarsa?` <span style="color:#92400E;font-size:11px">(berlaku s/d ${d.member.tgl_kadaluarsa})</span>`:''}`;
+    } else if (d.member) {
+      box.style.display = 'block';
+      box.style.background = '#F0FDF4';
+      box.style.borderColor = '#BBF7D0';
+      box.style.color = '#166534';
+      box.innerHTML = `⭐ Member <strong>${esc(d.member.nama_tier)}</strong>`;
+    } else {
+      box.style.display = 'none';
+    }
+  } catch(e) { /* silent */ }
 }
 
 async function loadPelangganInfo(id){
