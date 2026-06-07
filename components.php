@@ -168,6 +168,7 @@ function renderTopbar(string $activePage = '', bool $minimalMode = false): void 
         'settings' => [
             'label' => 'Settings',
             'items' => [
+                'outlet-settings' => ['label'=>'Outlet & Nota',  'url'=>'/outlet-settings', 'perm'=>'settings.roles'],
                 'struk'        => ['label'=>'Struk & Invoice',   'url'=>'/struk',        'perm'=>'settings.roles'],
                 'settings'     => ['label'=>'Role & Permission', 'url'=>'/settings',     'perm'=>'settings.roles'],
                 'audit'        => ['label'=>'Audit Log',         'url'=>'/audit',         'perm'=>'audit.view'],
@@ -228,7 +229,7 @@ function renderTopbar(string $activePage = '', bool $minimalMode = false): void 
     $iconMap = [
       'dashboard'=>'🏠','pos'=>'🛒','orders'=>'📋','kas'=>'💰',
       'laporan'=>'📊','layanan'=>'🧺','promo'=>'🎟️','customer'=>'👥','member'=>'⭐','approval-inbox'=>'📥',
-      'karyawan'=>'👤','absensi'=>'📅','settings'=>'⚙️','audit'=>'🔍',
+      'karyawan'=>'👤','absensi'=>'📅','settings'=>'⚙️','audit'=>'🔍','outlet-settings'=>'🏪',
       'checklist'=>'✅','droppoint'=>'📦','owner_report'=>'📨','piutang'=>'💼','kanban'=>'🗂️','struk'=>'🧾',
       'loyalty'=>'⭐','retention'=>'😴','support'=>'🎧','import'=>'📥',
     ];
