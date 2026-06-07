@@ -34,6 +34,21 @@ if ($action) {
         echo json_encode(['tiers' => ExpressTier::forTenant($tid, $oid)]); exit;
     }
 
+    // Load parfum list utk outlet ini (global + outlet-specific)
+    if ($action === 'parfum_list') {
+        try {
+            $st = Database::get()->prepare(
+                "SELECT nama FROM hl_parfum
+                  WHERE tenant_id=? AND is_active=1
+                    AND (outlet_id IS NULL OR outlet_id = ?)
+                  ORDER BY urutan ASC, nama ASC"
+            );
+            $st->execute([$tid, $oid]);
+            echo json_encode(['parfums' => array_column($st->fetchAll(PDO::FETCH_ASSOC), 'nama')]);
+        } catch (Throwable) { echo json_encode(['parfums'=>[]]); }
+        exit;
+    }
+
     // Cek apakah pelanggan punya membership aktif (utk POS badge & auto-diskon preview)
     if ($action === 'check_member') {
         $pid = (int)($_GET['pelanggan_id'] ?? 0);
@@ -787,14 +802,10 @@ textarea{resize:vertical;min-height:64px}
               <!-- isi auto by loadMemberInfo() -->
             </div>
             <div class="form-group">
-              <label>Parfum / Pewangi <span style="font-size:10px;color:var(--gray);font-weight:400;">— opsional</span></label>
+              <label>Parfum / Pewangi <span style="font-size:10px;color:var(--gray);font-weight:400;">— opsional, dari Master Parfum outlet</span></label>
               <input type="text" id="f_parfum" list="parfumList" placeholder="Lavender, Original, Rose, dll"/>
               <datalist id="parfumList">
-                <option value="Original"></option>
-                <option value="Lavender"></option>
-                <option value="Rose"></option>
-                <option value="Apple"></option>
-                <option value="Sakura"></option>
+                <!-- Auto-populate from /pos.php?action=parfum_list (per outlet) -->
               </datalist>
             </div>
             <div class="form-group full">
@@ -1095,6 +1106,7 @@ document.addEventListener('DOMContentLoaded', () => {
   loadLayanan();
   loadEstimasiHint();
   loadGlobalTiers();
+  loadParfumList();
 
   // ── KEYBOARD SHORTCUTS ──
   document.addEventListener('keydown', (e) => {
@@ -1261,6 +1273,18 @@ function renderItems() {
 // Express Tier — GLOBAL list, dipilih PER ITEM
 // ────────────────────────────────────────────────────
 let availableTiers = [];  // {nama_tier, estimasi_jam, tipe_biaya, nilai_biaya}
+
+// Load parfum dynamic (per outlet)
+async function loadParfumList() {
+  try {
+    const r = await fetch('pos.php?action=parfum_list');
+    const d = await r.json();
+    const dl = document.getElementById('parfumList');
+    if (!dl) return;
+    const items = d.parfums || [];
+    dl.innerHTML = items.map(p => `<option value="${p.replace(/"/g,'&quot;')}"></option>`).join('');
+  } catch(e) { /* silent */ }
+}
 
 // Load tier sekali saat halaman ready
 async function loadGlobalTiers() {

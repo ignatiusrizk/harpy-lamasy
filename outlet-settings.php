@@ -76,6 +76,62 @@ if ($action) {
         exit;
     }
 
+    // ── Parfum CRUD (per outlet atau global) ──
+    if ($action === 'parfum_list') {
+        try {
+            $st = $db->prepare(
+                "SELECT p.*, o.nama_outlet
+                   FROM hl_parfum p
+              LEFT JOIN outlets o ON o.id = p.outlet_id
+                  WHERE p.tenant_id = ?
+                  ORDER BY p.outlet_id IS NULL DESC, p.urutan ASC, p.nama ASC"
+            );
+            $st->execute([$tid]);
+            echo json_encode(['rows' => $st->fetchAll(PDO::FETCH_ASSOC)]);
+        } catch (Throwable $e) {
+            echo json_encode(['error'=>'Tabel hl_parfum belum ada. Run migration parfum.', 'rows'=>[]]);
+        }
+        exit;
+    }
+
+    if ($action === 'parfum_save' && $_SERVER['REQUEST_METHOD']==='POST') {
+        verifyCsrf();
+        $d    = json_decode(file_get_contents('php://input'), true);
+        $nama = substr(trim((string)($d['nama'] ?? '')), 0, 50);
+        $oid_p = !empty($d['outlet_id']) ? (int)$d['outlet_id'] : null;
+        $aktif = (int)($d['is_active'] ?? 1) ? 1 : 0;
+        $urut  = (int)($d['urutan'] ?? 0);
+        if ($nama === '') { echo json_encode(['error'=>'Nama parfum wajib']); exit; }
+        // Verifikasi outlet
+        if ($oid_p !== null) {
+            $own = TenantQuery::rawOne("SELECT id FROM outlets WHERE id=? AND tenant_id=?", [$oid_p, $tid]);
+            if (!$own) { echo json_encode(['error'=>'Outlet tidak valid']); exit; }
+        }
+        try {
+            if (!empty($d['id'])) {
+                $st = $db->prepare("UPDATE hl_parfum SET nama=?, outlet_id=?, is_active=?, urutan=? WHERE id=? AND tenant_id=?");
+                $st->execute([$nama, $oid_p, $aktif, $urut, (int)$d['id'], $tid]);
+            } else {
+                $st = $db->prepare("INSERT INTO hl_parfum (tenant_id, outlet_id, nama, is_active, urutan) VALUES (?,?,?,?,?)");
+                $st->execute([$tid, $oid_p, $nama, $aktif, $urut]);
+            }
+            echo json_encode(['success'=>true]);
+        } catch (Throwable $e) {
+            $msg = $e->getMessage();
+            echo json_encode(['error' => str_contains($msg, 'uniq_tenant_parfum') || str_contains($msg, 'Duplicate')
+                ? "Parfum \"$nama\" sudah ada" : 'Gagal: '.$msg]);
+        }
+        exit;
+    }
+
+    if ($action === 'parfum_delete' && $_SERVER['REQUEST_METHOD']==='POST') {
+        verifyCsrf();
+        $d = json_decode(file_get_contents('php://input'), true);
+        $db->prepare("DELETE FROM hl_parfum WHERE id=? AND tenant_id=?")->execute([(int)($d['id']??0), $tid]);
+        echo json_encode(['success'=>true]);
+        exit;
+    }
+
     exit;
 }
 
@@ -94,6 +150,55 @@ renderHeader('🏪 Outlet & Nota Settings', [
   </div>
 
   <div id="outletList" style="min-height:150px">⏳ Memuat...</div>
+
+  <!-- ════ Master Parfum ════ -->
+  <div style="background:#FEF3C7;border:1px solid #FDE68A;border-radius:10px;padding:14px 18px;margin:24px 0 14px;font-size:13px;color:#92400E;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+    <div>
+      🌸 <strong>Master Parfum</strong> — daftar pilihan parfum yg muncul di POS. Bisa di-scope ke outlet tertentu (mis. outlet mall punya parfum premium beda).
+    </div>
+    <button class="hl-btn hl-btn-primary hl-btn-sm" onclick="openParfumModal()">+ Tambah Parfum</button>
+  </div>
+  <div id="parfumList" style="min-height:80px">⏳ Memuat...</div>
+</div>
+
+<!-- Modal Parfum -->
+<div class="hl-modal-overlay" id="modalParfum">
+  <div class="hl-modal hl-modal-sm">
+    <div class="hl-modal-header">
+      <span class="hl-modal-title" id="parfumModalTitle">🌸 Tambah Parfum</span>
+      <button class="hl-modal-close" onclick="closeParfumModal()">✕</button>
+    </div>
+    <div class="hl-modal-body">
+      <input type="hidden" id="pf_id"/>
+      <div class="hl-form-group">
+        <label class="hl-label">Nama Parfum <span class="req">*</span></label>
+        <input type="text" id="pf_nama" class="hl-input" placeholder="Lavender, Rose, Apple, dll" maxlength="50"/>
+      </div>
+      <div class="hl-form-row">
+        <div class="hl-form-group">
+          <label class="hl-label">Berlaku di Outlet</label>
+          <select id="pf_outlet" class="hl-input">
+            <option value="">🌍 Semua outlet</option>
+          </select>
+        </div>
+        <div class="hl-form-group">
+          <label class="hl-label">Urutan</label>
+          <input type="number" id="pf_urutan" class="hl-input" value="0"/>
+        </div>
+      </div>
+      <div class="hl-form-group">
+        <label class="hl-label">Status</label>
+        <select id="pf_active" class="hl-input">
+          <option value="1">✅ Aktif</option>
+          <option value="0">⏸️ Nonaktif</option>
+        </select>
+      </div>
+    </div>
+    <div class="hl-modal-footer">
+      <button class="hl-btn hl-btn-outline" onclick="closeParfumModal()">Batal</button>
+      <button class="hl-btn hl-btn-primary" onclick="saveParfum()">💾 Simpan</button>
+    </div>
+  </div>
 </div>
 
 <!-- Modal edit format -->
@@ -246,7 +351,110 @@ async function saveFormat() {
   loadOutlets();
 }
 
-document.addEventListener('DOMContentLoaded', loadOutlets);
+// ── PARFUM CRUD ──
+let allOutletsForParfum = [];
+async function loadParfum() {
+  const list = document.getElementById('parfumList');
+  list.innerHTML = '<div style="padding:14px;text-align:center;color:var(--gray)">⏳ Memuat parfum...</div>';
+  const r = await fetch('?action=parfum_list');
+  const d = await r.json();
+  if (d.error) {
+    list.innerHTML = `<div style="background:#FEF2F2;border:1px solid #FCA5A5;padding:10px 14px;border-radius:8px;color:#991B1B;font-size:12px">${esc(d.error)}</div>`;
+    return;
+  }
+  const rows = d.rows || [];
+  if (!rows.length) {
+    list.innerHTML = '<div style="padding:24px;text-align:center;color:var(--gray);font-size:13px;background:#F9FAFB;border:1px dashed #E5E7EB;border-radius:8px">🌸 Belum ada parfum. Klik "Tambah Parfum" untuk mulai.</div>';
+    return;
+  }
+  list.innerHTML = `<table style="width:100%;border-collapse:collapse;font-size:13px;background:#fff;border-radius:8px;overflow:hidden;border:1px solid #E5E7EB">
+    <thead><tr style="background:#F3F4F6;text-align:left">
+      <th style="padding:10px 12px">Nama Parfum</th>
+      <th style="padding:10px 12px">Berlaku Di</th>
+      <th style="padding:10px 12px">Status</th>
+      <th style="padding:10px 12px;text-align:right"></th>
+    </tr></thead>
+    <tbody>${rows.map(r => `
+      <tr style="border-top:1px solid #F3F4F6">
+        <td style="padding:10px 12px"><strong>🌸 ${esc(r.nama)}</strong></td>
+        <td style="padding:10px 12px;font-size:12px;${r.outlet_id?'color:#0F7B6C':'color:#6B7280'}">${r.outlet_id ? '🏪 '+esc(r.nama_outlet||'Outlet '+r.outlet_id) : '🌍 Semua outlet'}</td>
+        <td style="padding:10px 12px">${r.is_active==1?'<span style="color:#059669">●Aktif</span>':'<span style="color:#9CA3AF">○Off</span>'}</td>
+        <td style="padding:10px 12px;text-align:right;white-space:nowrap">
+          <button class="hl-btn hl-btn-outline hl-btn-sm" onclick='editParfum(${JSON.stringify(r)})'>✏️</button>
+          <button class="hl-btn hl-btn-danger hl-btn-sm" onclick="deleteParfum(${r.id})">🗑️</button>
+        </td>
+      </tr>`).join('')}</tbody></table>`;
+}
+
+async function populateParfumOutlets() {
+  if (allOutletsForParfum.length > 0) return;
+  const r = await fetch('?action=list');
+  const d = await r.json();
+  allOutletsForParfum = d.rows || [];
+  const sel = document.getElementById('pf_outlet');
+  sel.innerHTML = '<option value="">🌍 Semua outlet</option>' +
+    allOutletsForParfum.map(o => `<option value="${o.id}">🏪 ${esc(o.nama_outlet)}</option>`).join('');
+}
+
+async function openParfumModal() {
+  await populateParfumOutlets();
+  document.getElementById('parfumModalTitle').textContent = '🌸 Tambah Parfum';
+  document.getElementById('pf_id').value = '';
+  document.getElementById('pf_nama').value = '';
+  document.getElementById('pf_outlet').value = '';
+  document.getElementById('pf_urutan').value = 0;
+  document.getElementById('pf_active').value = 1;
+  document.getElementById('modalParfum').classList.add('open');
+}
+function closeParfumModal() { document.getElementById('modalParfum').classList.remove('open'); }
+
+async function editParfum(r) {
+  await populateParfumOutlets();
+  document.getElementById('parfumModalTitle').textContent = '✏️ Edit Parfum';
+  document.getElementById('pf_id').value = r.id;
+  document.getElementById('pf_nama').value = r.nama;
+  document.getElementById('pf_outlet').value = r.outlet_id || '';
+  document.getElementById('pf_urutan').value = r.urutan;
+  document.getElementById('pf_active').value = r.is_active;
+  document.getElementById('modalParfum').classList.add('open');
+}
+
+async function saveParfum() {
+  const payload = {
+    id: document.getElementById('pf_id').value || null,
+    nama: document.getElementById('pf_nama').value.trim(),
+    outlet_id: document.getElementById('pf_outlet').value || null,
+    is_active: parseInt(document.getElementById('pf_active').value),
+    urutan: parseInt(document.getElementById('pf_urutan').value)||0,
+  };
+  if (!payload.nama) { showToast('Nama wajib','error'); return; }
+  const r = await fetch('?action=parfum_save', {
+    method:'POST', headers:{'Content-Type':'application/json','X-CSRF-Token':csrfToken()},
+    body: JSON.stringify(payload)
+  });
+  const d = await r.json();
+  if (d.error) { showToast(d.error,'error'); return; }
+  showToast('Parfum disimpan','success');
+  closeParfumModal();
+  loadParfum();
+}
+
+async function deleteParfum(id) {
+  if (!confirm('Hapus parfum ini?')) return;
+  const r = await fetch('?action=parfum_delete', {
+    method:'POST', headers:{'Content-Type':'application/json','X-CSRF-Token':csrfToken()},
+    body: JSON.stringify({id})
+  });
+  const d = await r.json();
+  if (d.error) { showToast(d.error,'error'); return; }
+  showToast('Parfum dihapus','success');
+  loadParfum();
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  loadOutlets();
+  loadParfum();
+});
 </script>
 
 <?php renderFooter(); ?>
