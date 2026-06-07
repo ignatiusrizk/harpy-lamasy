@@ -1,8 +1,10 @@
 -- ══════════════════════════════════════════════════════
 -- Migration: Parfum field + Custom Nota Number Format
--- Inspired by Smartlink:
--- - "Parfum: parfum laundry" field di Pengaturan Transaksi
--- - "Nomor Nota Premium" — custom format prefix/suffix
+--
+-- FIX v2: nota_prefix & nota_format ditaruh di `outlets` (bukan
+-- saas_tenants). Ini lebih bagus:
+-- - Per-outlet (tiap outlet bisa custom prefix, mis. JKT-001, BDG-001)
+-- - Tetap di tenant DB, gak perlu akses ke master DB
 -- ══════════════════════════════════════════════════════
 
 -- 1. Parfum field per nota
@@ -11,13 +13,10 @@ ALTER TABLE hl_transaksi
     COMMENT 'Pilihan parfum/pewangi cucian (mis. Lavender, Rose, Original)'
     AFTER catatan;
 
--- 2. Tenant settings utk format nota:
---    nota_prefix: prefix custom (default "HL-")
---    nota_format: template format (default "{PREFIX}{YYMMDD}-{COUNTER:3}")
---                 {PREFIX} {YYYY} {YY} {YYMMDD} {YYYYMMDD} {COUNTER:N} {OUTLET}
-ALTER TABLE saas_tenants
+-- 2. Per-outlet nota format
+ALTER TABLE outlets
   ADD COLUMN IF NOT EXISTS nota_prefix VARCHAR(20) DEFAULT 'HL-'
-    COMMENT 'Prefix nota custom per tenant',
+    COMMENT 'Prefix nota custom per outlet (mis. JKT-, BDG-)',
   ADD COLUMN IF NOT EXISTS nota_format VARCHAR(60) DEFAULT '{PREFIX}{YYMMDD}-{COUNTER:3}'
     COMMENT 'Template format nota. Token: {PREFIX} {YYMMDD} {COUNTER:N} {OUTLET}';
 

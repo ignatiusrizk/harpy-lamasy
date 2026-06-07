@@ -5,8 +5,8 @@
 // Generate nomor nota custom per tenant. Inspired by Smartlink
 // "Nomor Nota Premium" feature.
 //
-// Token yang didukung di template (saas_tenants.nota_format):
-//   {PREFIX}    → saas_tenants.nota_prefix (mis. "HL-", "HARPY-", "JL-")
+// Token yang didukung di template (outlets.nota_format):
+//   {PREFIX}    → outlets.nota_prefix (mis. "HL-", "HARPY-", "JL-")
 //   {YYYY}      → tahun 4 digit (2026)
 //   {YY}        → tahun 2 digit (26)
 //   {MM}        → bulan 2 digit (01-12)
@@ -96,34 +96,41 @@ class NotaFormatter
     }
 
     /**
-     * Load config nota dari saas_tenants. Fallback ke default kalau
-     * kolom belum ada (migration belum dijalankan).
+     * Load config nota dari `outlets` (per-outlet). Fallback ke default
+     * kalau kolom belum ada (migration belum dijalankan).
      */
     private static function loadTenantConfig(int $tenantId, int $outletId): array
     {
-        $defaults = ['prefix' => 'HL-', 'format' => '{PREFIX}{YYYYMMDD}-{COUNTER:3}'];
+        $defaults = [
+            'prefix' => 'HL-',
+            'format' => '{PREFIX}{YYYYMMDD}-{COUNTER:3}',
+            'outlet_kode' => 'O' . str_pad((string)$outletId, 2, '0', STR_PAD_LEFT),
+        ];
+        // 1 query, ambil prefix + format + nama outlet sekaligus
         try {
             $st = Database::get()->prepare(
-                "SELECT nota_prefix, nota_format FROM saas_tenants WHERE id=? LIMIT 1"
+                "SELECT nota_prefix, nota_format, nama_outlet FROM outlets WHERE id=? AND tenant_id=? LIMIT 1"
             );
-            $st->execute([$tenantId]);
+            $st->execute([$outletId, $tenantId]);
             $row = $st->fetch(PDO::FETCH_ASSOC);
             if ($row) {
-                $defaults['prefix'] = $row['nota_prefix'] ?: 'HL-';
-                $defaults['format'] = $row['nota_format'] ?: $defaults['format'];
+                if (!empty($row['nota_prefix'])) $defaults['prefix'] = $row['nota_prefix'];
+                if (!empty($row['nota_format'])) $defaults['format'] = $row['nota_format'];
+                $nm = (string)($row['nama_outlet'] ?? '');
+                if ($nm !== '') {
+                    $defaults['outlet_kode'] = strtoupper(substr(preg_replace('/[^A-Za-z]/', '', $nm), 0, 3));
+                }
             }
-        } catch (Throwable) { /* kolom belum ada → pakai default */ }
-
-        // Outlet kode (3 char dari nama, fallback ke ID)
-        try {
-            $st = Database::get()->prepare("SELECT nama FROM hl_outlets WHERE id=? LIMIT 1");
-            $st->execute([$outletId]);
-            $nm = (string)$st->fetchColumn();
-            $defaults['outlet_kode'] = $nm !== ''
-                ? strtoupper(substr(preg_replace('/[^A-Za-z]/', '', $nm), 0, 3))
-                : 'O' . str_pad((string)$outletId, 2, '0', STR_PAD_LEFT);
         } catch (Throwable) {
-            $defaults['outlet_kode'] = 'O' . str_pad((string)$outletId, 2, '0', STR_PAD_LEFT);
+            // kolom belum ada → coba query tanpa nota_prefix/nota_format
+            try {
+                $st = Database::get()->prepare("SELECT nama_outlet FROM outlets WHERE id=? AND tenant_id=? LIMIT 1");
+                $st->execute([$outletId, $tenantId]);
+                $nm = (string)$st->fetchColumn();
+                if ($nm !== '') {
+                    $defaults['outlet_kode'] = strtoupper(substr(preg_replace('/[^A-Za-z]/', '', $nm), 0, 3));
+                }
+            } catch (Throwable) {}
         }
         return $defaults;
     }
