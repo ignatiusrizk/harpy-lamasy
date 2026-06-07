@@ -95,6 +95,16 @@ if ($action) {
         echo json_encode(['success'=>true]); exit;
     }
 
+    // LIST outlets (utk dropdown "Berlaku di Outlet" di form voucher)
+    if ($action === 'outlets') {
+        try {
+            $st = Database::get()->prepare("SELECT id, nama_outlet FROM outlets WHERE tenant_id=? ORDER BY is_main DESC, id ASC");
+            $st->execute([$tid]);
+            echo json_encode(['outlets' => $st->fetchAll(PDO::FETCH_ASSOC)]);
+        } catch (Throwable) { echo json_encode(['outlets'=>[]]); }
+        exit;
+    }
+
     // GENERATE VOUCHER
     if ($action === 'generate_voucher' && $_SERVER['REQUEST_METHOD']==='POST') {
         if (!hasPermission('promo.create')) { echo json_encode(['error'=>'Akses ditolak']); exit; }
@@ -106,11 +116,22 @@ if ($action) {
         $expired = $d['expired_at'] ?: null;
         $nama    = substr(trim($d['nama_penerima'] ?? ''), 0, 100) ?: null;
         $telp    = substr(trim($d['telepon'] ?? ''), 0, 20) ?: null;
+        // Scope outlet: NULL = berlaku semua, INT = khusus outlet itu
+        $voucherOid = !empty($d['outlet_id']) ? (int)$d['outlet_id'] : null;
+        if ($voucherOid !== null) {
+            $own = TenantQuery::rawOne("SELECT id FROM outlets WHERE id=? AND tenant_id=?", [$voucherOid, $tid]);
+            if (!$own) { echo json_encode(['error'=>'Outlet tidak valid']); exit; }
+        }
 
         // Pastikan promo milik tenant ini
         if (!TenantQuery::exists('hl_promo', 'id = ?', [$promo_id])) {
             echo json_encode(['error'=>'Promo tidak ditemukan']); exit;
         }
+
+        // Cek kolom outlet_id sudah ada (migration applied?)
+        $hasOutletCol = true;
+        try { Database::get()->query("SELECT outlet_id FROM hl_voucher LIMIT 1"); }
+        catch (Throwable) { $hasOutletCol = false; }
 
         $generated = [];
         for ($i = 0; $i < $jumlah; $i++) {
@@ -124,25 +145,39 @@ if ($action) {
                 }
             }
             if (!$kode) continue;
-            TenantQuery::insert('hl_voucher', [
+            $row = [
                 'promo_id'     => $promo_id,
                 'kode'         => $kode,
                 'nama_penerima'=> $nama,
                 'telepon'      => $telp,
                 'expired_at'   => $expired,
-            ]);
+            ];
+            if ($hasOutletCol) $row['outlet_id'] = $voucherOid;
+            TenantQuery::insert('hl_voucher', $row);
             $generated[] = $kode;
         }
         echo json_encode(['success'=>true, 'vouchers'=>$generated]); exit;
     }
 
-    // LIST VOUCHER per promo
+    // LIST VOUCHER per promo (include outlet nama)
     if ($action === 'list_voucher') {
         $promo_id = intval($_GET['promo_id']);
-        $rows = TenantQuery::raw(
-            "SELECT * FROM hl_voucher WHERE tenant_id=? AND promo_id=? ORDER BY created_at DESC LIMIT 200",
-            [$tid, $promo_id]
-        );
+        try {
+            $rows = TenantQuery::raw(
+                "SELECT v.*, o.nama_outlet AS outlet_nama
+                   FROM hl_voucher v
+              LEFT JOIN outlets o ON o.id = v.outlet_id
+                  WHERE v.tenant_id=? AND v.promo_id=?
+                  ORDER BY v.created_at DESC LIMIT 200",
+                [$tid, $promo_id]
+            );
+        } catch (Throwable) {
+            // Fallback kalau kolom outlet_id belum ada
+            $rows = TenantQuery::raw(
+                "SELECT * FROM hl_voucher WHERE tenant_id=? AND promo_id=? ORDER BY created_at DESC LIMIT 200",
+                [$tid, $promo_id]
+            );
+        }
         echo json_encode($rows); exit;
     }
 
@@ -166,6 +201,10 @@ if ($action) {
             if ($v['is_used']) { echo json_encode(['error'=>'Voucher sudah digunakan']); exit; }
             if ($v['expired_at'] && $v['expired_at'] < date('Y-m-d')) { echo json_encode(['error'=>'Voucher sudah expired']); exit; }
             if ($v['promo_expired'] && $v['promo_expired'] < date('Y-m-d')) { echo json_encode(['error'=>'Promo sudah berakhir']); exit; }
+            // Voucher per outlet: kalau outlet_id di-set, harus match outlet ini
+            if (array_key_exists('outlet_id', $v) && $v['outlet_id'] !== null && (int)$v['outlet_id'] !== (int)$oid) {
+                echo json_encode(['error'=>'Voucher ini hanya berlaku di outlet lain']); exit;
+            }
             if ($v['min_transaksi'] > 0 && $total < $v['min_transaksi']) {
                 echo json_encode(['error'=>'Minimum transaksi Rp ' . number_format($v['min_transaksi'],0,',','.')]); exit;
             }
@@ -366,6 +405,13 @@ if ($action) {
             <input type="date" id="vExpired" class="hl-input"/>
           </div>
         </div>
+        <div class="hl-form-group">
+          <label class="hl-label">Berlaku di Outlet <span style="font-size:11px;color:var(--gray);font-weight:400">— strategi per cabang</span></label>
+          <select id="vOutlet" class="hl-input">
+            <option value="">🌍 Semua outlet (cross-outlet)</option>
+            <!-- populated by JS -->
+          </select>
+        </div>
         <?php if (hasPermission('promo.create')): ?>
         <button class="hl-btn hl-btn-primary" onclick="generateVoucher()">✨ Generate Voucher</button>
         <?php endif; ?>
@@ -488,10 +534,22 @@ function localDateStr(d) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  loadStats(); loadPromos();
+  loadStats(); loadPromos(); loadOutletsForVoucher();
   const d = new Date(); d.setDate(d.getDate()+30);
   document.getElementById('vExpired').value = localDateStr(d);
 });
+
+async function loadOutletsForVoucher() {
+  try {
+    const r = await fetch('promo.php?action=outlets');
+    const d = await r.json();
+    const sel = document.getElementById('vOutlet');
+    if (!sel) return;
+    const outlets = d.outlets || [];
+    sel.innerHTML = '<option value="">🌍 Semua outlet (cross-outlet)</option>' +
+      outlets.map(o => `<option value="${o.id}">🏪 ${esc(o.nama_outlet)}</option>`).join('');
+  } catch(e) {}
+}
 
 function switchTab(name, el) {
   document.getElementById('tabPromo').style.display   = name==='promo'   ? 'block' : 'none';
@@ -640,6 +698,7 @@ async function generateVoucher() {
       prefix:       document.getElementById('vPrefix').value||'HRP',
       nama_penerima:document.getElementById('vNama').value,
       expired_at:   document.getElementById('vExpired').value,
+      outlet_id:    document.getElementById('vOutlet')?.value || null,
     })
   });
   const d = await r.json();
@@ -665,16 +724,21 @@ async function loadVoucherList() {
     return;
   }
   const promo = promos.find(p=>p.id==promo_id);
-  document.getElementById('voucherTable').innerHTML = d.map(v => `
+  document.getElementById('voucherTable').innerHTML = d.map(v => {
+    const outletBadge = v.outlet_id
+      ? `<span style="font-size:10px;background:#E0F2FE;color:#075985;padding:1px 6px;border-radius:100px;margin-left:4px">🏪 ${esc(v.outlet_nama||'#'+v.outlet_id)}</span>`
+      : `<span style="font-size:10px;background:#F3F4F6;color:#6B7280;padding:1px 6px;border-radius:100px;margin-left:4px">🌍 Semua</span>`;
+    return `
     <tr>
-      <td data-lbl="Kode"><span class="td-kode" onclick="copyKode('${v.kode}',this)" style="cursor:pointer;${v.is_used?'text-decoration:line-through;color:var(--gray)':''}">${v.kode}</span></td>
+      <td data-lbl="Kode"><span class="td-kode" onclick="copyKode('${v.kode}',this)" style="cursor:pointer;${v.is_used?'text-decoration:line-through;color:var(--gray)':''}">${v.kode}</span>${outletBadge}</td>
       <td data-lbl="Promo" style="font-size:13px">${esc(promo?.nama||'-')}</td>
       <td data-lbl="Penerima" style="font-size:13px">${esc(v.nama_penerima||'-')}</td>
       <td data-lbl="Status"><span class="hl-badge" style="${v.is_used?'background:#F3F4F6;color:#374151':'background:#D1FAE5;color:#065F46'}">${v.is_used?'✓ Terpakai':'○ Belum'}</span></td>
       <td data-lbl="Order" style="font-family:var(--mono);font-size:12px">${v.used_by_order||'-'}</td>
       <td data-lbl="Expired" style="font-size:12px;color:var(--gray)">${v.expired_at?fmtDate(v.expired_at):'-'}</td>
       <td data-lbl="Dibuat" style="font-size:12px;color:var(--gray)">${fmtDate(v.created_at)}</td>
-    </tr>`).join('');
+    </tr>`;
+  }).join('');
 }
 
 function copyAllVouchers() {

@@ -287,6 +287,7 @@ CREATE TABLE IF NOT EXISTS hl_promo (
 CREATE TABLE IF NOT EXISTS hl_voucher (
   id              INT AUTO_INCREMENT PRIMARY KEY,
   promo_id        INT          DEFAULT NULL,
+  outlet_id       INT          DEFAULT NULL,    -- NULL = berlaku semua outlet
   kode            VARCHAR(20)  NOT NULL UNIQUE,
   nama_penerima   VARCHAR(100) DEFAULT NULL,
   telepon         VARCHAR(20)  DEFAULT NULL,
