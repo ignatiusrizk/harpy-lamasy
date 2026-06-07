@@ -6,6 +6,7 @@ require_once ROOT . '/core/Loyalty.php';
 require_once ROOT . '/core/ExpressTier.php';
 require_once ROOT . '/core/MemberTier.php';
 require_once ROOT . '/core/NotaFormatter.php';
+require_once ROOT . '/core/DepositManager.php';
 require_once __DIR__ . '/components.php';
 $user = currentUser();
 requirePermission('pos.view');
@@ -55,6 +56,14 @@ if ($action) {
         if ($pid <= 0) { echo json_encode(['member' => null]); exit; }
         $mem = MemberTier::activeForPelanggan($tid, $pid);
         echo json_encode(['member' => $mem]); exit;
+    }
+
+    // Cek saldo deposit pelanggan (utk badge & preview "Bayar pakai Saldo")
+    if ($action === 'check_deposit') {
+        $pid = (int)($_GET['pelanggan_id'] ?? 0);
+        if ($pid <= 0) { echo json_encode(['balance' => 0]); exit; }
+        echo json_encode(['balance' => DepositManager::balance($tid, $pid)]);
+        exit;
     }
 
     // SEARCH pelanggan — TENANT-SCOPED (lintas outlet)
@@ -335,9 +344,23 @@ if ($action) {
             // Total final (subtotal − diskon − member_diskon + biaya tambahan)
             $diskonTotal = $diskon + $redeemValue + $memberDiskon;
             $total    = max(0, $subtotal - $diskonTotal + $biayaTbh);
+
+            // ── Bayar pakai Saldo Deposit ──
+            // User checklist "Bayar pakai Saldo" + input jumlah ambil dari saldo.
+            // Sistem deduct saldo (transaction-locked) → counted as paid.
+            $depositPay = 0;
+            $depositErr = null;
+            if (!empty($data['use_deposit']) && $pel_id) {
+                $depositPay = (float)($data['deposit_amount'] ?? 0);
+                $maxBalance = DepositManager::balance($tid, (int)$pel_id);
+                if ($depositPay <= 0) $depositPay = min($maxBalance, $total); // auto max
+                $depositPay = min($depositPay, $maxBalance, $total);
+            }
+
             $dp       = floatval($data['dp'] ?? 0);
-            $sisa     = $total - $dp;
-            $status_b = $dp >= $total ? 'lunas' : ($dp > 0 ? 'dp' : 'belum_bayar');
+            $totalPaid = $dp + $depositPay;
+            $sisa     = max(0, $total - $totalPaid);
+            $status_b = $totalPaid >= $total ? 'lunas' : ($totalPaid > 0 ? 'dp' : 'belum_bayar');
 
             // Cek apakah kolom biaya_tambahan & tipe_order sudah ada (migration applied?)
             $hasBiayaTipe = true;
@@ -360,12 +383,19 @@ if ($action) {
             $hasEstJam = true;
             try { $db->query("SELECT estimasi_jam FROM hl_transaksi LIMIT 1"); } catch (Throwable) { $hasEstJam = false; }
 
+            // Append catatan kalau ada deposit pay (audit visible di nota)
+            if ($depositPay > 0) {
+                $depCatatan = "Bayar Saldo Deposit: Rp " . number_format($depositPay, 0, ',', '.');
+                $catatan = $catatan === '' ? $depCatatan : ($catatan . ' · ' . $depCatatan);
+            }
+
             // Bangun INSERT dinamis sesuai kolom yg tersedia
+            // $dp di DB = $totalPaid (semua sumber payment: cash + deposit)
             $cols   = ['tenant_id','outlet_id','no_order','tanggal','pelanggan_id','nama_pelanggan','telepon',
                        'subtotal','diskon','total','dp','sisa_bayar','metode_bayar','status_bayar',
                        'status_proses','estimasi_selesai','catatan','created_by'];
             $vals   = [$tid,$oid,$no,$tanggal,$pel_id,$nama_pel,$telepon,
-                       $subtotal,$diskonTotal,$total,$dp,$sisa,
+                       $subtotal,$diskonTotal,$total,$totalPaid,$sisa,
                        $data['metode_bayar'] ?? 'cash', $status_b,
                        'masuk',$estimasi,$catatan,$user['id']];
             if ($hasEstJam)    { $cols[] = 'estimasi_jam';   $vals[] = $estimasiJam; }
@@ -389,6 +419,18 @@ if ($action) {
             // Deduct poin redeem (dalam transaksi yang sama) — transaksi_id terisi
             if ($redeemPoin > 0 && $pel_id) {
                 Loyalty::redeemInTx($db, $tid, $oid, (int)$pel_id, $redeemPoin, (int)$trx_id, $user['id']);
+            }
+
+            // Deduct saldo deposit (audit trail di hl_deposit_usage)
+            if ($depositPay > 0 && $pel_id) {
+                [$_id, $depErr] = DepositManager::deduct(
+                    $tid, $oid, (int)$pel_id, $depositPay,
+                    (int)$trx_id, "Bayar nota $no", (int)$user['id']
+                );
+                if ($depErr) {
+                    // Saldo tidak cukup atau error — rollback semua
+                    throw new RuntimeException('Gagal potong saldo deposit: ' . $depErr);
+                }
             }
 
             // Insert items — cek kolom tier ada (Phase 3 rebuild)
@@ -982,6 +1024,21 @@ textarea{resize:vertical;min-height:64px}
               </div>
             </div>
 
+            <!-- Bayar pakai Saldo Deposit (Phase 4.1) — muncul kalau pelanggan punya saldo > 0 -->
+            <div id="depositBox" style="display:none;background:#F0FDF4;border:1px solid #BBF7D0;border-radius:8px;padding:10px 14px;margin-bottom:8px;font-size:13px;color:#166534">
+              <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+                <div>💳 <strong>Saldo Deposit:</strong> <span id="depositBalance">Rp 0</span></div>
+                <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+                  <input type="checkbox" id="f_use_deposit" onchange="onUseDepositChange()"/>
+                  <span>Bayar pakai Saldo</span>
+                </label>
+              </div>
+              <div id="depositAmountWrap" style="display:none;margin-top:8px">
+                <label style="font-size:11px;color:#166534">Jumlah dari Saldo (max sesuai saldo & total):</label>
+                <input type="number" id="f_deposit_amount" value="0" min="0" oninput="recalc()" style="width:100%;padding:6px 10px;border:1px solid #BBF7D0;border-radius:6px;font-size:13px"/>
+              </div>
+            </div>
+
             <div id="statusBayarInfo" style="text-align:center;font-size:13px;font-weight:600;padding:8px;border-radius:8px;background:var(--light);color:var(--gray)">
               Belum ada item
             </div>
@@ -1401,14 +1458,23 @@ function recalc() {
   // Total = subtotal − diskon − redeem + biaya tambahan
   const total    = Math.max(subtotal - diskon - redeemValue + biayaTbh, 0);
   const dp       = parseFloat(document.getElementById('f_dp').value)||0;
-  const sisa     = total - dp;
+  // Bayar pakai saldo deposit (clamped by balance & total-dp)
+  let depositPay = 0;
+  const useDep = document.getElementById('f_use_deposit')?.checked;
+  if (useDep) {
+    depositPay = parseFloat(document.getElementById('f_deposit_amount')?.value)||0;
+    depositPay = Math.min(depositPay, depositBalance, Math.max(0, total - dp));
+  }
+  const totalPaid = dp + depositPay;
+  const sisa     = Math.max(0, total - totalPaid);
 
   document.getElementById('sumSubtotal').textContent = 'Rp ' + subtotal.toLocaleString('id-ID');
   document.getElementById('sumDiskon').textContent   = (diskon + redeemValue).toLocaleString('id-ID');
   document.getElementById('sumBiaya').textContent    = biayaTbh.toLocaleString('id-ID');
   document.getElementById('sumBiayaRow').style.display = biayaTbh > 0 ? 'flex' : 'none';
   document.getElementById('sumTotal').textContent    = 'Rp ' + total.toLocaleString('id-ID');
-  document.getElementById('sumDP').textContent       = 'Rp ' + dp.toLocaleString('id-ID');
+  document.getElementById('sumDP').innerHTML         = 'Rp ' + totalPaid.toLocaleString('id-ID') +
+    (depositPay > 0 ? ` <span style="font-size:10px;color:#0F7B6C">(+Rp ${depositPay.toLocaleString('id-ID')} saldo)</span>` : '');
   document.getElementById('sumSisa').textContent     = 'Rp ' + sisa.toLocaleString('id-ID');
 
   const cells = document.querySelectorAll('.item-subtotal');
@@ -1464,6 +1530,41 @@ function selectPelanggan(id, nama, telp, poin) {
   loadPelangganInfo(id);
   // Fetch info member tier (Tier 1b — Smartlink-inspired)
   loadMemberInfo(id);
+  // Fetch saldo deposit (Tier 4.1)
+  loadDepositInfo(id);
+}
+
+// ── Deposit Wallet (Tier 4.1) ──
+let depositBalance = 0;
+async function loadDepositInfo(pid) {
+  try {
+    const r = await fetch('pos.php?action=check_deposit&pelanggan_id=' + pid);
+    const d = await r.json();
+    depositBalance = parseFloat(d.balance) || 0;
+    const box = document.getElementById('depositBox');
+    if (!box) return;
+    if (depositBalance > 0) {
+      box.style.display = 'block';
+      document.getElementById('depositBalance').textContent = 'Rp ' + Math.round(depositBalance).toLocaleString('id-ID');
+    } else {
+      box.style.display = 'none';
+    }
+  } catch(e) { depositBalance = 0; }
+}
+
+function onUseDepositChange() {
+  const checked = document.getElementById('f_use_deposit').checked;
+  document.getElementById('depositAmountWrap').style.display = checked ? 'block' : 'none';
+  if (checked) {
+    // Auto-fill with min(balance, total)
+    const totalText = document.getElementById('sumTotal').textContent;
+    const totalNum = parseFloat(totalText.replace(/[^\d]/g,''))||0;
+    const auto = Math.min(depositBalance, totalNum);
+    document.getElementById('f_deposit_amount').value = auto;
+  } else {
+    document.getElementById('f_deposit_amount').value = 0;
+  }
+  recalc();
 }
 
 // ── Member Tier auto-detect ──
@@ -1698,6 +1799,8 @@ async function doSaveTransaksi() {
     parfum:         document.getElementById('f_parfum')?.value || '',
     redeem_poin:    (LOYALTY.enabled && currentPelangganId) ? (parseInt(document.getElementById('f_redeem_poin')?.value||0)||0) : 0,
     dp:             document.getElementById('f_dp').value,
+    use_deposit:    document.getElementById('f_use_deposit')?.checked ? 1 : 0,
+    deposit_amount: parseFloat(document.getElementById('f_deposit_amount')?.value)||0,
     metode_bayar:   document.getElementById('f_metode').value,
     foto_masuk:     document.getElementById('f_foto_path').value || '',
     items

@@ -149,6 +149,7 @@ function renderTopbar(string $activePage = '', bool $minimalMode = false): void 
                 'promo'    => ['label'=>'Promo',          'url'=>'/promo',     'perm'=>'promo.view'],
                 'customer' => ['label'=>'Customer',       'url'=>'/customer',  'perm'=>'pelanggan.view'],
                 'member'   => ['label'=>'Member Tier',    'url'=>'/member',    'perm'=>'pelanggan.view'],
+                'deposit'  => ['label'=>'Deposit Wallet', 'url'=>'/deposit',   'perm'=>'pelanggan.view'],
                 'approval-inbox' => ['label'=>'⏳ Approval Inbox', 'url'=>'/approval-inbox', 'perm'=>'owner'],
                 'loyalty'  => ['label'=>'Sistem Poin',    'url'=>'/loyalty',   'perm'=>'pelanggan.view'],
                 'retention'=> ['label'=>'Retensi Dormant','url'=>'/retention', 'perm'=>'pelanggan.view'],
@@ -228,7 +229,7 @@ function renderTopbar(string $activePage = '', bool $minimalMode = false): void 
     $emphasisKeys = ['pos','orders']; // nav yang ditandai (POS/Order)
     $iconMap = [
       'dashboard'=>'🏠','pos'=>'🛒','orders'=>'📋','kas'=>'💰',
-      'laporan'=>'📊','layanan'=>'🧺','promo'=>'🎟️','customer'=>'👥','member'=>'⭐','approval-inbox'=>'📥',
+      'laporan'=>'📊','layanan'=>'🧺','promo'=>'🎟️','customer'=>'👥','member'=>'⭐','approval-inbox'=>'📥','deposit'=>'💳',
       'karyawan'=>'👤','absensi'=>'📅','settings'=>'⚙️','audit'=>'🔍','outlet-settings'=>'🏪',
       'checklist'=>'✅','droppoint'=>'📦','owner_report'=>'📨','piutang'=>'💼','kanban'=>'🗂️','struk'=>'🧾',
       'loyalty'=>'⭐','retention'=>'😴','support'=>'🎧','import'=>'📥',
