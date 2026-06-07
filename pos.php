@@ -28,9 +28,10 @@ if ($action) {
         echo json_encode($rows); exit;
     }
 
-    // Ambil semua tier express GLOBAL utk tenant ini (dipakai POS dropdown per item)
+    // Ambil tier express utk tenant + outlet ini (dipakai POS dropdown per item)
+    // Filter outlet: tier global (NULL) + tier khusus outlet ini.
     if ($action === 'express_tiers') {
-        echo json_encode(['tiers' => ExpressTier::forTenant($tid)]); exit;
+        echo json_encode(['tiers' => ExpressTier::forTenant($tid, $oid)]); exit;
     }
 
     // Cek apakah pelanggan punya membership aktif (utk POS badge & auto-diskon preview)
@@ -275,9 +276,9 @@ if ($action) {
 
             // Biaya tambahan = SUM dari per-item biaya_express (server-side
             // re-compute supaya gak bisa di-tamper dari frontend).
-            // Load tier list global tenant sekali utk lookup cepat.
+            // Load tier yg berlaku di outlet ini (global + outlet-specific)
             $tierMap = [];
-            foreach (ExpressTier::forTenant($tid) as $t) {
+            foreach (ExpressTier::forTenant($tid, $oid) as $t) {
                 $tierMap[$t['nama_tier']] = $t;
             }
             $biayaTbh = 0.0;

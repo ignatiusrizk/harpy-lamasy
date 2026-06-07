@@ -19,41 +19,59 @@
 class ExpressTier
 {
     /**
-     * Semua tier aktif utk tenant ini.
+     * Tier aktif utk tenant + outlet ini.
+     * Include tier global (outlet_id NULL = berlaku semua outlet).
      * Dipakai POS utk render dropdown per item.
      */
-    public static function forTenant(int $tenantId): array
+    public static function forTenant(int $tenantId, ?int $outletId = null): array
     {
         try {
-            $st = Database::get()->prepare(
-                "SELECT id, nama_tier, estimasi_jam, tipe_biaya, nilai_biaya, urutan
-                   FROM hl_express_tier
-                  WHERE tenant_id = ? AND is_active = 1
-                  ORDER BY urutan ASC, estimasi_jam DESC"
-            );
-            $st->execute([$tenantId]);
+            if ($outletId === null) {
+                // Backward compat: kalau outlet tidak di-pass, ambil semua
+                $st = Database::get()->prepare(
+                    "SELECT id, nama_tier, estimasi_jam, tipe_biaya, nilai_biaya, urutan, outlet_id
+                       FROM hl_express_tier
+                      WHERE tenant_id = ? AND is_active = 1
+                      ORDER BY urutan ASC, estimasi_jam DESC"
+                );
+                $st->execute([$tenantId]);
+            } else {
+                // Filter per outlet: global (NULL) + specific outlet
+                $st = Database::get()->prepare(
+                    "SELECT id, nama_tier, estimasi_jam, tipe_biaya, nilai_biaya, urutan, outlet_id
+                       FROM hl_express_tier
+                      WHERE tenant_id = ? AND is_active = 1
+                        AND (outlet_id IS NULL OR outlet_id = ?)
+                      ORDER BY urutan ASC, estimasi_jam DESC"
+                );
+                $st->execute([$tenantId, $outletId]);
+            }
             return $st->fetchAll(PDO::FETCH_ASSOC) ?: [];
         } catch (Throwable) {
-            // Tabel belum ada → return kosong supaya POS tetap jalan
             return [];
         }
     }
 
     /**
      * Cari satu tier by nama (utk hitung fee saat save).
+     * Prioritas: outlet-specific dulu, kalau gak ada baru global (NULL).
      */
-    public static function findByNama(int $tenantId, string $namaTier): ?array
+    public static function findByNama(int $tenantId, string $namaTier, ?int $outletId = null): ?array
     {
         $namaTier = trim($namaTier);
         if ($namaTier === '' || strtolower($namaTier) === 'reguler') return null;
         try {
+            // Order by outlet_id DESC supaya outlet-specific dapat duluan
+            // (NULL last in MySQL default ASC, but DESC pushes specific to top)
             $st = Database::get()->prepare(
-                "SELECT id, nama_tier, estimasi_jam, tipe_biaya, nilai_biaya
+                "SELECT id, nama_tier, estimasi_jam, tipe_biaya, nilai_biaya, outlet_id
                    FROM hl_express_tier
                   WHERE tenant_id = ? AND nama_tier = ? AND is_active = 1
+                    AND (outlet_id IS NULL OR outlet_id = ?)
+                  ORDER BY (outlet_id IS NULL) ASC
                   LIMIT 1"
             );
-            $st->execute([$tenantId, $namaTier]);
+            $st->execute([$tenantId, $namaTier, $outletId ?? 0]);
             return $st->fetch(PDO::FETCH_ASSOC) ?: null;
         } catch (Throwable) {
             return null;

@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS hl_express_tier (
   urutan          INT          DEFAULT 0,
   created_at      TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
   updated_at      TIMESTAMP    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  UNIQUE KEY uniq_tenant_tier (tenant_id, nama_tier),
+  UNIQUE KEY uniq_tenant_outlet_tier (tenant_id, outlet_id, nama_tier),
   INDEX idx_tenant_active (tenant_id, is_active, urutan)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 

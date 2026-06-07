@@ -174,6 +174,7 @@ CREATE TABLE IF NOT EXISTS hl_transaksi (
 -- ── Tier Express GLOBAL per Tenant ──────────────────
 CREATE TABLE IF NOT EXISTS hl_express_tier (
   id              INT          AUTO_INCREMENT PRIMARY KEY,
+  outlet_id       INT          DEFAULT NULL,    -- NULL = berlaku semua outlet
   nama_tier       VARCHAR(50)  NOT NULL,    -- "Express 12 Jam", "Kilat 3 Jam"
   estimasi_jam    INT          NOT NULL,    -- jam dari masuk → siap
   tipe_biaya      ENUM('flat','percent') NOT NULL DEFAULT 'percent',
@@ -182,7 +183,7 @@ CREATE TABLE IF NOT EXISTS hl_express_tier (
   urutan          INT          DEFAULT 0,
   created_at      TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
   updated_at      TIMESTAMP    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  UNIQUE KEY uniq_tenant_tier (nama_tier),
+  UNIQUE KEY uniq_outlet_tier (outlet_id, nama_tier),
   INDEX idx_active (is_active, urutan)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 

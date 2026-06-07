@@ -108,7 +108,17 @@ if ($action) {
         echo json_encode(['success'=>true]); exit;
     }
 
-    // ── Tier Express CRUD (GLOBAL per tenant) ──
+    // ── List outlets utk tier "Berlaku di" dropdown ──
+    if ($action === 'outlets') {
+        try {
+            $st = Database::get()->prepare("SELECT id, nama_outlet FROM outlets WHERE tenant_id=? ORDER BY is_main DESC, id ASC");
+            $st->execute([$tid]);
+            echo json_encode(['outlets' => $st->fetchAll(PDO::FETCH_ASSOC)]);
+        } catch (Throwable) { echo json_encode(['outlets'=>[]]); }
+        exit;
+    }
+
+    // ── Tier Express CRUD (tenant-level, dgn opsional per-outlet override) ──
     if ($action === 'tier_list') {
         try {
             $st = Database::get()->prepare(
@@ -139,8 +149,15 @@ if ($action) {
         $nilai  = max(0, (float)($d['nilai_biaya'] ?? 0));
         $aktif  = (int)($d['is_active'] ?? 1) ? 1 : 0;
         $urut   = (int)($d['urutan'] ?? 0);
+        // outlet_id: NULL = berlaku semua outlet, int = khusus outlet ini
+        $tierOutletId = !empty($d['outlet_id']) ? (int)$d['outlet_id'] : null;
         if ($nama === '' || $jam <= 0 || $nilai < 0) {
             echo json_encode(['error'=>'Nama tier, estimasi jam, dan nilai wajib diisi (jam > 0)']); exit;
+        }
+        // Verifikasi outlet milik tenant ini (kalau di-pass)
+        if ($tierOutletId !== null) {
+            $own = TenantQuery::rawOne("SELECT id FROM outlets WHERE id=? AND tenant_id=?", [$tierOutletId, $tid]);
+            if (!$own) { echo json_encode(['error'=>'Outlet tidak valid']); exit; }
         }
 
         $db = Database::get();
@@ -148,23 +165,24 @@ if ($action) {
             if (!empty($d['id'])) {
                 $st = $db->prepare(
                     "UPDATE hl_express_tier
-                        SET nama_tier=?, estimasi_jam=?, tipe_biaya=?, nilai_biaya=?, is_active=?, urutan=?
+                        SET nama_tier=?, estimasi_jam=?, tipe_biaya=?, nilai_biaya=?,
+                            is_active=?, urutan=?, outlet_id=?
                       WHERE id=? AND tenant_id=?"
                 );
-                $st->execute([$nama, $jam, $tipe, $nilai, $aktif, $urut, (int)$d['id'], $tid]);
+                $st->execute([$nama, $jam, $tipe, $nilai, $aktif, $urut, $tierOutletId, (int)$d['id'], $tid]);
             } else {
                 $st = $db->prepare(
                     "INSERT INTO hl_express_tier
                         (tenant_id, outlet_id, nama_tier, estimasi_jam, tipe_biaya, nilai_biaya, is_active, urutan)
                      VALUES (?,?,?,?,?,?,?,?)"
                 );
-                $st->execute([$tid, $oid, $nama, $jam, $tipe, $nilai, $aktif, $urut]);
+                $st->execute([$tid, $tierOutletId, $nama, $jam, $tipe, $nilai, $aktif, $urut]);
             }
             echo json_encode(['success'=>true]);
         } catch (Throwable $e) {
             $msg = $e->getMessage();
             if (str_contains($msg, 'uniq_tenant_tier') || str_contains($msg, 'Duplicate')) {
-                echo json_encode(['error'=>'Nama tier "'.$nama.'" sudah ada']);
+                echo json_encode(['error'=>'Nama tier "'.$nama.'" sudah ada (gunakan nama beda kalau mau per-outlet, atau hapus yg sebelumnya)']);
             } else {
                 echo json_encode(['error'=>'Gagal simpan: '.$msg]);
             }
@@ -396,8 +414,11 @@ input:checked + .toggle-slider::before{transform:translateX(18px)}
         </div>
         <div class="hl-form-row">
           <div class="hl-form-group">
-            <label class="hl-label">Urutan</label>
-            <input type="number" id="tf_urutan" class="hl-input" value="0" min="0"/>
+            <label class="hl-label">Berlaku di Outlet <span style="font-size:11px;color:var(--gray);font-weight:400">— strategi per outlet</span></label>
+            <select id="tf_outlet" class="hl-input">
+              <option value="">🌍 Semua outlet</option>
+              <!-- populated by JS -->
+            </select>
           </div>
           <div class="hl-form-group">
             <label class="hl-label">Status</label>
@@ -405,6 +426,12 @@ input:checked + .toggle-slider::before{transform:translateX(18px)}
               <option value="1">✅ Aktif</option>
               <option value="0">⏸️ Nonaktif</option>
             </select>
+          </div>
+        </div>
+        <div class="hl-form-row">
+          <div class="hl-form-group">
+            <label class="hl-label">Urutan</label>
+            <input type="number" id="tf_urutan" class="hl-input" value="0" min="0"/>
           </div>
         </div>
         <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:10px;">
@@ -528,7 +555,22 @@ function editLayanan(id) { openModal(allLayanan.find(l=>l.id==id)); }
 function closeModal() { document.getElementById('modalLayanan').classList.remove('open'); }
 
 // ── Tier Express GLOBAL CRUD ──
+let allOutlets = [];
+
+async function loadOutletsForTier() {
+  if (allOutlets.length > 0) return;
+  try {
+    const r = await fetch('?action=outlets');
+    const d = await r.json();
+    allOutlets = d.outlets || [];
+    const sel = document.getElementById('tf_outlet');
+    sel.innerHTML = '<option value="">🌍 Semua outlet</option>' +
+      allOutlets.map(o => `<option value="${o.id}">🏪 ${esc(o.nama_outlet)}</option>`).join('');
+  } catch(e) { /* silent */ }
+}
+
 async function openTierModal() {
+  await loadOutletsForTier();
   resetTierForm();
   document.getElementById('modalTier').classList.add('open');
   await loadTiers();
@@ -561,6 +603,7 @@ function renderTierList(tiers) {
       <thead>
         <tr style="background:#F3F4F6;text-align:left;">
           <th style="padding:8px 10px;">Nama Tier</th>
+          <th style="padding:8px 10px;">Outlet</th>
           <th style="padding:8px 10px;">Estimasi</th>
           <th style="padding:8px 10px;">Biaya</th>
           <th style="padding:8px 10px;">Status</th>
@@ -568,9 +611,14 @@ function renderTierList(tiers) {
         </tr>
       </thead>
       <tbody>
-        ${tiers.map(t => `
+        ${tiers.map(t => {
+          const outletLabel = t.outlet_id
+            ? (allOutlets.find(o => o.id == t.outlet_id)?.nama_outlet || `Outlet #${t.outlet_id}`)
+            : '🌍 Semua';
+          return `
           <tr style="border-bottom:1px solid #F3F4F6;">
             <td style="padding:10px;">⚡ <strong>${esc(t.nama_tier)}</strong></td>
+            <td style="padding:10px;font-size:11px;${t.outlet_id?'color:#0F7B6C;':'color:#6B7280;'}">${esc(outletLabel)}</td>
             <td style="padding:10px;color:#4B5563;">${t.estimasi_jam} jam</td>
             <td style="padding:10px;">
               ${t.tipe_biaya === 'flat'
@@ -582,8 +630,8 @@ function renderTierList(tiers) {
               <button class="hl-btn hl-btn-outline hl-btn-sm" onclick='editTier(${JSON.stringify(t)})'>✏️</button>
               <button class="hl-btn hl-btn-danger hl-btn-sm" onclick="deleteTier(${t.id})">🗑️</button>
             </td>
-          </tr>
-        `).join('')}
+          </tr>`;
+        }).join('')}
       </tbody>
     </table>`;
 }
@@ -603,6 +651,7 @@ function resetTierForm() {
   document.getElementById('tf_nilai').value  = '';
   document.getElementById('tf_urutan').value = 0;
   document.getElementById('tf_active').value = 1;
+  document.getElementById('tf_outlet').value = '';
   document.getElementById('tierFormTitle').textContent = '➕ Tambah Tier Baru';
   updateNilaiUnit();
 }
@@ -615,6 +664,7 @@ function editTier(t) {
   document.getElementById('tf_nilai').value  = t.nilai_biaya;
   document.getElementById('tf_urutan').value = t.urutan;
   document.getElementById('tf_active').value = t.is_active;
+  document.getElementById('tf_outlet').value = t.outlet_id || '';
   document.getElementById('tierFormTitle').textContent = '✏️ Edit Tier';
   updateNilaiUnit();
 }
@@ -628,6 +678,7 @@ async function saveTier() {
     nilai_biaya:  parseFloat(document.getElementById('tf_nilai').value) || 0,
     is_active:    parseInt(document.getElementById('tf_active').value),
     urutan:       parseInt(document.getElementById('tf_urutan').value) || 0,
+    outlet_id:    document.getElementById('tf_outlet').value || null,
   };
   if (!payload.nama_tier || payload.estimasi_jam <= 0) {
     showToast('Nama tier & estimasi jam wajib diisi', 'error'); return;
