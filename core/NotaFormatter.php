@@ -136,6 +136,39 @@ class NotaFormatter
     }
 
     /**
+     * Generate default nota_prefix dari nama outlet.
+     * Auto-strip kata umum (Laundry, Wash, Cleaners, dll), ambil 1-2
+     * kata pertama, uppercase, max 12 char.
+     *
+     * Contoh:
+     *   "Harpy Laundry Johar Baru" → "HARPY-"
+     *   "Bersih Wangi Kemang"      → "BERSIHWANGI-"
+     *   "Laundry 24 Jam"           → "JAM-"  (cuma dari kata non-stopword)
+     *   "Nene Laundry"             → "NENE-"
+     */
+    public static function generatePrefixFromName(string $namaOutlet): string
+    {
+        $stopwords = ['LAUNDRY','WASH','CLEAN','CLEANERS','EXPRESS','KILAT','PRO','SUPER','JAM','HARI','24','DRY','CITY','SHOP'];
+        $words = preg_split('/[\s\-_]+/', strtoupper(trim($namaOutlet)));
+        $words = array_map(fn($w) => preg_replace('/[^A-Z0-9]/', '', $w), $words);
+        $words = array_filter($words, fn($w) => $w !== '' && !in_array($w, $stopwords, true));
+        $words = array_values($words);
+
+        // Default fallback
+        if (empty($words)) return 'NOTA-';
+
+        // 1 kata pendek → pakai utuh; 1 kata panjang → potong 6 char;
+        // 2+ kata → gabung 2 kata pertama (max 12 char total)
+        if (count($words) === 1) {
+            $p = substr($words[0], 0, 8);
+        } else {
+            $p = substr($words[0], 0, 6) . substr($words[1], 0, 6);
+            $p = substr($p, 0, 12);
+        }
+        return $p . '-';
+    }
+
+    /**
      * Preview format dengan counter hipotetis (utk UI settings).
      * Hasil: "HL-260606-001 (contoh)"
      */

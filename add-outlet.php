@@ -160,6 +160,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['step2_submit'])) {
         ]);
         $outletId = (int)$db->lastInsertId();
 
+        // Auto-set nota_prefix dari nama outlet (kalau kolom sudah ada)
+        try {
+            require_once ROOT . '/core/NotaFormatter.php';
+            $autoPrefix = NotaFormatter::generatePrefixFromName($d['nama_outlet']);
+            $db->prepare(
+                "UPDATE outlets SET nota_prefix=?, nota_format='{PREFIX}{YYMMDD}-{COUNTER:3}' WHERE id=?"
+            )->execute([$autoPrefix, $outletId]);
+        } catch (Throwable) { /* kolom belum ada → skip, pakai default 'HL-' */ }
+
         // Update total_outlets di tenant
         $db->prepare(
             "UPDATE tenants SET total_outlets = total_outlets + 1 WHERE id=?"

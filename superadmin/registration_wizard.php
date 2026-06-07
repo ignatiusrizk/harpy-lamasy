@@ -280,6 +280,16 @@ function provisionTenant(array $wizard): array
             $wizard['kota'] ?? '',
             $outletStatus,
         ]);
+        $newOutletId = (int)$db->lastInsertId();
+
+        // Auto-set nota_prefix dari nama outlet (best-effort, skip kalau kolom belum ada)
+        try {
+            require_once dirname(__DIR__) . '/core/NotaFormatter.php';
+            $autoPrefix = NotaFormatter::generatePrefixFromName($wizard['nama_outlet']);
+            $db->prepare(
+                "UPDATE outlets SET nota_prefix=?, nota_format='{PREFIX}{YYMMDD}-{COUNTER:3}' WHERE id=?"
+            )->execute([$autoPrefix, $newOutletId]);
+        } catch (Throwable) { /* kolom belum ada → skip */ }
         $outletId = (int)$db->lastInsertId();
         $db->prepare("UPDATE tenants SET total_outlets=1 WHERE id=?")->execute([$tenantId]);
 
