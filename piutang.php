@@ -115,6 +115,78 @@ if ($action === 'generate' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     exit;
 }
 
+// ── BULK GENERATE: Faktur Tagihan Massal (Smartlink-inspired) ──
+// Generate piutang sekaligus untuk semua pelanggan dgn order di periode
+// (atau filter by tipe_bayar='bulanan'). 1 call → N piutang rows.
+if ($action === 'generate_bulk' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    header('Content-Type: application/json');
+    if (!hasPermission('laporan.export')) { echo json_encode(['error'=>'Akses ditolak']); exit; }
+    verifyCsrf();
+    $d = json_decode(file_get_contents('php://input'), true) ?: [];
+    $start = preg_match('/^\d{4}-\d{2}-\d{2}$/', $d['start'] ?? '') ? $d['start'] : null;
+    $end   = preg_match('/^\d{4}-\d{2}-\d{2}$/', $d['end']   ?? '') ? $d['end']   : null;
+    $tempo = preg_match('/^\d{4}-\d{2}-\d{2}$/', $d['jatuh_tempo'] ?? '') ? $d['jatuh_tempo'] : null;
+    $scope = $d['scope'] ?? 'bulanan_only'; // 'bulanan_only' | 'all_with_orders'
+    if (!$start || !$end || !$tempo) { echo json_encode(['error'=>'Tanggal periode & jatuh tempo wajib']); exit; }
+
+    try {
+        // Find pelanggan yang punya order di periode (& filter tipe kalau scope=bulanan_only)
+        $where = "t.tenant_id=? AND t.outlet_id=? AND DATE(t.tanggal) BETWEEN ? AND ?";
+        $params = [$tid, $oid, $start, $end];
+        if ($scope === 'bulanan_only') {
+            // Filter pelanggan yang flagged tipe='bulanan' (atau bisa pakai tipe_bayar=bulanan kalau ada)
+            $where .= " AND (p.tipe='bulanan' OR p.tipe_bayar='bulanan')";
+        }
+        $st = $db->prepare(
+            "SELECT t.pelanggan_id, p.nama, COUNT(t.id) AS cnt,
+                    COALESCE(SUM(t.total), 0) AS total_tagihan,
+                    COALESCE(SUM(t.dp),    0) AS total_dibayar
+               FROM hl_transaksi t
+               JOIN hl_pelanggan p ON p.id = t.pelanggan_id
+              WHERE $where AND t.pelanggan_id IS NOT NULL
+              GROUP BY t.pelanggan_id, p.nama
+             HAVING cnt > 0"
+        );
+        $st->execute($params);
+        $candidates = $st->fetchAll(PDO::FETCH_ASSOC);
+        if (!$candidates) { echo json_encode(['error'=>'Tidak ada pelanggan dengan order di periode tsb']); exit; }
+
+        $generated = 0; $skipped = 0; $errors = [];
+        $ins = $db->prepare("INSERT INTO hl_piutang
+            (tenant_id, outlet_id, pelanggan_id, periode_start, periode_end, jatuh_tempo,
+             total_order, total_tagihan, total_dibayar, status)
+            VALUES (?,?,?,?,?,?,?,?,?, 'belum_tagih')
+            ON DUPLICATE KEY UPDATE
+              total_order=VALUES(total_order),
+              total_tagihan=VALUES(total_tagihan),
+              total_dibayar=VALUES(total_dibayar)");
+
+        foreach ($candidates as $c) {
+            try {
+                $ins->execute([
+                    $tid, $oid, (int)$c['pelanggan_id'],
+                    $start, $end, $tempo,
+                    (int)$c['cnt'], (float)$c['total_tagihan'], (float)$c['total_dibayar']
+                ]);
+                $generated++;
+            } catch (Throwable $e) {
+                $skipped++;
+                $errors[] = $c['nama'] . ': ' . $e->getMessage();
+            }
+        }
+        logAudit('generate_bulk', 'piutang',
+            "Bulk generate ($scope, $start s/d $end): $generated berhasil, $skipped gagal");
+        echo json_encode([
+            'ok' => true,
+            'generated' => $generated,
+            'skipped'   => $skipped,
+            'errors'    => array_slice($errors, 0, 5),
+            'total_candidates' => count($candidates),
+        ]);
+    } catch (Throwable $e) { echo json_encode(['error'=>$e->getMessage()]); }
+    exit;
+}
+
 // ── API: tandai invoice terkirim + buka WA link invoice ──
 if ($action === 'mark_invoiced' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     header('Content-Type: application/json');
@@ -299,7 +371,10 @@ require_once ROOT . '/core/CoinLedger.php';
       <p style="font-size:13px;color:var(--gray)">Tagihan pelanggan korporat/bulanan & status pembayarannya</p>
     </div>
     <?php if (hasPermission('laporan.export')): ?>
-    <button class="hl-btn hl-btn-primary" onclick="openGen()">+ Buat Tagihan</button>
+    <div style="display:flex;gap:6px;flex-wrap:wrap">
+      <button class="hl-btn hl-btn-outline" onclick="openBulkGen()" title="Generate tagihan untuk semua pelanggan B2B sekaligus">📦 Massal</button>
+      <button class="hl-btn hl-btn-primary" onclick="openGen()">+ Buat Tagihan</button>
+    </div>
     <?php endif; ?>
   </div>
 
@@ -335,6 +410,34 @@ require_once ROOT . '/core/CoinLedger.php';
   <div style="display:flex;gap:8px;justify-content:flex-end">
     <button class="hl-btn hl-btn-outline" onclick="closeModal('genModal')">Batal</button>
     <button class="hl-btn hl-btn-primary" onclick="doGen()">Buat Tagihan</button>
+  </div>
+</div></div>
+
+<!-- BULK GENERATE MODAL -->
+<div class="modal-bg" id="bulkGenModal"><div class="modal">
+  <h3>📦 Faktur Tagihan Massal</h3>
+  <p style="font-size:13px;color:#6B7280;margin-bottom:12px;line-height:1.5">
+    Generate tagihan sekaligus untuk SEMUA pelanggan yang punya order di periode ini.
+    Cocok untuk B2B/bulanan (mis. hotel, kos, gym, dll).
+  </p>
+  <div class="fld">
+    <label>Cakupan</label>
+    <select id="bulkScope">
+      <option value="bulanan_only">Hanya pelanggan bertipe Bulanan/B2B</option>
+      <option value="all_with_orders">Semua pelanggan yang ada order di periode</option>
+    </select>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+    <div class="fld"><label>Periode Mulai</label><input type="date" id="bulkStart" value="<?= date('Y-m-01') ?>"></div>
+    <div class="fld"><label>Periode Akhir</label><input type="date" id="bulkEnd" value="<?= date('Y-m-d') ?>"></div>
+  </div>
+  <div class="fld"><label>Jatuh Tempo (semua)</label><input type="date" id="bulkTempo" value="<?= date('Y-m-d', strtotime('+14 days')) ?>"></div>
+  <div style="background:#FEF3C7;border:1px solid #FDE68A;border-radius:6px;padding:8px 12px;margin-bottom:12px;font-size:11.5px;color:#92400E">
+    💡 Yang sudah punya piutang di periode ini akan di-UPDATE (jumlah total/dibayar terbaru). Tidak duplikat.
+  </div>
+  <div style="display:flex;gap:8px;justify-content:flex-end">
+    <button class="hl-btn hl-btn-outline" onclick="closeModal('bulkGenModal')">Batal</button>
+    <button class="hl-btn hl-btn-primary" onclick="doBulkGen()">Generate Massal</button>
   </div>
 </div></div>
 
@@ -455,6 +558,28 @@ async function doGen(){
     if (d.error){ alert('⚠️ '+d.error); return; }
     showToast(`✅ Tagihan ${d.total_order} order = ${fmtRp(d.total_tagihan)}`,'success');
     closeModal('genModal'); loadList();
+  } catch(e){ alert('Gagal: '+e.message); }
+}
+
+function openBulkGen(){ document.getElementById('bulkGenModal').classList.add('open'); }
+
+async function doBulkGen(){
+  const body = {
+    scope:       document.getElementById('bulkScope').value,
+    start:       document.getElementById('bulkStart').value,
+    end:         document.getElementById('bulkEnd').value,
+    jatuh_tempo: document.getElementById('bulkTempo').value,
+  };
+  if (!confirm(`Generate tagihan massal untuk periode ${body.start} s/d ${body.end}?\nScope: ${body.scope === 'bulanan_only' ? 'Bulanan/B2B only' : 'Semua dengan order'}`)) return;
+  try {
+    const r = await fetch('piutang.php?action=generate_bulk', {method:'POST', headers:{'Content-Type':'application/json','X-CSRF-Token':CSRF}, body:JSON.stringify(body)});
+    const d = await r.json();
+    if (d.error){ alert('⚠️ '+d.error); return; }
+    const errSummary = d.errors && d.errors.length ? `\n\nGagal: ${d.errors.join(', ')}` : '';
+    showToast(`✅ ${d.generated} dari ${d.total_candidates} pelanggan ter-generate${d.skipped?` (${d.skipped} skip)`:''}`,'success');
+    if (errSummary) alert('Sebagian skip:' + errSummary);
+    closeModal('bulkGenModal');
+    loadList();
   } catch(e){ alert('Gagal: '+e.message); }
 }
 
