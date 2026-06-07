@@ -133,6 +133,24 @@ if ($action) {
         echo json_encode($t); exit;
     }
 
+    // REQUEST DELETE — kasir submit, owner approve (Smartlink-style approval workflow)
+    if ($action === 'request_delete' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+        if (!hasPermission('orders.edit') && !hasPermission('orders.delete')) {
+            echo json_encode(['error'=>'Akses ditolak']); exit;
+        }
+        verifyCsrf();
+        require_once ROOT . '/core/DeleteRequest.php';
+        $d  = json_decode(file_get_contents('php://input'), true);
+        $id = (int)($d['transaksi_id'] ?? 0);
+        $alasan = (string)($d['alasan'] ?? '');
+        // Verifikasi transaksi punya tenant
+        $own = TenantQuery::rawOne("SELECT id FROM hl_transaksi WHERE id=? AND tenant_id=? AND outlet_id=?", [$id, $tid, $oid]);
+        if (!$own) { echo json_encode(['error'=>'Transaksi tidak ditemukan']); exit; }
+        [$reqId, $err] = DeleteRequest::submit('transaksi', $id, $alasan, (int)$user['id']);
+        echo json_encode($err ? ['error'=>$err] : ['success'=>true, 'request_id'=>$reqId]);
+        exit;
+    }
+
     // UPLOAD FOTO PICKUP — dokumentasi saat cucian diambil pelanggan
     if ($action === 'upload_foto_pickup' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!hasPermission('orders.edit') && !hasPermission('orders.update_status')) {
@@ -692,6 +710,8 @@ tbody td{padding:11px 12px;vertical-align:middle}
 
 /* BADGES */
 .badge{display:inline-block;font-size:11px;font-weight:600;letter-spacing:.04em;padding:3px 9px;border-radius:100px;white-space:nowrap}
+.proses-bar{display:block;width:100%;max-width:80px;height:3px;background:#E5E7EB;border-radius:2px;overflow:hidden;margin-top:4px}
+.proses-fill{height:100%;background:linear-gradient(90deg,#10B981,#0F7B6C);transition:width .3s ease}
 .b-masuk{background:#DBEAFE;color:#1D4ED8}
 .b-cuci{background:#FEF9C3;color:#854D0E}
 .b-kering{background:#FEF3C7;color:#92400E}
@@ -1069,6 +1089,9 @@ textarea{resize:vertical;min-height:64px}
       <?php if (hasPermission('orders.edit')): ?>
       <button class="btn btn-primary btn-sm" id="btnSaveEdit" onclick="saveEdit()">💾 Simpan Perubahan</button>
       <?php endif; ?>
+      <?php if (hasPermission('orders.edit') || hasPermission('orders.delete')): ?>
+      <button class="btn btn-sm" style="background:#FEE2E2;color:#991B1B;border:1px solid #FCA5A5" onclick="requestDelete()" title="Submit permintaan hapus untuk persetujuan owner">🗑️ Minta Hapus</button>
+      <?php endif; ?>
     </div>
   </div>
 </div>
@@ -1284,7 +1307,7 @@ async function loadOrders(page=1) {
       +   (row.nama_mitra ? ' <span style="font-size:9px;font-weight:700;background:#FEF3C7;color:#92400E;padding:2px 7px;border-radius:100px;margin-left:4px">📦 ' + esc(row.nama_mitra) + '</span>' : '')
       +   '</div>' + telp + '</td>'
       + '<td data-lbl="Layanan"><div class="td-layanan">' + esc(row.layanan_list||'-') + '</div></td>'
-      + '<td data-lbl="Status"><span class="badge b-' + row.status_proses + '">' + statusLabel(row.status_proses) + '</span></td>'
+      + '<td data-lbl="Status"><span class="badge b-' + row.status_proses + '">' + statusLabel(row.status_proses) + '</span><div class="proses-bar" title="' + prosesPercent(row.status_proses) + '% — ' + statusLabel(row.status_proses) + '"><div class="proses-fill" style="width:' + prosesPercent(row.status_proses) + '%"></div></div></td>'
       + '<td data-lbl="Bayar"><span class="badge b-' + row.status_bayar + '">' + bayarLabel(row.status_bayar) + '</span></td>'
       + '<td data-lbl="Total" class="td-total">Rp ' + parseFloat(row.total).toLocaleString('id-ID') + '</td>'
       + '<td data-lbl="Sisa" style="font-family:var(--mono);font-size:12px;text-align:right;color:' + sisaColor + '">' + sisaText + '</td>'
@@ -1524,6 +1547,25 @@ async function openBayarById(id) {
   if (d.id) openBayarModal(d.id, d.nama_pelanggan, d.total, d.dp||0, d.sisa_bayar||0);
 }
 
+// ── REQUEST DELETE (Smartlink-style approval workflow) ──
+async function requestDelete() {
+  if (!currentEditId) return;
+  const alasan = prompt('Alasan permintaan hapus order ini?\n\n(Wajib diisi, owner akan review)');
+  if (!alasan || alasan.trim().length < 3) {
+    showToast('Alasan minimal 3 karakter', 'error');
+    return;
+  }
+  const r = await fetch('orders.php?action=request_delete', {
+    method:'POST', headers:{'Content-Type':'application/json','X-CSRF-Token':csrfToken()},
+    body: JSON.stringify({transaksi_id: currentEditId, alasan: alasan.trim()})
+  });
+  const d = await r.json();
+  if (d.error) { showToast(d.error, 'error'); return; }
+  showToast('✅ Permintaan hapus terkirim. Menunggu approval owner.', 'success');
+  closeModal();
+  loadOrders();
+}
+
 // ── PROSES STEPS ──────────────────────────────────────
 function setProses(val, el) {
   document.getElementById('edit_status_proses').value = val;
@@ -1666,6 +1708,8 @@ function debounce() {
 // ── HELPERS ───────────────────────────────────────────
 function statusLabel(s){return{'masuk':'📥 Masuk','cuci':'🫧 Cuci','kering':'💨 Kering','setrika':'👔 Setrika','siap':'✅ Siap','diambil':'📦 Diambil'}[s]||s}
 function bayarLabel(s){return{'lunas':'✅ Lunas','dp':'⚡ DP','belum_bayar':'⏳ Belum Bayar'}[s]||s}
+// Progress % visual per status (inspired by Smartlink — visual KPI)
+function prosesPercent(s){return{'masuk':10,'cuci':30,'kering':50,'setrika':70,'siap':90,'diambil':100}[s]||0}
 function fmtDate(d){if(!d)return'-';return new Date(d).toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'})}
 function fmtDateTime(d){if(!d)return'-';return new Date(d).toLocaleString('id-ID',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})}
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;')}

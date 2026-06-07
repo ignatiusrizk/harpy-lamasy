@@ -5,6 +5,7 @@ require_once ROOT . '/middleware/tenant_guard.php';
 require_once ROOT . '/core/Loyalty.php';
 require_once ROOT . '/core/ExpressTier.php';
 require_once ROOT . '/core/MemberTier.php';
+require_once ROOT . '/core/NotaFormatter.php';
 require_once __DIR__ . '/components.php';
 $user = currentUser();
 requirePermission('pos.view');
@@ -150,6 +151,7 @@ if ($action) {
         $nama_pel  = substr(trim(strip_tags($data['nama_pelanggan'] ?? '')), 0, 100);
         $telepon   = substr(preg_replace('/[^0-9+\-\s]/', '', $data['telepon'] ?? ''), 0, 20);
         $catatan   = substr(trim(strip_tags($data['catatan'] ?? '')), 0, 500);
+        $parfum    = substr(trim(strip_tags($data['parfum']  ?? '')), 0, 50);
         $tanggal   = substr(trim($data['tanggal'] ?? date('Y-m-d')), 0, 10);
         // Estimasi selesai — terima DATE (yyyy-mm-dd) atau DATETIME, normalisasi ke DATETIME.
         // Kalau kosong, auto-compute dari antrian saat ini.
@@ -207,11 +209,8 @@ if ($action) {
         $db = Database::get();
         $db->beginTransaction();
         try {
-            // Generate no order per outlet
-            $prefix = 'HL-' . date('Ymd') . '-';
-            $cnt    = $db->prepare("SELECT COUNT(*) FROM hl_transaksi WHERE tenant_id=? AND outlet_id=? AND no_order LIKE ?");
-            $cnt->execute([$tid, $oid, $prefix . '%']);
-            $no = $prefix . str_pad((int)$cnt->fetchColumn() + 1, 3, '0', STR_PAD_LEFT);
+            // Generate no order pakai NotaFormatter (template per-tenant)
+            $no = NotaFormatter::next($tid, $oid, $tanggal);
 
             // Hitung total
             $subtotal = 0;
@@ -331,6 +330,9 @@ if ($action) {
             $hasTierNama = true;
             try { $db->query("SELECT express_tier_nama FROM hl_transaksi LIMIT 1"); }
             catch (Throwable) { $hasTierNama = false; }
+            $hasParfum = true;
+            try { $db->query("SELECT parfum FROM hl_transaksi LIMIT 1"); }
+            catch (Throwable) { $hasParfum = false; }
 
             // Foto masuk (optional, dari upload_foto endpoint)
             $fotoMasuk = trim($data['foto_masuk'] ?? '');
@@ -354,6 +356,7 @@ if ($action) {
             if ($hasBiayaTipe) { $cols[] = 'biaya_tambahan'; $vals[] = $biayaTbh;
                                  $cols[] = 'tipe_order';     $vals[] = $tipeOrder; }
             if ($hasTierNama)  { $cols[] = 'express_tier_nama'; $vals[] = $expressTierNama; }
+            if ($hasParfum && $parfum !== '') { $cols[] = 'parfum'; $vals[] = $parfum; }
             $placeholders = implode(',', array_fill(0, count($cols), '?'));
             $stmt = $db->prepare("INSERT INTO hl_transaksi (".implode(',', $cols).") VALUES ($placeholders)");
             $stmt->execute($vals);
@@ -781,6 +784,17 @@ textarea{resize:vertical;min-height:64px}
             <!-- Member badge — muncul saat pelanggan punya membership aktif -->
             <div class="form-group full" id="memberBadgeBox" style="display:none;background:#FEF3C7;border:1px solid #FDE68A;border-radius:8px;padding:8px 14px;margin:4px 0;font-size:12.5px;color:#92400E;">
               <!-- isi auto by loadMemberInfo() -->
+            </div>
+            <div class="form-group">
+              <label>Parfum / Pewangi <span style="font-size:10px;color:var(--gray);font-weight:400;">— opsional</span></label>
+              <input type="text" id="f_parfum" list="parfumList" placeholder="Lavender, Original, Rose, dll"/>
+              <datalist id="parfumList">
+                <option value="Original"></option>
+                <option value="Lavender"></option>
+                <option value="Rose"></option>
+                <option value="Apple"></option>
+                <option value="Sakura"></option>
+              </datalist>
             </div>
             <div class="form-group full">
               <label>Catatan Order</label>
@@ -1656,6 +1670,7 @@ async function doSaveTransaksi() {
     diskon:         document.getElementById('f_diskon').value,
     biaya_tambahan: document.getElementById('f_biaya_tambahan').value,
     tipe_order:     document.getElementById('f_tipe_order').value,
+    parfum:         document.getElementById('f_parfum')?.value || '',
     redeem_poin:    (LOYALTY.enabled && currentPelangganId) ? (parseInt(document.getElementById('f_redeem_poin')?.value||0)||0) : 0,
     dp:             document.getElementById('f_dp').value,
     metode_bayar:   document.getElementById('f_metode').value,

@@ -154,6 +154,7 @@ CREATE TABLE IF NOT EXISTS hl_transaksi (
   status_proses    ENUM('masuk','cuci','kering','setrika','siap','diambil') DEFAULT 'masuk',
   estimasi_selesai DATE         DEFAULT NULL,
   catatan          TEXT         DEFAULT NULL,
+  parfum           VARCHAR(50)  DEFAULT NULL,
   bukti_bayar      VARCHAR(255) DEFAULT NULL,
   foto_pickup      VARCHAR(255) DEFAULT NULL,
   promo_id         INT          DEFAULT NULL,

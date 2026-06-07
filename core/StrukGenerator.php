@@ -517,6 +517,11 @@ body {
             $h .= self::tRow('Est. Selesai', self::fmtDate($trx['estimasi_selesai'], 'd/m/Y'), $maxChar);
         }
 
+        // ── Parfum (kalau ada) ────────────────────────
+        if (!empty($trx['parfum'])) {
+            $h .= "<div class='sm'>🌸 Parfum: " . self::esc($trx['parfum']) . "</div>\n";
+        }
+
         // ── Catatan ───────────────────────────────────
         if (!empty($tmpl['show_catatan']) && !empty($trx['catatan'])) {
             $h .= "<hr class='sep'>\n";
