@@ -789,6 +789,12 @@ foreach ($banners as $b):
 <?php endforeach; ?>
 
 <?php
+// ── Promo/Feature Banner Carousel (Smartlink-inspired) ──
+require_once ROOT . '/core/BannerLoader.php';
+echo BannerLoader::renderCarousel(TenantResolver::id());
+?>
+
+<?php
 // ══════════════════════════════════════════════════════
 // Dashboard variant per role (brief Akses Karyawan Section 6.4)
 // owner/manager/admin/superadmin → full dashboard (existing)
