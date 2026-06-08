@@ -11,6 +11,7 @@ $activePage = 'approval-inbox';
 define('ROOT', __DIR__);
 require_once ROOT . '/middleware/tenant_guard.php';
 require_once ROOT . '/core/DeleteRequest.php';
+require_once ROOT . '/core/DepositManager.php';
 require_once __DIR__ . '/components.php';
 $user = currentUser();
 // Owner-only — approval is owner's responsibility
@@ -42,6 +43,7 @@ if ($action) {
             // Enrich dengan info entity (mis. no_order utk transaksi)
             foreach ($rows as &$r) {
                 $snap = json_decode($r['entity_snapshot'] ?? 'null', true);
+                $r['source'] = 'delete';
                 $r['entity_label'] = match($r['entity_type']) {
                     'transaksi' => $snap['no_order'] ?? "#{$r['entity_id']}",
                     'kas'       => 'Kas #' . $r['entity_id'] . ($snap ? ' — Rp ' . number_format((float)($snap['jumlah'] ?? 0), 0, ',', '.') : ''),
@@ -55,6 +57,40 @@ if ($action) {
                     default     => '',
                 };
             }
+            unset($r);
+
+            // Append refund requests (sama status filter)
+            // Map: pending=pending, approved=approved+executed, rejected=rejected
+            $refundStatus = $status === 'approved' ? "('approved','executed')" : "('$status')";
+            try {
+                $st2 = $db->prepare(
+                    "SELECT r.id, r.entity_type AS dummy, r.pelanggan_id AS entity_id,
+                            r.alasan, r.requested_by, r.requested_at, r.status, r.reviewed_by, r.reviewed_at, r.review_note,
+                            r.jumlah_refund, r.metode_refund, r.saldo_sebelum,
+                            p.nama AS pelanggan_nama, p.telepon AS pelanggan_telp,
+                            u_req.nama AS requester_nama, u_rev.nama AS reviewer_nama
+                       FROM hl_deposit_refund r
+                       LEFT JOIN hl_pelanggan p ON p.id = r.pelanggan_id
+                       LEFT JOIN hl_users u_req ON u_req.id = r.requested_by
+                       LEFT JOIN hl_users u_rev ON u_rev.id = r.reviewed_by
+                      WHERE r.tenant_id = ? AND r.status IN $refundStatus
+                      ORDER BY r.requested_at DESC LIMIT 200"
+                );
+                $st2->execute([$tid]);
+                $refunds = $st2->fetchAll(PDO::FETCH_ASSOC);
+                foreach ($refunds as &$rf) {
+                    $rf['source']        = 'refund';
+                    $rf['entity_type']   = 'refund';
+                    $rf['entity_label']  = 'Refund Saldo: ' . ($rf['pelanggan_nama'] ?? '#'.$rf['entity_id']);
+                    $rf['entity_extra']  = 'Rp ' . number_format((float)$rf['jumlah_refund'], 0, ',', '.') . ' · via ' . strtoupper($rf['metode_refund']);
+                    $rf['status'] = $rf['status'] === 'executed' ? 'approved' : $rf['status'];
+                    $rows[] = $rf;
+                }
+            } catch (Throwable) { /* tabel belum ada → skip */ }
+
+            // Sort all by requested_at desc
+            usort($rows, fn($a, $b) => strcmp($b['requested_at'] ?? '', $a['requested_at'] ?? ''));
+
             echo json_encode(['rows' => $rows, 'count' => count($rows)]);
         } catch (Throwable $e) {
             echo json_encode(['error' => 'Tabel belum ada. Run delete_request_migration.sql', 'rows' => []]);
@@ -65,9 +101,12 @@ if ($action) {
     if ($action === 'approve' && $_SERVER['REQUEST_METHOD']==='POST') {
         verifyCsrf();
         $d = json_decode(file_get_contents('php://input'), true);
-        $reqId = (int)($d['id'] ?? 0);
-        $note  = (string)($d['note'] ?? '');
-        $err = DeleteRequest::approve($reqId, (int)$user['id'], $note);
+        $reqId  = (int)($d['id'] ?? 0);
+        $source = (string)($d['source'] ?? 'delete');
+        $note   = (string)($d['note'] ?? '');
+        $err = $source === 'refund'
+            ? DepositManager::approveRefund($tid, $reqId, (int)$user['id'], $note)
+            : DeleteRequest::approve($reqId, (int)$user['id'], $note);
         echo json_encode($err ? ['error'=>$err] : ['success'=>true]);
         exit;
     }
@@ -75,15 +114,20 @@ if ($action) {
     if ($action === 'reject' && $_SERVER['REQUEST_METHOD']==='POST') {
         verifyCsrf();
         $d = json_decode(file_get_contents('php://input'), true);
-        $reqId = (int)($d['id'] ?? 0);
-        $note  = (string)($d['note'] ?? '');
-        $err = DeleteRequest::reject($reqId, (int)$user['id'], $note);
+        $reqId  = (int)($d['id'] ?? 0);
+        $source = (string)($d['source'] ?? 'delete');
+        $note   = (string)($d['note'] ?? '');
+        $err = $source === 'refund'
+            ? DepositManager::rejectRefund($tid, $reqId, (int)$user['id'], $note)
+            : DeleteRequest::reject($reqId, (int)$user['id'], $note);
         echo json_encode($err ? ['error'=>$err] : ['success'=>true]);
         exit;
     }
 
     if ($action === 'count') {
-        echo json_encode(['pending' => DeleteRequest::pendingCount($tid)]);
+        echo json_encode([
+            'pending' => DeleteRequest::pendingCount($tid) + DepositManager::pendingRefundCount($tid),
+        ]);
         exit;
     }
 
@@ -160,10 +204,10 @@ async function loadInbox() {
 }
 
 function entityIcon(type) {
-  return {'transaksi':'📋','kas':'💰','pelanggan':'👤'}[type] || '📌';
+  return {'transaksi':'📋','kas':'💰','pelanggan':'👤','refund':'↩️'}[type] || '📌';
 }
 function entityLabel(type) {
-  return {'transaksi':'Transaksi','kas':'Kas','pelanggan':'Pelanggan'}[type] || type;
+  return {'transaksi':'Hapus Transaksi','kas':'Hapus Kas','pelanggan':'Nonaktif Pelanggan','refund':'Refund Saldo'}[type] || type;
 }
 
 function renderInbox(rows) {
@@ -188,8 +232,8 @@ function renderInbox(rows) {
         </div>
         ${r.status === 'pending' ? `
         <div style="display:flex;gap:6px;flex-shrink:0">
-          <button class="hl-btn hl-btn-outline hl-btn-sm" onclick="doReject(${r.id})">❌ Tolak</button>
-          <button class="hl-btn hl-btn-danger hl-btn-sm" onclick="doApprove(${r.id})">✅ Approve & Hapus</button>
+          <button class="hl-btn hl-btn-outline hl-btn-sm" onclick="doReject(${r.id}, '${esc(r.source||'delete')}')">❌ Tolak</button>
+          <button class="hl-btn hl-btn-danger hl-btn-sm" onclick="doApprove(${r.id}, '${esc(r.source||'delete')}')">${r.source==='refund'?'✅ Approve & Refund':'✅ Approve & Hapus'}</button>
         </div>` : ''}
       </div>
     </div>`).join('');
@@ -201,25 +245,28 @@ function switchTab(status) {
   loadInbox();
 }
 
-async function doApprove(id) {
-  if (!confirm('Approve & hapus permanen? Aksi tidak bisa di-undo.')) return;
+async function doApprove(id, source) {
+  const msg = source === 'refund'
+    ? 'Approve & potong saldo customer? Cash harus diberikan ke customer.'
+    : 'Approve & hapus permanen? Aksi tidak bisa di-undo.';
+  if (!confirm(msg)) return;
   const note = prompt('Catatan (opsional):') || '';
   const r = await fetch('?action=approve', {
     method:'POST', headers:{'Content-Type':'application/json','X-CSRF-Token':csrfToken()},
-    body: JSON.stringify({id, note})
+    body: JSON.stringify({id, source, note})
   });
   const d = await r.json();
   if (d.error) { showToast(d.error, 'error'); return; }
-  showToast('Disetujui & dihapus', 'success');
+  showToast(source === 'refund' ? 'Refund disetujui & saldo dipotong' : 'Disetujui & dihapus', 'success');
   loadInbox();
 }
 
-async function doReject(id) {
+async function doReject(id, source) {
   const note = prompt('Alasan ditolak (wajib):');
   if (!note || note.trim().length < 3) { showToast('Alasan minimal 3 karakter', 'error'); return; }
   const r = await fetch('?action=reject', {
     method:'POST', headers:{'Content-Type':'application/json','X-CSRF-Token':csrfToken()},
-    body: JSON.stringify({id, note: note.trim()})
+    body: JSON.stringify({id, source, note: note.trim()})
   });
   const d = await r.json();
   if (d.error) { showToast(d.error, 'error'); return; }

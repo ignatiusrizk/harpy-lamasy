@@ -107,6 +107,28 @@ if ($action) {
         exit;
     }
 
+    // ── Refund Request (submit, owner approve di approval-inbox) ──
+    if ($action === 'request_refund' && $_SERVER['REQUEST_METHOD']==='POST') {
+        verifyCsrf();
+        $d = json_decode(file_get_contents('php://input'), true);
+        $pid    = (int)($d['pelanggan_id'] ?? 0);
+        $jml    = (float)($d['jumlah'] ?? 0);
+        $alasan = (string)($d['alasan'] ?? '');
+        $metode = (string)($d['metode'] ?? 'cash');
+        [$id, $err] = DepositManager::requestRefund($tid, $oid, $pid, $jml, $alasan, (int)$user['id'], $metode);
+        echo json_encode($err ? ['error'=>$err] : ['success'=>true, 'id'=>$id]);
+        exit;
+    }
+
+    // ── Process expired (manual trigger atau cron) ──
+    if ($action === 'process_expired' && $_SERVER['REQUEST_METHOD']==='POST') {
+        verifyCsrf();
+        if (!hasPermission('owner')) { echo json_encode(['error'=>'Akses ditolak']); exit; }
+        $total = DepositManager::processExpired($tid);
+        echo json_encode(['success'=>true, 'expired_amount'=>$total]);
+        exit;
+    }
+
     // ── Bonus Tier CRUD ──
     if ($action === 'tier_list') {
         try {
@@ -238,6 +260,46 @@ renderHeader('💳 Deposit Wallet', [
     <div class="hl-modal-footer">
       <button class="hl-btn hl-btn-outline" onclick="closeTopupModal()">Batal</button>
       <button class="hl-btn hl-btn-primary" onclick="doTopup()">✅ Topup</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════ Modal Refund ════ -->
+<div class="hl-modal-overlay" id="modalRefund">
+  <div class="hl-modal hl-modal-sm">
+    <div class="hl-modal-header">
+      <span class="hl-modal-title">↩️ Refund Saldo — <span id="refundCustNama"></span></span>
+      <button class="hl-modal-close" onclick="closeRefundModal()">✕</button>
+    </div>
+    <div class="hl-modal-body">
+      <input type="hidden" id="rf_pelanggan_id"/>
+      <div style="background:#FEF3C7;border:1px solid #FDE68A;border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:12.5px;color:#92400E;line-height:1.5">
+        ⚠️ Refund butuh <strong>approval owner</strong> di Approval Inbox. Setelah disetujui, saldo dipotong & cash dikembalikan ke customer.
+      </div>
+      <div style="background:#F0FDF4;border:1px solid #BBF7D0;border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:13px;color:#166534">
+        Saldo customer: <strong id="rf_currentBalance">Rp 0</strong>
+      </div>
+      <div class="hl-form-group">
+        <label class="hl-label">Jumlah Refund (Rp) <span class="req">*</span></label>
+        <input type="number" id="rf_jumlah" class="hl-input" min="1000" step="1000" placeholder="50000"/>
+        <div style="font-size:11px;color:#6B7280;margin-top:4px">Max: saldo customer</div>
+      </div>
+      <div class="hl-form-group">
+        <label class="hl-label">Metode Refund</label>
+        <select id="rf_metode" class="hl-input">
+          <option value="cash">💵 Cash</option>
+          <option value="transfer">🏦 Transfer Bank</option>
+          <option value="qris">📱 QRIS</option>
+        </select>
+      </div>
+      <div class="hl-form-group">
+        <label class="hl-label">Alasan Refund <span class="req">*</span></label>
+        <textarea id="rf_alasan" class="hl-input" rows="3" placeholder="Mis. customer pindah kota, komplain layanan, dll" maxlength="1000"></textarea>
+      </div>
+    </div>
+    <div class="hl-modal-footer">
+      <button class="hl-btn hl-btn-outline" onclick="closeRefundModal()">Batal</button>
+      <button class="hl-btn hl-btn-primary" onclick="submitRefund()">📤 Submit Refund</button>
     </div>
   </div>
 </div>
@@ -379,6 +441,7 @@ async function loadCustomers(q='') {
         <td style="padding:10px 12px;text-align:right;white-space:nowrap">
           <button class="hl-btn hl-btn-primary hl-btn-sm" onclick="openTopup(${r.id}, ${JSON.stringify(r.nama).replace(/"/g,'&quot;')}, ${r.saldo_deposit})">⬆️ Topup</button>
           <button class="hl-btn hl-btn-outline hl-btn-sm" onclick="openHistory(${r.id}, ${JSON.stringify(r.nama).replace(/"/g,'&quot;')})">📜</button>
+          ${r.saldo_deposit > 0 ? `<button class="hl-btn hl-btn-sm" style="background:#FEE2E2;color:#991B1B;border:1px solid #FCA5A5" onclick="openRefund(${r.id}, ${JSON.stringify(r.nama).replace(/"/g,'&quot;')}, ${r.saldo_deposit})">↩️ Refund</button>` : ''}
         </td>
       </tr>
     `).join('')}</tbody></table>`;
@@ -440,6 +503,40 @@ async function doTopup() {
   closeTopupModal();
   loadStats();
   loadCustomers();
+}
+
+// ── Refund ──
+let refundPid = null;
+function openRefund(id, nama, balance) {
+  refundPid = id;
+  document.getElementById('refundCustNama').textContent = nama;
+  document.getElementById('rf_pelanggan_id').value = id;
+  document.getElementById('rf_currentBalance').textContent = fmt(balance);
+  document.getElementById('rf_jumlah').value = '';
+  document.getElementById('rf_jumlah').max = balance;
+  document.getElementById('rf_alasan').value = '';
+  document.getElementById('rf_metode').value = 'cash';
+  document.getElementById('modalRefund').classList.add('open');
+}
+function closeRefundModal() { document.getElementById('modalRefund').classList.remove('open'); }
+
+async function submitRefund() {
+  const payload = {
+    pelanggan_id: refundPid,
+    jumlah: parseFloat(document.getElementById('rf_jumlah').value)||0,
+    alasan: document.getElementById('rf_alasan').value.trim(),
+    metode: document.getElementById('rf_metode').value,
+  };
+  if (payload.jumlah <= 0) { showToast('Jumlah wajib > 0','error'); return; }
+  if (payload.alasan.length < 5) { showToast('Alasan minimal 5 karakter','error'); return; }
+  const r = await fetch('?action=request_refund', {
+    method:'POST', headers:{'Content-Type':'application/json','X-CSRF-Token':csrfToken()},
+    body: JSON.stringify(payload)
+  });
+  const d = await r.json();
+  if (d.error) { showToast(d.error,'error'); return; }
+  showToast('✅ Refund request terkirim. Menunggu approval owner di Approval Inbox.','success');
+  closeRefundModal();
 }
 
 // ── History ──
