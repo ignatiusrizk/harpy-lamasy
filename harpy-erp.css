@@ -701,13 +701,11 @@ body { font-family: var(--font); background: var(--off); color: var(--dark); min
 /* Wrapper utk items, supaya bisa di-collapse */
 .ol-side-group-items {
   display: flex; flex-direction: column; gap: 2px;
-  max-height: 600px;
-  overflow: hidden;
-  transition: max-height .25s ease, opacity .2s ease, padding .2s ease;
+  /* No overflow:hidden — itu yg bikin item terakhir ke-clip kalau
+     max-height tidak persis. Pakai display:none waktu collapsed. */
 }
 .ol-side-group-items.ol-side-collapsed {
-  max-height: 0; opacity: 0; padding: 0;
-  pointer-events: none;
+  display: none;
 }
 .ol-side-group-single {
   /* Dashboard solo item — no group header */
