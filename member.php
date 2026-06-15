@@ -147,13 +147,15 @@ if ($action) {
     exit;
 }
 
-renderHeader('⭐ Member Tier', [
-    'breadcrumbs' => [
-        ['label'=>'Dashboard','url'=>'/dashboard'],
-        ['label'=>'Member Tier'],
-    ],
-]);
 ?>
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<?php renderHead('Member Tier'); ?>
+</head>
+<body>
+<?php renderTopbar('member'); ?>
+<div class="hl-main">
 
 <div class="hl-container">
   <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:18px;">
@@ -499,4 +501,6 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 
-<?php renderFooter(); ?>
+</div><!-- /hl-main -->
+</body>
+</html>

@@ -187,13 +187,15 @@ if ($action) {
     exit;
 }
 
-renderHeader('💳 Deposit Wallet', [
-    'breadcrumbs' => [
-        ['label'=>'Dashboard','url'=>'/dashboard'],
-        ['label'=>'Deposit Wallet'],
-    ],
-]);
 ?>
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<?php renderHead('Deposit Wallet'); ?>
+</head>
+<body>
+<?php renderTopbar('deposit'); ?>
+<div class="hl-main">
 
 <div class="hl-container">
   <!-- Stats -->
@@ -684,4 +686,6 @@ async function deleteBonusTier(id) {
 document.addEventListener('DOMContentLoaded', () => { loadStats(); loadCustomers(); });
 </script>
 
-<?php renderFooter(); ?>
+</div><!-- /hl-main -->
+</body>
+</html>
