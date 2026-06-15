@@ -258,8 +258,19 @@ function renderTopbar(string $activePage = '', bool $minimalMode = false): void 
             if (!groupVisible($group, $user)) continue;
             $visibleItems = array_filter($group['items'], fn($i) => navItemVisible($i, $user));
             if (!$visibleItems) continue;
+            // Group 'dashboard' single-item — gak perlu header collapsible
+            $isSingle = count($visibleItems) === 1 && $groupKey === 'dashboard';
+            // Cek apakah active page ada di group ini → group auto-expanded
+            $hasActive = isset($visibleItems[$activePage]);
           ?>
-          <div class="ol-side-label"><?= htmlspecialchars($group['label']) ?></div>
+          <?php if (!$isSingle): ?>
+          <button type="button" class="ol-side-label ol-side-group-toggle <?= $hasActive ? 'has-active' : '' ?>"
+                  data-group="<?= htmlspecialchars($groupKey) ?>" aria-expanded="true">
+            <span class="ol-side-label-text"><?= htmlspecialchars($group['label']) ?></span>
+            <span class="ol-side-chevron">▾</span>
+          </button>
+          <?php endif; ?>
+          <div class="ol-side-group-items<?= $isSingle ? ' ol-side-group-single' : '' ?>" data-group-items="<?= htmlspecialchars($groupKey) ?>">
           <?php foreach ($visibleItems as $key => $item):
             $isEmph = in_array($key, $emphasisKeys, true);
             $isActive = $activePage === $key;
@@ -269,8 +280,47 @@ function renderTopbar(string $activePage = '', bool $minimalMode = false): void 
             <span class="ico"><?= $iconMap[$key] ?? '•' ?></span> <?= htmlspecialchars($item['label']) ?>
           </a>
           <?php endforeach; ?>
+          </div>
           <?php endforeach; ?>
         </nav>
+        <script>
+        // ── Side menu collapsible groups (persist in localStorage) ──
+        (function() {
+          const STORAGE_KEY = 'lamasy_sidemenu_collapsed_v1';
+          // Get collapsed set
+          function getCollapsed() {
+            try { return new Set(JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]')); }
+            catch (e) { return new Set(); }
+          }
+          function saveCollapsed(set) {
+            try { localStorage.setItem(STORAGE_KEY, JSON.stringify([...set])); } catch (e) {}
+          }
+          // Apply state pada load
+          const collapsed = getCollapsed();
+          document.querySelectorAll('.ol-side-group-toggle').forEach(btn => {
+            const groupKey = btn.dataset.group;
+            const items = document.querySelector(`[data-group-items="${groupKey}"]`);
+            if (!items) return;
+            // Auto-expand kalau group punya active page (override saved collapsed)
+            const hasActive = btn.classList.contains('has-active');
+            const isCollapsed = collapsed.has(groupKey) && !hasActive;
+            if (isCollapsed) {
+              items.classList.add('ol-side-collapsed');
+              btn.setAttribute('aria-expanded', 'false');
+              btn.classList.add('is-collapsed');
+            }
+            btn.addEventListener('click', () => {
+              const willCollapse = !items.classList.contains('ol-side-collapsed');
+              items.classList.toggle('ol-side-collapsed', willCollapse);
+              btn.classList.toggle('is-collapsed', willCollapse);
+              btn.setAttribute('aria-expanded', willCollapse ? 'false' : 'true');
+              const s = getCollapsed();
+              willCollapse ? s.add(groupKey) : s.delete(groupKey);
+              saveCollapsed(s);
+            });
+          });
+        })();
+        </script>
         <?php endif; ?>
       </aside>
 

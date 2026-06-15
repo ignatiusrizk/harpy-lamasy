@@ -680,6 +680,39 @@ body { font-family: var(--font); background: var(--off); color: var(--dark); min
   padding: 12px 10px 6px;
   text-transform: uppercase;
 }
+/* Collapsible group toggle (button replaces div for clickable) */
+.ol-side-group-toggle {
+  display: flex; align-items: center; justify-content: space-between;
+  width: 100%; background: none; border: none;
+  cursor: pointer; font-family: var(--font);
+  margin-top: 4px;
+  border-radius: 6px;
+  transition: background .15s ease;
+}
+.ol-side-group-toggle:hover { background: rgba(15,123,108,.05); color: var(--teal-d); }
+.ol-side-group-toggle.has-active .ol-side-label-text { color: var(--teal-d); }
+.ol-side-chevron {
+  font-size: 10px; color: #C4CAD6;
+  transition: transform .2s ease;
+  margin-right: 4px;
+}
+.ol-side-group-toggle.is-collapsed .ol-side-chevron { transform: rotate(-90deg); }
+.ol-side-group-toggle:hover .ol-side-chevron { color: var(--teal-d); }
+/* Wrapper utk items, supaya bisa di-collapse */
+.ol-side-group-items {
+  display: flex; flex-direction: column; gap: 2px;
+  max-height: 600px;
+  overflow: hidden;
+  transition: max-height .25s ease, opacity .2s ease, padding .2s ease;
+}
+.ol-side-group-items.ol-side-collapsed {
+  max-height: 0; opacity: 0; padding: 0;
+  pointer-events: none;
+}
+.ol-side-group-single {
+  /* Dashboard solo item — no group header */
+  margin-bottom: 8px;
+}
 .ol-side-link {
   display: flex; align-items: center; gap: 10px;
   padding: 9px 11px;
