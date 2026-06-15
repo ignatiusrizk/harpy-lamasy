@@ -195,7 +195,6 @@ if ($action) {
 </head>
 <body>
 <?php renderTopbar('deposit'); ?>
-<div class="hl-main">
 
 <div class="hl-container">
   <!-- Stats -->
@@ -686,6 +685,5 @@ async function deleteBonusTier(id) {
 document.addEventListener('DOMContentLoaded', () => { loadStats(); loadCustomers(); });
 </script>
 
-</div><!-- /hl-main -->
 </body>
 </html>

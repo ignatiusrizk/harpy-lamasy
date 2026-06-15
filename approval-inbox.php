@@ -143,7 +143,6 @@ $pendingCount = DeleteRequest::pendingCount(TenantResolver::id());
 </head>
 <body>
 <?php renderTopbar('approval-inbox'); ?>
-<div class="hl-main">
 
 <div class="hl-container">
   <div style="background:#FEF3C7;border:1px solid #FDE68A;border-radius:10px;padding:14px 18px;margin-bottom:18px;font-size:13.5px;color:#92400E;line-height:1.55">
@@ -279,6 +278,5 @@ async function doReject(id, source) {
 document.addEventListener('DOMContentLoaded', loadInbox);
 </script>
 
-</div><!-- /hl-main -->
 </body>
 </html>
