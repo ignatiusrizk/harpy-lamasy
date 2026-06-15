@@ -1089,6 +1089,7 @@ textarea{resize:vertical;min-height:64px}
       <?php if (hasPermission('orders.edit')): ?>
       <button class="btn btn-primary btn-sm" id="btnSaveEdit" onclick="saveEdit()">💾 Simpan Perubahan</button>
       <?php endif; ?>
+      <button class="btn btn-sm" style="background:#25D366;color:#fff;border:none" onclick="shareToWA()" title="Kirim link tracking ke customer via WhatsApp">💬 Kirim Status WA</button>
       <?php if (hasPermission('orders.edit') || hasPermission('orders.delete')): ?>
       <button class="btn btn-sm" style="background:#FEE2E2;color:#991B1B;border:1px solid #FCA5A5" onclick="requestDelete()" title="Submit permintaan hapus untuk persetujuan owner">🗑️ Minta Hapus</button>
       <?php endif; ?>
@@ -1156,6 +1157,7 @@ $_outletTelp  = $_outletInfo['telepon'] ?? '';
 <script>
 let searchTimer = null;
 let currentEditId = null;
+let currentOrderData = null;
 let editItems = [];
 let layananAll = [];
 const BRAND_NAME   = <?= json_encode($_brandName) ?>;
@@ -1371,6 +1373,7 @@ async function openDetail(id) {
   if (d.error) { document.getElementById('modalBody').innerHTML = '<div class="empty">❌ ' + d.error + '</div>'; return; }
 
   editItems = d.items || [];
+  currentOrderData = d;
   document.getElementById('modalTitle').textContent = '📋 ' + d.no_order;
 
   const statuses = [
@@ -1545,6 +1548,24 @@ async function openBayarById(id) {
   const r = await fetch('orders.php?action=get&id=' + id);
   const d = await r.json();
   if (d.id) openBayarModal(d.id, d.nama_pelanggan, d.total, d.dp||0, d.sisa_bayar||0);
+}
+
+// ── SHARE TRACKING LINK VIA WHATSAPP ──
+function shareToWA() {
+  if (!currentEditId) return;
+  const order = currentOrderData;
+  if (!order) { showToast('Order belum di-load', 'error'); return; }
+  const phone = (order.telepon || '').replace(/[^0-9]/g, '');
+  if (!phone) { showToast('Pelanggan tidak punya nomor telepon', 'error'); return; }
+  const waNum = phone.startsWith('0') ? '62' + phone.substring(1) : phone;
+  const trackUrl = location.origin + '/cek?n=' + encodeURIComponent(order.no_order);
+  const statusTxt = {
+    'masuk':'sudah kami terima','cuci':'sedang dicuci','kering':'sedang dikeringkan',
+    'setrika':'sedang disetrika','siap':'siap diambil','diambil':'sudah diambil'
+  }[order.status_proses] || order.status_proses;
+  const msg = `Halo ${order.nama_pelanggan}, cucian Anda dengan nomor *${order.no_order}* saat ini ${statusTxt}.\n\nCek status lengkap (real-time): ${trackUrl}\n\nVerifikasi pakai 4 digit terakhir nomor telepon Anda.`;
+  const waUrl = `https://wa.me/${waNum}?text=${encodeURIComponent(msg)}`;
+  window.open(waUrl, '_blank');
 }
 
 // ── REQUEST DELETE (Smartlink-style approval workflow) ──

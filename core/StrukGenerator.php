@@ -18,6 +18,18 @@
 
 class StrukGenerator
 {
+    /**
+     * URL public tracking customer (di-embed di QR struk).
+     * Auto-detect host dari $_SERVER, fallback ke domain tetap.
+     */
+    public static function trackingUrl(string $noOrder): string
+    {
+        $host = $_SERVER['HTTP_HOST'] ?? 'lamasy.app';
+        $scheme = (!empty($_SERVER['HTTPS']) || ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https') ? 'https' : 'http';
+        return $scheme . '://' . $host . '/cek?n=' . urlencode($noOrder);
+    }
+
+
     // ── Coin cost per tipe ─────────────────────────────
     const COIN_RETAIL  = 'generate_nota';    // 50 coin
     const COIN_B2B     = 'generate_invoice'; // 200 coin
@@ -556,6 +568,16 @@ body {
         if (!empty($tmpl['footer_extra'])) {
             $h .= "<div class='c sm'>" . self::esc($tmpl['footer_extra']) . "</div>\n";
         }
+        // ── QR Code Tracking (auto-included kalau no_order ada) ──
+        if (!empty($trx['no_order'])) {
+            $trackUrl = self::trackingUrl($trx['no_order']);
+            $qrSrc = 'https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=' . urlencode($trackUrl);
+            $h .= "<hr class='sep'>\n";
+            $h .= "<div class='c' style='margin-top:4px'>"
+                . "<img src='" . self::esc($qrSrc) . "' alt='QR Cek Status' style='width:90px;height:90px'/>"
+                . "<div class='sm' style='margin-top:2px'>📱 Scan QR utk cek status</div>"
+                . "</div>\n";
+        }
         if (!empty($tmpl['show_watermark'])) {
             $h .= "<div class='c b' style='opacity:.3;font-size:2em;margin-top:4px'>COPY</div>\n";
         }
@@ -852,6 +874,15 @@ tbody tr:nth-child(even) td { background: #f8faff; }
         if (!empty($tmpl['show_footer_syarat']) && !empty($tmpl['footer_syarat'])) {
             $h .= "  <hr style='margin:8px 0;border-color:#ddd'>\n";
             $h .= "  <div>" . nl2br(self::esc($tmpl['footer_syarat'])) . "</div>\n";
+        }
+        // QR Code Tracking
+        if (!empty($trx['no_order'])) {
+            $trackUrl = self::trackingUrl($trx['no_order']);
+            $qrSrc = 'https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=' . urlencode($trackUrl);
+            $h .= "  <div style='text-align:center;margin-top:10px;padding-top:10px;border-top:1px dashed #ddd'>";
+            $h .= "<img src='" . self::esc($qrSrc) . "' alt='QR Cek Status' style='width:100px;height:100px'/>";
+            $h .= "<div style='font-size:10px;color:#777;margin-top:3px'>📱 Scan QR untuk cek status cucian</div>";
+            $h .= "</div>\n";
         }
         $h .= "</div><!-- /doc-footer -->
 
