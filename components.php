@@ -241,7 +241,7 @@ function renderTopbar(string $activePage = '', bool $minimalMode = false): void 
       <!-- ── SIDEBAR ── -->
       <aside class="ol-side">
         <div class="ol-side-brand">
-          <div class="ol-side-logo"><img src="/assets/logo.png" alt="LAMASY" style="height:24px;vertical-align:middle;margin-right:6px">LAMASY</div>
+          <div class="ol-side-logo"><img src="/assets/logo.png" alt="LAMASY" style="height:22px;max-width:24px;object-fit:contain;vertical-align:middle;margin-right:6px;flex-shrink:0">LAMASY</div>
           <div class="ol-side-sub" title="<?= htmlspecialchars($brandNama) ?>">
             <?= htmlspecialchars($brandNama) ?>
           </div>

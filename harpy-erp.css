@@ -646,6 +646,8 @@ body { font-family: var(--font); background: var(--off); color: var(--dark); min
 .ol-side-logo {
   font-size: 18px; font-weight: 800; color: var(--teal-d);
   letter-spacing: .04em; line-height: 1; white-space: nowrap;
+  display: flex; align-items: center;
+  overflow: hidden; /* safety in case logo image wider than expected */
 }
 .ol-side-sub {
   font-size: 11px; font-weight: 500;
