@@ -196,7 +196,7 @@ if ($action) {
 <body>
 <?php renderTopbar('deposit'); ?>
 
-<div class="hl-container">
+<div class="hl-main">
   <!-- Stats -->
   <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px" id="statsCards">
     <div class="hl-stat-card teal"><div class="hl-stat-num" id="sLiability">-</div><div class="hl-stat-label">💰 Liability Total</div></div>

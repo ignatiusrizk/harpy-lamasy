@@ -144,7 +144,7 @@ $pendingCount = DeleteRequest::pendingCount(TenantResolver::id());
 <body>
 <?php renderTopbar('approval-inbox'); ?>
 
-<div class="hl-container">
+<div class="hl-main">
   <div style="background:#FEF3C7;border:1px solid #FDE68A;border-radius:10px;padding:14px 18px;margin-bottom:18px;font-size:13.5px;color:#92400E;line-height:1.55">
     💡 <strong>Approval Inbox</strong> — pusatkan semua permintaan yang butuh persetujuan owner.
     Saat ini menampilkan permintaan hapus transaksi/kas/pelanggan dari kasir.

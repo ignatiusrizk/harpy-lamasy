@@ -156,7 +156,7 @@ if ($action) {
 <body>
 <?php renderTopbar('member'); ?>
 
-<div class="hl-container">
+<div class="hl-main">
   <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:18px;">
     <button class="hl-btn hl-btn-primary" onclick="openTierModal()">⭐ Tambah Tier</button>
     <button class="hl-btn hl-btn-outline" onclick="openEnrollModal()">+ Daftar Pelanggan ke Tier</button>

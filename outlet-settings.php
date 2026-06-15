@@ -144,7 +144,7 @@ if ($action) {
 <body>
 <?php renderTopbar('outlet-settings'); ?>
 
-<div class="hl-container">
+<div class="hl-main">
   <div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:10px;padding:14px 18px;margin-bottom:18px;font-size:13.5px;color:#1E40AF;line-height:1.55">
     💡 <strong>Format Nomor Nota</strong> — atur prefix & template format nota per outlet. Default tiap outlet otomatis dapat prefix dari nama (mis. "Harpy Laundry" → <code>HARPY-</code>).
     Bisa di-customize untuk konsistensi branding (mis. <code>HL-2024-00001</code>, <code>JKT001/2026/06/</code>, dll).
