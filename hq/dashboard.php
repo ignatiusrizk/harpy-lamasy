@@ -534,6 +534,28 @@ foreach ($outlets as $o) {
                 'msg'=>"📒 Outlet <strong>{$o['nama_outlet']}</strong>: kas belum diinput hari ini (ada {$o['order_today']} order)"];
         }
     } catch (Throwable) {}
+
+    // 3. Inventori bahan baku stok kritis
+    try {
+        $stmt = $db->prepare("SELECT COUNT(*) AS habis_count,
+                                     SUM(CASE WHEN stok_terkini > 0 AND stok_terkini <= stok_minimum THEN 1 ELSE 0 END) AS minim_count
+                              FROM hl_bahan_stok
+                              WHERE tenant_id=? AND outlet_id=? AND is_active=1
+                                AND stok_terkini <= stok_minimum");
+        $stmt->execute([$tid, $oid]);
+        $invRow = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
+        $habisCount = (int)($invRow['habis_count'] ?? 0);
+        $minimCount = (int)($invRow['minim_count'] ?? 0);
+        // habis_count includes minim, jadi pisahkan: habis = stok<=0
+        $habisOnly = $habisCount - $minimCount;
+        if ($habisOnly > 0 || $minimCount > 0) {
+            $parts = [];
+            if ($habisOnly > 0) $parts[] = "<strong>$habisOnly bahan habis</strong>";
+            if ($minimCount > 0) $parts[] = "$minimCount bahan minim";
+            $alerts[] = ['level' => $habisOnly > 0 ? 'danger' : 'warning',
+                'msg' => "📦 Outlet <strong>{$o['nama_outlet']}</strong>: " . implode(' & ', $parts) . ' — <a href="/hq/inventori" style="color:inherit;text-decoration:underline">kelola</a>'];
+        }
+    } catch (Throwable) {}
 }
 
 $tenantCoin = (int)($hqTenant['coin_balance'] ?? 0);

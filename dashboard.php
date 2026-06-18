@@ -338,7 +338,27 @@ if ($action) {
             );
         } catch (Throwable) {}
 
-        echo json_encode(['siap' => $siap, 'mepet' => $mepet, 'piutang' => $piutang, 'mitra_inaktif' => $mitraInaktif]);
+        // Inventori bahan baku — stok kritis (habis / minim)
+        $inventoriKritis = [];
+        try {
+            $inventoriKritis = TenantQuery::raw(
+                "SELECT id, nama, kategori, satuan, stok_terkini, stok_minimum, status_stok
+                 FROM hl_bahan_stok
+                 WHERE tenant_id = ? AND outlet_id = ? AND is_active = 1
+                   AND stok_terkini <= stok_minimum
+                 ORDER BY (stok_terkini <= 0) DESC, nama ASC
+                 LIMIT 10",
+                [$tid, $oid]
+            );
+        } catch (Throwable) {}
+
+        echo json_encode([
+            'siap'           => $siap,
+            'mepet'          => $mepet,
+            'piutang'        => $piutang,
+            'mitra_inaktif'  => $mitraInaktif,
+            'inventori_kritis' => $inventoriKritis,
+        ]);
         exit;
     }
 
@@ -1292,6 +1312,19 @@ if ($_dashRole === 'kasir'):
       </div>
     </div>
 
+    <!-- INVENTORI KRITIS -->
+    <div id="inventoriKritisWrap" style="display:none;margin-top:16px">
+      <div class="hl-card" style="border-left:4px solid #EF4444">
+        <div class="hl-card-header">
+          <div class="alert-title">📦 Bahan Baku Stok Kritis
+            <span class="alert-badge" id="badgeInventoriKritis" style="background:#FEE2E2;color:#991B1B">0</span>
+          </div>
+          <a href="/inventori" style="font-size:12px;color:var(--teal);text-decoration:none">Kelola stok →</a>
+        </div>
+        <div class="hl-card-body" style="padding:12px" id="inventoriKritisList"></div>
+      </div>
+    </div>
+
 </div><!-- /hl-main -->
 
 <?php endif; // hasOutlet ?>
@@ -1604,6 +1637,29 @@ async function loadAlerts(){
     }).join('');
   } else if (wrapMI) {
     wrapMI.style.display = 'none';
+  }
+
+  // Inventori bahan baku stok kritis
+  const wrapINV = document.getElementById('inventoriKritisWrap');
+  if (wrapINV && Array.isArray(d.inventori_kritis) && d.inventori_kritis.length) {
+    wrapINV.style.display = 'block';
+    document.getElementById('badgeInventoriKritis').textContent = d.inventori_kritis.length;
+    document.getElementById('inventoriKritisList').innerHTML = d.inventori_kritis.map(b => {
+      const habis = parseInt(b.stok_terkini) <= 0;
+      const badge = habis
+        ? '<span class="hl-badge hl-badge-red" style="font-size:10px">🔴 Habis</span>'
+        : '<span class="hl-badge" style="font-size:10px;background:#FEF3C7;color:#92400E">⚠️ Minim</span>';
+      return `<div class="alert-row">
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:2px">${badge}</div>
+          <div class="alert-nama">${esc(b.nama)}</div>
+          <div class="alert-meta">Stok: <strong>${b.stok_terkini} ${esc(b.satuan)}</strong> · Min: ${b.stok_minimum}</div>
+        </div>
+        <a href="/inventori" class="hl-btn hl-btn-outline hl-btn-sm" style="font-size:11px">Kelola</a>
+      </div>`;
+    }).join('');
+  } else if (wrapINV) {
+    wrapINV.style.display = 'none';
   }
 }
 

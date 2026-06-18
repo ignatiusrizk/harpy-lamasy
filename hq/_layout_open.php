@@ -73,6 +73,10 @@ $_canSwitch = !empty($hqIsOwner) || !empty($hqIsManager);
          class="hq-side-link <?= $_aPage === 'hq-layanan' ? 'active' : '' ?>">
         <span class="ico">🧺</span> Layanan & Harga
       </a>
+      <a href="/hq/inventori"
+         class="hq-side-link <?= $_aPage === 'hq-inventori' ? 'active' : '' ?>">
+        <span class="ico">📦</span> Inventori
+      </a>
 
       <div class="hq-side-divider"></div>
       <div class="hq-side-label">Tim & Pelanggan</div>

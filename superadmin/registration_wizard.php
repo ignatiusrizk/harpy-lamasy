@@ -293,6 +293,14 @@ function provisionTenant(array $wizard): array
         $outletId = (int)$db->lastInsertId();
         $db->prepare("UPDATE tenants SET total_outlets=1 WHERE id=?")->execute([$tenantId]);
 
+        // Seed bahan baku default
+        try {
+            require_once dirname(__DIR__) . '/core/TenantProvisioner.php';
+            TenantProvisioner::seedDefaultBahan($db, $tenantId, $newOutletId);
+        } catch (Throwable $e) {
+            error_log('[registration_wizard] Gagal seed bahan default: ' . $e->getMessage());
+        }
+
         // 4. Credentials
         $password = substr(str_shuffle('abcdefghijklmnopqrstuvwxyz0123456789'), 0, 8);
         $hashedPw = password_hash($password, PASSWORD_BCRYPT);

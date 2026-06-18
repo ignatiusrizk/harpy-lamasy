@@ -1437,6 +1437,7 @@ function renderKeuLr(d) {
   }
   if ((d.beban.penyusutan||0) > 0) h += row('Beban Penyusutan Aset', d.beban.penyusutan, 'indent');
   if ((d.beban.bunga||0) > 0) h += row('Beban Bunga Pinjaman', d.beban.bunga, 'indent');
+  if ((d.beban.bahan_baku||0) > 0) h += row('Beban Bahan Baku (Inventori)', d.beban.bahan_baku, 'indent');
   const manualEnt = Object.entries(d.beban.manual || {});
   manualEnt.forEach(([k,v]) => h += row(escapeHtml(k), v, 'indent'));
   h += row('Total Beban', d.total_beban, 'subtotal');

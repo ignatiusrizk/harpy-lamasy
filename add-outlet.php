@@ -218,6 +218,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['step2_submit'])) {
             // Non-fatal — outlet tetap terbuat, template akan dibuat on-demand
         }
 
+        // Seed default bahan baku inventori
+        try {
+            require_once ROOT . '/core/TenantProvisioner.php';
+            TenantProvisioner::seedDefaultBahan($db, $tid, $outletId);
+        } catch (Throwable $e) {
+            error_log('[add-outlet.php] Gagal seed bahan default: ' . $e->getMessage());
+        }
+
         if ($isPaid) {
             // Paid/pending outlet: JANGAN switch session ke outlet baru
             // Tenant tetap di outlet yang sedang aktif

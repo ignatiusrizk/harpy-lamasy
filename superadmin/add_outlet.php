@@ -142,6 +142,14 @@ function provisionOutlet(array $wiz, array $tenant): array
             $lStmt->execute([$tenantId, $outletId, $l['nama'], $l['harga'], $l['satuan'], $l['kategori']]);
         }
 
+        // Seed bahan baku default
+        try {
+            require_once dirname(__DIR__) . '/core/TenantProvisioner.php';
+            TenantProvisioner::seedDefaultBahan($db, $tenantId, $outletId);
+        } catch (Throwable $e) {
+            error_log('[sa add_outlet] Gagal seed bahan default: ' . $e->getMessage());
+        }
+
         // If per_outlet mode and coin_initial_balance > 0, optionally note transfer from shared
         $note = '';
         if ($tenant['coin_mode'] === 'per_outlet' && $coinBalance > 0) {

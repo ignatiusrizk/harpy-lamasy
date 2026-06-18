@@ -166,6 +166,24 @@ class FinancialCalculator
         // Bunga pinjaman
         $bebanBunga = self::hitungBunga($tenantId, $outletId, $periode);
 
+        // Beban bahan baku — auto dari mutasi inventori tipe='masuk'
+        // (purchase / restock dianggap beban di bulan terjadi).
+        $bebanBahanBaku = 0;
+        try {
+            $s = $db->prepare("
+                SELECT COALESCE(SUM(m.jumlah * COALESCE(m.harga_beli, 0)), 0)
+                FROM hl_bahan_mutasi m
+                WHERE m.tenant_id = ?
+                  AND m.tipe      = 'masuk'
+                  AND DATE(m.created_at) BETWEEN ? AND ?
+                  " . ($outletId ? " AND m.outlet_id = ?" : "") . "
+            ");
+            $params = [$tenantId, $start, $end];
+            if ($outletId) $params[] = $outletId;
+            $s->execute($params);
+            $bebanBahanBaku = (int)$s->fetchColumn();
+        } catch (Throwable) {}
+
         // Beban manual (jurnal: tipe=beban_manual, arah=debit)
         $bebanManual      = [];
         $totalBebanManual = 0;
@@ -189,7 +207,8 @@ class FinancialCalculator
         } catch (Throwable) {}
 
         $totalBeban = $bebanGaji + $bebanKomisi + $bebanKasKeluar
-                    + $bebanPenyusutan + $bebanBunga + $totalBebanManual;
+                    + $bebanPenyusutan + $bebanBunga + $totalBebanManual
+                    + $bebanBahanBaku;
 
         $labaBersih = $totalPendapatan - $totalBeban;
 
@@ -209,6 +228,7 @@ class FinancialCalculator
                 'detail_kas'       => $detailKasKeluar,
                 'penyusutan'       => $bebanPenyusutan,
                 'bunga'            => $bebanBunga,
+                'bahan_baku'       => $bebanBahanBaku,
                 'manual'           => $bebanManual,
                 'total_manual'     => $totalBebanManual,
             ],
@@ -742,9 +762,10 @@ class FinancialCalculator
                + ($beban['bunga'] ?? 0)
                + ($beban['total_manual'] ?? 0);
 
-        // Biaya variabel: komisi + operasional kas
+        // Biaya variabel: komisi + operasional kas + bahan baku
         $variabel = ($beban['komisi_mitra'] ?? 0)
-                  + ($beban['operasional_kas'] ?? 0);
+                  + ($beban['operasional_kas'] ?? 0)
+                  + ($beban['bahan_baku'] ?? 0);
 
         $rasioVar = $pendapatan > 0 ? $variabel / $pendapatan : 0;
         $margin   = 1 - $rasioVar;

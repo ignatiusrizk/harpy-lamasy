@@ -166,6 +166,8 @@ class TenantProvisioner
             ['kas.view',             'kas',       'view',          'Lihat halaman kas'],
             ['kas.create',           'kas',       'create',        'Input kas masuk/keluar'],
             ['kas.delete',           'kas',       'delete',        'Hapus entri kas'],
+            ['inventori.view',       'inventori', 'view',          'Lihat stok & riwayat bahan baku'],
+            ['inventori.manage',     'inventori', 'manage',        'Tambah/edit/hapus bahan & input mutasi stok'],
             ['laporan.view',         'laporan',   'view',          'Lihat laporan'],
             ['laporan.export',       'laporan',   'export',        'Export laporan'],
             ['karyawan.view',        'karyawan',  'view',          'Lihat data karyawan'],
@@ -260,6 +262,39 @@ class TenantProvisioner
         foreach ($layanan as [$nama, $kat, $sat, $harga, $urut]) {
             $stmt->execute([$tenantId, $nama, $kat, $sat, $harga, $urut]);
         }
+    }
+
+    /**
+     * Seed bahan baku default untuk outlet baru.
+     * Stok awal = 0 (tenant isi sendiri), stok_minimum sesuai konvensi laundry kecil.
+     *
+     * @return int jumlah bahan yang ter-seed
+     */
+    public static function seedDefaultBahan(PDO $db, int $tenantId, int $outletId): int
+    {
+        $defaults = [
+            // [nama, kategori, satuan, stok_minimum]
+            ['Deterjen Bubuk',        'deterjen',         'kg',    5],
+            ['Deterjen Cair',         'deterjen',         'liter', 5],
+            ['Softener / Pelembut',   'pewangi',          'liter', 3],
+            ['Parfum Laundry',        'parfum',           'pcs',   5],
+            ['Plastik Kemasan S',     'plastik_kemasan',  'rol',   3],
+            ['Plastik Kemasan L',     'plastik_kemasan',  'rol',   3],
+            ['Hanger',                'peralatan',        'pcs',  20],
+        ];
+
+        $stmt = $db->prepare(
+            "INSERT INTO hl_bahan (tenant_id, outlet_id, nama, kategori, satuan, stok_awal, stok_minimum, is_active)
+             VALUES (?,?,?,?,?,0,?,1)"
+        );
+        $count = 0;
+        foreach ($defaults as [$nama, $kat, $sat, $min]) {
+            try {
+                $stmt->execute([$tenantId, $outletId, $nama, $kat, $sat, $min]);
+                $count++;
+            } catch (Throwable) { /* skip duplikat / table belum ada */ }
+        }
+        return $count;
     }
 
     // ── Internal helpers ──────────────────────────────
