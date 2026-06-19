@@ -1,6 +1,6 @@
 <?php
 // ══════════════════════════════════════════════════════
-// self.php — Public Self-Service Booking
+// self.php — Public Self-Service Booking — v2
 //
 // Customer scan QR di mesin → URL /self?m=KODE
 // 1. Tampilkan info mesin (nama, tipe, status)
