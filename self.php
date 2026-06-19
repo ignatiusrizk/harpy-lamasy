@@ -37,7 +37,12 @@ function findMesinByKode(string $kode): ?array
         );
         $st->execute([$kode]);
         return $st->fetch(PDO::FETCH_ASSOC) ?: null;
-    } catch (Throwable) { return null; }
+    } catch (Throwable $e) {
+        if (!empty($_GET['debug'])) {
+            echo '<pre>ERROR: '.htmlspecialchars($e->getMessage()).'</pre>';
+        }
+        return null;
+    }
 }
 
 function getCycles(int $mesinId): array
