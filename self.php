@@ -27,7 +27,7 @@ function findMesinByKode(string $kode): ?array
         $db = Database::get();
         $st = $db->prepare(
             "SELECT m.*, o.nama_outlet, o.telepon AS outlet_telp,
-                    t.nama_perusahaan, t.logo_url
+                    t.nama_perusahaan
              FROM hl_mesin m
              JOIN outlets o ON o.id = m.outlet_id
              JOIN tenants t ON t.id = m.tenant_id
