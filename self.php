@@ -130,6 +130,7 @@ $cycles = $mesin ? getCycles((int)$mesin['id']) : [];
 $activeSesi = $mesin ? getActiveSesi((int)$mesin['id']) : null;
 ?>
 <!DOCTYPE html>
+<!-- self.php v3 -->
 <html lang="id">
 <head>
 <meta charset="utf-8">
