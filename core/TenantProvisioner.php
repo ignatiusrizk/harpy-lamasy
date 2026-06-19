@@ -168,6 +168,9 @@ class TenantProvisioner
             ['kas.delete',           'kas',       'delete',        'Hapus entri kas'],
             ['inventori.view',       'inventori', 'view',          'Lihat stok & riwayat bahan baku'],
             ['inventori.manage',     'inventori', 'manage',        'Tambah/edit/hapus bahan & input mutasi stok'],
+            ['mesin.view',           'mesin',     'view',          'Lihat status mesin self-service'],
+            ['mesin.operate',        'mesin',     'operate',       'Konfirmasi mulai/selesai sesi mesin'],
+            ['mesin.manage',         'mesin',     'manage',        'Tambah/edit/hapus mesin & atur cycle'],
             ['laporan.view',         'laporan',   'view',          'Lihat laporan'],
             ['laporan.export',       'laporan',   'export',        'Export laporan'],
             ['karyawan.view',        'karyawan',  'view',          'Lihat data karyawan'],
@@ -211,6 +214,7 @@ class TenantProvisioner
         $kasirInclude   = ['pos.view','pos.create','orders.view_all','orders.create',
                            'orders.update_status','orders.bayar','pelanggan.view',
                            'pelanggan.create','absensi.clock','absensi.view','layanan.view',
+                           'mesin.view','mesin.operate',
                            'bantuan.view','bantuan.submit','bantuan.reply','bantuan.close'];
         $karyawanInclude = ['absensi.clock','absensi.view','orders.view_own','orders.update_status',
                             'bantuan.view','bantuan.submit','bantuan.reply','bantuan.close'];

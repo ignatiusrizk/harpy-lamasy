@@ -133,6 +133,7 @@ function renderTopbar(string $activePage = '', bool $minimalMode = false): void 
                 'kanban'    => ['label'=>'Kanban',    'url'=>'/kanban',    'perms'=>['orders.view_all','orders.view_own']],
                 'kas'       => ['label'=>'Kas',       'url'=>'/kas',       'perm'=>'kas.view'],
                 'inventori' => ['label'=>'Inventori', 'url'=>'/inventori', 'perms'=>['inventori.view','kas.view']],
+                'mesin'     => ['label'=>'Mesin Koin', 'url'=>'/mesin',     'perms'=>['mesin.view','pos.view']],
                 'checklist' => ['label'=>'Checklist', 'url'=>'/checklist', 'perm'=>null],
             ],
         ],

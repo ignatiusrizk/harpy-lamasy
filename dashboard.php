@@ -338,6 +338,24 @@ if ($action) {
             );
         } catch (Throwable) {}
 
+        // Mesin self-service — sesi running yang sudah lewat estimasi (perlu attention)
+        $mesinAttention = [];
+        try {
+            $mesinAttention = TenantQuery::raw(
+                "SELECT s.id AS sesi_id, s.pelanggan_nama, s.pelanggan_telepon,
+                        m.nama AS mesin_nama, m.kode AS mesin_kode, s.estimated_done_at,
+                        TIMESTAMPDIFF(MINUTE, s.estimated_done_at, NOW()) AS lewat_menit
+                 FROM hl_mesin_sesi s
+                 JOIN hl_mesin m ON m.id = s.mesin_id
+                 WHERE s.tenant_id = ? AND s.outlet_id = ?
+                   AND s.status = 'running'
+                   AND s.estimated_done_at IS NOT NULL
+                   AND s.estimated_done_at < NOW()
+                 ORDER BY s.estimated_done_at ASC LIMIT 10",
+                [$tid, $oid]
+            );
+        } catch (Throwable) {}
+
         // Inventori bahan baku — stok kritis (habis / minim)
         $inventoriKritis = [];
         try {
@@ -358,6 +376,7 @@ if ($action) {
             'piutang'        => $piutang,
             'mitra_inaktif'  => $mitraInaktif,
             'inventori_kritis' => $inventoriKritis,
+            'mesin_attention'  => $mesinAttention,
         ]);
         exit;
     }
@@ -1312,6 +1331,19 @@ if ($_dashRole === 'kasir'):
       </div>
     </div>
 
+    <!-- MESIN ATTENTION -->
+    <div id="mesinAttentionWrap" style="display:none;margin-top:16px">
+      <div class="hl-card" style="border-left:4px solid #EF4444">
+        <div class="hl-card-header">
+          <div class="alert-title">🪙 Mesin Self-Service Selesai (Customer Perlu Diingatkan)
+            <span class="alert-badge" id="badgeMesinAttention" style="background:#FEE2E2;color:#991B1B">0</span>
+          </div>
+          <a href="/mesin" style="font-size:12px;color:var(--teal);text-decoration:none">Buka mesin →</a>
+        </div>
+        <div class="hl-card-body" style="padding:12px" id="mesinAttentionList"></div>
+      </div>
+    </div>
+
     <!-- INVENTORI KRITIS -->
     <div id="inventoriKritisWrap" style="display:none;margin-top:16px">
       <div class="hl-card" style="border-left:4px solid #EF4444">
@@ -1637,6 +1669,27 @@ async function loadAlerts(){
     }).join('');
   } else if (wrapMI) {
     wrapMI.style.display = 'none';
+  }
+
+  // Mesin self-service: sesi running lewat estimasi
+  const wrapMS = document.getElementById('mesinAttentionWrap');
+  if (wrapMS && Array.isArray(d.mesin_attention) && d.mesin_attention.length) {
+    wrapMS.style.display = 'block';
+    document.getElementById('badgeMesinAttention').textContent = d.mesin_attention.length;
+    document.getElementById('mesinAttentionList').innerHTML = d.mesin_attention.map(s => {
+      const phone = (s.pelanggan_telepon || '').replace(/[^0-9]/g,'').replace(/^0/,'62');
+      const waMsg = `Halo ${s.pelanggan_nama}, cuci/kering kamu di ${s.mesin_nama} sudah selesai. Mohon segera diambil ya, terima kasih.`;
+      const waUrl = phone ? `https://wa.me/${phone}?text=${encodeURIComponent(waMsg)}` : null;
+      return `<div class="alert-row">
+        <div style="flex:1;min-width:0">
+          <div class="alert-nama">🪙 ${esc(s.mesin_nama)} <small style="color:var(--gray)">${esc(s.mesin_kode)}</small></div>
+          <div class="alert-meta">${esc(s.pelanggan_nama)} · Selesai ${s.lewat_menit} menit lalu</div>
+        </div>
+        ${waUrl ? `<a href="${waUrl}" target="_blank" class="alert-wa">💬 WA</a>` : ''}
+      </div>`;
+    }).join('');
+  } else if (wrapMS) {
+    wrapMS.style.display = 'none';
   }
 
   // Inventori bahan baku stok kritis
