@@ -1,6 +1,6 @@
 <?php
 // ══════════════════════════════════════════════════════
-// self.php — Public Self-Service Booking — v2
+// self.php — Public Self-Service Booking
 //
 // Customer scan QR di mesin → URL /self?m=KODE
 // 1. Tampilkan info mesin (nama, tipe, status)
@@ -12,6 +12,7 @@
 // outlet status check). Untuk safety, kode harus 100% match.
 // ══════════════════════════════════════════════════════
 define('ROOT', __DIR__);
+require_once ROOT . '/master/config/db.php';
 require_once ROOT . '/core/Database.php';
 require_once ROOT . '/core/TenantQuery.php';
 
@@ -37,12 +38,7 @@ function findMesinByKode(string $kode): ?array
         );
         $st->execute([$kode]);
         return $st->fetch(PDO::FETCH_ASSOC) ?: null;
-    } catch (Throwable $e) {
-        if (!empty($_GET['debug'])) {
-            echo '<pre>ERROR: '.htmlspecialchars($e->getMessage()).'</pre>';
-        }
-        return null;
-    }
+    } catch (Throwable) { return null; }
 }
 
 function getCycles(int $mesinId): array
@@ -135,7 +131,6 @@ $cycles = $mesin ? getCycles((int)$mesin['id']) : [];
 $activeSesi = $mesin ? getActiveSesi((int)$mesin['id']) : null;
 ?>
 <!DOCTYPE html>
-<!-- self.php v3 -->
 <html lang="id">
 <head>
 <meta charset="utf-8">
