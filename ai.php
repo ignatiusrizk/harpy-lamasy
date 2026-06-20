@@ -36,6 +36,7 @@ require_once ROOT . '/core/AnthropicClient.php';
 require_once ROOT . '/core/AIPersona.php';
 require_once ROOT . '/core/CoinLedger.php';
 require_once ROOT . '/core/AIBudget.php';
+require_once ROOT . '/core/AIRateLimiter.php';
 
 header('Content-Type: application/json');
 
@@ -104,6 +105,11 @@ if ($action === 'briefing') {
         exit;
     }
 
+    // Cek rate limit harian
+    if (!AIRateLimiter::canCall('ai_briefing_hq')) {
+        echo json_encode(AIRateLimiter::errorResponse('ai_briefing_hq'));
+        exit;
+    }
     // Cek coin
     if (!CoinLedger::canAfford('ai_briefing_hq')) {
         ai_err('Coin tidak cukup untuk AI Briefing (butuh '.CoinLedger::getHarga('ai_briefing_hq').' coin)');
@@ -255,6 +261,10 @@ if ($action === 'laporan_analyze' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($pertanyaan === '') ai_err('Pertanyaan kosong');
     if (mb_strlen($pertanyaan) > 500) ai_err('Pertanyaan terlalu panjang (maks 500 karakter)');
 
+    if (!AIRateLimiter::canCall('ai_chat_data')) {
+        echo json_encode(AIRateLimiter::errorResponse('ai_chat_data'));
+        exit;
+    }
     if (!CoinLedger::canAfford('ai_chat_data')) {
         ai_err('Coin tidak cukup (butuh '.CoinLedger::getHarga('ai_chat_data').' coin)');
     }
@@ -335,6 +345,10 @@ if ($action === 'upselling' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
+    if (!AIRateLimiter::canCall('ai_upselling')) {
+        echo json_encode(AIRateLimiter::errorResponse('ai_upselling'));
+        exit;
+    }
     if (!CoinLedger::canAfford('ai_upselling')) {
         ai_err('Coin tidak cukup (butuh '.CoinLedger::getHarga('ai_upselling').' coin)');
     }

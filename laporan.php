@@ -3,6 +3,7 @@ $activePage = 'laporan';
 define('ROOT', __DIR__);
 require_once ROOT . '/middleware/tenant_guard.php';
 require_once ROOT . '/core/AIInsight.php';
+require_once ROOT . '/core/AIRateLimiter.php';
 require_once __DIR__ . '/components.php';
 $user = currentUser();
 requirePermission('laporan.view');
@@ -202,6 +203,10 @@ if ($action) {
 
     // ── AI INSIGHT ────────────────────────────────────
     if ($action === 'ai_insight') {
+        if (!AIRateLimiter::canCall('ai_insight_laporan')) {
+            echo json_encode(AIRateLimiter::errorResponse('ai_insight_laporan'));
+            exit;
+        }
         if (!CoinLedger::canAfford('ai_insight_laporan')) {
             echo json_encode(['error' => 'Coin tidak cukup. Butuh 100 coin, saldo: ' . TenantResolver::coinBalance()]);
             exit;
@@ -623,9 +628,18 @@ tfoot td{padding:9px 12px;font-weight:700;font-size:13px}
         <label>s/d</label>
         <input type="date" id="lrSampai"/>
         <button class="hl-btn hl-btn-primary hl-btn-sm" onclick="loadLR()">🔍 Hitung L/R</button>
+        <?php
+          $rl_insight = AIRateLimiter::status('ai_insight_laporan');
+          $insight_exhausted = !$rl_insight['unlimited'] && $rl_insight['remaining'] <= 0;
+        ?>
         <button class="hl-btn hl-btn-sm" onclick="loadAiInsightOutlet()"
-                style="background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border:none">
+                <?= $insight_exhausted ? 'disabled' : '' ?>
+                style="background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border:none<?= $insight_exhausted ? ';opacity:.5;cursor:not-allowed' : '' ?>"
+                title="<?= $insight_exhausted ? 'Limit harian tercapai (' . $rl_insight['limit'] . '×/hari). Reset 00:00.' : 'Sisa ' . $rl_insight['remaining'] . '/' . $rl_insight['limit'] . ' query hari ini' ?>">
           ✨ AI Insight
+          <?php if (!$rl_insight['unlimited']): ?>
+            <span style="font-size:10px;opacity:.85;margin-left:4px"><?= $rl_insight['remaining'] ?>/<?= $rl_insight['limit'] ?></span>
+          <?php endif; ?>
         </button>
         <button class="hl-btn hl-btn-outline hl-btn-sm" onclick="window.print()">🖨️ Print</button>
       </div>

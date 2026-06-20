@@ -23,7 +23,7 @@ if ($action) {
     if ($action === 'list') {
         $kat = $_GET['kategori'] ?? '';
         $sql = "SELECT id, feature_key, nama_fitur, deskripsi, kategori,
-                       harga_coin, harga_minimum, is_active, catatan_internal,
+                       harga_coin, harga_minimum, daily_limit, is_active, catatan_internal,
                        updated_at,
                        (SELECT s.name FROM super_admins s WHERE s.id = p.updated_by) AS updated_by_name
                 FROM saas_coin_pricing p";
@@ -92,6 +92,7 @@ if ($action) {
                         ? $d['kategori'] : 'lainnya';
         $hargaCoin    = max(0, (int)($d['harga_coin'] ?? 0));
         $hargaMin     = max(0, (int)($d['harga_minimum'] ?? 0));
+        $dailyLimit   = max(0, (int)($d['daily_limit'] ?? 0));
         $isActive     = empty($d['is_active']) ? 0 : 1;
         $deskripsi    = trim($d['deskripsi'] ?? '');
         $catatan      = trim($d['catatan_internal'] ?? '');
@@ -127,11 +128,11 @@ if ($action) {
                 $db->prepare(
                     "UPDATE saas_coin_pricing
                         SET feature_key=?, nama_fitur=?, kategori=?, harga_coin=?,
-                            harga_minimum=?, is_active=?, deskripsi=?, catatan_internal=?,
+                            harga_minimum=?, daily_limit=?, is_active=?, deskripsi=?, catatan_internal=?,
                             updated_by=?
                       WHERE id=?"
                 )->execute([$featureKey, $namaFitur, $kategori, $hargaCoin, $hargaMin,
-                            $isActive, $deskripsi, $catatan, $saId, $id]);
+                            $dailyLimit, $isActive, $deskripsi, $catatan, $saId, $id]);
 
                 // Catat history kalau ada perubahan
                 if ($priceChanged || $statusChanged) {
@@ -153,10 +154,10 @@ if ($action) {
                 // INSERT — fitur baru
                 $db->prepare(
                     "INSERT INTO saas_coin_pricing
-                        (feature_key, nama_fitur, kategori, harga_coin, harga_minimum,
+                        (feature_key, nama_fitur, kategori, harga_coin, harga_minimum, daily_limit,
                          is_active, deskripsi, catatan_internal, updated_by)
-                     VALUES (?,?,?,?,?,?,?,?,?)"
-                )->execute([$featureKey, $namaFitur, $kategori, $hargaCoin, $hargaMin,
+                     VALUES (?,?,?,?,?,?,?,?,?,?)"
+                )->execute([$featureKey, $namaFitur, $kategori, $hargaCoin, $hargaMin, $dailyLimit,
                             $isActive, $deskripsi, $catatan, $saId]);
                 $newId = (int)$db->lastInsertId();
 
@@ -338,13 +339,14 @@ $csrf = saGetCsrf();
             <th>Kategori</th>
             <th style="text-align:right;">Harga</th>
             <th style="text-align:right;">Min</th>
+            <th style="text-align:right;">Limit/Hari</th>
             <th>Status</th>
             <th>Update</th>
             <th>Aksi</th>
           </tr>
         </thead>
         <tbody id="pricingBody">
-          <tr><td colspan="7" style="text-align:center;padding:32px;color:rgba(255,255,255,.3);">Memuat...</td></tr>
+          <tr><td colspan="8" style="text-align:center;padding:32px;color:rgba(255,255,255,.3);">Memuat...</td></tr>
         </tbody>
       </table>
     </div>
@@ -418,6 +420,11 @@ $csrf = saGetCsrf();
         <input type="number" id="f_min" min="0" step="1" value="0">
         <small>Batas bawah — proteksi margin AI cost</small>
       </div>
+    </div>
+    <div class="form-row">
+      <label>Limit per Hari per Tenant</label>
+      <input type="number" id="f_limit" min="0" step="1" value="0">
+      <small>0 = unlimited. Rate limit untuk fitur AI (cegah abuse + cost meledak). Reset otomatis 00:00 WIB.</small>
     </div>
     <div class="form-row">
       <label>Deskripsi (untuk tenant)</label>
@@ -507,6 +514,9 @@ async function loadPricing() {
       <td>${catBadge(r.kategori)}</td>
       <td class="price-cell" style="text-align:right;">${Number(r.harga_coin).toLocaleString('id-ID')}</td>
       <td class="min-cell" style="text-align:right;">${Number(r.harga_minimum).toLocaleString('id-ID')}</td>
+      <td style="text-align:right;font-family:'DM Mono',monospace;font-size:12px">
+        ${(r.daily_limit && r.daily_limit > 0) ? `<span style="background:rgba(255,165,0,.15);color:#FBBF24;padding:2px 8px;border-radius:8px">${r.daily_limit}×</span>` : '<span style="color:rgba(255,255,255,.3)">∞</span>'}
+      </td>
       <td>
         <span class="toggle-pill ${r.is_active==1?'on':'off'}" onclick="quickToggle(${r.id}, ${r.is_active==1?0:1})">
           <span class="dot"></span>${r.is_active==1?'Aktif':'Nonaktif'}
@@ -575,6 +585,7 @@ async function openEditModal(id) {
     document.getElementById('f_kategori').value = d.kategori;
     document.getElementById('f_harga').value    = d.harga_coin;
     document.getElementById('f_min').value      = d.harga_minimum;
+    document.getElementById('f_limit').value    = d.daily_limit || 0;
     document.getElementById('f_desk').value     = d.deskripsi || '';
     document.getElementById('f_catatan').value  = d.catatan_internal || '';
     document.getElementById('f_alasan').value   = '';
@@ -587,6 +598,7 @@ async function openEditModal(id) {
     document.getElementById('f_kategori').value = 'lainnya';
     document.getElementById('f_harga').value    = 0;
     document.getElementById('f_min').value      = 0;
+    document.getElementById('f_limit').value    = 0;
     document.getElementById('f_desk').value     = '';
     document.getElementById('f_catatan').value  = '';
     document.getElementById('f_alasan').value   = '';
@@ -609,6 +621,7 @@ async function saveFitur() {
     kategori:         document.getElementById('f_kategori').value,
     harga_coin:       document.getElementById('f_harga').value,
     harga_minimum:    document.getElementById('f_min').value,
+    daily_limit:      document.getElementById('f_limit').value,
     deskripsi:        document.getElementById('f_desk').value,
     catatan_internal: document.getElementById('f_catatan').value,
     alasan:           document.getElementById('f_alasan').value,

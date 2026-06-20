@@ -6,6 +6,10 @@
 if (!defined('SA_ROOT')) define('SA_ROOT', __DIR__);
 require_once SA_ROOT . '/middleware/superadmin_guard.php';
 require_once SA_ROOT . '/superadmin_components.php';
+require_once SA_ROOT . '/../core/AIRateLimiter.php';
+
+// Ambil tenant yang hit rate limit >=3x hari ini
+$_aiAbusers = AIRateLimiter::getAbusersToday(3);
 
 date_default_timezone_set('Asia/Jakarta');
 
@@ -359,6 +363,29 @@ if ($action) {
     <div id="hw-err-alert" style="display:none;margin-top:8px;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:8px;padding:10px 14px;font-size:12.5px;color:#FCD34D;">
       ⚠️ Ada error baru hari ini. <a href="/superadmin/health.php#errors" style="color:#FCD34D;font-weight:700;">Lihat error log →</a>
     </div>
+
+    <?php if (!empty($_aiAbusers)): ?>
+    <div style="margin-top:14px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.25);border-radius:10px;padding:14px 16px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div style="font-size:13px;font-weight:700;color:#FCA5A5">⚠️ <?= count($_aiAbusers) ?> tenant hit rate limit AI hari ini</div>
+        <a href="/superadmin/health.php" style="color:#FCA5A5;font-size:11px;font-weight:700;text-decoration:none">Cek detail →</a>
+      </div>
+      <table style="width:100%;font-size:12px;color:rgba(255,255,255,.7)">
+        <thead><tr style="text-align:left;color:rgba(255,255,255,.4);font-size:10px;text-transform:uppercase">
+          <th style="padding:4px 0">Tenant ID</th>
+          <th>Fitur</th>
+          <th style="text-align:right">Attempts Blocked</th>
+        </tr></thead>
+        <tbody>
+        <?php foreach ($_aiAbusers as $a): ?>
+          <tr><td style="padding:3px 0;font-family:'DM Mono',monospace">#<?= (int)$a['tenant_id'] ?></td>
+              <td style="font-family:'DM Mono',monospace;font-size:11px"><?= htmlspecialchars($a['feature']) ?></td>
+              <td style="text-align:right;font-family:'DM Mono',monospace;font-weight:700;color:#FBBF24"><?= (int)$a['attempts'] ?></td></tr>
+        <?php endforeach; ?>
+        </tbody>
+      </table>
+    </div>
+    <?php endif; ?>
   </div>
 </div>
 

@@ -14,6 +14,7 @@ require_once ROOT . '/middleware/hq_guard.php';
 require_once ROOT . '/core/AIChatData.php';
 require_once ROOT . '/core/CoinLedger.php';
 require_once ROOT . '/core/AIBudget.php';
+require_once ROOT . '/core/AIRateLimiter.php';
 
 $db   = Database::get();
 $tid  = (int)$hqTenant['id'];
@@ -23,6 +24,10 @@ $action = $_GET['action'] ?? '';
 if ($action === 'ask' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     header('Content-Type: application/json');
 
+    if (!AIRateLimiter::canCall('ai_chat_data')) {
+        echo json_encode(AIRateLimiter::errorResponse('ai_chat_data'));
+        exit;
+    }
     if (!CoinLedger::canAfford('ai_chat_data')) {
         echo json_encode(['error' => 'Coin tidak cukup. Butuh 50 coin per pertanyaan.']);
         exit;

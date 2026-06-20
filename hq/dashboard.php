@@ -15,6 +15,7 @@ define('ROOT', dirname(__DIR__));
 require_once ROOT . '/middleware/hq_guard.php';
 require_once ROOT . '/core/AIInsight.php';
 require_once ROOT . '/core/CoinLedger.php';
+require_once ROOT . '/core/AIRateLimiter.php';
 
 $db    = Database::get();
 $tid   = (int)$hqTenant['id'];
@@ -719,14 +720,31 @@ require __DIR__ . '/_layout_open.php';
   </div>
 
   <!-- AI BRIEFING HQ -->
+  <?php
+    $rl_briefing = AIRateLimiter::status('ai_briefing_hq');
+    $briefing_exhausted = !$rl_briefing['unlimited'] && $rl_briefing['remaining'] <= 0;
+  ?>
   <div class="ai-brief" id="aiBrief">
     <div class="ai-brief-head">
-      <div class="ai-brief-title">✨ AI Briefing Pagi</div>
-      <button class="ai-brief-btn" id="aiBriefBtn" onclick="generateBriefing()">Generate Briefing</button>
+      <div class="ai-brief-title">✨ AI Briefing Pagi
+        <?php if (!$rl_briefing['unlimited']): ?>
+          <span style="font-size:11px;font-weight:500;opacity:.7;margin-left:8px">
+            <?= $rl_briefing['used'] ?>/<?= $rl_briefing['limit'] ?> hari ini
+          </span>
+        <?php endif; ?>
+      </div>
+      <button class="ai-brief-btn" id="aiBriefBtn" onclick="generateBriefing()"
+              <?= $briefing_exhausted ? 'disabled style="opacity:.5;cursor:not-allowed" title="Limit harian sudah tercapai, reset 00:00"' : '' ?>>
+        <?= $briefing_exhausted ? '⏰ Sudah Dipakai Hari Ini' : 'Generate Briefing' ?>
+      </button>
     </div>
     <div class="ai-brief-body" id="aiBriefBody">
       <div class="ai-brief-empty" id="aiBriefEmpty">
-        Klik "Generate Briefing" untuk ringkasan kondisi semua outlet hari ini. <span style="opacity:.7">(80 coin, 1x per hari)</span>
+        <?php if ($briefing_exhausted): ?>
+          Briefing AI sudah dipakai hari ini. Reset otomatis besok pukul 00:00 WIB.
+        <?php else: ?>
+          Klik "Generate Briefing" untuk ringkasan kondisi semua outlet hari ini. <span style="opacity:.7">(80 coin, 1x per hari)</span>
+        <?php endif; ?>
       </div>
       <div class="ai-brief-loading" id="aiBriefLoading" style="display:none">⏳ Menyusun briefing…</div>
       <div class="ai-brief-text" id="aiBriefText" style="display:none"></div>

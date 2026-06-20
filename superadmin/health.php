@@ -10,6 +10,42 @@ if (!defined('SA_ROOT')) define('SA_ROOT', __DIR__);
 require_once SA_ROOT . '/middleware/superadmin_guard.php';
 require_once SA_ROOT . '/superadmin_components.php';
 require_once SA_ROOT . '/../core/ErrorLogger.php';
+require_once SA_ROOT . '/../core/AIRateLimiter.php';
+
+// ── AI Usage Stats (untuk dashboard section) ──────────
+function getAIUsageStats(string $date): array {
+    $features = ['ai_briefing','ai_briefing_hq','ai_upselling','ai_analyst',
+                 'ai_chat_data','ai_churn_message','ai_migration_mapping',
+                 'ai_review','ai_insight_laporan'];
+    $rows = [];
+    $totalCalls = 0;
+    $totalCoin  = 0;
+    foreach ($features as $f) {
+        $s = AIRateLimiter::getPlatformStats($f, $date);
+        if ($s['total_calls'] > 0) {
+            $rows[] = $s;
+            $totalCalls += $s['total_calls'];
+            $totalCoin  += $s['total_coin'];
+        }
+    }
+    // Estimasi cost API Anthropic — asumsi ~$0.01/call (gross average)
+    $estCostUSD = $totalCalls * 0.01;
+    $estCostIDR = $estCostUSD * 16000;
+    $coinIDR    = $totalCoin; // 1 coin = 1 IDR (asumsi pricing platform)
+    $margin     = $coinIDR - $estCostIDR;
+    $marginPct  = $coinIDR > 0 ? round($margin / $coinIDR * 100, 1) : 0;
+
+    return [
+        'rows'        => $rows,
+        'total_calls' => $totalCalls,
+        'total_coin'  => $totalCoin,
+        'est_cost_usd'=> $estCostUSD,
+        'est_cost_idr'=> $estCostIDR,
+        'coin_idr'    => $coinIDR,
+        'margin'      => $margin,
+        'margin_pct'  => $marginPct,
+    ];
+}
 
 date_default_timezone_set('Asia/Jakarta');
 
@@ -567,6 +603,53 @@ canvas { width: 100% !important; }
       <button class="sa-btn sa-btn-green" onclick="submitResolve()">✅ Mark Resolved</button>
     </div>
   </div>
+</div>
+
+<!-- ══════════════════════════ AI USAGE STATS ═══════════════════════════ -->
+<?php
+  $aiToday = getAIUsageStats(date('Y-m-d'));
+?>
+<div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:24px;margin-top:24px">
+  <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:16px;flex-wrap:wrap;gap:12px">
+    <div>
+      <h3 style="margin:0 0 4px;font-size:16px;font-weight:700;color:#fff">🤖 AI Usage Stats — Hari Ini</h3>
+      <p style="margin:0;font-size:12px;color:rgba(255,255,255,.5)">Per fitur · semua tenant · <?= date('d M Y') ?></p>
+    </div>
+    <div style="display:flex;gap:16px;font-size:12px">
+      <div><div style="color:rgba(255,255,255,.5);font-size:10px;text-transform:uppercase">Total API Calls</div><div style="font-family:'DM Mono',monospace;font-weight:800;font-size:18px;color:#35E8D5"><?= number_format($aiToday['total_calls']) ?></div></div>
+      <div><div style="color:rgba(255,255,255,.5);font-size:10px;text-transform:uppercase">Est. API Cost</div><div style="font-family:'DM Mono',monospace;font-weight:800;font-size:18px;color:#FBBF24">Rp <?= number_format($aiToday['est_cost_idr'], 0, ',', '.') ?></div></div>
+      <div><div style="color:rgba(255,255,255,.5);font-size:10px;text-transform:uppercase">Coin Revenue</div><div style="font-family:'DM Mono',monospace;font-weight:800;font-size:18px;color:#10B981">Rp <?= number_format($aiToday['coin_idr'], 0, ',', '.') ?></div></div>
+      <div><div style="color:rgba(255,255,255,.5);font-size:10px;text-transform:uppercase">Margin AI</div><div style="font-family:'DM Mono',monospace;font-weight:800;font-size:18px;color:<?= $aiToday['margin'] >= 0 ? '#35E8D5' : '#E24B4A' ?>">Rp <?= number_format($aiToday['margin'], 0, ',', '.') ?> · <?= $aiToday['margin_pct'] ?>%</div></div>
+    </div>
+  </div>
+
+  <?php if (empty($aiToday['rows'])): ?>
+    <div style="text-align:center;padding:24px;color:rgba(255,255,255,.4);font-size:13px">Belum ada AI usage hari ini.</div>
+  <?php else: ?>
+  <table class="sa-table" style="margin-top:8px">
+    <thead>
+      <tr>
+        <th>Feature</th>
+        <th style="text-align:right">Total Calls</th>
+        <th style="text-align:right">Unique Tenant</th>
+        <th style="text-align:right">Max / Tenant</th>
+        <th style="text-align:right">Coin Revenue</th>
+      </tr>
+    </thead>
+    <tbody>
+    <?php foreach ($aiToday['rows'] as $r):
+      $heavy = $r['max_single_tenant'] >= 50; ?>
+      <tr>
+        <td style="font-family:'DM Mono',monospace;font-size:12px"><?= htmlspecialchars($r['feature']) ?></td>
+        <td style="text-align:right;font-family:'DM Mono',monospace;font-weight:700"><?= number_format($r['total_calls']) ?></td>
+        <td style="text-align:right;font-family:'DM Mono',monospace"><?= number_format($r['unique_tenants']) ?></td>
+        <td style="text-align:right;font-family:'DM Mono',monospace<?= $heavy ? ';color:#FBBF24;font-weight:700' : '' ?>"><?= number_format($r['max_single_tenant']) ?><?= $heavy ? ' ⚠' : '' ?></td>
+        <td style="text-align:right;font-family:'DM Mono',monospace;color:#10B981">Rp <?= number_format($r['total_coin'], 0, ',', '.') ?></td>
+      </tr>
+    <?php endforeach; ?>
+    </tbody>
+  </table>
+  <?php endif; ?>
 </div>
 
 <?php saRenderNavClose(); ?>

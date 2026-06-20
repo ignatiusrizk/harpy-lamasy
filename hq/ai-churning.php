@@ -14,6 +14,7 @@ define('ROOT', dirname(__DIR__));
 require_once ROOT . '/middleware/hq_guard.php';
 require_once ROOT . '/core/AIChurnDetector.php';
 require_once ROOT . '/core/CoinLedger.php';
+require_once ROOT . '/core/AIRateLimiter.php';
 
 $db   = Database::get();
 $tid  = (int)$hqTenant['id'];
@@ -65,6 +66,10 @@ if ($action === 'list') {
 if ($action === 'generate' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     header('Content-Type: application/json');
 
+    if (!AIRateLimiter::canCall('ai_churn_message')) {
+        echo json_encode(AIRateLimiter::errorResponse('ai_churn_message'));
+        exit;
+    }
     if (!CoinLedger::canAfford('ai_churn_message')) {
         echo json_encode(['error' => 'Coin tidak cukup. Butuh 30 coin per pesan.']);
         exit;

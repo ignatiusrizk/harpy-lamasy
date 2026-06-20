@@ -19,6 +19,7 @@ require_once ROOT . '/components.php';
 require_once ROOT . '/core/AIMigrationMapper.php';
 require_once ROOT . '/core/MigrationImporter.php';
 require_once ROOT . '/core/AIBudget.php';
+require_once ROOT . '/core/AIRateLimiter.php';
 
 date_default_timezone_set('Asia/Jakarta');
 
@@ -230,6 +231,11 @@ if ($action) {
         // Deduct HANYA jika: perlu AI (bukan gratis) + bukan assisted + hasil
         // mapping benar-benar bisa dipakai.
         if (!$freeSource && !$job['is_assisted'] && $mappingUsable) {
+            if (!AIRateLimiter::canCall('ai_migration_mapping')) {
+                $db->prepare("UPDATE hl_migration_jobs SET status='uploaded' WHERE id=?")->execute([$jobId]);
+                echo json_encode(AIRateLimiter::errorResponse('ai_migration_mapping'));
+                exit;
+            }
             if (!CoinLedger::canAfford('ai_migration_mapping')) {
                 $db->prepare("UPDATE hl_migration_jobs SET status='uploaded' WHERE id=?")->execute([$jobId]);
                 echo json_encode([
