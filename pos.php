@@ -812,15 +812,16 @@ textarea{resize:vertical;min-height:64px}
     z-index: 50;
   }
   .pos-mobile-cta-total {
-    flex: 1; min-width: 0; font-size: 11px; color: var(--gray); line-height: 1.2;
-    white-space: nowrap;
+    flex: 1; min-width: 0; display: flex; align-items: baseline; gap: 6px;
+    white-space: nowrap; overflow: hidden;
+    font-size: 11px; color: var(--gray); text-transform: uppercase; letter-spacing: .3px;
   }
   .pos-mobile-cta-total strong {
-    display: block; font-size: 18px; color: var(--navy); font-family: var(--mono);
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    font-size: 18px; color: var(--navy); font-family: var(--mono);
+    overflow: hidden; text-overflow: ellipsis;
   }
   .pos-mobile-cta button {
-    flex-shrink: 0; padding: 12px 18px; font-size: 14px; font-weight: 700;
+    flex-shrink: 0; padding: 12px 20px; font-size: 14px; font-weight: 700;
     white-space: nowrap;
   }
   /* Hide tombol Simpan asli (avoid duplicate), tombol Reset tetap di flow */
