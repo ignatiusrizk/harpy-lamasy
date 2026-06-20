@@ -590,6 +590,15 @@ function renderToast(): void { ?>
     </div><!-- /.ol-shell -->
     <div class="hl-toast" id="toast"></div>
 
+    <?php
+    // ── Splash Screen Edukatif (jika ada pending) ─────────
+    if (!empty($_SESSION['pending_splash']) && empty($_SESSION['is_demo'])) {
+        $splash = $_SESSION['pending_splash'];
+        unset($_SESSION['pending_splash']);
+        renderSplash($splash);
+    }
+    ?>
+
     <?php if (!empty($_SESSION['is_demo'])): ?>
     <!-- Demo CTA Modal -->
     <div id="demoCta" style="
@@ -762,6 +771,156 @@ function renderToast(): void { ?>
       t.textContent=msg;t.className='hl-toast '+type+' show';
       setTimeout(()=>t.className='hl-toast',3500);
     }
+    </script>
+    <?php
+}
+
+// ══════════════════════════════════════════════════════
+// SPLASH SCREEN EDUKATIF — render functions
+// Dipanggil dari renderToast() kalau ada $_SESSION['pending_splash']
+// ══════════════════════════════════════════════════════
+function renderSplash(array $splash): void
+{
+    switch ($splash['type'] ?? '') {
+        case 'onboarding': renderOnboardingSplash($splash); break;
+        case 'whats_new':  renderWhatsNewSplash($splash);   break;
+        case 'tips':       renderTipsSplash($splash);       break;
+    }
+    renderSplashScripts();
+}
+
+function renderOnboardingSplash(array $data): void
+{
+    $steps     = $data['steps'] ?? [];
+    $completed = (int)($data['completed'] ?? 0);
+    $total     = (int)($data['total'] ?? 3);
+    $pct       = $total > 0 ? round($completed / $total * 100) : 0;
+
+    // Next undone step → arah CTA utama
+    $cta = '/dashboard';
+    if (empty($steps['layanan']))        $cta = '/layanan';
+    elseif (empty($steps['karyawan']))   $cta = '/karyawan';
+    elseif (empty($steps['transaksi']))  $cta = '/pos';
+
+    $stepRows = [
+        ['layanan',   '/layanan',  'Tambah layanan & harga',   1],
+        ['karyawan',  '/karyawan', 'Tambah karyawan',          2],
+        ['transaksi', '/pos',      'Coba transaksi pertama',   3],
+    ];
+    ?>
+    <div id="splash-overlay" class="splash-overlay" onclick="if(event.target===this)closeSplash('onboarding',null)">
+      <div class="splash-card splash-onboarding">
+        <button class="splash-close" onclick="closeSplash('onboarding', null)" aria-label="Tutup">×</button>
+        <div class="splash-icon">🎉</div>
+        <h2>Selamat datang di LaMaSy!</h2>
+        <p>Yuk selesaikan setup outlet kamu supaya bisa langsung terima order.</p>
+
+        <div class="splash-progress">
+          <div class="splash-progress-bar" style="width:<?= $pct ?>%"></div>
+        </div>
+        <div class="splash-progress-label"><?= $completed ?> dari <?= $total ?> langkah selesai · <?= $pct ?>%</div>
+
+        <div class="splash-steps">
+          <?php foreach ($stepRows as [$key, $url, $label, $num]):
+            $done = !empty($steps[$key]); ?>
+            <a href="<?= $url ?>" class="splash-step<?= $done ? ' done' : '' ?>"
+               onclick="markSplashSeen('onboarding', null)">
+              <span class="splash-step-num"><?= $done ? '✓' : $num ?></span>
+              <span><?= htmlspecialchars($label) ?></span>
+              <?php if (!$done): ?><span class="splash-step-arrow">→</span><?php endif; ?>
+            </a>
+          <?php endforeach; ?>
+        </div>
+
+        <div class="splash-actions">
+          <a href="<?= $cta ?>" class="btn-splash-primary"
+             onclick="markSplashSeen('onboarding', null)">Lanjut Setup →</a>
+          <button class="btn-splash-skip" onclick="closeSplash('onboarding', null)">Nanti saja</button>
+        </div>
+      </div>
+    </div>
+    <?php
+}
+
+function renderWhatsNewSplash(array $data): void
+{
+    $a = $data['announcement'] ?? [];
+    $id = (int)($a['id'] ?? 0);
+    if (!$id) return;
+    ?>
+    <div id="splash-overlay" class="splash-overlay" onclick="if(event.target===this)closeSplash('whats_new','<?= $id ?>')">
+      <div class="splash-card splash-whatsnew">
+        <button class="splash-close" onclick="closeSplash('whats_new', '<?= $id ?>')" aria-label="Tutup">×</button>
+        <div class="splash-badge">✨ Update Baru</div>
+        <h2><?= htmlspecialchars($a['title'] ?? 'Fitur Baru') ?></h2>
+        <div class="splash-content"><?= nl2br(htmlspecialchars($a['content'] ?? '')) ?></div>
+        <div class="splash-actions">
+          <button class="btn-splash-primary" onclick="closeSplash('whats_new', '<?= $id ?>')">Mengerti!</button>
+        </div>
+      </div>
+    </div>
+    <?php
+}
+
+function renderTipsSplash(array $data): void
+{
+    $tip = $data['tip'] ?? [];
+    if (empty($tip['id'])) return;
+    $refId = $tip['id'] . '_' . date('Y-m-d');
+    $hasCta = !empty($tip['cta_label']) && !empty($tip['cta_url']);
+    ?>
+    <div id="splash-overlay" class="splash-overlay" onclick="if(event.target===this)closeSplash('tips','<?= htmlspecialchars($refId) ?>')">
+      <div class="splash-card splash-tips">
+        <button class="splash-close" onclick="closeSplash('tips', '<?= htmlspecialchars($refId) ?>')" aria-label="Tutup">×</button>
+        <div class="splash-icon"><?= htmlspecialchars($tip['icon'] ?? '💡') ?></div>
+        <div class="splash-badge">💡 Tips Hari Ini</div>
+        <h2><?= htmlspecialchars($tip['judul']) ?></h2>
+        <p><?= htmlspecialchars($tip['konten']) ?></p>
+        <div class="splash-actions">
+          <?php if ($hasCta): ?>
+            <a href="<?= htmlspecialchars($tip['cta_url']) ?>" class="btn-splash-primary"
+               onclick="markSplashSeen('tips', '<?= htmlspecialchars($refId) ?>')">
+              <?= htmlspecialchars($tip['cta_label']) ?>
+            </a>
+          <?php endif; ?>
+          <button class="btn-splash-skip" onclick="closeSplash('tips', '<?= htmlspecialchars($refId) ?>')">Tutup</button>
+        </div>
+      </div>
+    </div>
+    <?php
+}
+
+function renderSplashScripts(): void
+{
+    ?>
+    <script>
+    function markSplashSeen(type, refId) {
+      const csrf = document.querySelector('meta[name="csrf-token"]')?.content || '';
+      fetch('/api/splash_seen.php', {
+        method: 'POST',
+        headers: { 'Content-Type':'application/json', 'X-CSRF-Token': csrf },
+        body: JSON.stringify({ type, ref_id: refId })
+      }).catch(() => {});
+    }
+    function closeSplash(type, refId) {
+      markSplashSeen(type, refId);
+      const overlay = document.getElementById('splash-overlay');
+      if (overlay) {
+        overlay.style.animation = 'splashFadeOut .2s ease forwards';
+        setTimeout(() => overlay.remove(), 200);
+      }
+    }
+    // ESC untuk tutup
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') {
+        const o = document.getElementById('splash-overlay');
+        if (o) {
+          // Default tutup tanpa mark seen (biar muncul lagi besok)
+          o.style.animation = 'splashFadeOut .2s ease forwards';
+          setTimeout(() => o.remove(), 200);
+        }
+      }
+    });
     </script>
     <?php
 }

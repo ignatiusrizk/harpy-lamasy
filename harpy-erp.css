@@ -1094,3 +1094,153 @@ html, body { overflow-x: hidden; }
     margin-top: 6px;
   }
 }
+
+/* ══════════════════════════════════════════════════════
+   SPLASH SCREEN EDUKATIF
+   Onboarding · What's New · Tips Harian
+   ══════════════════════════════════════════════════════ */
+.splash-overlay {
+  position: fixed; inset: 0;
+  background: rgba(15,28,58,.6);
+  z-index: 9999;
+  display: flex; align-items: center; justify-content: center;
+  padding: 16px;
+  animation: splashFadeIn .25s ease;
+}
+@keyframes splashFadeIn { from {opacity:0} to {opacity:1} }
+@keyframes splashFadeOut { to { opacity:0; transform: scale(.95); } }
+
+.splash-card {
+  background: #fff;
+  border-radius: 18px;
+  padding: 28px 24px 24px;
+  max-width: 440px; width: 100%;
+  text-align: center;
+  position: relative;
+  animation: splashSlideUp .3s ease;
+  box-shadow: 0 20px 60px rgba(0,0,0,.25);
+  max-height: 90vh; overflow-y: auto;
+}
+@keyframes splashSlideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to   { transform: translateY(0);     opacity: 1; }
+}
+
+.splash-icon { font-size: 48px; line-height: 1; margin-bottom: 12px; }
+.splash-card h2 {
+  font-size: 20px; font-weight: 800;
+  color: var(--navy); margin: 0 0 8px;
+}
+.splash-card p {
+  font-size: 14px; color: var(--gray);
+  line-height: 1.6; margin: 0 0 20px;
+}
+
+.splash-badge {
+  display: inline-block;
+  background: #EFF6FF; color: #1E40AF;
+  font-size: 11px; font-weight: 700;
+  padding: 4px 12px; border-radius: 20px;
+  margin-bottom: 12px;
+  letter-spacing: .3px; text-transform: uppercase;
+}
+.splash-card.splash-tips .splash-badge { background:#FEF3C7; color:#92400E; }
+
+/* Progress bar (onboarding) */
+.splash-progress {
+  background: #F3F4F6; border-radius: 4px;
+  height: 8px; margin: 14px 0 6px;
+  overflow: hidden;
+}
+.splash-progress-bar {
+  background: linear-gradient(90deg, var(--teal), var(--teal-d));
+  height: 100%; border-radius: 4px;
+  transition: width .5s ease;
+}
+.splash-progress-label {
+  font-size: 12px; color: var(--gray);
+  margin-bottom: 16px; font-weight: 600;
+}
+
+/* Steps onboarding */
+.splash-steps {
+  display: flex; flex-direction: column; gap: 8px;
+  margin-bottom: 20px; text-align: left;
+}
+.splash-step {
+  display: flex; align-items: center; gap: 10px;
+  padding: 11px 14px; border-radius: 10px;
+  background: #F9FAFB;
+  text-decoration: none; color: var(--navy);
+  font-size: 14px; font-weight: 600;
+  border: 1.5px solid #E5E7EB;
+  transition: all .15s;
+}
+.splash-step:hover {
+  background: #EFF6FF; border-color: #3B82F6;
+  transform: translateX(2px);
+}
+.splash-step.done {
+  background: #D1FAE5; border-color: #10B981;
+  color: #065F46;
+}
+.splash-step-num {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  background: var(--teal); color: var(--navy-d, #0F1C3A);
+  font-size: 12px; font-weight: 800; flex-shrink: 0;
+}
+.splash-step.done .splash-step-num {
+  background: #10B981; color: white;
+}
+.splash-step-arrow { margin-left: auto; color: var(--teal-d); font-size: 16px; }
+
+/* Content box (what's new) */
+.splash-content {
+  text-align: left;
+  font-size: 13px; color: #4B5563; line-height: 1.7;
+  background: #F9FAFB; border-radius: 10px;
+  padding: 14px 16px; margin-bottom: 20px;
+  max-height: 240px; overflow-y: auto;
+}
+
+/* Actions */
+.splash-actions {
+  display: flex; flex-direction: column; gap: 8px;
+}
+.btn-splash-primary {
+  display: block; width: 100%;
+  background: var(--teal); color: var(--navy-d, #0F1C3A);
+  padding: 13px; border-radius: 10px;
+  border: none; font-size: 14px; font-weight: 800;
+  cursor: pointer; text-decoration: none;
+  transition: all .2s; font-family: inherit;
+}
+.btn-splash-primary:hover {
+  background: var(--teal-d); color: white;
+  box-shadow: 0 4px 14px rgba(53,232,213,.3);
+}
+.btn-splash-skip {
+  background: none; border: none;
+  color: var(--gray); font-size: 13px;
+  cursor: pointer; padding: 8px;
+  font-family: inherit; font-weight: 500;
+}
+.btn-splash-skip:hover { color: var(--navy); }
+.splash-close {
+  position: absolute; top: 10px; right: 12px;
+  background: none; border: none;
+  font-size: 22px; color: #9CA3AF;
+  cursor: pointer; padding: 4px 10px;
+  line-height: 1; border-radius: 6px;
+  transition: all .15s;
+}
+.splash-close:hover { color: var(--navy); background: #F3F4F6; }
+
+@media (max-width: 480px) {
+  .splash-card { padding: 22px 18px 18px; }
+  .splash-icon { font-size: 40px; }
+  .splash-card h2 { font-size: 18px; }
+  .splash-card p { font-size: 13px; }
+}

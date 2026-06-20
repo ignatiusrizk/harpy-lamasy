@@ -183,6 +183,23 @@ if (!empty($_SESSION['is_demo'])) {
     }
 }
 
+// ── Splash Screen Edukatif (1x per session, skip demo & AJAX) ──
+if (empty($_SESSION['is_demo']) &&
+    empty($_SESSION['splash_shown']) &&
+    empty($_SESSION['pending_splash']) &&
+    empty($_GET['action']) &&
+    empty($_SERVER['HTTP_X_REQUESTED_WITH']) &&
+    ($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'GET') {
+    try {
+        require_once ROOT . '/core/SplashManager.php';
+        $_splash = SplashManager::check();
+        if ($_splash) {
+            $_SESSION['pending_splash'] = $_splash;
+            // splash_shown ditandai saat user actually close/CTA via /api/splash_seen.php
+        }
+    } catch (Throwable) { /* non-fatal */ }
+}
+
 // ── Anomaly Detector + Daily Report (1x per 30 menit per session) ──
 // Pseudo-cron: skip AJAX supaya tidak nambah latency response.
 if (empty($_GET['action']) && empty($_SERVER['HTTP_X_REQUESTED_WITH'])) {

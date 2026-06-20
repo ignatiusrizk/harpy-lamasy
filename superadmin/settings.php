@@ -173,6 +173,68 @@ if (!empty($_SERVER['HTTP_X_REQUESTED_WITH'])) {
     }
 
     // ── ToS: release new version ─────────────────────
+    if ($action === 'tips_list') {
+        $rows = $db->query(
+            "SELECT id, tenant_id, judul, konten, icon, cta_label, cta_url, urutan, is_active
+             FROM hl_splash_tips ORDER BY urutan ASC, id ASC"
+        )->fetchAll(PDO::FETCH_ASSOC);
+        echo json_encode(['data' => $rows]);
+        exit;
+    }
+
+    if ($action === 'tips_save') {
+        $d = json_decode(file_get_contents('php://input'), true) ?: [];
+        $judul     = substr(trim(strip_tags($d['judul'] ?? '')), 0, 100);
+        $konten    = substr(trim(strip_tags($d['konten'] ?? '')), 0, 2000);
+        $icon      = substr(trim($d['icon'] ?? '💡'), 0, 10) ?: '💡';
+        $ctaLabel  = substr(trim(strip_tags($d['cta_label'] ?? '')), 0, 50) ?: null;
+        $ctaUrl    = substr(trim($d['cta_url'] ?? ''), 0, 200) ?: null;
+        $urutan    = max(0, (int)($d['urutan'] ?? 0));
+        $isActive  = !empty($d['is_active']) ? 1 : 0;
+        if (!$judul || !$konten) {
+            echo json_encode(['error' => 'Judul dan konten wajib diisi']); exit;
+        }
+        if (!empty($d['id'])) {
+            $db->prepare(
+                "UPDATE hl_splash_tips SET judul=?, konten=?, icon=?, cta_label=?, cta_url=?, urutan=?, is_active=? WHERE id=?"
+            )->execute([$judul, $konten, $icon, $ctaLabel, $ctaUrl, $urutan, $isActive, (int)$d['id']]);
+        } else {
+            $db->prepare(
+                "INSERT INTO hl_splash_tips (tenant_id, judul, konten, icon, cta_label, cta_url, urutan, is_active)
+                 VALUES (NULL, ?, ?, ?, ?, ?, ?, ?)"
+            )->execute([$judul, $konten, $icon, $ctaLabel, $ctaUrl, $urutan, $isActive]);
+        }
+        echo json_encode(['success' => true]);
+        exit;
+    }
+
+    if ($action === 'tips_toggle') {
+        $d = json_decode(file_get_contents('php://input'), true) ?: [];
+        $id = (int)($d['id'] ?? 0);
+        if (!$id) { echo json_encode(['error' => 'ID invalid']); exit; }
+        $db->prepare("UPDATE hl_splash_tips SET is_active = 1 - is_active WHERE id=?")->execute([$id]);
+        echo json_encode(['success' => true]);
+        exit;
+    }
+
+    if ($action === 'tips_delete') {
+        $d = json_decode(file_get_contents('php://input'), true) ?: [];
+        $id = (int)($d['id'] ?? 0);
+        if (!$id) { echo json_encode(['error' => 'ID invalid']); exit; }
+        $db->prepare("DELETE FROM hl_splash_tips WHERE id=?")->execute([$id]);
+        $db->prepare("DELETE FROM hl_splash_seen WHERE splash_type='tips' AND ref_id LIKE ?")
+           ->execute([$id . '_%']);
+        echo json_encode(['success' => true]);
+        exit;
+    }
+
+    if ($action === 'tips_reset_seen') {
+        require_once dirname(__DIR__) . '/core/SplashManager.php';
+        $deleted = SplashManager::resetTipsHistory();
+        echo json_encode(['success' => true, 'deleted' => $deleted]);
+        exit;
+    }
+
     if ($action === 'tos_release') {
         $version = trim($_POST['version'] ?? '');
         $summary = trim($_POST['summary'] ?? '');
@@ -271,6 +333,7 @@ $pageTitle  = 'Platform Settings';
   <button class="set-tab active" onclick="switchTab('maintenance',this)">🔧 Maintenance</button>
   <button class="set-tab" onclick="switchTab('demo',this)">🎮 Demo</button>
   <button class="set-tab" onclick="switchTab('tos',this)">📋 ToS Versions</button>
+  <button class="set-tab" onclick="switchTab('tips',this)">💡 Splash Tips</button>
 </div>
 
 <!-- ══════════════════════════ MAINTENANCE TAB ═══════════════════════════ -->
@@ -402,6 +465,65 @@ $pageTitle  = 'Platform Settings';
   </div>
 </div>
 
+<!-- ══════════════════════════ TIPS TAB ═══════════════════════════ -->
+<div class="set-panel" id="tab-tips">
+
+  <div class="set-card">
+    <h3>💡 Splash Tips Harian</h3>
+    <p>Tips yang muncul 1x per hari per user. Toggle aktif untuk publish/unpublish. Klik "Reset Seen" supaya semua user lihat tips baru lagi besok.</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
+      <button class="sa-btn sa-btn-primary" onclick="openTipsEdit(null)">➕ Tambah Tip</button>
+      <button class="sa-btn sa-btn-outline" onclick="resetTipsSeen()" title="Hapus seen history → semua user lihat tips lagi">🔄 Reset Seen History</button>
+    </div>
+    <div id="tipsList" style="display:flex;flex-direction:column;gap:10px"></div>
+  </div>
+
+</div>
+
+<!-- ══════════════════════════ MODAL: Edit Tip ═══════════════════════════ -->
+<div id="tipsEditModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9998;align-items:center;justify-content:center;padding:20px">
+  <div style="background:#1a2540;border-radius:14px;padding:24px;max-width:540px;width:100%;max-height:90vh;overflow-y:auto;border:1px solid rgba(255,255,255,.08)">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <h3 id="tipsModalTitle" style="margin:0;color:#fff;font-size:16px;font-weight:700">➕ Tambah Tip</h3>
+      <button onclick="closeTipsEdit()" style="background:none;border:none;color:rgba(255,255,255,.5);font-size:22px;cursor:pointer">×</button>
+    </div>
+    <input type="hidden" id="tip_id"/>
+    <div class="set-field">
+      <label>Judul *</label>
+      <input type="text" id="tip_judul" maxlength="100" placeholder="Misal: Inventori Bahan Baku"/>
+    </div>
+    <div class="set-field">
+      <label>Konten *</label>
+      <textarea id="tip_konten" rows="3" maxlength="2000" placeholder="Penjelasan fitur singkat..."></textarea>
+    </div>
+    <div style="display:grid;grid-template-columns:80px 1fr;gap:12px">
+      <div class="set-field">
+        <label>Icon</label>
+        <input type="text" id="tip_icon" maxlength="10" value="💡" style="text-align:center;font-size:20px"/>
+      </div>
+      <div class="set-field">
+        <label>Urutan</label>
+        <input type="number" id="tip_urutan" value="0" min="0"/>
+      </div>
+    </div>
+    <div class="set-field">
+      <label>CTA Label (opsional)</label>
+      <input type="text" id="tip_cta_label" maxlength="50" placeholder="Misal: Coba Sekarang"/>
+    </div>
+    <div class="set-field">
+      <label>CTA URL (opsional)</label>
+      <input type="text" id="tip_cta_url" maxlength="200" placeholder="/inventori"/>
+    </div>
+    <label style="display:flex;align-items:center;gap:8px;color:rgba(255,255,255,.7);font-size:13px;margin-bottom:16px">
+      <input type="checkbox" id="tip_is_active" checked/> Aktif (tampilkan ke user)
+    </label>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="sa-btn sa-btn-outline" onclick="closeTipsEdit()">Batal</button>
+      <button class="sa-btn sa-btn-primary" onclick="saveTip()">💾 Simpan</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast-set"></div>
 
 <?php saRenderNavClose(); ?>
@@ -415,7 +537,123 @@ function switchTab(name, btn) {
     document.getElementById('tab-' + name).classList.add('active');
     if (name === 'demo')    loadDemoStats();
     if (name === 'maintenance') loadMaintStatus();
+    if (name === 'tips')    loadTipsList();
 }
+
+// ── TIPS ─────────────────────────────────────
+async function loadTipsList() {
+    const r = await fetch('/superadmin/settings.php?action=tips_list', { credentials:'same-origin' });
+    const j = await r.json();
+    const wrap = document.getElementById('tipsList');
+    if (!j.data?.length) {
+        wrap.innerHTML = '<div style="text-align:center;padding:24px;color:rgba(255,255,255,.4)">Belum ada tip. Klik "Tambah Tip" untuk mulai.</div>';
+        return;
+    }
+    wrap.innerHTML = j.data.map(t => {
+        const activeStyle = t.is_active == 1
+            ? 'border-color:rgba(53,232,213,.3);background:rgba(53,232,213,.04)'
+            : 'border-color:rgba(255,255,255,.06);background:rgba(255,255,255,.02);opacity:.6';
+        const scope = t.tenant_id ? `Tenant #${t.tenant_id}` : '🌍 Global';
+        const cta = t.cta_label ? `<span style="background:rgba(53,232,213,.15);color:#35E8D5;padding:2px 8px;border-radius:8px;font-size:11px;margin-left:6px">${esc(t.cta_label)}</span>` : '';
+        return `<div style="padding:14px 16px;border:1px solid rgba(255,255,255,.08);border-radius:10px;${activeStyle}">
+          <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start">
+            <div style="flex:1;min-width:0">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+                <span style="font-size:20px">${esc(t.icon||'💡')}</span>
+                <strong style="color:#fff;font-size:14px">${esc(t.judul)}</strong>
+                ${cta}
+              </div>
+              <div style="font-size:12px;color:rgba(255,255,255,.5);line-height:1.5">${esc(t.konten)}</div>
+              <div style="font-size:11px;color:rgba(255,255,255,.3);margin-top:6px">Urutan: ${t.urutan} · ${scope} · ${t.is_active==1?'✓ Aktif':'⏸ Nonaktif'}</div>
+            </div>
+            <div style="display:flex;gap:6px;flex-shrink:0">
+              <button class="sa-btn sa-btn-outline" style="padding:5px 10px;font-size:11px" onclick='openTipsEdit(${JSON.stringify(t).replace(/'/g,"&apos;")})'>✏️</button>
+              <button class="sa-btn sa-btn-outline" style="padding:5px 10px;font-size:11px" onclick="toggleTipActive(${t.id})">${t.is_active==1?'⏸':'▶'}</button>
+              <button class="sa-btn sa-btn-danger" style="padding:5px 10px;font-size:11px" onclick="deleteTip(${t.id}, ${JSON.stringify(t.judul).replace(/'/g,'&apos;')})">🗑️</button>
+            </div>
+          </div>
+        </div>`;
+    }).join('');
+}
+
+function openTipsEdit(tip) {
+    document.getElementById('tipsModalTitle').textContent = tip ? '✏️ Edit Tip' : '➕ Tambah Tip';
+    document.getElementById('tip_id').value         = tip?.id || '';
+    document.getElementById('tip_judul').value      = tip?.judul || '';
+    document.getElementById('tip_konten').value     = tip?.konten || '';
+    document.getElementById('tip_icon').value       = tip?.icon || '💡';
+    document.getElementById('tip_urutan').value     = tip?.urutan ?? 0;
+    document.getElementById('tip_cta_label').value  = tip?.cta_label || '';
+    document.getElementById('tip_cta_url').value    = tip?.cta_url || '';
+    document.getElementById('tip_is_active').checked = tip ? (tip.is_active == 1) : true;
+    document.getElementById('tipsEditModal').style.display = 'flex';
+}
+function closeTipsEdit() { document.getElementById('tipsEditModal').style.display = 'none'; }
+
+async function saveTip() {
+    const data = {
+        id:         document.getElementById('tip_id').value || null,
+        judul:      document.getElementById('tip_judul').value,
+        konten:     document.getElementById('tip_konten').value,
+        icon:       document.getElementById('tip_icon').value,
+        urutan:     parseInt(document.getElementById('tip_urutan').value) || 0,
+        cta_label:  document.getElementById('tip_cta_label').value,
+        cta_url:    document.getElementById('tip_cta_url').value,
+        is_active:  document.getElementById('tip_is_active').checked ? 1 : 0,
+    };
+    if (!data.judul.trim() || !data.konten.trim()) {
+        showToast('Judul dan konten wajib diisi', false); return;
+    }
+    const r = await fetch('/superadmin/settings.php?action=tips_save', {
+        method:'POST', credentials:'same-origin',
+        headers:{ 'Content-Type':'application/json', 'X-CSRF-Token': CSRF },
+        body: JSON.stringify(data),
+    });
+    const j = await r.json();
+    if (j.error) { showToast(j.error, false); return; }
+    showToast('Tip tersimpan');
+    closeTipsEdit();
+    loadTipsList();
+}
+
+async function toggleTipActive(id) {
+    const r = await fetch('/superadmin/settings.php?action=tips_toggle', {
+        method:'POST', credentials:'same-origin',
+        headers:{ 'Content-Type':'application/json', 'X-CSRF-Token': CSRF },
+        body: JSON.stringify({ id }),
+    });
+    const j = await r.json();
+    if (j.error) { showToast(j.error, false); return; }
+    showToast('Status di-toggle');
+    loadTipsList();
+}
+
+async function deleteTip(id, judul) {
+    if (!confirm(`Hapus tip "${judul}"?\nSeen history user untuk tip ini juga akan dihapus.`)) return;
+    const r = await fetch('/superadmin/settings.php?action=tips_delete', {
+        method:'POST', credentials:'same-origin',
+        headers:{ 'Content-Type':'application/json', 'X-CSRF-Token': CSRF },
+        body: JSON.stringify({ id }),
+    });
+    const j = await r.json();
+    if (j.error) { showToast(j.error, false); return; }
+    showToast('Tip dihapus');
+    loadTipsList();
+}
+
+async function resetTipsSeen() {
+    if (!confirm('Reset seen history untuk SEMUA user × SEMUA tip?\nSemua user akan lihat tip lagi besok.')) return;
+    const r = await fetch('/superadmin/settings.php?action=tips_reset_seen', {
+        method:'POST', credentials:'same-origin',
+        headers:{ 'Content-Type':'application/json', 'X-CSRF-Token': CSRF },
+        body: '{}',
+    });
+    const j = await r.json();
+    if (j.error) { showToast(j.error, false); return; }
+    showToast(`Seen history di-reset (${j.deleted} record dihapus)`);
+}
+
+function esc(s){ return (s||'').toString().replace(/[<>&"]/g, c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c])); }
 
 function showToast(msg, ok=true) {
     var t = document.getElementById('toast-set');
