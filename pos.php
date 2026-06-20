@@ -812,13 +812,16 @@ textarea{resize:vertical;min-height:64px}
     z-index: 50;
   }
   .pos-mobile-cta-total {
-    flex: 1; font-size: 11px; color: var(--gray); line-height: 1.2;
+    flex: 1; min-width: 0; font-size: 11px; color: var(--gray); line-height: 1.2;
+    white-space: nowrap;
   }
   .pos-mobile-cta-total strong {
     display: block; font-size: 18px; color: var(--navy); font-family: var(--mono);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
   .pos-mobile-cta button {
-    flex-shrink: 0; padding: 12px 22px; font-size: 14px; font-weight: 700;
+    flex-shrink: 0; padding: 12px 18px; font-size: 14px; font-weight: 700;
+    white-space: nowrap;
   }
   /* Hide tombol Simpan asli (avoid duplicate), tombol Reset tetap di flow */
   #btnSave { display: none !important; }
@@ -2060,7 +2063,7 @@ function showToast(msg,type='success'){const t=document.getElementById('toast');
 <!-- Mobile sticky CTA (auto-hidden di desktop) -->
 <div class="pos-mobile-cta" id="posMobileCta">
   <div class="pos-mobile-cta-total">
-    Total Bayar
+    Total
     <strong id="mTotal">Rp 0</strong>
   </div>
   <button class="btn btn-primary" id="btnSaveMobile" onclick="saveTransaksi()" disabled>
