@@ -38,12 +38,21 @@ ALTER TABLE hl_pelanggan
   ADD COLUMN IF NOT EXISTS saldo_expires_at DATETIME NULL
     COMMENT 'Tanggal expired saldo deposit (NULL = no expiry)';
 
+-- Voucher per outlet (dari voucher_per_outlet_migration yg gak fully apply)
+ALTER TABLE hl_voucher
+  ADD COLUMN IF NOT EXISTS outlet_id INT NULL
+    COMMENT 'Outlet scope voucher (NULL = global tenant)'
+  AFTER tenant_id;
+
 -- Index untuk lookup tier (non-unique, opsional tapi helpful)
 ALTER TABLE hl_transaksi
   ADD INDEX IF NOT EXISTS idx_express_tier (tenant_id, outlet_id, express_tier_id);
 
 ALTER TABLE hl_pelanggan
   ADD INDEX IF NOT EXISTS idx_member_tier (tenant_id, outlet_id, member_tier_id);
+
+ALTER TABLE hl_voucher
+  ADD INDEX IF NOT EXISTS idx_voucher_outlet (tenant_id, outlet_id, is_used);
 
 -- Verify
 -- SELECT TABLE_NAME, COLUMN_NAME FROM information_schema.columns
