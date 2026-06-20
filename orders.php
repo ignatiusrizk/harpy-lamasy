@@ -851,9 +851,11 @@ textarea{resize:vertical;min-height:64px}
   .card-header{padding:12px 14px;flex-wrap:wrap;gap:6px}
   .modal{width:100%;max-width:100%;border-radius:var(--r-lg) var(--r-lg) 0 0;height:92vh}
   .modal-overlay{align-items:flex-end;padding:0}
-  /* Table utama orders scroll horizontal di HP */
-  .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
-  .table-wrap table{min-width:760px}
+  /* Table utama orders stacked di HP (lihat .hl-stack-mobile di harpy-erp.css) */
+  .table-wrap{overflow-x:visible}
+  .table-wrap table.hl-stack-mobile{min-width:0}
+  /* Fallback untuk table lain (mis. log table) yang masih butuh scroll horizontal */
+  .table-wrap table:not(.hl-stack-mobile){min-width:760px;overflow-x:auto;-webkit-overflow-scrolling:touch}
   /* Bulk toolbar wrap di HP */
   #bulkToolbar{flex-direction:column;align-items:stretch!important;gap:8px}
   #bulkToolbar select,#bulkToolbar button{width:100%}
