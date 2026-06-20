@@ -821,8 +821,8 @@ textarea{resize:vertical;min-height:64px}
     overflow: hidden; text-overflow: ellipsis;
   }
   .pos-mobile-cta button {
-    flex-shrink: 0; padding: 12px 20px; font-size: 14px; font-weight: 700;
-    white-space: nowrap;
+    flex: 0 0 auto; width: auto !important; padding: 12px 22px;
+    font-size: 14px; font-weight: 700; white-space: nowrap;
   }
   /* Hide tombol Simpan asli (avoid duplicate), tombol Reset tetap di flow */
   #btnSave { display: none !important; }
