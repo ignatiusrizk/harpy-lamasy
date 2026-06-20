@@ -706,7 +706,10 @@ require __DIR__ . '/_layout_open.php';
     .ranking{grid-template-columns:1fr}
   }
   @media(max-width:640px){
-    .metrics{grid-template-columns:1fr}
+    /* 2-col tetap di mobile — halving vertical scroll, num+label cukup di ~170px width */
+    .metrics{grid-template-columns:repeat(2,1fr);gap:10px}
+    .metric{padding:14px}
+    .metric-num{font-size:1.3rem}
   }
 </style>
 
