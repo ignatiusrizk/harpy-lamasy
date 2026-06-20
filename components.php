@@ -235,6 +235,7 @@ function renderTopbar(string $activePage = '', bool $minimalMode = false): void 
       'karyawan'=>'👤','absensi'=>'📅','settings'=>'⚙️','audit'=>'🔍','outlet-settings'=>'🏪',
       'checklist'=>'✅','droppoint'=>'📦','owner_report'=>'📨','piutang'=>'💼','kanban'=>'🗂️','struk'=>'🧾',
       'loyalty'=>'⭐','retention'=>'😴','support'=>'🎧','import'=>'📥',
+      'inventori'=>'🧴','mesin'=>'🪙',
     ];
     ?>
     <div class="ol-shell" id="olShell">
