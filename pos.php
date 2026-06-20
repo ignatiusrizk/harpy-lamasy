@@ -795,6 +795,36 @@ textarea{resize:vertical;min-height:64px}
   .main{padding:8px 8px 80px}
   .layanan-grid{grid-template-columns:1fr 1fr;gap:4px}
 }
+
+/* Mobile sticky action bar — Total + Simpan selalu accessible */
+.pos-mobile-cta { display: none; }
+@media(max-width:680px) {
+  .pos-mobile-cta {
+    display: flex;
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    padding: 10px 14px calc(10px + env(safe-area-inset-bottom, 0px));
+    background: var(--white);
+    border-top: 1px solid rgba(27,45,90,.1);
+    box-shadow: 0 -4px 20px rgba(0,0,0,.08);
+    gap: 12px;
+    align-items: center;
+    z-index: 50;
+  }
+  .pos-mobile-cta-total {
+    flex: 1; font-size: 11px; color: var(--gray); line-height: 1.2;
+  }
+  .pos-mobile-cta-total strong {
+    display: block; font-size: 18px; color: var(--navy); font-family: var(--mono);
+  }
+  .pos-mobile-cta button {
+    flex-shrink: 0; padding: 12px 22px; font-size: 14px; font-weight: 700;
+  }
+  /* Hide tombol Simpan asli (avoid duplicate), tombol Reset tetap di flow */
+  #btnSave { display: none !important; }
+  /* Extra bottom padding biar content gak ketutup sticky bar */
+  .main { padding-bottom: 90px !important; }
+}
 </style>
 </head>
 <body>
@@ -2026,6 +2056,35 @@ function showToast(msg,type='success'){const t=document.getElementById('toast');
     </div>
   </div>
 </div>
+
+<!-- Mobile sticky CTA (auto-hidden di desktop) -->
+<div class="pos-mobile-cta" id="posMobileCta">
+  <div class="pos-mobile-cta-total">
+    Total Bayar
+    <strong id="mTotal">Rp 0</strong>
+  </div>
+  <button class="btn btn-primary" id="btnSaveMobile" onclick="saveTransaksi()" disabled>
+    💾 Simpan
+  </button>
+</div>
+
+<script>
+// Sync sticky bar dengan tombol/total utama — set & forget pakai MutationObserver
+(function syncMobileCta(){
+  const btn = document.getElementById('btnSave');
+  const total = document.getElementById('sumTotal');
+  const mBtn = document.getElementById('btnSaveMobile');
+  const mTot = document.getElementById('mTotal');
+  if (!btn || !total || !mBtn || !mTot) return;
+  const sync = () => {
+    mBtn.disabled = btn.disabled;
+    mTot.textContent = total.textContent;
+  };
+  new MutationObserver(sync).observe(btn, { attributes:true, attributeFilter:['disabled'] });
+  new MutationObserver(sync).observe(total, { childList:true, characterData:true, subtree:true });
+  sync();
+})();
+</script>
 
 <?php renderToast(); ?>
 </body>
