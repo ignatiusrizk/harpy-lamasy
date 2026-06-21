@@ -121,6 +121,7 @@ if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) || !empty($_GET['action'])) {
     // Transfer antar outlet
     if ($action === 'transfer' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         requirePermission('inventori.manage');
+        verifyCsrf();
         $d = json_decode(file_get_contents('php://input'), true);
         $bahanAsalId  = (int)($d['bahan_asal_id'] ?? 0);
         $outletAsalId = (int)($d['outlet_asal_id'] ?? 0);
@@ -149,11 +150,15 @@ if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) || !empty($_GET['action'])) {
             exit;
         }
 
-        // Verify outlet tujuan milik tenant ini
-        $outletTujuan = $db->prepare("SELECT id, nama_outlet FROM outlets WHERE id = ? AND tenant_id = ? LIMIT 1");
+        // Verify outlet tujuan milik tenant ini & masih operasional
+        $outletTujuan = $db->prepare(
+            "SELECT id, nama_outlet FROM outlets
+             WHERE id = ? AND tenant_id = ? AND status IN ('active','trial','grace')
+             LIMIT 1"
+        );
         $outletTujuan->execute([$outletTujuanId, $tid]);
         $outletTujuan = $outletTujuan->fetch(PDO::FETCH_ASSOC);
-        if (!$outletTujuan) { echo json_encode(['error' => 'Outlet tujuan tidak valid']); exit; }
+        if (!$outletTujuan) { echo json_encode(['error' => 'Outlet tujuan tidak valid atau nonaktif']); exit; }
 
         try {
             $db->beginTransaction();
@@ -182,9 +187,9 @@ if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) || !empty($_GET['action'])) {
 
             // Hitung stok tujuan sekarang
             $stokTujuanRow = $db->prepare(
-                "SELECT stok_terkini FROM hl_bahan_stok WHERE id = ?"
+                "SELECT stok_terkini FROM hl_bahan_stok WHERE id = ? AND tenant_id = ? AND outlet_id = ?"
             );
-            $stokTujuanRow->execute([$bahanTujuanId]);
+            $stokTujuanRow->execute([$bahanTujuanId, $tid, $outletTujuanId]);
             $stokTujuanSebelum = (int)$stokTujuanRow->fetchColumn();
             $stokTujuanSesudah = $stokTujuanSebelum + $jumlah;
 

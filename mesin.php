@@ -284,7 +284,10 @@ if ($action) {
         if (!$sesi) { echo json_encode(['error'=>'Sesi tidak ditemukan']); exit; }
         $db->prepare("UPDATE hl_mesin_sesi SET status='batal' WHERE id=?")->execute([$sesiId]);
         // Cek apakah ini sesi aktif terakhir → balikin status mesin ke idle
-        $stillActive = TenantQuery::rawOne("SELECT id FROM hl_mesin_sesi WHERE mesin_id=? AND status IN ('booked','running')", [(int)$sesi['mesin_id']]);
+        $stillActive = TenantQuery::rawOne(
+            "SELECT id FROM hl_mesin_sesi WHERE mesin_id=? AND tenant_id=? AND outlet_id=? AND status IN ('booked','running')",
+            [(int)$sesi['mesin_id'], $tid, $oid]
+        );
         if (!$stillActive) {
             $db->prepare("UPDATE hl_mesin SET status='idle' WHERE id=?")->execute([(int)$sesi['mesin_id']]);
         }

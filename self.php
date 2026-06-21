@@ -79,10 +79,6 @@ if ($action === 'book' && $_SERVER['REQUEST_METHOD']==='POST') {
     $mesin = findMesinByKode($kodeIn);
     if (!$mesin) { echo json_encode(['error'=>'Mesin tidak ditemukan']); exit; }
 
-    // Cek apakah sudah ada sesi aktif (race condition: customer lain barengan)
-    $existing = getActiveSesi((int)$mesin['id']);
-    if ($existing) { echo json_encode(['error'=>'Mesin sedang dipakai. Refresh halaman.']); exit; }
-
     $cycleId = intval($d['cycle_id'] ?? 0);
     $nama    = substr(trim(strip_tags($d['nama'] ?? '')), 0, 80);
     $tel     = preg_replace('/[^0-9+]/', '', $d['telepon'] ?? '');
@@ -97,8 +93,22 @@ if ($action === 'book' && $_SERVER['REQUEST_METHOD']==='POST') {
     $cycle = $st->fetch(PDO::FETCH_ASSOC);
     if (!$cycle) { echo json_encode(['error'=>'Cycle tidak valid']); exit; }
 
-    // Insert sesi (status=booked, status_bayar=belum)
+    // Atomic check + insert (cegah race condition saat 2 customer scan QR barengan)
     try {
+        $db->beginTransaction();
+
+        // Lock baris sesi aktif (jika ada) — concurrent transaction akan wait di sini
+        $st = $db->prepare(
+            "SELECT id FROM hl_mesin_sesi
+             WHERE mesin_id=? AND status IN ('booked','running') LIMIT 1 FOR UPDATE"
+        );
+        $st->execute([(int)$mesin['id']]);
+        if ($st->fetchColumn()) {
+            $db->rollBack();
+            echo json_encode(['error'=>'Mesin sedang dipakai. Refresh halaman.']);
+            exit;
+        }
+
         $st = $db->prepare(
             "INSERT INTO hl_mesin_sesi
               (tenant_id, outlet_id, mesin_id, cycle_id, pelanggan_nama, pelanggan_telepon,
@@ -113,6 +123,8 @@ if ($action === 'book' && $_SERVER['REQUEST_METHOD']==='POST') {
         $sesiId = (int)$db->lastInsertId();
         $db->prepare("UPDATE hl_mesin SET status='booked' WHERE id=?")->execute([(int)$mesin['id']]);
 
+        $db->commit();
+
         echo json_encode([
             'success'   => true,
             'sesi_id'   => $sesiId,
@@ -120,7 +132,9 @@ if ($action === 'book' && $_SERVER['REQUEST_METHOD']==='POST') {
             'outlet_telp' => $mesin['outlet_telp'] ?? '',
         ]);
     } catch (Throwable $e) {
-        echo json_encode(['error'=>'Gagal: '.$e->getMessage()]);
+        if ($db->inTransaction()) $db->rollBack();
+        error_log('[self.php book] ' . $e->getMessage());
+        echo json_encode(['error' => 'Gagal menyimpan booking. Coba lagi sebentar.']);
     }
     exit;
 }
