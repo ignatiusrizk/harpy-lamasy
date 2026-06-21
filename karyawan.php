@@ -574,7 +574,8 @@ async function loadGaji() {
       <td data-lbl="Total" class="hl-td-mono hl-td-right" style="font-weight:800;color:var(--navy)">Rp ${parseFloat(g.total||0).toLocaleString('id-ID')}</td>
       <td data-lbl="Status"><span class="hl-badge ${g.status==='dibayar'?'hl-badge-lunas':'hl-badge-dp'}">${g.status==='dibayar'?'✅ Dibayar':'⏳ Pending'}</span></td>
       <td>
-        <div style="display:flex;gap:4px">
+        <div style="display:flex;gap:4px;flex-wrap:wrap">
+          <a href="/api/payslip.php?id=${g.id}&auto_print=1" target="_blank" class="hl-btn hl-btn-outline hl-btn-sm" title="Cetak slip gaji">🖨️</a>
           ${CAN_GAJI ? `<button class="hl-btn hl-btn-outline hl-btn-sm" onclick='editGaji(${JSON.stringify(g)})'>✏️ Edit</button>` : ''}
           ${CAN_GAJI && g.status==='pending' ? `<button class="hl-btn hl-btn-sm hl-btn-green" onclick="bayarGaji(${g.id})">💰 Bayar</button>` : ''}
         </div>
