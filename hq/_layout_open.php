@@ -39,6 +39,10 @@ $_canSwitch = !empty($hqIsOwner) || !empty($hqIsManager);
   <?php if (function_exists('getCsrfToken')): ?>
   <meta name="csrf-token" content="<?= htmlspecialchars(getCsrfToken()) ?>">
   <?php endif; ?>
+  <?php
+    require_once dirname(__DIR__) . '/components.php';
+    renderGlobalJsHelpers();
+  ?>
 </head>
 <body>
 

@@ -7,33 +7,7 @@ require_once ROOT . '/middleware/hq_guard.php';
 require_once ROOT . '/core/FinancialCalculator.php';
 
 // ── HQ compat stubs (hq_guard tidak provide requirePermission/logAudit) ──
-if (!function_exists('requirePermission')) {
-    function requirePermission(string $kode): void {
-        // HQ view already gated by hq_guard.php (owner/manager only).
-        // 'keuangan.edit' further restricted to owner/superadmin.
-        global $hqIsOwner, $hqIsManager;
-        if (str_ends_with($kode, '.edit') && !$hqIsOwner) {
-            header('Content-Type: application/json');
-            echo json_encode(['error' => 'Akses ditolak — hanya Owner.']);
-            exit;
-        }
-    }
-}
-if (!function_exists('requireNotGrace')) {
-    function requireNotGrace(string $message = ''): void {
-        global $hqTenant;
-        if (($hqTenant['status'] ?? '') === 'grace') {
-            header('Content-Type: application/json');
-            echo json_encode(['error' => 'Akun dalam masa tenggang (grace). Perbarui paket terlebih dahulu.']);
-            exit;
-        }
-    }
-}
-if (!function_exists('logAudit')) {
-    function logAudit(string $aksi, string $modul, string $ket = ''): void {
-        // Silently skip — tenant_guard not loaded in HQ context.
-    }
-}
+// requirePermission/requireNotGrace/logAudit stubs sudah di hq_guard.php
 
 requirePermission('keuangan.view');
 

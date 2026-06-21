@@ -152,3 +152,43 @@ if (!function_exists('verifyCsrf')) {
         }
     }
 }
+
+// HQ pages tidak melewati tenant_guard, jadi `requirePermission()` dan
+// `logAudit()` perlu di-stub. Pattern sebelumnya: tiap HQ page redefine
+// stub-nya sendiri. Pindahkan ke sini biar 1 source of truth.
+//
+// Rule generic: aksi ber-suffix `.manage`, `.edit`, `.delete` hanya boleh
+// Owner. View/list otherwise allowed (HQ scope sudah dibatasi hq_guard).
+if (!function_exists('requirePermission')) {
+    function requirePermission(string $kode): void {
+        global $hqIsOwner;
+        $needsOwner = str_ends_with($kode, '.manage')
+                   || str_ends_with($kode, '.edit')
+                   || str_ends_with($kode, '.delete');
+        if ($needsOwner && empty($hqIsOwner)) {
+            if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) || !empty($_GET['action'])) {
+                header('Content-Type: application/json');
+                echo json_encode(['error' => 'Akses ditolak — hanya Owner.']);
+            } else {
+                http_response_code(403);
+                echo 'Akses ditolak — hanya Owner.';
+            }
+            exit;
+        }
+    }
+}
+if (!function_exists('logAudit')) {
+    function logAudit(string $aksi, string $modul, string $ket = ''): void {
+        // HQ context tidak punya audit log per-outlet — silent no-op.
+    }
+}
+if (!function_exists('requireNotGrace')) {
+    function requireNotGrace(string $message = ''): void {
+        global $hqTenant;
+        if (($hqTenant['status'] ?? '') === 'grace') {
+            header('Content-Type: application/json');
+            echo json_encode(['error' => $message ?: 'Akun dalam masa tenggang (grace). Perbarui paket terlebih dahulu.']);
+            exit;
+        }
+    }
+}

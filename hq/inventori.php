@@ -14,20 +14,7 @@ $pageTitle  = 'Inventori Lintas Outlet';
 define('ROOT', dirname(__DIR__));
 require_once ROOT . '/middleware/hq_guard.php';
 
-// ── HQ compat stubs (sama seperti hq/keuangan.php) ──
-if (!function_exists('requirePermission')) {
-    function requirePermission(string $kode): void {
-        global $hqIsOwner;
-        if (str_ends_with($kode, '.manage') && !$hqIsOwner) {
-            header('Content-Type: application/json');
-            echo json_encode(['error' => 'Akses ditolak — hanya Owner yang bisa kelola/transfer stok.']);
-            exit;
-        }
-    }
-}
-if (!function_exists('logAudit')) {
-    function logAudit(string $aksi, string $modul, string $ket = ''): void { /* no-op */ }
-}
+// requirePermission/logAudit stubs sudah di hq_guard.php
 
 $db   = Database::get();
 $tid  = (int) TenantResolver::id();
@@ -512,11 +499,8 @@ async function doTransfer() {
 }
 
 // ── HELPERS ────────────────────────────────────────
-function fmtNum(n) { return new Intl.NumberFormat('id-ID').format(n || 0); }
-function esc(s) { return (s||'').toString().replace(/[<>&"]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c])); }
-function katLabel(k) {
-  return {deterjen:'🧴 Deterjen', parfum:'🌸 Parfum', pewangi:'💧 Pewangi', plastik_kemasan:'📦 Plastik', peralatan:'🔧 Peralatan', lainnya:'📋 Lainnya'}[k] || k;
-}
+// esc/fmtNum sudah global di components.php
+const katLabel = window.katLabelInventori;
 
 // ── INIT ───────────────────────────────────────────
 loadConsolidated();

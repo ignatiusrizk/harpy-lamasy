@@ -103,6 +103,26 @@ function renderHead(string $title = 'LAMASY'): void {
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/harpy-erp.css?v=<?= @filemtime(__DIR__.'/harpy-erp.css') ?: date('Ymd') ?>">
+    <?php renderGlobalJsHelpers(); ?>
+    <?php
+}
+
+/**
+ * Global JS helpers — dipakai semua page (outlet & HQ).
+ * Dipanggil dari renderHead() dan hq/_layout_open.php.
+ */
+function renderGlobalJsHelpers(): void { ?>
+    <script>
+    // Global UI helpers — tersedia sebelum body scripts execute.
+    window.esc    = s => (s||'').toString().replace(/[<>&"]/g, c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]));
+    window.fmtNum = n => new Intl.NumberFormat('id-ID').format(n||0);
+    window.fmtRp  = n => 'Rp ' + window.fmtNum(n);
+    window.fmtDate = s => { if (!s) return '-'; return new Date(s.replace(' ','T')).toLocaleString('id-ID', {day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}); };
+    window.fmtTime = s => { if (!s) return '-'; return new Date(s.replace(' ','T')).toLocaleTimeString('id-ID', {hour:'2-digit',minute:'2-digit'}); };
+    window.fmtTanggal = s => { if (!s) return '-'; return new Date(s.replace(' ','T')).toLocaleDateString('id-ID', {day:'2-digit',month:'short',year:'numeric'}); };
+    window.capitalize = s => s ? s.charAt(0).toUpperCase() + s.slice(1) : '';
+    window.katLabelInventori = k => ({deterjen:'🧴 Deterjen', parfum:'🌸 Parfum', pewangi:'💧 Pewangi', plastik_kemasan:'📦 Plastik', peralatan:'🔧 Peralatan', lainnya:'📋 Lainnya'}[k] || k);
+    </script>
     <?php
 }
 

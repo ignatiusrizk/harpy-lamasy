@@ -10,12 +10,7 @@ $pageTitle  = 'Mesin Self-Service Lintas Outlet';
 define('ROOT', dirname(__DIR__));
 require_once ROOT . '/middleware/hq_guard.php';
 
-if (!function_exists('requirePermission')) {
-    function requirePermission(string $kode): void { /* HQ already gated */ }
-}
-if (!function_exists('logAudit')) {
-    function logAudit(string $a, string $m, string $k = ''): void { /* no-op */ }
-}
+// requirePermission/logAudit stubs sudah di hq_guard.php
 
 $db   = Database::get();
 $tid  = (int) TenantResolver::id();
@@ -278,8 +273,7 @@ setInterval(() => {
   });
 }, 1000);
 
-function fmtNum(n) { return new Intl.NumberFormat('id-ID').format(n||0); }
-function esc(s) { return (s||'').toString().replace(/[<>&"]/g, c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c])); }
+// esc/fmtNum sudah global di components.php
 
 // Init
 (function init() {

@@ -810,26 +810,11 @@ async function saveMutasi() {
   loadStok();
 }
 
-// ── HELPERS ────────────────────────────────────────
-function fmtNum(n) { return new Intl.NumberFormat('id-ID').format(n || 0); }
-function esc(s)    { return (s||'').toString().replace(/[<>&"]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c])); }
-function capitalize(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
-function fmtDate(s) {
-  if (!s) return '-';
-  const d = new Date(s.replace(' ','T'));
-  return d.toLocaleString('id-ID', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
-}
-function tipeIcon(t) {
-  return { masuk:'⬆️', keluar:'⬇️', adjust:'⚖️', transfer:'↔️' }[t] || '';
-}
-function katLabel(k) {
-  return {
-    deterjen:'🧴 Deterjen', parfum:'🌸 Parfum', pewangi:'💧 Pewangi',
-    plastik_kemasan:'📦 Plastik', peralatan:'🔧 Peralatan', lainnya:'📋 Lainnya'
-  }[k] || k;
-}
+// ── HELPERS lokal — esc/fmtNum/fmtDate/katLabelInventori sudah global di components.php ──
+const katLabel = window.katLabelInventori;
+function tipeIcon(t) { return { masuk:'⬆️', keluar:'⬇️', adjust:'⚖️', transfer:'↔️' }[t] || ''; }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
-// showToast() global sudah di-inject oleh renderToast() di components.php
+// showToast() global sudah di-inject oleh renderToast()
 
 // ── INIT ───────────────────────────────────────────
 (function init() {

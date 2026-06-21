@@ -838,11 +838,8 @@ async function loadSesi() {
 function csrfHeaders() {
   return { 'Content-Type':'application/json', 'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content || '' };
 }
-function fmtNum(n) { return new Intl.NumberFormat('id-ID').format(n||0); }
-function esc(s) { return (s||'').toString().replace(/[<>&"]/g, c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c])); }
+// esc/fmtNum/fmtDate/fmtTime sudah global di components.php
 function escAttr(s) { return esc(s).replace(/'/g,"\\'"); }
-function fmtDate(s) { if (!s) return '-'; return new Date(s.replace(' ','T')).toLocaleString('id-ID', {day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}); }
-function fmtTime(s) { if (!s) return '-'; return new Date(s.replace(' ','T')).toLocaleTimeString('id-ID', {hour:'2-digit',minute:'2-digit'}); }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 
 // ── INIT ───────────────────────────────────────────
