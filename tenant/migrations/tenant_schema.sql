@@ -387,3 +387,30 @@ CREATE TABLE IF NOT EXISTS hl_zona_antar (
   aktif TINYINT(1) DEFAULT 1,
   INDEX idx_outlet_aktif (tenant_id, outlet_id, aktif)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ── Loyalty Rewards (Poin Reward) ──────────────────────
+CREATE TABLE IF NOT EXISTS hl_poin_reward (
+  id                   INT AUTO_INCREMENT PRIMARY KEY,
+  tenant_id            INT NOT NULL,
+  outlet_id            INT DEFAULT NULL,
+  nama_reward          VARCHAR(100) NOT NULL,
+  deskripsi            TEXT NULL,
+  poin_dibutuhkan      INT NOT NULL,
+  tipe                 ENUM('diskon_nominal','diskon_persen','gratis_layanan') NOT NULL,
+  nilai                INT NOT NULL,
+  min_transaksi        INT DEFAULT 0,
+  max_redeem_per_bulan INT DEFAULT 0,
+  is_active            TINYINT(1) DEFAULT 1,
+  created_at           TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_tenant_outlet (tenant_id, outlet_id, is_active),
+  INDEX idx_poin_needed   (poin_dibutuhkan)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Multi-outlet reward targeting junction
+CREATE TABLE IF NOT EXISTS hl_poin_reward_outlet (
+  reward_id INT NOT NULL,
+  outlet_id INT NOT NULL,
+  PRIMARY KEY (reward_id, outlet_id),
+  INDEX idx_outlet (outlet_id),
+  FOREIGN KEY (reward_id) REFERENCES hl_poin_reward(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
