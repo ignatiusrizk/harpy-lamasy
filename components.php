@@ -977,3 +977,31 @@ function formatTanggal(string $date, bool $withDay = false): string {
     if (!$date) return '-';
     return date($withDay ? 'l, d M Y' : 'd M Y', strtotime($date));
 }
+
+// ── WA Link helpers ───────────────────────────────────
+const WA_TEMPLATES = [
+    'order_diterima' => "Halo {nama} 👋\nPesanan #{kode} sudah kami terima di {outlet}.\nEstimasi selesai: {tgl_ambil}\nCek status: {link_track}\n\nTerima kasih!",
+    'order_ready'    => "Halo {nama} ✨\nPesanan #{kode} sudah siap diambil di {outlet}.\nTotal: Rp {total}\n\nDitunggu ya!",
+    'struk_lunas'    => "Terima kasih {nama} 🙏\nPembayaran #{kode} lunas. Total Rp {total}.\nStruk digital: {link_struk}",
+];
+
+function waNormalizePhone(?string $phone): ?string {
+    if (!$phone) return null;
+    $clean = preg_replace('/[^0-9+]/', '', $phone);
+    if (str_starts_with($clean, '+')) $clean = substr($clean, 1);
+    if (str_starts_with($clean, '0'))  $clean = '62' . substr($clean, 1);
+    if (str_starts_with($clean, '8'))  $clean = '62' . $clean;
+    if (!preg_match('/^[0-9]{9,15}$/', $clean)) return null;
+    return $clean;
+}
+
+function waLink(?string $phone, string $template, array $vars = []): ?string {
+    $tpl = WA_TEMPLATES[$template] ?? null;
+    if ($tpl === null) return null;
+    $normalized = waNormalizePhone($phone);
+    if ($normalized === null) return null;
+    $body = preg_replace_callback('/\{(\w+)\}/', function($m) use ($vars) {
+        return $vars[$m[1]] ?? '';
+    }, $tpl);
+    return 'https://wa.me/' . $normalized . '?text=' . rawurlencode($body);
+}
