@@ -154,7 +154,7 @@ function renderTopbar(string $activePage = '', bool $minimalMode = false): void 
                 'kas'       => ['label'=>'Kas',       'url'=>'/kas',       'perm'=>'kas.view'],
                 'inventori' => ['label'=>'Inventori', 'url'=>'/inventori', 'perms'=>['inventori.view','kas.view']],
                 'mesin'     => ['label'=>'Mesin Koin', 'url'=>'/mesin',     'perms'=>['mesin.view','pos.view']],
-                'produksi'  => ['label'=>'🧺 Produksi','url'=>'/produksi',  'perm'=>'produksi.work'],
+                'produksi'  => ['label'=>'Produksi','url'=>'/produksi',  'perm'=>'produksi.work'],
                 'checklist' => ['label'=>'Checklist', 'url'=>'/checklist', 'perm'=>null],
             ],
         ],
@@ -256,7 +256,7 @@ function renderTopbar(string $activePage = '', bool $minimalMode = false): void 
       'karyawan'=>'👤','absensi'=>'📅','settings'=>'⚙️','audit'=>'🔍','outlet-settings'=>'🏪',
       'checklist'=>'✅','droppoint'=>'📦','owner_report'=>'📨','piutang'=>'💼','kanban'=>'🗂️','struk'=>'🧾',
       'loyalty'=>'⭐','retention'=>'😴','support'=>'🎧','import'=>'📥',
-      'inventori'=>'🧴','mesin'=>'🪙',
+      'inventori'=>'🧴','mesin'=>'🪙','produksi'=>'🧺',
     ];
     ?>
     <div class="ol-shell" id="olShell">
