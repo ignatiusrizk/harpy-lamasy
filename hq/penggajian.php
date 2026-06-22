@@ -307,7 +307,11 @@ async function loadData(){
     document.getElementById('mBeban').textContent = fmtRp(d.total.beban);
     document.getElementById('mPending').textContent = fmtRp(d.total.pending);
     document.getElementById('mDibayar').textContent = fmtRp(d.total.dibayar);
-    document.getElementById('mSlip').textContent = `${d.total.slip} / ${d.total.karyawan}`;
+    // Owner / user tanpa assignment outlet tidak masuk karyawan count, jadi
+    // slip bisa > karyawan. Display label adaptif supaya tidak misleading "1 / 0".
+    document.getElementById('mSlip').textContent = d.total.karyawan > 0
+      ? `${d.total.slip} / ${d.total.karyawan}`
+      : `${d.total.slip} slip`;
     if (!d.rows.length){ box.innerHTML = '<div class="empty">Belum ada outlet.</div>'; return; }
     let html = '<table class="tbl"><thead><tr><th>Outlet</th><th style="text-align:center">Karyawan</th><th style="text-align:center">Slip</th><th style="text-align:right">Beban</th><th style="text-align:center">Status</th><th></th></tr></thead><tbody>';
     d.rows.forEach(o => {

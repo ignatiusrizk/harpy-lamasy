@@ -614,7 +614,7 @@ require __DIR__ . '/_layout_open.php';
   </div>
 
   <div class="toolbar">
-    <input type="search" id="searchInput" placeholder="🔍 Cari nama, username, HP…" oninput="loadList()">
+    <input type="search" id="searchInput" placeholder="🔍 Cari nama, username, HP…" autocomplete="off" oninput="loadList()">
     <select id="filterOutlet" onchange="loadList()">
       <option value="">📍 Semua Outlet</option>
     </select>

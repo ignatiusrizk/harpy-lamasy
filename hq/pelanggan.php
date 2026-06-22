@@ -65,7 +65,7 @@ if ($action) {
                   WHERE p.tenant_id = ? $whereExtra
                   $havingExtra
                   ORDER BY $orderBy
-                  LIMIT 200"
+                  LIMIT 1000"
             );
             $stmt->execute($params);
             echo json_encode($stmt->fetchAll());
@@ -510,7 +510,7 @@ async function loadList(){
         <span class="pl-tipe tipe-${r.tipe||'retail'}">${r.tipe||'retail'}</span>
       </div>
       <div class="pl-outlet">
-        <strong>${r.registered_outlet_name ? '📍 '+escapeHtml(r.registered_outlet_name) : '<span style="color:#9CA3AF">Outlet tidak diketahui</span>'}</strong>
+        <strong>${r.registered_outlet_name ? '📍 '+escapeHtml(r.registered_outlet_name) : '<span style="color:#9CA3AF">Belum di-assign ke outlet</span>'}</strong>
         Outlet pertama daftar
       </div>
       <div class="pl-num">${r.total_visit_count || r.total_order || 0}<small>Visit</small></div>

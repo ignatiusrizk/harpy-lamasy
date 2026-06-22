@@ -186,7 +186,7 @@ renderTopbar($activePage);
     <div class="hl-card" style="padding:14px;text-align:center"><div style="color:var(--gray);font-size:11px;text-transform:uppercase">Total</div><div style="font-size:24px;font-weight:800"><?= (int)($stats['jml_jemput'] + $stats['jml_antar']) ?></div><div style="font-size:11px;color:var(--gray)">📥 <?= (int)$stats['jml_jemput'] ?> · 📤 <?= (int)$stats['jml_antar'] ?></div></div>
     <div class="hl-card" style="padding:14px;text-align:center"><div style="color:var(--gray);font-size:11px;text-transform:uppercase">Selesai</div><div style="font-size:24px;font-weight:800;color:#065F46"><?= (int)$stats['jml_done'] ?></div></div>
     <div class="hl-card" style="padding:14px;text-align:center"><div style="color:var(--gray);font-size:11px;text-transform:uppercase">On-going</div><div style="font-size:24px;font-weight:800;color:#92400E"><?= (int)$stats['jml_ongoing'] ?></div></div>
-    <div class="hl-card" style="padding:14px;text-align:center"><div style="color:var(--gray);font-size:11px;text-transform:uppercase">Avg Waktu</div><div style="font-size:24px;font-weight:800"><?= (int)$stats['avg_minutes'] ?: '-' ?>m</div></div>
+    <div class="hl-card" style="padding:14px;text-align:center"><div style="color:var(--gray);font-size:11px;text-transform:uppercase">Avg Waktu</div><div style="font-size:24px;font-weight:800"><?= (int)$stats['avg_minutes'] > 0 ? (int)$stats['avg_minutes'].'m' : '—' ?></div></div>
     <div class="hl-card" style="padding:14px;text-align:center"><div style="color:var(--gray);font-size:11px;text-transform:uppercase">Fee</div><div style="font-size:24px;font-weight:800">Rp <?= number_format((int)$stats['fee_total'], 0, ',', '.') ?></div></div>
   </div>
 
@@ -198,7 +198,7 @@ renderTopbar($activePage);
     <?php foreach ($perKurir as $k): ?>
     <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid #EEF1F8">
       <div><strong>🛵 <?= htmlspecialchars($k['nama']) ?></strong></div>
-      <div style="font-size:13.5px;color:var(--gray)"><?= (int)$k['done'] ?>/<?= (int)$k['total'] ?> selesai · avg <?= (int)$k['avg_min'] ?: '-' ?>m</div>
+      <div style="font-size:13.5px;color:var(--gray)"><?= (int)$k['done'] ?>/<?= (int)$k['total'] ?> selesai · avg <?= (int)$k['avg_min'] > 0 ? (int)$k['avg_min'].'m' : '—' ?></div>
     </div>
     <?php endforeach; ?>
   </div>

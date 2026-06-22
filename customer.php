@@ -21,7 +21,9 @@ if ($action) {
         $limit   = 24;
         $offset  = ($page - 1) * $limit;
 
-        $where = ['p.tenant_id = ?', 'p.outlet_id = ?']; $params = [$tid, $oid];
+        // Customer = tenant-scoped (lintas outlet), konsisten dgn stats/segmen_stats.
+        // Riwayat order tetap outlet-scoped lewat get_orders.
+        $where = ['p.tenant_id = ?']; $params = [$tid];
         if ($q) { $where[] = '(p.nama LIKE ? OR p.telepon LIKE ? OR p.alamat LIKE ?)'; $like="%$q%"; $params=array_merge($params,[$like,$like,$like]); }
         if ($tipe)   { $where[] = 'p.tipe=?';   $params[] = $tipe; }
         if ($segmen && in_array($segmen, ['baru','regular','vip','dormant'], true)) {
@@ -43,7 +45,7 @@ if ($action) {
                 COALESCE(SUM(t.total),0) as total_omset,
                 MAX(t.tanggal) as last_order
                 FROM hl_pelanggan p
-                LEFT JOIN hl_transaksi t ON t.pelanggan_id = p.id AND t.tenant_id = p.tenant_id AND t.outlet_id = p.outlet_id
+                LEFT JOIN hl_transaksi t ON t.pelanggan_id = p.id AND t.tenant_id = p.tenant_id
                 WHERE $whereStr
                 GROUP BY p.id
                 ORDER BY p.nama

@@ -149,7 +149,7 @@ require __DIR__ . '/_layout_open.php';
     <div class="hq-ms-card outlet"><div class="hq-ms-num" id="hqSumOutlet">-</div><div style="font-size:11px;color:#6B7280;font-weight:600;text-transform:uppercase">🏪 Outlet dgn Mesin</div></div>
     <div class="hq-ms-card mesin"><div class="hq-ms-num" id="hqSumMesin">-</div><div style="font-size:11px;color:#6B7280;font-weight:600;text-transform:uppercase">📦 Total Mesin Aktif</div></div>
     <div class="hq-ms-card running"><div class="hq-ms-num" id="hqSumRunning" style="color:#10B981">-</div><div style="font-size:11px;color:#6B7280;font-weight:600;text-transform:uppercase">▶️ Sedang Running</div></div>
-    <div class="hq-ms-card rev"><div class="hq-ms-num" id="hqSumRev" style="color:#D97706">-</div><div style="font-size:11px;color:#6B7280;font-weight:600;text-transform:uppercase">💰 Revenue Bulan Ini</div></div>
+    <div class="hq-ms-card rev"><div class="hq-ms-num" id="hqSumRev" style="color:#D97706">Rp 0</div><div style="font-size:11px;color:#6B7280;font-weight:600;text-transform:uppercase">💰 Revenue Bulan Ini</div></div>
   </div>
 
   <div class="hq-tabs">

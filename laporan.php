@@ -858,9 +858,9 @@ async function loadHarian() {
       </div>
       <div style="padding:10px;background:var(--off);border-radius:var(--r);font-size:13px">
         <div style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap">
-          <span class="badge b-lunas">${d.order.lunas} Lunas</span>
-          <span class="badge b-dp">${d.order.dp_count} DP</span>
-          <span class="badge b-belum_bayar">${d.order.belum_bayar} Belum Bayar</span>
+          <span class="badge b-lunas">${d.order.lunas||0} Lunas</span>
+          <span class="badge b-dp">${d.order.dp_count||0} DP</span>
+          <span class="badge b-belum_bayar">${d.order.belum_bayar||0} Belum Bayar</span>
         </div>
       </div>
     </div>`;

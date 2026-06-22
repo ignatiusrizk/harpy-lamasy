@@ -45,7 +45,7 @@ if ($action === 'absensi') {
                   LEFT JOIN outlets o ON o.id=a.outlet_id
                  WHERE a.tenant_id=? AND a.tanggal BETWEEN ? AND ? $oFilter
                  GROUP BY u.id, u.nama, a.outlet_id, o.nama_outlet
-                 ORDER BY (telat + alpha + izin) DESC, u.nama";
+                 ORDER BY telat DESC, alpha DESC, izin DESC, u.nama";
         $params = [$tid, $start, $end];
         if ($outletId > 0) $params[] = $outletId;
         $stmt = $db->prepare($sql);

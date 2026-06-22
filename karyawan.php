@@ -206,8 +206,17 @@ if ($action) {
     }
 
     if ($action === 'stats') {
-        $total      = TenantQuery::count('hl_users', 'is_active=1');
-        $hadir      = TenantQuery::count('hl_absensi', "tanggal=CURDATE() AND status='hadir'");
+        // Total = karyawan yg di-assign aktif ke outlet ini (konsisten dgn list).
+        // Owner / user tanpa assignment tidak dihitung di outlet view.
+        $totalRow = TenantQuery::raw(
+            "SELECT COUNT(DISTINCT u.id) c FROM hl_users u
+               JOIN hl_karyawan_outlet ko ON ko.karyawan_id=u.id AND ko.tenant_id=u.tenant_id
+                                          AND ko.outlet_id=? AND ko.is_active=1
+              WHERE u.tenant_id=? AND u.is_active=1",
+            [$oid, $tid]
+        );
+        $total = (int)($totalRow[0]['c'] ?? 0);
+        $hadir = TenantQuery::count('hl_absensi', "tanggal=CURDATE() AND status='hadir' AND outlet_id={$oid}");
         $totalGaji  = TenantQuery::raw(
             "SELECT COALESCE(SUM(total),0) as c FROM hl_gaji WHERE tenant_id=? AND outlet_id=? AND bulan=? AND status='pending'",
             [$tid, $oid, date('Y-m')]
