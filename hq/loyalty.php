@@ -56,10 +56,10 @@ if ($action) {
         try {
             $db->beginTransaction();
             if ($id > 0) {
-                $st = $db->prepare("UPDATE hl_poin_reward SET nama_reward=?, deskripsi=?, poin_dibutuhkan=?, tipe=?, nilai=?, min_transaksi=?, max_redeem_per_bulan=?, is_active=? WHERE id=? AND tenant_id=?");
+                $st = $db->prepare("UPDATE hl_poin_reward SET nama_reward=?, deskripsi=?, poin_dibutuhkan=?, tipe=?, nilai=?, min_transaksi=?, max_redeem_per_bulan=?, is_active=?, is_hq_managed=1 WHERE id=? AND tenant_id=?");
                 $st->execute([$nama, $deskripsi, $poin, $tipe, $nilai, $minTransaksi, $maxRedeem, $isActive, $id, $tid]);
             } else {
-                $st = $db->prepare("INSERT INTO hl_poin_reward (tenant_id, outlet_id, nama_reward, deskripsi, poin_dibutuhkan, tipe, nilai, min_transaksi, max_redeem_per_bulan, is_active) VALUES (?, NULL, ?, ?, ?, ?, ?, ?, ?, ?)");
+                $st = $db->prepare("INSERT INTO hl_poin_reward (tenant_id, outlet_id, nama_reward, deskripsi, poin_dibutuhkan, tipe, nilai, min_transaksi, max_redeem_per_bulan, is_active, is_hq_managed) VALUES (?, NULL, ?, ?, ?, ?, ?, ?, ?, ?, 1)");
                 $st->execute([$tid, $nama, $deskripsi, $poin, $tipe, $nilai, $minTransaksi, $maxRedeem, $isActive]);
                 $id = (int)$db->lastInsertId();
             }
@@ -68,9 +68,12 @@ if ($action) {
             $del = $db->prepare("DELETE FROM hl_poin_reward_outlet WHERE reward_id=?");
             $del->execute([$id]);
             if ($scope === 'selected' && !empty($outletIds)) {
-                $ins = $db->prepare("INSERT IGNORE INTO hl_poin_reward_outlet (reward_id, outlet_id) VALUES (?, ?)");
+                $ins = $db->prepare(
+                    "INSERT IGNORE INTO hl_poin_reward_outlet (reward_id, outlet_id)
+                     SELECT ?, id FROM outlets WHERE id=? AND tenant_id=?"
+                );
                 foreach ($outletIds as $oId) {
-                    if ($oId > 0) $ins->execute([$id, $oId]);
+                    if ($oId > 0) $ins->execute([$id, $oId, $tid]);
                 }
             }
             // scope='all' → junction kept empty (0 rows = berlaku semua)

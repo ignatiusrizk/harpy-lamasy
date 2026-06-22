@@ -299,6 +299,26 @@ if ($action) {
                         [$rewardId, $tid, $oid]
                     );
                     if ($reward && $balPoin >= (int)$reward['poin_dibutuhkan']) {
+                        // Min transaksi check
+                        if ((int)$reward['min_transaksi'] > 0 && $subtotal < (int)$reward['min_transaksi']) {
+                            $rewardId = 0; $redeemPoin = 0;
+                            $reward = null;
+                        }
+                        // Max redeem per bulan check
+                        if ($reward && (int)$reward['max_redeem_per_bulan'] > 0) {
+                            $stMonthly = $db->prepare(
+                                "SELECT COUNT(*) FROM hl_loyalty_log
+                                  WHERE pelanggan_id=? AND reward_id=? AND type='redeem'
+                                    AND YEAR(created_at)=YEAR(CURDATE()) AND MONTH(created_at)=MONTH(CURDATE())"
+                            );
+                            $stMonthly->execute([(int)$pel_id, (int)$reward['id']]);
+                            if ((int)$stMonthly->fetchColumn() >= (int)$reward['max_redeem_per_bulan']) {
+                                $rewardId = 0; $redeemPoin = 0;
+                                $reward = null;
+                            }
+                        }
+                    }
+                    if ($reward && $balPoin >= (int)$reward['poin_dibutuhkan']) {
                         $redeemPoin = (int)$reward['poin_dibutuhkan'];
                         // Compute discount per tipe
                         switch ($reward['tipe']) {
@@ -1115,7 +1135,7 @@ textarea{resize:vertical;min-height:64px}
               <div style="display:flex;gap:8px;align-items:flex-end;padding-top:8px;border-top:1px dashed rgba(8,145,178,.25)">
                 <div class="form-group" style="flex:1;margin-bottom:0">
                   <label style="font-size:11px">Tukar Poin (manual)</label>
-                  <input type="number" id="f_redeem_poin" value="0" min="0" oninput="recalc()"/>
+                  <input type="number" id="f_redeem_poin" value="0" min="0" oninput="document.getElementById('f_reward_id').value='0'; recalc()"/>
                 </div>
                 <button type="button" class="btn btn-teal-sm" onclick="redeemMax()" style="margin-bottom:1px;white-space:nowrap">Max</button>
               </div>
@@ -1794,6 +1814,7 @@ function updateLoyaltyBox(){
 }
 
 function redeemMax(){
+  document.getElementById('f_reward_id').value = '0';
   const subtotal = items.reduce((s,i)=>s+i.jumlah*i.harga_satuan,0);
   const diskon   = parseFloat(document.getElementById('f_diskon').value)||0;
   const maxByRp  = Math.floor(Math.max(0, subtotal-diskon) / LOYALTY.poin_value);

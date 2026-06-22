@@ -400,6 +400,7 @@ CREATE TABLE IF NOT EXISTS hl_poin_reward (
   nilai                INT NOT NULL,
   min_transaksi        INT DEFAULT 0,
   max_redeem_per_bulan INT DEFAULT 0,
+  is_hq_managed        TINYINT(1) DEFAULT 0,
   is_active            TINYINT(1) DEFAULT 1,
   created_at           TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   INDEX idx_tenant_outlet (tenant_id, outlet_id, is_active),

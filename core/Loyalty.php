@@ -121,11 +121,15 @@ class Loyalty
         } catch (Throwable) { return []; }
     }
 
-    /** Return true kalau reward dimanage HQ (global atau multi-outlet) — kasir tidak boleh edit. */
+    /** Return true kalau reward dimanage HQ — kasir tidak boleh edit. */
     public static function isHqManaged(int $rewardId): bool
     {
-        $outlets = self::applicableOutlets($rewardId);
-        return count($outlets) !== 1; // 0 = global, 2+ = multi-outlet
+        try {
+            $db = Database::get();
+            $st = $db->prepare("SELECT is_hq_managed FROM hl_poin_reward WHERE id=? LIMIT 1");
+            $st->execute([$rewardId]);
+            return (int)($st->fetchColumn() ?: 0) === 1;
+        } catch (Throwable) { return false; }
     }
 
     public static function balance(int $tenantId, int $pelangganId): int
