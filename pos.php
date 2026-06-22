@@ -1153,6 +1153,7 @@ textarea{resize:vertical;min-height:64px}
     <div class="modal-footer" style="gap:6px;flex-wrap:wrap">
       <button class="btn btn-outline" onclick="closeModal()">Tutup</button>
       <button class="btn btn-green" onclick="printStruk()">🖨️ Print Struk</button>
+      <button class="btn btn-teal-sm" onclick="printLabel()" title="Cetak label stiker 58mm untuk produksi">🏷 Label</button>
       <button class="btn btn-teal-sm" onclick="kirimNotaWA()" title="Kirim nota via WhatsApp (150 koin)">📲 Kirim WA</button>
       <a id="openStrukBtn" href="#" target="_blank" class="btn btn-teal-sm">↗ Buka Penuh</a>
       <button class="btn btn-teal-sm" onclick="window.location.href='/orders'">📋 Orders</button>
@@ -1959,6 +1960,11 @@ function printStruk() {
   } else {
     window.print();
   }
+}
+function printLabel() {
+  const id = lastSaved?.id;
+  if (!id) { showToast('❌ Order belum tersimpan', 'error'); return; }
+  window.open('/api/label.php?id=' + id, '_blank', 'width=320,height=480');
 }
 function closeModal()  { document.getElementById('modalStruk').classList.remove('open'); }
 
