@@ -216,7 +216,16 @@ class TenantProvisioner
         );
 
         $ownerExclude   = [];
-        $adminExclude   = ['settings.roles', 'audit.view', 'karyawan.delete'];
+        // Admin default: ops manager scope. Tidak boleh ubah master katalog/marketing,
+        // tidak boleh konfigurasi sistem, tidak boleh hapus karyawan.
+        // Owner masih bisa custom via /hq/roles kalau butuh skema lain.
+        $adminExclude   = [
+            'settings.roles', 'audit.view', 'karyawan.delete',
+            'layanan.create', 'layanan.edit', 'layanan.delete',
+            'promo.create', 'promo.delete',
+            'inventori.manage', 'mesin.manage',
+            'bonus_rule.manage',
+        ];
         $kasirInclude   = ['pos.view','pos.create','orders.view_all','orders.create',
                            'orders.update_status','orders.bayar','pelanggan.view',
                            'pelanggan.create','absensi.clock','absensi.view','layanan.view',

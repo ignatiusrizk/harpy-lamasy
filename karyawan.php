@@ -56,19 +56,18 @@ if ($action) {
         if (!$nama)     { echo json_encode(['error'=>'Nama wajib diisi']); exit; }
         if (!$username) { echo json_encode(['error'=>'Username wajib diisi']); exit; }
 
-        // Resolve role
+        // Resolve role string dari hl_users.role ENUM('superadmin','admin','staff').
+        // Cuma role system (is_system=1) dengan nama "Admin" yang dapat enum 'admin'.
+        // Role 'superadmin' TIDAK PERNAH di-assign via UI ini — itu reserved untuk
+        // tenant owner yang dibuat TenantProvisioner. Custom role apapun → 'staff'.
+        // String enum ini cuma untuk routing dasar; permission asli via role_id+hl_role_permissions.
         $roleId  = is_numeric($d['role'] ?? '') ? intval($d['role']) : null;
         $roleStr = 'staff';
         if ($roleId) {
-            $rRow = TenantQuery::rawOne("SELECT nama FROM hl_roles WHERE id=? AND tenant_id=?", [$roleId, $tid]);
-            if ($rRow) {
-                $rNama = strtolower($rRow['nama']);
-                if (str_contains($rNama, 'owner') || str_contains($rNama, 'super')) $roleStr = 'superadmin';
-                elseif (str_contains($rNama, 'manager') || str_contains($rNama, 'admin')) $roleStr = 'admin';
-                else $roleStr = 'staff';
+            $rRow = TenantQuery::rawOne("SELECT nama, is_system FROM hl_roles WHERE id=? AND tenant_id=?", [$roleId, $tid]);
+            if ($rRow && (int)$rRow['is_system'] === 1 && strtolower(trim($rRow['nama'])) === 'admin') {
+                $roleStr = 'admin';
             }
-        } elseif (!empty($d['role'])) {
-            $roleStr = $d['role'];
         }
 
         $data = [

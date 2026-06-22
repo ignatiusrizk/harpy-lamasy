@@ -14,7 +14,7 @@ $user = currentUser();
 $tid  = TenantResolver::id();
 $oid  = TenantResolver::outletId();
 
-if (!hasPermission('karyawan.gaji') && !hasPermission('karyawan.view')) {
+if (!hasPermission('karyawan.gaji')) {
     http_response_code(403);
     echo 'Akses ditolak.';
     exit;
