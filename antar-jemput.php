@@ -53,6 +53,85 @@ if ($action) {
         exit;
     }
 
+    if ($action === 'create' && $_SERVER['REQUEST_METHOD']==='POST') {
+        verifyCsrf();
+        requirePermission('antar.manage');
+        $d = json_decode(file_get_contents('php://input'), true) ?: [];
+        $tipe = in_array(($d['tipe'] ?? 'jemput'), ['jemput','antar'], true) ? $d['tipe'] : 'jemput';
+        $nama = substr(trim($d['nama'] ?? ''), 0, 100);
+        $hp   = substr(trim($d['telepon'] ?? ''), 0, 20);
+        $alamat  = trim($d['alamat'] ?? '') ?: null;
+        $catatan = trim($d['catatan'] ?? '') ?: null;
+        $zonaId  = (int)($d['zona_id'] ?? 0) ?: null;
+        $slot    = $d['slot_waktu'] ?? null;
+        $transaksiId = (int)($d['transaksi_id'] ?? 0) ?: null;
+        $pelangganId = (int)($d['pelanggan_id'] ?? 0) ?: null;
+
+        if (!$nama) { echo json_encode(['error'=>'Nama wajib']); exit; }
+        if (!$alamat && !$catatan) { echo json_encode(['error'=>'Alamat atau catatan/patokan wajib salah satu']); exit; }
+
+        // Ambil fee dari zona
+        $fee = 0;
+        if ($zonaId) {
+            $z = TenantQuery::rawOne("SELECT fee FROM hl_zona_antar WHERE id=? AND tenant_id=? AND outlet_id=? AND aktif=1", [$zonaId, $tid, $oid]);
+            if ($z) $fee = (int)$z['fee'];
+        }
+
+        $userId = (int)(currentUser()['id'] ?? 0);
+        TenantQuery::insert('hl_antar_jemput', [
+            'tipe'=>$tipe, 'transaksi_id'=>$transaksiId, 'pelanggan_id'=>$pelangganId,
+            'nama'=>$nama, 'telepon'=>$hp, 'alamat'=>$alamat, 'zona_id'=>$zonaId, 'fee'=>$fee,
+            'slot_waktu'=>$slot, 'catatan'=>$catatan, 'created_by'=>$userId, 'outlet_id'=>$oid,
+        ]);
+        logAudit('antar_create', 'antar_jemput', "tipe=$tipe nama=$nama");
+        echo json_encode(['ok'=>true]);
+        exit;
+    }
+
+    if ($action === 'assign' && $_SERVER['REQUEST_METHOD']==='POST') {
+        verifyCsrf();
+        requirePermission('antar.manage');
+        $d = json_decode(file_get_contents('php://input'), true) ?: [];
+        $id       = (int)($d['id'] ?? 0);
+        $kurirId  = (int)($d['kurir_id'] ?? 0);
+        if ($id<=0 || $kurirId<=0) { echo json_encode(['error'=>'Input invalid']); exit; }
+
+        try {
+            $db->beginTransaction();
+            $st = $db->prepare("SELECT status FROM hl_antar_jemput WHERE id=? AND tenant_id=? AND outlet_id=? FOR UPDATE");
+            $st->execute([$id, $tid, $oid]);
+            $current = $st->fetchColumn();
+            if ($current === false) { throw new Exception('Tidak ditemukan'); }
+            if ($current !== 'pending') { throw new Exception('Sudah diassign worker lain'); }
+
+            // Verify kurir milik outlet aktif
+            $k = TenantQuery::rawOne("SELECT id FROM hl_kurir WHERE id=? AND tenant_id=? AND outlet_id=? AND aktif=1", [$kurirId, $tid, $oid]);
+            if (!$k) { throw new Exception('Kurir tidak valid'); }
+
+            $upd = $db->prepare("UPDATE hl_antar_jemput SET kurir_id=?, status='assigned', updated_at=NOW() WHERE id=? AND tenant_id=? AND outlet_id=?");
+            $upd->execute([$kurirId, $id, $tid, $oid]);
+            logAudit('antar_assign', 'antar_jemput', "id=$id kurir=$kurirId");
+            $db->commit();
+            echo json_encode(['ok'=>true]);
+        } catch (Throwable $e) {
+            if ($db->inTransaction()) $db->rollBack();
+            echo json_encode(['error'=>$e->getMessage()]);
+        }
+        exit;
+    }
+
+    if ($action === 'cancel' && $_SERVER['REQUEST_METHOD']==='POST') {
+        verifyCsrf();
+        requirePermission('antar.manage');
+        $d = json_decode(file_get_contents('php://input'), true) ?: [];
+        $id = (int)($d['id'] ?? 0);
+        $st = $db->prepare("UPDATE hl_antar_jemput SET status='cancel', updated_at=NOW() WHERE id=? AND tenant_id=? AND outlet_id=? AND status NOT IN ('done','cancel')");
+        $st->execute([$id, $tid, $oid]);
+        logAudit('antar_cancel', 'antar_jemput', "id=$id");
+        echo json_encode(['ok'=>true]);
+        exit;
+    }
+
     echo json_encode(['error'=>'Unknown action']);
     exit;
 }
@@ -78,6 +157,47 @@ renderTopbar($activePage);
   </div>
 
   <div id="ajList" style="display:grid;gap:10px;grid-template-columns:1fr">⏳ Memuat...</div>
+</div>
+
+<!-- Modal Create -->
+<div class="hl-modal-overlay" id="modalCreate">
+  <div class="hl-modal" style="max-width:500px">
+    <div class="hl-modal-header"><span class="hl-modal-title">📥 Jemput Baru</span></div>
+    <div class="hl-modal-body">
+      <label class="hl-label">Nama Pelanggan</label>
+      <input type="text" id="c_nama" class="hl-input" maxlength="100">
+      <label class="hl-label">Telepon</label>
+      <input type="text" id="c_hp" class="hl-input" maxlength="20">
+      <label class="hl-label">Alamat (opsional)</label>
+      <textarea id="c_alamat" class="hl-input" rows="2"></textarea>
+      <label class="hl-label">Catatan / Patokan (opsional)</label>
+      <textarea id="c_catatan" class="hl-input" rows="2" placeholder="Dekat warung Bu Inah, pagar hitam..."></textarea>
+      <label class="hl-label">Slot Waktu (opsional)</label>
+      <input type="datetime-local" id="c_slot" class="hl-input">
+      <label class="hl-label" id="lbl_zona" style="display:none">Zona</label>
+      <select id="c_zona" class="hl-input" style="display:none"><option value="">-- Pilih zona --</option></select>
+    </div>
+    <div class="hl-modal-footer">
+      <button class="hl-btn hl-btn-outline" onclick="closeCreate()">Batal</button>
+      <button class="hl-btn hl-btn-primary" onclick="saveCreate()">Simpan</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Assign -->
+<div class="hl-modal-overlay" id="modalAssign">
+  <div class="hl-modal" style="max-width:400px">
+    <div class="hl-modal-header"><span class="hl-modal-title">Assign Kurir</span></div>
+    <div class="hl-modal-body">
+      <input type="hidden" id="a_id" value="0">
+      <label class="hl-label">Pilih Kurir Aktif</label>
+      <select id="a_kurir" class="hl-input"><option value="">-- Pilih --</option></select>
+    </div>
+    <div class="hl-modal-footer">
+      <button class="hl-btn hl-btn-outline" onclick="closeAssign()">Batal</button>
+      <button class="hl-btn hl-btn-primary" onclick="doAssign()">Assign</button>
+    </div>
+  </div>
 </div>
 
 <?php renderToast(); ?>
@@ -131,8 +251,62 @@ async function loadList() {
   `).join('');
 }
 
-function openCreate() { alert('Implementasi di Task 6'); }
-function openAssign(id) { alert('Implementasi di Task 6: assign ' + id); }
+async function loadZonaForCreate() {
+  const r = await fetch('/outlet-settings.php?action=zona_list&outlet_id=<?= $oid ?>');
+  const d = await r.json();
+  const sel = document.getElementById('c_zona');
+  const lbl = document.getElementById('lbl_zona');
+  if (d.rows && d.rows.length) {
+    sel.innerHTML = '<option value="">-- Tanpa zona --</option>' + d.rows.map(z => `<option value="${z.id}">${esc(z.nama)} (Rp ${Number(z.fee).toLocaleString('id-ID')})</option>`).join('');
+    sel.style.display = lbl.style.display = '';
+  } else {
+    sel.style.display = lbl.style.display = 'none';
+  }
+}
+
+function openCreate() {
+  ['c_nama','c_hp','c_alamat','c_catatan','c_slot'].forEach(id => document.getElementById(id).value='');
+  document.getElementById('c_zona').value = '';
+  loadZonaForCreate();
+  document.getElementById('modalCreate').classList.add('open');
+}
+function closeCreate() { document.getElementById('modalCreate').classList.remove('open'); }
+
+async function saveCreate() {
+  const payload = {
+    tipe: currentTipe,
+    nama: document.getElementById('c_nama').value,
+    telepon: document.getElementById('c_hp').value,
+    alamat: document.getElementById('c_alamat').value,
+    catatan: document.getElementById('c_catatan').value,
+    slot_waktu: document.getElementById('c_slot').value,
+    zona_id: parseInt(document.getElementById('c_zona').value) || null,
+  };
+  const r = await fetch('?action=create', {method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':CSRF},body:JSON.stringify(payload)});
+  const d = await r.json();
+  if (d.error) { showToast(d.error,'error'); return; }
+  showToast('✅ Tersimpan','success'); closeCreate(); loadList();
+}
+
+async function openAssign(id) {
+  document.getElementById('a_id').value = id;
+  const r = await fetch('?action=kurir_list');
+  const d = await r.json();
+  const sel = document.getElementById('a_kurir');
+  sel.innerHTML = '<option value="">-- Pilih --</option>' + (d.rows||[]).map(k => `<option value="${k.id}">${esc(k.nama)}</option>`).join('');
+  document.getElementById('modalAssign').classList.add('open');
+}
+function closeAssign() { document.getElementById('modalAssign').classList.remove('open'); }
+
+async function doAssign() {
+  const id = parseInt(document.getElementById('a_id').value);
+  const kurirId = parseInt(document.getElementById('a_kurir').value);
+  if (!kurirId) { showToast('Pilih kurir','error'); return; }
+  const r = await fetch('?action=assign', {method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':CSRF},body:JSON.stringify({id, kurir_id: kurirId})});
+  const d = await r.json();
+  if (d.error) { showToast(d.error,'error'); return; }
+  showToast('✅ Kurir di-assign','success'); closeAssign(); loadList();
+}
 
 loadList();
 setInterval(loadList, 30000);
