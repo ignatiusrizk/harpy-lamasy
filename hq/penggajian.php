@@ -109,8 +109,13 @@ if ($action === 'generate' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         $evalBonus = !empty($d['eval_bonus']);
         if ($evalBonus) {
             require_once ROOT . '/core/BonusEvaluator.php';
-            $gajis = $db->prepare("SELECT id FROM hl_gaji WHERE tenant_id=? AND bulan=?");
-            $gajis->execute([$tid, $bulan]);
+            if ($targetOutlet > 0) {
+                $gajis = $db->prepare("SELECT id FROM hl_gaji WHERE tenant_id=? AND bulan=? AND outlet_id=?");
+                $gajis->execute([$tid, $bulan, $targetOutlet]);
+            } else {
+                $gajis = $db->prepare("SELECT id FROM hl_gaji WHERE tenant_id=? AND bulan=?");
+                $gajis->execute([$tid, $bulan]);
+            }
             foreach ($gajis->fetchAll(PDO::FETCH_COLUMN) as $gid) {
                 BonusEvaluator::applyToGaji((int)$gid);
             }
@@ -124,6 +129,7 @@ if ($action === 'generate' && $_SERVER['REQUEST_METHOD'] === 'POST') {
 // ── API: data_karyawan (gaji list per outlet) ─────────
 if ($action === 'data_karyawan') {
     header('Content-Type: application/json');
+    if (!$canManage) { echo json_encode(['error'=>'Akses ditolak']); exit; }
     $oid   = (int)($_GET['outlet_id'] ?? 0);
     $bulan = preg_match('/^\d{4}-\d{2}$/', $_GET['bulan'] ?? '') ? $_GET['bulan'] : date('Y-m');
     if ($oid <= 0) { echo json_encode(['error'=>'Input invalid']); exit; }
@@ -141,6 +147,7 @@ if ($action === 'data_karyawan') {
 // ── API: komponen_list ────────────────────────────────
 if ($action === 'komponen_list') {
     header('Content-Type: application/json');
+    if (!$canManage) { echo json_encode(['error'=>'Akses ditolak']); exit; }
     $gajiId = (int)($_GET['gaji_id'] ?? 0);
     if ($gajiId <= 0) { echo json_encode(['error'=>'Input invalid']); exit; }
     $own = $db->prepare("SELECT 1 FROM hl_gaji WHERE id=? AND tenant_id=?");
