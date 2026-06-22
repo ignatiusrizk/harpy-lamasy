@@ -125,6 +125,7 @@ if ($action) {
         requirePermission('antar.manage');
         $d = json_decode(file_get_contents('php://input'), true) ?: [];
         $id = (int)($d['id'] ?? 0);
+        if ($id <= 0) { echo json_encode(['error'=>'Input invalid']); exit; }
         $st = $db->prepare("UPDATE hl_antar_jemput SET status='cancel', updated_at=NOW() WHERE id=? AND tenant_id=? AND outlet_id=? AND status NOT IN ('done','cancel')");
         $st->execute([$id, $tid, $oid]);
         logAudit('antar_cancel', 'antar_jemput', "id=$id");
