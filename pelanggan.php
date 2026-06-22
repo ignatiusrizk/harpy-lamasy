@@ -49,7 +49,7 @@ $saldoDeposit = (float)($pel['saldo_deposit'] ?? 0);
 // Loyalty (kalau tabel ada)
 $poin = 0; $tier = '';
 try {
-    $st = $db->prepare("SELECT poin_saldo FROM hl_pelanggan WHERE id=?");
+    $st = $db->prepare("SELECT poin_balance FROM hl_pelanggan WHERE id=?");
     $st->execute([(int)$pel['id']]);
     $poin = (int)($st->fetchColumn() ?: 0);
 } catch (Throwable) {}
