@@ -1092,7 +1092,7 @@ textarea{resize:vertical;min-height:64px}
       <button class="btn btn-primary btn-sm" id="btnSaveEdit" onclick="saveEdit()">💾 Simpan Perubahan</button>
       <?php endif; ?>
       <button class="btn btn-sm" style="background:#25D366;color:#fff;border:none" onclick="shareToWA()" title="Kirim link tracking ke customer via WhatsApp">💬 Kirim Status WA</button>
-      <button class="btn btn-sm btn-outline" onclick="printLabel(event)" title="Cetak label stiker · Shift+klik untuk ganti ukuran (58/80mm)">🏷 Label</button>
+      <button class="btn btn-sm btn-outline" onclick="printLabel()" title="Cetak label stiker (ukuran diatur di Outlet Settings)">🏷 Label</button>
       <?php if (hasPermission('orders.edit') || hasPermission('orders.delete')): ?>
       <button class="btn btn-sm" style="background:#FEE2E2;color:#991B1B;border:1px solid #FCA5A5" onclick="requestDelete()" title="Submit permintaan hapus untuk persetujuan owner">🗑️ Minta Hapus</button>
       <?php endif; ?>
@@ -1738,16 +1738,9 @@ function debounce() {
   searchTimer = setTimeout(() => loadOrders(1), 400);
 }
 
-function printLabel(ev) {
+function printLabel() {
   if (!currentEditId) { showToast('❌ Order belum dipilih', 'error'); return; }
-  let size = localStorage.getItem('labelSize');
-  if (!size || (ev && ev.shiftKey)) {
-    size = prompt('Ukuran printer label?\n\nKetik 58 atau 80', size || '80');
-    if (size !== '58' && size !== '80') return;
-    localStorage.setItem('labelSize', size);
-    showToast('✅ Ukuran label disimpan: ' + size + 'mm', 'success');
-  }
-  window.open('/api/label.php?id=' + currentEditId + '&size=' + size, '_blank', 'width=380,height=520');
+  window.open('/api/label.php?id=' + currentEditId, '_blank', 'width=380,height=520');
 }
 
 // ── HELPERS ───────────────────────────────────────────

@@ -25,7 +25,7 @@ if ($action) {
         catch (Throwable) { $hasNotaCols = false; }
 
         $cols = "id, tenant_id, nama_outlet, slug, kota, telepon, status, is_main";
-        if ($hasNotaCols) $cols .= ", nota_prefix, nota_format";
+        if ($hasNotaCols) $cols .= ", nota_prefix, nota_format, label_size";
         $st = $db->prepare("SELECT $cols FROM outlets WHERE tenant_id=? ORDER BY is_main DESC, id ASC");
         $st->execute([$tid]);
         $rows = $st->fetchAll(PDO::FETCH_ASSOC);
@@ -48,6 +48,7 @@ if ($action) {
         $id = (int)($d['id'] ?? 0);
         $prefix = substr(trim((string)($d['nota_prefix'] ?? '')), 0, 20);
         $format = substr(trim((string)($d['nota_format'] ?? '')), 0, 60) ?: '{PREFIX}{YYMMDD}-{COUNTER:3}';
+        $labelSize = in_array(($d['label_size'] ?? '80'), ['58','80'], true) ? $d['label_size'] : '80';
 
         // Validasi: format harus punya minimal {COUNTER} (kalau gak ada,
         // nota_no duplicate setiap hari)
@@ -57,9 +58,9 @@ if ($action) {
         }
 
         try {
-            $st = $db->prepare("UPDATE outlets SET nota_prefix=?, nota_format=? WHERE id=? AND tenant_id=?");
-            $st->execute([$prefix, $format, $id, $tid]);
-            logAudit('update', 'outlet', "Update format nota outlet #$id: prefix=$prefix, format=$format");
+            $st = $db->prepare("UPDATE outlets SET nota_prefix=?, nota_format=?, label_size=? WHERE id=? AND tenant_id=?");
+            $st->execute([$prefix, $format, $labelSize, $id, $tid]);
+            logAudit('update', 'outlet', "Update outlet #$id: prefix=$prefix, format=$format, label=$labelSize");
             echo json_encode(['success'=>true]);
         } catch (Throwable $e) {
             echo json_encode(['error'=>'Gagal: '.$e->getMessage()]);
@@ -231,6 +232,19 @@ if ($action) {
         Preview nota baru: <strong style="font-family:var(--mono,monospace);font-size:16px;color:#0F7B6C" id="livePreview">HL-260607-001</strong>
       </div>
 
+      <!-- Label printer size -->
+      <div style="margin:8px 0 14px;padding:12px 14px;background:#F9FAFB;border:1px solid #E5E7EB;border-radius:8px">
+        <label class="hl-label" style="margin-bottom:8px">🏷 Ukuran Printer Label (stiker produksi)</label>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:6px 12px;border:1px solid #E5E7EB;border-radius:8px;background:#fff">
+            <input type="radio" name="ed_label_size" value="58"> 58mm (thermal mini)
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:6px 12px;border:1px solid #E5E7EB;border-radius:8px;background:#fff">
+            <input type="radio" name="ed_label_size" value="80" checked> 80mm (thermal standar)
+          </label>
+        </div>
+      </div>
+
       <!-- Quick templates -->
       <div style="font-size:12px;color:#6B7280;margin-bottom:6px;font-weight:600">⚡ Quick Template:</div>
       <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px">
@@ -311,6 +325,8 @@ function openEdit(r) {
   document.getElementById('edOutletNama').textContent = r.nama_outlet;
   document.getElementById('ed_prefix').value = r.nota_prefix || 'HL-';
   document.getElementById('ed_format').value = r.nota_format || '{PREFIX}{YYMMDD}-{COUNTER:3}';
+  const lsz = (r.label_size === '58') ? '58' : '80';
+  document.querySelectorAll('input[name=ed_label_size]').forEach(el => el.checked = (el.value === lsz));
   document.getElementById('modalEdit').classList.add('open');
   livePreview();
 }
@@ -341,9 +357,10 @@ async function saveFormat() {
   const id = document.getElementById('ed_id').value;
   const prefix = document.getElementById('ed_prefix').value;
   const format = document.getElementById('ed_format').value;
+  const labelSize = document.querySelector('input[name=ed_label_size]:checked')?.value || '80';
   const r = await fetch('?action=save', {
     method:'POST', headers:{'Content-Type':'application/json','X-CSRF-Token':csrfToken()},
-    body: JSON.stringify({id, nota_prefix: prefix, nota_format: format})
+    body: JSON.stringify({id, nota_prefix: prefix, nota_format: format, label_size: labelSize})
   });
   const d = await r.json();
   if (d.error) { showToast(d.error, 'error'); return; }

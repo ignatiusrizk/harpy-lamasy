@@ -12,21 +12,13 @@ require_once ROOT . '/core/TenantQuery.php';
 require_once ROOT . '/core/TenantResolver.php';
 
 $id   = (int)($_GET['id'] ?? 0);
-$size = (string)($_GET['size'] ?? '80');
-if (!in_array($size, ['58','80'], true)) $size = '80';
 $tid  = TenantResolver::id();
 $oid  = TenantResolver::outletId();
 
 if ($id <= 0) { http_response_code(400); exit('Bad id'); }
 
-// Sizing per width
-$widthMm  = $size === '58' ? 58 : 80;
-$qrMm     = $size === '58' ? 35 : 48;
-$qrPx     = $size === '58' ? 180 : 240;
-$kodeSize = $size === '58' ? 18 : 24;
-
 $order = TenantQuery::rawOne(
-    "SELECT t.no_order, t.nama_pelanggan, t.estimasi_selesai, o.nama_outlet
+    "SELECT t.no_order, t.nama_pelanggan, t.estimasi_selesai, o.nama_outlet, o.label_size
        FROM hl_transaksi t
   LEFT JOIN outlets o ON o.id = t.outlet_id
       WHERE t.id=? AND t.tenant_id=? AND t.outlet_id=? LIMIT 1",
@@ -34,6 +26,12 @@ $order = TenantQuery::rawOne(
 );
 
 if (!$order) { http_response_code(404); exit('Order tidak ditemukan'); }
+
+$size     = in_array(($order['label_size'] ?? '80'), ['58','80'], true) ? $order['label_size'] : '80';
+$widthMm  = $size === '58' ? 58 : 80;
+$qrMm     = $size === '58' ? 35 : 48;
+$qrPx     = $size === '58' ? 180 : 240;
+$kodeSize = $size === '58' ? 18 : 24;
 
 $nama   = $order['nama_pelanggan'] ?: '-';
 $kode   = $order['no_order'];
