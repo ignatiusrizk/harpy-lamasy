@@ -78,6 +78,7 @@ CREATE TABLE IF NOT EXISTS hl_pelanggan (
   tipe          ENUM('retail','korporat','bulanan') DEFAULT 'retail',
   metode_bayar  ENUM('langsung','bulanan') DEFAULT 'langsung',
   catatan       TEXT         DEFAULT NULL,
+  portal_token  VARCHAR(64)  DEFAULT NULL UNIQUE,
   saldo_deposit DECIMAL(12,2) DEFAULT 0,
   total_order   INT          DEFAULT 0,
   is_active     TINYINT(1)   DEFAULT 1,
