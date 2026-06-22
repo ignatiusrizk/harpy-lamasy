@@ -154,6 +154,7 @@ function renderTopbar(string $activePage = '', bool $minimalMode = false): void 
                 'kas'       => ['label'=>'Kas',       'url'=>'/kas',       'perm'=>'kas.view'],
                 'inventori' => ['label'=>'Inventori', 'url'=>'/inventori', 'perms'=>['inventori.view','kas.view']],
                 'mesin'     => ['label'=>'Mesin Koin', 'url'=>'/mesin',     'perms'=>['mesin.view','pos.view']],
+                'produksi'  => ['label'=>'🧺 Produksi','url'=>'/produksi',  'perm'=>'produksi.work'],
                 'checklist' => ['label'=>'Checklist', 'url'=>'/checklist', 'perm'=>null],
             ],
         ],

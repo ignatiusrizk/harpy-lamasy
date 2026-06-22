@@ -171,6 +171,7 @@ class TenantProvisioner
             ['mesin.view',           'mesin',     'view',          'Lihat status mesin self-service'],
             ['mesin.operate',        'mesin',     'operate',       'Konfirmasi mulai/selesai sesi mesin'],
             ['mesin.manage',         'mesin',     'manage',        'Tambah/edit/hapus mesin & atur cycle'],
+            ['produksi.work',        'produksi',  'work',          'Akses /produksi & update stage order'],
             ['laporan.view',         'laporan',   'view',          'Lihat laporan'],
             ['laporan.export',       'laporan',   'export',        'Export laporan'],
             ['karyawan.view',        'karyawan',  'view',          'Lihat data karyawan'],
