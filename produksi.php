@@ -113,6 +113,10 @@ if ($action) {
         $stage       = $d['stage'] ?? '';
         $dataFields  = $d['data'] ?? [];
         $fotoPaths   = $d['foto'] ?? [];          // array of paths
+        // Validate paths: only accept paths from our upload endpoint (prevents XSS via foto_paths render)
+        $fotoPaths = array_values(array_filter($fotoPaths, function($p) {
+            return is_string($p) && str_starts_with($p, 'uploads/foto_proses/');
+        }));
         $catatan     = trim($d['catatan'] ?? '');
         $signature   = $d['signature'] ?? '';     // data URL untuk stage diambil
 
@@ -186,7 +190,13 @@ if ($action) {
         } catch (Throwable $e) {
             if ($db->inTransaction()) $db->rollBack();
             error_log('[produksi save_stage] ' . $e->getMessage());
-            echo json_encode(['error' => $e->getMessage()]);
+            // Allow specific known error messages, generic for unknown
+            $msg = $e->getMessage();
+            $knownErrors = ['Order tidak ditemukan', 'Order sudah diupdate worker lain. Refresh halaman.', 'Input tidak valid'];
+            if (!in_array($msg, $knownErrors, true)) {
+                $msg = 'Gagal menyimpan. Coba lagi sebentar.';
+            }
+            echo json_encode(['error' => $msg]);
         }
         exit;
     }
