@@ -3,7 +3,7 @@
   "short_name": "LAMASY",
   "description": "Portal pelanggan LAMASY — cek status laundry, saldo, dan poin loyalty",
   "start_url": "/pelanggan",
-  "scope": "/",
+  "scope": "/pelanggan",
   "display": "standalone",
   "orientation": "portrait",
   "theme_color": "#0F1C3A",

@@ -26,12 +26,7 @@ function verifyPortalCsrf(): void {
 $action = $_GET['action'] ?? '';
 
 if ($action === 'logout') {
-    $_SESSION = [];
-    if (ini_get('session.use_cookies')) {
-        $params = session_get_cookie_params();
-        setcookie(session_name(), '', time() - 42000, $params['path'], $params['domain'], $params['secure'], $params['httponly']);
-    }
-    session_destroy();
+    unset($_SESSION['portal_pelanggan_id'], $_SESSION['portal_csrf']);
     header('Location: /p?msg=logout');
     exit;
 }
@@ -43,7 +38,7 @@ if ($action === 'regen_token' && $_SERVER['REQUEST_METHOD']==='POST') {
     $st = $db->prepare("UPDATE hl_pelanggan SET portal_token=? WHERE id=?");
     $st->execute([$newToken, (int)$pel['id']]);
     // Logout setelah regen
-    $_SESSION['portal_pelanggan_id'] = 0;
+    unset($_SESSION['portal_pelanggan_id'], $_SESSION['portal_csrf']);
     echo json_encode(['ok'=>true]);
     exit;
 }

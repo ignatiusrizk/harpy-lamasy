@@ -43,6 +43,7 @@ if ($token) {
             $st->execute([$token]);
             $pel = $st->fetch(PDO::FETCH_ASSOC);
             if ($pel) {
+                session_regenerate_id(true);
                 $_SESSION['portal_pelanggan_id'] = (int)$pel['id'];
                 // Audit
                 try {
