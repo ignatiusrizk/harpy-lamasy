@@ -82,7 +82,7 @@ class BonusEvaluator
             $name = $r['nama'];
             switch ($r['tipe']) {
                 case 'hadir_penuh':
-                    if ($hadirCount >= $workdays) {
+                    if ($hadirCount === $workdays) {
                         $komponen[] = ['jenis'=>'bonus_hadir_penuh','rule_id'=>$r['id'],'nama'=>$name,'amount'=>$amt,'keterangan'=>"Hadir $hadirCount/$workdays"];
                     }
                     break;

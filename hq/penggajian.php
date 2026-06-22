@@ -67,6 +67,7 @@ if ($action === 'data') {
 if ($action === 'generate' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     header('Content-Type: application/json');
     if (!$canManage) { echo json_encode(['error'=>'Akses ditolak']); exit; }
+    verifyCsrf();
     $d = json_decode(file_get_contents('php://input'), true) ?: [];
     $bulan = preg_match('/^\d{4}-\d{2}$/', $d['bulan'] ?? '') ? $d['bulan'] : date('Y-m');
     $targetOutlet = (int)($d['outlet_id'] ?? 0); // 0 = semua
@@ -346,7 +347,7 @@ async function genOutlet(oid){
 async function doGenerate(bulan, oid){
   const evalBonus = document.getElementById('eval_bonus')?.checked ?? true;
   try {
-    const r = await fetch('/hq/penggajian.php?action=generate', {method:'POST', body:JSON.stringify({bulan, outlet_id:oid, eval_bonus: evalBonus})});
+    const r = await fetch('/hq/penggajian.php?action=generate', {method:'POST', headers:{'Content-Type':'application/json','X-CSRF-Token':CSRF}, body:JSON.stringify({bulan, outlet_id:oid, eval_bonus: evalBonus})});
     const d = await r.json();
     if (d.error){ alert('⚠️ '+d.error); return; }
     let msg = `✅ ${d.created} slip gaji baru dibuat.`;
@@ -359,7 +360,7 @@ async function markPaid(oid, nama){
   const bulan = document.getElementById('fBulan').value;
   if (!confirm(`Tandai semua slip pending di "${nama}" bulan ${bulan} sebagai DIBAYAR?`)) return;
   try {
-    const r = await fetch('/hq/penggajian.php?action=mark_paid', {method:'POST', body:JSON.stringify({bulan, outlet_id:oid})});
+    const r = await fetch('/hq/penggajian.php?action=mark_paid', {method:'POST', headers:{'Content-Type':'application/json','X-CSRF-Token':CSRF}, body:JSON.stringify({bulan, outlet_id:oid})});
     const d = await r.json();
     if (d.error){ alert('⚠️ '+d.error); return; }
     alert(`✅ ${d.affected} slip ditandai dibayar.`);
