@@ -91,9 +91,15 @@ class Loyalty
     {
         try {
             $db = Database::get();
-            $stmt = $db->prepare("SELECT * FROM hl_poin_reward
-                                   WHERE tenant_id=? AND outlet_id=? AND is_active=1
-                                   ORDER BY poin_dibutuhkan ASC");
+            $stmt = $db->prepare(
+                "SELECT r.* FROM hl_poin_reward r
+                  WHERE r.tenant_id=? AND r.is_active=1
+                    AND (
+                      NOT EXISTS (SELECT 1 FROM hl_poin_reward_outlet WHERE reward_id=r.id)
+                      OR EXISTS (SELECT 1 FROM hl_poin_reward_outlet WHERE reward_id=r.id AND outlet_id=?)
+                    )
+                  ORDER BY r.poin_dibutuhkan ASC"
+            );
             $stmt->execute([$tenantId, $outletId]);
             $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
             foreach ($rows as &$r) {
@@ -102,6 +108,24 @@ class Loyalty
             }
             return $rows;
         } catch (Throwable) { return []; }
+    }
+
+    /** Return list outlet_id yang apply untuk reward. Empty array = berlaku semua outlet (no junction). */
+    public static function applicableOutlets(int $rewardId): array
+    {
+        try {
+            $db = Database::get();
+            $st = $db->prepare("SELECT outlet_id FROM hl_poin_reward_outlet WHERE reward_id=? ORDER BY outlet_id");
+            $st->execute([$rewardId]);
+            return array_map('intval', $st->fetchAll(PDO::FETCH_COLUMN));
+        } catch (Throwable) { return []; }
+    }
+
+    /** Return true kalau reward dimanage HQ (global atau multi-outlet) — kasir tidak boleh edit. */
+    public static function isHqManaged(int $rewardId): bool
+    {
+        $outlets = self::applicableOutlets($rewardId);
+        return count($outlets) !== 1; // 0 = global, 2+ = multi-outlet
     }
 
     public static function balance(int $tenantId, int $pelangganId): int
