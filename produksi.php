@@ -228,19 +228,31 @@ $pageTitle  = '🧺 Produksi';
 .stage-tab.active .cnt { background:rgba(255,255,255,.25); }
 .order-card { background:#fff;border:1px solid var(--off);border-radius:12px;padding:12px 14px;cursor:pointer;transition:border .2s; }
 .order-card:active { border-color:var(--teal); }
-.modal-overlay{display:none;position:fixed;inset:0;background:rgba(15,28,58,.6);backdrop-filter:blur(4px);z-index:200;align-items:center;justify-content:center;padding:20px}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(15,28,58,.55);backdrop-filter:blur(6px);z-index:200;align-items:center;justify-content:center;padding:20px}
 .modal-overlay.open{display:flex}
-.modal label{display:block;font-size:13px;font-weight:600;margin-top:10px;margin-bottom:4px}
-.modal input[type=text],.modal input[type=number],.modal select,.modal textarea{width:100%;box-sizing:border-box;padding:9px 11px;border:1px solid var(--off);border-radius:8px;font-size:14px;font-family:var(--font);background:#fff}
-.modal input[type=text]:focus,.modal input[type=number]:focus,.modal select:focus,.modal textarea:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px rgba(53,232,213,.18)}
-.modal textarea{resize:vertical;min-height:60px}
-.modal input[type=file]{width:100%;box-sizing:border-box;padding:12px;border:1.5px dashed rgba(27,45,90,.2);border-radius:8px;background:#FAFBFC;font-size:13px;cursor:pointer;transition:all .15s}
-.modal input[type=file]:hover{border-color:var(--teal);background:#F0FDFC}
-.modal label{display:block;font-size:12.5px;font-weight:700;color:var(--navy-d);letter-spacing:.01em;margin-top:14px;margin-bottom:6px}
-.modal .stage-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;padding-bottom:12px;border-bottom:1px solid var(--off)}
-.modal .stage-header h3{margin:0;font-size:17px}
-.modal .stage-close{background:none;border:none;font-size:24px;line-height:1;cursor:pointer;color:var(--gray);padding:0 4px}
-.modal .stage-close:hover{color:var(--navy-d)}
+.modal{background:#fff;border-radius:18px;padding:22px 22px 20px;box-shadow:0 24px 60px rgba(15,28,58,.32), 0 4px 12px rgba(15,28,58,.08);width:100%;max-width:440px;max-height:90vh;overflow-y:auto;animation:modalSlideUp .22s cubic-bezier(.2,.8,.3,1)}
+@keyframes modalSlideUp{from{opacity:0;transform:translateY(12px) scale(.98)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.modal{animation:none}}
+
+.modal .stage-header{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin:-4px -4px 16px;padding:0 4px 14px;border-bottom:1px solid #EEF1F8}
+.modal .stage-header h3{margin:0;font-size:18px;font-weight:700;color:var(--navy-d);line-height:1.25}
+.modal .stage-close{background:none;border:none;font-size:22px;line-height:1;cursor:pointer;color:var(--gray);padding:4px 8px;border-radius:8px;transition:all .15s}
+.modal .stage-close:hover{color:var(--navy-d);background:#F3F4F6}
+
+.modal label{display:block;font-size:11.5px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.06em;margin-top:14px;margin-bottom:6px}
+.modal label:first-of-type{margin-top:0}
+.modal input[type=text],.modal input[type=number],.modal select,.modal textarea{width:100%;box-sizing:border-box;padding:11px 13px;border:1px solid #E5E7EB;border-radius:10px;font-size:14.5px;font-family:var(--font);background:#fff;color:var(--navy-d);transition:border-color .15s, box-shadow .15s}
+.modal input[type=text]:focus,.modal input[type=number]:focus,.modal select:focus,.modal textarea:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px rgba(53,232,213,.2)}
+.modal textarea{resize:vertical;min-height:64px;line-height:1.4}
+.modal select{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path fill='%236B7280' d='M6 8L0 0h12z'/></svg>");background-repeat:no-repeat;background-position:right 14px center;padding-right:36px;cursor:pointer}
+
+.modal input[type=file]{width:100%;box-sizing:border-box;padding:14px;border:1.5px dashed rgba(27,45,90,.2);border-radius:10px;background:#F9FAFB;font-size:13px;cursor:pointer;transition:all .15s;color:var(--gray)}
+.modal input[type=file]:hover{border-color:var(--teal);background:#F0FDFC;color:var(--navy-d)}
+.modal input[type=file]::file-selector-button{margin-right:12px;padding:7px 14px;border-radius:8px;border:none;background:var(--teal);color:var(--navy-d);font-weight:700;font-size:12.5px;cursor:pointer;transition:background .15s}
+.modal input[type=file]::file-selector-button:hover{background:var(--teal-d)}
+
+.modal #fotoPreview img{box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.modal canvas{background:#fff}
 
 /* Buttons — local fix (global .btn not defined in harpy-erp.css; only .hl-btn exists) */
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:10px 18px;border-radius:10px;font-family:var(--font);font-size:14px;font-weight:600;cursor:pointer;transition:all .2s;border:1px solid var(--off);background:#fff;color:var(--navy-d)}
@@ -294,17 +306,20 @@ $pageTitle  = '🧺 Produksi';
 
     <!-- Modal stage form (filled di Task 7) -->
     <div id="stageModal" class="modal-overlay" style="align-items:center;justify-content:center;padding:20px">
-      <div class="modal" style="max-width:480px;max-height:90vh;overflow-y:auto">
+      <div class="modal">
         <div id="stageModalBody"></div>
       </div>
     </div>
 
     <!-- Modal scanner (filled di Task 8) -->
     <div id="scanModal" class="modal-overlay" style="align-items:center;justify-content:center;padding:20px">
-      <div class="modal" style="max-width:480px">
-        <h3 style="margin:0 0 12px">📷 Scan QR Order</h3>
-        <div id="scanArea" style="width:100%;min-height:300px"></div>
-        <button class="btn" onclick="stopScan()" style="margin-top:12px;width:100%">Batal</button>
+      <div class="modal">
+        <div class="stage-header">
+          <h3>📷 Scan QR Order</h3>
+          <button class="stage-close" onclick="stopScan()" aria-label="Tutup">×</button>
+        </div>
+        <div id="scanArea" style="width:100%;min-height:300px;border-radius:12px;overflow:hidden;background:#000"></div>
+        <button class="btn" onclick="stopScan()" style="margin-top:14px;width:100%">Batal</button>
       </div>
     </div>
   </div>
