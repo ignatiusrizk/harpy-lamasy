@@ -183,6 +183,7 @@ class TenantProvisioner
             ['karyawan.edit',        'karyawan',  'edit',          'Edit data karyawan'],
             ['karyawan.delete',      'karyawan',  'delete',        'Hapus karyawan'],
             ['karyawan.gaji',        'karyawan',  'gaji',          'Kelola penggajian'],
+            ['bonus_rule.manage',    'bonus_rule','manage',        'Kelola master bonus & penalti rule (HQ)'],
             ['absensi.view',         'absensi',   'view',          'Lihat data absensi'],
             ['absensi.clock',        'absensi',   'clock',         'Clock in/out'],
             ['absensi.approve',      'absensi',   'approve',       'Approve izin karyawan'],

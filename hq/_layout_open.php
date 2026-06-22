@@ -105,6 +105,12 @@ $_canSwitch = !empty($hqIsOwner) || !empty($hqIsManager);
              class="hq-side-link <?= $_aPage === 'hq-sdm' ? 'active' : '' ?>">SDM Analytics</a>
           <a href="/hq/penggajian"
              class="hq-side-link <?= $_aPage === 'hq-penggajian' ? 'active' : '' ?>">Penggajian</a>
+          <?php if ($hqIsOwner): ?>
+          <a href="/hq/bonus-rule"
+             class="hq-side-link <?= $_aPage === 'hq-bonus-rule' ? 'active' : '' ?>">
+            <span class="ico">🎯</span> Bonus Rule
+          </a>
+          <?php endif; ?>
           <a href="/hq/roles"
              class="hq-side-link <?= $_aPage === 'hq-roles' ? 'active' : '' ?>">Role & Akses</a>
         </div>

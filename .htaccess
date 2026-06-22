@@ -19,7 +19,7 @@ RewriteRule \.(bak|backup|old|orig|save|swp|~)$ - [F,L]
 # (301 would silently convert POST→GET, breaking all AJAX endpoints)
 # HQ pages
 RewriteCond %{REQUEST_METHOD} GET
-RewriteRule ^hq/(dashboard|outlet|laporan|keuangan|karyawan|mutasi|sdm|penggajian|roles|pelanggan|promo|layanan|droppoint|billing|coin-info|checklist|broadcast|audit|settings|struk|ai-chat|ai-churning|inventori|mesin|loyalty)\.php$ /hq/$1 [R=301,L]
+RewriteRule ^hq/(dashboard|outlet|laporan|keuangan|karyawan|mutasi|sdm|penggajian|roles|pelanggan|promo|layanan|droppoint|billing|coin-info|checklist|broadcast|audit|settings|struk|ai-chat|ai-churning|inventori|mesin|loyalty|bonus-rule)\.php$ /hq/$1 [R=301,L]
 # App pages
 RewriteCond %{REQUEST_METHOD} GET
 RewriteRule ^(dashboard|pos|orders|kanban|kas|checklist|laporan|piutang|layanan|promo|customer|loyalty|retention|karyawan|absensi|settings|struk|audit|import|support|login|logout|register|track|landing|tos|privacy|maintenance|demo|accept-tos|deposit|member|approval-inbox|outlet-settings|cek|inventori|mesin|self|produksi|antar-jemput|kurir|kurir-master|p|pelanggan|pelanggan-order)\.php$ /$1 [R=301,L]
@@ -33,7 +33,7 @@ RewriteRule ^(pending-verify|resend-verify|select-outlet|switch-outlet|no-assign
 
 # ── Clean URLs: extensionless → .php (internal rewrite)
 # HQ pages
-RewriteRule ^hq/(dashboard|outlet|laporan|keuangan|karyawan|mutasi|sdm|penggajian|roles|pelanggan|promo|layanan|droppoint|billing|coin-info|checklist|broadcast|audit|settings|struk|ai-chat|ai-churning|inventori|mesin|loyalty)$ hq/$1.php [L,QSA]
+RewriteRule ^hq/(dashboard|outlet|laporan|keuangan|karyawan|mutasi|sdm|penggajian|roles|pelanggan|promo|layanan|droppoint|billing|coin-info|checklist|broadcast|audit|settings|struk|ai-chat|ai-churning|inventori|mesin|loyalty|bonus-rule)$ hq/$1.php [L,QSA]
 # App pages
 RewriteRule ^(dashboard|pos|orders|kanban|kas|checklist|laporan|piutang|layanan|promo|customer|loyalty|retention|karyawan|absensi|settings|struk|audit|import|support|login|logout|register|track|landing|tos|privacy|maintenance|demo|accept-tos|deposit|member|approval-inbox|outlet-settings|cek|inventori|mesin|self|produksi|antar-jemput|kurir|kurir-master|p|pelanggan|pelanggan-order)$ $1.php [L,QSA]
 RewriteRule ^droppoint$ droppoint_manager.php [L,QSA]
