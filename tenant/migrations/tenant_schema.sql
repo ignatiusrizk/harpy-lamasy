@@ -414,3 +414,23 @@ CREATE TABLE IF NOT EXISTS hl_poin_reward_outlet (
   INDEX idx_outlet (outlet_id),
   FOREIGN KEY (reward_id) REFERENCES hl_poin_reward(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ── Loyalty Log (Poin History) ────────────────────────
+CREATE TABLE IF NOT EXISTS hl_loyalty_log (
+  id            INT AUTO_INCREMENT PRIMARY KEY,
+  tenant_id     INT NOT NULL,
+  outlet_id     INT DEFAULT NULL,
+  pelanggan_id  INT NOT NULL,
+  transaksi_id  INT DEFAULT NULL,
+  reward_id     INT DEFAULT NULL,
+  type          ENUM('earn','redeem','adjust') NOT NULL,
+  poin          INT NOT NULL,
+  balance_after INT NOT NULL,
+  keterangan    VARCHAR(255) DEFAULT NULL,
+  created_by    INT DEFAULT NULL,
+  expired_at    DATE DEFAULT NULL,
+  created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_pel       (tenant_id, pelanggan_id),
+  INDEX idx_trx       (tenant_id, transaksi_id, type),
+  INDEX idx_expired   (tenant_id, expired_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

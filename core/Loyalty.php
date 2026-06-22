@@ -220,7 +220,7 @@ class Loyalty
                             (tenant_id, outlet_id, pelanggan_id, transaksi_id, type, poin, balance_after, keterangan, created_by)
                           VALUES (?,?,?,?,'redeem',?,?,?,?)")
                ->execute([$tenantId, $outletId, $pelangganId, $transaksiId, -$poin, $newBal,
-                          "Redeem $poin poin", $userId]);
+                          'Redeem '.$poin.' poin', $userId]);
             $db->commit();
             return $poin * $cfg['poin_value'];
         } catch (Throwable $e) {
@@ -246,14 +246,13 @@ class Loyalty
         if ($bal < $poin) throw new RuntimeException("Poin tidak cukup (saldo: $bal).");
 
         $newBal  = $bal - $poin;
-        // ponytail: reward_id stored in keterangan suffix (no schema column needed yet)
-        $ket = $rewardId ? "Reward #$rewardId ($poin poin) di POS" : "Redeem $poin poin di POS";
+        $ket = 'Redeem '.$poin.' poin di POS';
         $db->prepare("UPDATE hl_pelanggan SET poin_balance=? WHERE id=? AND tenant_id=?")
            ->execute([$newBal, $pelangganId, $tenantId]);
         $db->prepare("INSERT INTO hl_loyalty_log
-                        (tenant_id, outlet_id, pelanggan_id, transaksi_id, type, poin, balance_after, keterangan, created_by)
-                      VALUES (?,?,?,?,'redeem',?,?,?,?)")
-           ->execute([$tenantId, $outletId, $pelangganId, $transaksiId, -$poin, $newBal, $ket, $userId]);
+                        (tenant_id, outlet_id, pelanggan_id, transaksi_id, reward_id, type, poin, balance_after, keterangan, created_by)
+                      VALUES (?,?,?,?,?,'redeem',?,?,?,?)")
+           ->execute([$tenantId, $outletId, $pelangganId, $transaksiId, $rewardId ?: null, -$poin, $newBal, $ket, $userId]);
         return $poin * $cfg['poin_value'];
     }
 
