@@ -188,6 +188,33 @@ if ($action) {
 
             logAudit('proses_stage', 'transaksi', "id={$transaksiId} stage={$stage}");
             $db->commit();
+
+            // Auto-create antar row kalau stage=diambil & jenis=diantarkan (ponytail: direct insert, skip HTTP roundtrip)
+            if ($stage === 'diambil' && ($dataFields['jenis'] ?? '') === 'diantarkan') {
+                $existing = TenantQuery::rawOne(
+                    "SELECT id FROM hl_antar_jemput WHERE transaksi_id=? AND tipe='antar' AND tenant_id=?",
+                    [$transaksiId, $tid]
+                );
+                if (!$existing) {
+                    $orderInfo = TenantQuery::rawOne(
+                        "SELECT nama_pelanggan, telepon, pelanggan_id FROM hl_transaksi WHERE id=? AND tenant_id=?",
+                        [$transaksiId, $tid]
+                    );
+                    if ($orderInfo) {
+                        TenantQuery::insert('hl_antar_jemput', [
+                            'tipe'         => 'antar',
+                            'transaksi_id' => $transaksiId,
+                            'pelanggan_id' => $orderInfo['pelanggan_id'],
+                            'nama'         => $orderInfo['nama_pelanggan'] ?: 'Pelanggan',
+                            'telepon'      => $orderInfo['telepon'] ?: '',
+                            'catatan'      => 'Auto-created dari /produksi (jenis: diantarkan)',
+                            'outlet_id'    => $oid,
+                            'created_by'   => $userId,
+                        ]);
+                    }
+                }
+            }
+
             echo json_encode(['ok' => true]);
         } catch (Throwable $e) {
             if ($db->inTransaction()) $db->rollBack();

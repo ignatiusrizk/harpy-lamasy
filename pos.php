@@ -892,6 +892,23 @@ textarea{resize:vertical;min-height:64px}
         </div>
       </div>
 
+      <!-- ANTAR KE PELANGGAN -->
+      <div style="margin:14px 0;padding:12px 14px;background:#F0FDFC;border:1px solid #BBF0EA;border-radius:10px">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:600">
+          <input type="checkbox" id="cb_antar" onchange="toggleAntarSection()"> 🛵 Antar ke Pelanggan
+        </label>
+        <div id="antarSection" style="display:none;margin-top:10px">
+          <label style="font-size:12px;font-weight:600;color:var(--gray);text-transform:uppercase;letter-spacing:.06em">Alamat (opsional)</label>
+          <textarea id="antar_alamat" class="input" rows="2" placeholder="Jl. Mawar 12, RT 03/RW 04..."></textarea>
+          <label style="font-size:12px;font-weight:600;color:var(--gray);text-transform:uppercase;letter-spacing:.06em;margin-top:8px;display:block">Patokan/Catatan</label>
+          <input type="text" id="antar_catatan" class="input" placeholder="Dekat warung Bu Inah">
+          <div id="antarZonaWrap" style="display:none;margin-top:8px">
+            <label style="font-size:12px;font-weight:600;color:var(--gray);text-transform:uppercase;letter-spacing:.06em">Zona</label>
+            <select id="antar_zona" class="input"><option value="">-- Pilih zona --</option></select>
+          </div>
+        </div>
+      </div>
+
       <!-- ITEM LAYANAN -->
       <div class="card">
         <div class="card-header">
@@ -1854,6 +1871,23 @@ async function doSaveTransaksi() {
           body: JSON.stringify({voucher_id:appliedVoucher.voucher_id||null,promo_id:appliedVoucher.promo_id||null,no_order:data.no_order})
         });
       }
+      // Auto-create antar row kalau checkbox antar dicentang
+      if (document.getElementById('cb_antar')?.checked) {
+        const antarPayload = {
+          tipe: 'antar',
+          transaksi_id: data.id,
+          pelanggan_id: data.pelanggan_id || null,
+          nama: document.getElementById('f_nama').value || data.nama_pelanggan,
+          telepon: document.getElementById('f_telepon').value || '',
+          alamat: document.getElementById('antar_alamat').value || null,
+          catatan: document.getElementById('antar_catatan').value || 'Antar dari POS',
+          zona_id: parseInt(document.getElementById('antar_zona').value) || null,
+        };
+        fetch('/antar-jemput.php?action=create', {
+          method:'POST', headers:{'Content-Type':'application/json','X-CSRF-Token':csrfToken()},
+          body: JSON.stringify(antarPayload)
+        }).catch(e => console.warn('Antar auto-create failed', e));
+      }
       showToast('✅ Order ' + data.no_order + ' tersimpan!', 'success');
       lastSaved = data;
       await showStruk(data.id);
@@ -2045,6 +2079,26 @@ function resetForm() {
   const rp=document.getElementById('f_redeem_poin'); if(rp) rp.value='0';
   updateLoyaltyBox();
   if (typeof clearFoto === 'function') clearFoto();
+  // Reset antar section
+  const cbAntar = document.getElementById('cb_antar');
+  if (cbAntar) { cbAntar.checked=false; document.getElementById('antarSection').style.display='none'; }
+}
+
+// ponytail: lazy load zona only on first check
+async function toggleAntarSection() {
+  const cb = document.getElementById('cb_antar');
+  const sec = document.getElementById('antarSection');
+  sec.style.display = cb.checked ? 'block' : 'none';
+  if (cb.checked && !sec.dataset.loaded) {
+    sec.dataset.loaded = '1';
+    const r = await fetch('/outlet-settings.php?action=zona_list&outlet_id=<?= $oid ?>');
+    const d = await r.json();
+    if (d.rows && d.rows.length) {
+      const sel = document.getElementById('antar_zona');
+      sel.innerHTML = '<option value="">-- Pilih zona --</option>' + d.rows.map(z => `<option value="${z.id}">${z.nama} (Rp ${Number(z.fee).toLocaleString('id-ID')})</option>`).join('');
+      document.getElementById('antarZonaWrap').style.display = 'block';
+    }
+  }
 }
 
 function formatDate(d) {
