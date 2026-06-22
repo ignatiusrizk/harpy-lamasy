@@ -64,7 +64,7 @@ if ($action) {
             // ponytail: junction logic — show global rewards + rewards scoped to this outlet
             $st = $db->prepare(
                 "SELECT r.* FROM hl_poin_reward r
-                  WHERE r.tenant_id=? AND r.is_active=1
+                  WHERE r.tenant_id=?
                     AND (NOT EXISTS (SELECT 1 FROM hl_poin_reward_outlet WHERE reward_id=r.id)
                          OR EXISTS (SELECT 1 FROM hl_poin_reward_outlet WHERE reward_id=r.id AND outlet_id=?))
                   ORDER BY r.poin_dibutuhkan ASC"
