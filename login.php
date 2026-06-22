@@ -276,6 +276,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     logAuditLogin($user, 'login', 'auth', 'Login berhasil');
                 } catch (Throwable $e) {}
 
+                // Kurir → mobile page langsung
+                if (($user['role'] ?? '') === 'kurir') {
+                    header('Location: /kurir');
+                    exit;
+                }
+
                 header('Location: ' . $redirectTo);
                 exit;
             }

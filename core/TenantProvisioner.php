@@ -139,6 +139,7 @@ class TenantProvisioner
             'admin'    => ['Admin',    'Kelola order, kas, laporan, karyawan', 1],
             'kasir'    => ['Kasir',    'Input order & pembayaran saja',        1],
             'karyawan' => ['Karyawan', 'Absensi & update status order',        1],
+            'kurir'    => ['Kurir',    'Akses /kurir untuk update antar jemput', 1],
         ];
 
         $stmt   = $db->prepare("INSERT INTO hl_roles (tenant_id, nama, deskripsi, is_system) VALUES (?,?,?,?)");
@@ -172,6 +173,9 @@ class TenantProvisioner
             ['mesin.operate',        'mesin',     'operate',       'Konfirmasi mulai/selesai sesi mesin'],
             ['mesin.manage',         'mesin',     'manage',        'Tambah/edit/hapus mesin & atur cycle'],
             ['produksi.work',        'produksi',  'work',          'Akses /produksi & update stage order'],
+            ['antar.view',           'antar',     'view',          'Lihat list antar jemput & report'],
+            ['antar.manage',         'antar',     'manage',        'Create antar jemput, assign kurir, kelola master'],
+            ['antar.kurir',          'antar',     'kurir',         'Akses /kurir mobile (untuk role kurir)'],
             ['laporan.view',         'laporan',   'view',          'Lihat laporan'],
             ['laporan.export',       'laporan',   'export',        'Export laporan'],
             ['karyawan.view',        'karyawan',  'view',          'Lihat data karyawan'],
@@ -215,10 +219,11 @@ class TenantProvisioner
         $kasirInclude   = ['pos.view','pos.create','orders.view_all','orders.create',
                            'orders.update_status','orders.bayar','pelanggan.view',
                            'pelanggan.create','absensi.clock','absensi.view','layanan.view',
-                           'mesin.view','mesin.operate','produksi.work',
+                           'mesin.view','mesin.operate','produksi.work','antar.view',
                            'bantuan.view','bantuan.submit','bantuan.reply','bantuan.close'];
         $karyawanInclude = ['absensi.clock','absensi.view','orders.view_own','orders.update_status',
-                            'produksi.work','bantuan.view','bantuan.submit','bantuan.reply','bantuan.close'];
+                            'produksi.work','antar.view','bantuan.view','bantuan.submit','bantuan.reply','bantuan.close'];
+        $kurirInclude   = ['antar.kurir'];
 
         foreach ($permissions as [$kode, $modul, $aksi, $desc]) {
             $stmtPerm->execute([$tenantId, $kode, $modul, $aksi, $desc]);
@@ -240,6 +245,11 @@ class TenantProvisioner
             // Karyawan: hanya yang included
             if (in_array($kode, $karyawanInclude)) {
                 $stmtMap->execute([$tenantId, $roleIds['karyawan'], $permId, 'all']);
+            }
+
+            // Kurir: hanya antar.kurir
+            if (in_array($kode, $kurirInclude)) {
+                $stmtMap->execute([$tenantId, $roleIds['kurir'], $permId, 'all']);
             }
         }
     }

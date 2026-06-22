@@ -154,8 +154,9 @@ function renderTopbar(string $activePage = '', bool $minimalMode = false): void 
                 'kas'       => ['label'=>'Kas',       'url'=>'/kas',       'perm'=>'kas.view'],
                 'inventori' => ['label'=>'Inventori', 'url'=>'/inventori', 'perms'=>['inventori.view','kas.view']],
                 'mesin'     => ['label'=>'Mesin Koin', 'url'=>'/mesin',     'perms'=>['mesin.view','pos.view']],
-                'produksi'  => ['label'=>'Produksi','url'=>'/produksi',  'perm'=>'produksi.work'],
-                'checklist' => ['label'=>'Checklist', 'url'=>'/checklist', 'perm'=>null],
+                'produksi'     => ['label'=>'Produksi',     'url'=>'/produksi',     'perm'=>'produksi.work'],
+                'antar-jemput' => ['label'=>'Antar Jemput', 'url'=>'/antar-jemput', 'perm'=>'antar.view'],
+                'checklist'    => ['label'=>'Checklist',    'url'=>'/checklist',    'perm'=>null],
             ],
         ],
         'keuangan' => [
@@ -170,7 +171,8 @@ function renderTopbar(string $activePage = '', bool $minimalMode = false): void 
             'items' => [
                 'layanan'  => ['label'=>'Layanan',        'url'=>'/layanan',   'perm'=>'layanan.view'],
                 'promo'    => ['label'=>'Promo',          'url'=>'/promo',     'perm'=>'promo.view'],
-                'customer' => ['label'=>'Customer',       'url'=>'/customer',  'perm'=>'pelanggan.view'],
+                'customer'     => ['label'=>'Customer',       'url'=>'/customer',     'perm'=>'pelanggan.view'],
+                'kurir-master' => ['label'=>'Kurir',         'url'=>'/kurir-master', 'perm'=>'antar.manage'],
                 'member'   => ['label'=>'Member Tier',    'url'=>'/member',    'perm'=>'pelanggan.view'],
                 'deposit'  => ['label'=>'Deposit Wallet', 'url'=>'/deposit',   'perm'=>'pelanggan.view'],
                 'approval-inbox' => ['label'=>'⏳ Approval Inbox', 'url'=>'/approval-inbox', 'perm'=>'owner'],
@@ -256,6 +258,7 @@ function renderTopbar(string $activePage = '', bool $minimalMode = false): void 
       'checklist'=>'✅','droppoint'=>'📦','owner_report'=>'📨','piutang'=>'💼','kanban'=>'🗂️','struk'=>'🧾',
       'loyalty'=>'⭐','retention'=>'😴','support'=>'🎧','import'=>'📥',
       'inventori'=>'🧴','mesin'=>'🪙','produksi'=>'🧺',
+      'antar-jemput'=>'🚚','kurir-master'=>'🛵',
     ];
     ?>
     <div class="ol-shell" id="olShell">
