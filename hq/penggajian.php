@@ -105,8 +105,101 @@ if ($action === 'generate' && $_SERVER['REQUEST_METHOD'] === 'POST') {
                 if ($ins->rowCount() > 0) { $created++; if ($nOutlet>1) $splitCount++; }
             }
         }
-        try { logAudit('generate_gaji','penggajian',"Generate slip massal $bulan ($created baru, $splitCount split multi-outlet)"); } catch (Throwable) {}
+        // Step 1: call BonusEvaluator if checkbox checked
+        $evalBonus = !empty($d['eval_bonus']);
+        if ($evalBonus) {
+            require_once ROOT . '/core/BonusEvaluator.php';
+            $gajis = $db->prepare("SELECT id FROM hl_gaji WHERE tenant_id=? AND bulan=?");
+            $gajis->execute([$tid, $bulan]);
+            foreach ($gajis->fetchAll(PDO::FETCH_COLUMN) as $gid) {
+                BonusEvaluator::applyToGaji((int)$gid);
+            }
+        }
+        try { logAudit('generate_gaji','penggajian',"Generate slip massal $bulan ($created baru, $splitCount split multi-outlet)".($evalBonus?' +eval_bonus':'')); } catch (Throwable) {}
         echo json_encode(['ok'=>true, 'created'=>$created, 'split'=>$splitCount]);
+    } catch (Throwable $e) { echo json_encode(['error'=>$e->getMessage()]); }
+    exit;
+}
+
+// ── API: data_karyawan (gaji list per outlet) ─────────
+if ($action === 'data_karyawan') {
+    header('Content-Type: application/json');
+    $oid   = (int)($_GET['outlet_id'] ?? 0);
+    $bulan = preg_match('/^\d{4}-\d{2}$/', $_GET['bulan'] ?? '') ? $_GET['bulan'] : date('Y-m');
+    if ($oid <= 0) { echo json_encode(['error'=>'Input invalid']); exit; }
+    try {
+        $st = $db->prepare("SELECT g.id, g.user_id, u.name, g.gaji_pokok, g.bonus, g.potongan, g.total, g.status
+                              FROM hl_gaji g JOIN hl_users u ON u.id=g.user_id
+                             WHERE g.tenant_id=? AND g.outlet_id=? AND g.bulan=?
+                             ORDER BY u.name");
+        $st->execute([$tid, $oid, $bulan]);
+        echo json_encode(['rows' => $st->fetchAll(PDO::FETCH_ASSOC)]);
+    } catch (Throwable $e) { echo json_encode(['error'=>$e->getMessage()]); }
+    exit;
+}
+
+// ── API: komponen_list ────────────────────────────────
+if ($action === 'komponen_list') {
+    header('Content-Type: application/json');
+    $gajiId = (int)($_GET['gaji_id'] ?? 0);
+    if ($gajiId <= 0) { echo json_encode(['error'=>'Input invalid']); exit; }
+    $own = $db->prepare("SELECT 1 FROM hl_gaji WHERE id=? AND tenant_id=?");
+    $own->execute([$gajiId, $tid]);
+    if (!$own->fetchColumn()) { echo json_encode(['error'=>'Forbidden']); exit; }
+    $rows = $db->prepare("SELECT * FROM hl_gaji_komponen WHERE gaji_id=? ORDER BY jenis='pokok' DESC, amount DESC, id");
+    $rows->execute([$gajiId]);
+    echo json_encode(['rows' => $rows->fetchAll(PDO::FETCH_ASSOC)]);
+    exit;
+}
+
+// ── API: komponen_add ─────────────────────────────────
+if ($action === 'komponen_add' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    header('Content-Type: application/json');
+    if (!$canManage) { echo json_encode(['error'=>'Akses ditolak']); exit; }
+    verifyCsrf();
+    $d = json_decode(file_get_contents('php://input'), true) ?: [];
+    $gajiId   = (int)($d['gaji_id'] ?? 0);
+    $nama     = substr(trim($d['nama'] ?? ''), 0, 100);
+    $amount   = (int)($d['amount'] ?? 0);
+    $ket      = trim($d['keterangan'] ?? '');
+    if ($gajiId <= 0 || !$nama || $amount === 0) { echo json_encode(['error'=>'Input invalid']); exit; }
+    $own = $db->prepare("SELECT 1 FROM hl_gaji WHERE id=? AND tenant_id=?");
+    $own->execute([$gajiId, $tid]);
+    if (!$own->fetchColumn()) { echo json_encode(['error'=>'Forbidden']); exit; }
+    try {
+        $ins = $db->prepare("INSERT INTO hl_gaji_komponen (gaji_id, jenis, rule_id, nama, amount, keterangan) VALUES (?, 'manual', NULL, ?, ?, ?)");
+        $ins->execute([$gajiId, $nama, $amount, $ket]);
+        // Recompute totals from komponen
+        $sumSt = $db->prepare("SELECT COALESCE(SUM(CASE WHEN jenis='pokok' THEN amount ELSE 0 END),0) sp,
+                                      COALESCE(SUM(CASE WHEN amount>0 AND jenis!='pokok' THEN amount ELSE 0 END),0) sb,
+                                      COALESCE(SUM(CASE WHEN amount<0 THEN ABS(amount) ELSE 0 END),0) sd
+                                 FROM hl_gaji_komponen WHERE gaji_id=?");
+        $sumSt->execute([$gajiId]);
+        $s = $sumSt->fetch(PDO::FETCH_ASSOC);
+        $db->prepare("UPDATE hl_gaji SET bonus=?, potongan=?, total=? WHERE id=?")
+           ->execute([(int)$s['sb'], (int)$s['sd'], (int)$s['sp'] + (int)$s['sb'] - (int)$s['sd'], $gajiId]);
+        try { logAudit('komponen_add','gaji',"gaji_id=$gajiId nama=$nama amount=$amount"); } catch (Throwable) {}
+        echo json_encode(['ok'=>true]);
+    } catch (Throwable $e) { echo json_encode(['error'=>$e->getMessage()]); }
+    exit;
+}
+
+// ── API: re_evaluate ──────────────────────────────────
+if ($action === 're_evaluate' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    header('Content-Type: application/json');
+    if (!$canManage) { echo json_encode(['error'=>'Akses ditolak']); exit; }
+    verifyCsrf();
+    $d = json_decode(file_get_contents('php://input'), true) ?: [];
+    $gajiId = (int)($d['gaji_id'] ?? 0);
+    if ($gajiId <= 0) { echo json_encode(['error'=>'Input invalid']); exit; }
+    $own = $db->prepare("SELECT 1 FROM hl_gaji WHERE id=? AND tenant_id=?");
+    $own->execute([$gajiId, $tid]);
+    if (!$own->fetchColumn()) { echo json_encode(['error'=>'Forbidden']); exit; }
+    try {
+        require_once ROOT . '/core/BonusEvaluator.php';
+        BonusEvaluator::applyToGaji($gajiId);
+        try { logAudit('re_evaluate','gaji',"gaji_id=$gajiId"); } catch (Throwable) {}
+        echo json_encode(['ok'=>true]);
     } catch (Throwable $e) { echo json_encode(['error'=>$e->getMessage()]); }
     exit;
 }
@@ -170,6 +263,11 @@ require __DIR__ . '/_layout_open.php';
   <label style="font-size:12px;color:#6B7280;font-weight:600">Bulan:</label>
   <input type="month" id="fBulan" value="<?= date('Y-m') ?>">
   <button class="btn btn-light btn-sm" onclick="loadData()">↻ Terapkan</button>
+  <?php if ($canManage): ?>
+  <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;margin-left:8px">
+    <input type="checkbox" id="eval_bonus" checked> Evaluate auto-bonus
+  </label>
+  <?php endif; ?>
 </div>
 
 <div class="metrics">
@@ -188,6 +286,7 @@ require __DIR__ . '/_layout_open.php';
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const fmtRp = n => 'Rp ' + Number(n||0).toLocaleString('id-ID');
 const CAN_MANAGE = <?= $canManage ? 'true':'false' ?>;
+const CSRF = '<?= htmlspecialchars(getCsrfToken()) ?>';
 
 async function loadData(){
   const bulan = document.getElementById('fBulan').value;
@@ -202,7 +301,7 @@ async function loadData(){
     document.getElementById('mDibayar').textContent = fmtRp(d.total.dibayar);
     document.getElementById('mSlip').textContent = `${d.total.slip} / ${d.total.karyawan}`;
     if (!d.rows.length){ box.innerHTML = '<div class="empty">Belum ada outlet.</div>'; return; }
-    let html = '<table class="tbl"><thead><tr><th>Outlet</th><th style="text-align:center">Karyawan</th><th style="text-align:center">Slip</th><th style="text-align:right">Beban</th><th style="text-align:center">Status</th>'+(CAN_MANAGE?'<th></th>':'')+'</tr></thead><tbody>';
+    let html = '<table class="tbl"><thead><tr><th>Outlet</th><th style="text-align:center">Karyawan</th><th style="text-align:center">Slip</th><th style="text-align:right">Beban</th><th style="text-align:center">Status</th><th></th></tr></thead><tbody>';
     d.rows.forEach(o => {
       let status;
       if (o.slip === 0) status = '<span class="pill pill-gray">belum generate</span>';
@@ -215,11 +314,13 @@ async function loadData(){
         <td style="text-align:center">${o.slip}${belumGen}</td>
         <td class="num">${fmtRp(o.beban)}</td>
         <td style="text-align:center">${status}</td>
-        ${CAN_MANAGE?`<td style="white-space:nowrap">
-          ${o.belum_generate>0?`<button class="btn btn-light btn-sm" onclick="genOutlet(${o.outlet_id})">⚙️ Generate</button>`:''}
-          ${o.cnt_pending>0?`<button class="btn btn-green btn-sm" onclick="markPaid(${o.outlet_id}, ${JSON.stringify(o.nama_outlet)})">✓ Bayar</button>`:''}
-        </td>`:''}
-      </tr>`;
+        <td style="white-space:nowrap">
+          ${o.slip>0?`<button class="btn btn-light btn-sm" onclick="toggleKaryawan(this,${o.outlet_id})">▾ Detail</button>`:''}
+          ${CAN_MANAGE && o.belum_generate>0?`<button class="btn btn-light btn-sm" onclick="genOutlet(${o.outlet_id})">⚙️ Generate</button>`:''}
+          ${CAN_MANAGE && o.cnt_pending>0?`<button class="btn btn-green btn-sm" onclick="markPaid(${o.outlet_id}, ${JSON.stringify(o.nama_outlet)})">✓ Bayar</button>`:''}
+        </td>
+      </tr>
+      <tr id="sub-${o.outlet_id}" style="display:none"><td colspan="6" style="padding:0 12px 12px 24px;background:#F9FAFB"><div class="sub-loading">⏳</div></td></tr>`;
     });
     html += '</tbody></table>';
     box.innerHTML = html;
@@ -236,8 +337,9 @@ async function genOutlet(oid){
   await doGenerate(bulan, oid);
 }
 async function doGenerate(bulan, oid){
+  const evalBonus = document.getElementById('eval_bonus')?.checked ?? true;
   try {
-    const r = await fetch('/hq/penggajian.php?action=generate', {method:'POST', body:JSON.stringify({bulan, outlet_id:oid})});
+    const r = await fetch('/hq/penggajian.php?action=generate', {method:'POST', body:JSON.stringify({bulan, outlet_id:oid, eval_bonus: evalBonus})});
     const d = await r.json();
     if (d.error){ alert('⚠️ '+d.error); return; }
     let msg = `✅ ${d.created} slip gaji baru dibuat.`;
@@ -256,6 +358,103 @@ async function markPaid(oid, nama){
     alert(`✅ ${d.affected} slip ditandai dibayar.`);
     loadData();
   } catch(e){ alert('Gagal: '+e.message); }
+}
+
+async function toggleKaryawan(btn, oid) {
+  const row = document.getElementById('sub-' + oid);
+  if (row.style.display !== 'none') { row.style.display = 'none'; btn.textContent = '▾ Detail'; return; }
+  btn.textContent = '▴ Detail';
+  row.style.display = '';
+  const bulan = document.getElementById('fBulan').value;
+  const cell = row.querySelector('td');
+  cell.innerHTML = '<div style="font-size:12px;color:#6B7280">⏳ Memuat…</div>';
+  try {
+    const r = await fetch(`/hq/penggajian.php?action=data_karyawan&outlet_id=${oid}&bulan=${bulan}`);
+    const d = await r.json();
+    if (d.error) { cell.innerHTML = `<span style="color:#EF4444">${esc(d.error)}</span>`; return; }
+    if (!d.rows.length) { cell.innerHTML = '<span style="font-size:12px;color:#9CA3AF">Belum ada slip.</span>'; return; }
+    let h = '<table style="width:100%;font-size:12px;border-collapse:collapse"><thead><tr style="background:#EEF1F8"><th align="left" style="padding:6px 8px">Karyawan</th><th align="right" style="padding:6px 8px">Pokok</th><th align="right" style="padding:6px 8px">Bonus</th><th align="right" style="padding:6px 8px">Potongan</th><th align="right" style="padding:6px 8px">Total</th><th align="center" style="padding:6px 8px">Status</th>';
+    if (CAN_MANAGE) h += '<th style="padding:6px 8px"></th>';
+    h += '</tr></thead><tbody>';
+    d.rows.forEach(g => {
+      h += `<tr style="border-top:1px solid #E5E9F2">
+        <td style="padding:6px 8px">${esc(g.name)}</td>
+        <td style="padding:6px 8px;text-align:right;font-family:monospace">${fmtRp(g.gaji_pokok)}</td>
+        <td style="padding:6px 8px;text-align:right;font-family:monospace;color:#065F46">${fmtRp(g.bonus||0)}</td>
+        <td style="padding:6px 8px;text-align:right;font-family:monospace;color:#991B1B">${fmtRp(g.potongan||0)}</td>
+        <td style="padding:6px 8px;text-align:right;font-family:monospace;font-weight:700">${fmtRp(g.total)}</td>
+        <td style="padding:6px 8px;text-align:center"><span class="pill ${g.status==='dibayar'?'pill-ok':'pill-warn'}">${esc(g.status)}</span></td>
+        ${CAN_MANAGE?`<td style="padding:6px 8px;white-space:nowrap">
+          <button class="btn btn-light btn-sm" style="padding:3px 8px;font-size:11px" onclick="showKomponen(${g.id})">▾ Komponen</button>
+          <button class="btn btn-light btn-sm" style="padding:3px 8px;font-size:11px" onclick="reEvaluate(${g.id},${oid})">🔄 Re-eval</button>
+          <button class="btn btn-light btn-sm" style="padding:3px 8px;font-size:11px" onclick="openAddKomponen(${g.id},${oid})">+ Manual</button>
+        </td>`:''}
+      </tr>`;
+    });
+    h += '</tbody></table>';
+    cell.innerHTML = h;
+  } catch(e) { cell.innerHTML = `<span style="color:#EF4444">${esc(e.message)}</span>`; }
+}
+
+async function showKomponen(gajiId) {
+  const r = await fetch('/hq/penggajian.php?action=komponen_list&gaji_id=' + gajiId);
+  const d = await r.json();
+  if (d.error) { alert(d.error); return; }
+  const modal = document.getElementById('modalKomponen') || createKomponenModal();
+  const html = d.rows.map(k => `<tr>
+    <td style="padding:6px 8px">${esc(k.jenis)}</td>
+    <td style="padding:6px 8px">${esc(k.nama)}</td>
+    <td style="padding:6px 8px;text-align:right;font-family:monospace;font-weight:600;color:${Number(k.amount)>=0?'#065F46':'#991B1B'}">${fmtRp(k.amount)}</td>
+    <td style="padding:6px 8px;font-size:11px;color:#64748B">${esc(k.keterangan||'')}</td>
+  </tr>`).join('') || '<tr><td colspan="4" style="padding:12px;text-align:center;color:#9CA3AF">Belum ada komponen.</td></tr>';
+  modal.querySelector('#komponenTbody').innerHTML = html;
+  modal.classList.add('open');
+}
+
+async function reEvaluate(gajiId, oid) {
+  if (!confirm('Re-evaluate rules untuk gaji ini? Komponen manual tetap dipertahankan.')) return;
+  try {
+    const r = await fetch('/hq/penggajian.php?action=re_evaluate', {method:'POST', headers:{'Content-Type':'application/json','X-CSRF-Token':CSRF}, body:JSON.stringify({gaji_id: gajiId})});
+    const d = await r.json();
+    if (d.error) { alert('⚠️ ' + d.error); return; }
+    alert('✅ Re-evaluated');
+    loadData();
+  } catch(e) { alert('Gagal: ' + e.message); }
+}
+
+async function openAddKomponen(gajiId, oid) {
+  const nama = prompt('Nama komponen (e.g. THR, Bonus Project, Potongan Pinjaman):');
+  if (!nama) return;
+  const amountStr = prompt('Amount (positif=bonus, negatif=potongan, e.g. 500000 atau -200000):');
+  if (amountStr === null) return;
+  const amount = parseInt(amountStr);
+  if (isNaN(amount) || amount === 0) { alert('Amount harus angka non-zero'); return; }
+  const ket = prompt('Keterangan (opsional):') || '';
+  try {
+    const r = await fetch('/hq/penggajian.php?action=komponen_add', {method:'POST', headers:{'Content-Type':'application/json','X-CSRF-Token':CSRF}, body:JSON.stringify({gaji_id: gajiId, nama, amount, keterangan: ket})});
+    const d = await r.json();
+    if (d.error) { alert('⚠️ ' + d.error); return; }
+    alert('✅ Komponen ditambah');
+    loadData();
+  } catch(e) { alert('Gagal: ' + e.message); }
+}
+
+function createKomponenModal() {
+  const div = document.createElement('div');
+  div.id = 'modalKomponen';
+  div.className = 'hq-modal-overlay';
+  div.innerHTML = `<div class="hq-modal" style="max-width:640px">
+    <div class="hq-modal-header"><span>Breakdown Komponen Gaji</span>
+      <button onclick="document.getElementById('modalKomponen').classList.remove('open')">✕</button></div>
+    <div class="hq-modal-body">
+      <table style="width:100%;font-size:13px;border-collapse:collapse">
+        <thead><tr style="background:#F9FAFB"><th align="left" style="padding:8px">Jenis</th><th align="left" style="padding:8px">Nama</th><th align="right" style="padding:8px">Amount</th><th align="left" style="padding:8px">Ket</th></tr></thead>
+        <tbody id="komponenTbody"></tbody>
+      </table>
+    </div>
+  </div>`;
+  document.body.appendChild(div);
+  return div;
 }
 
 loadData();
