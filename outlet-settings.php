@@ -25,7 +25,7 @@ if ($action) {
         catch (Throwable) { $hasNotaCols = false; }
 
         $cols = "id, tenant_id, nama_outlet, slug, kota, telepon, status, is_main";
-        if ($hasNotaCols) $cols .= ", nota_prefix, nota_format, label_size";
+        if ($hasNotaCols) $cols .= ", nota_prefix, nota_format, label_size, antar_mode";
         $st = $db->prepare("SELECT $cols FROM outlets WHERE tenant_id=? ORDER BY is_main DESC, id ASC");
         $st->execute([$tid]);
         $rows = $st->fetchAll(PDO::FETCH_ASSOC);
@@ -49,6 +49,7 @@ if ($action) {
         $prefix = substr(trim((string)($d['nota_prefix'] ?? '')), 0, 20);
         $format = substr(trim((string)($d['nota_format'] ?? '')), 0, 60) ?: '{PREFIX}{YYMMDD}-{COUNTER:3}';
         $labelSize = in_array(($d['label_size'] ?? '80'), ['58','80'], true) ? $d['label_size'] : '80';
+        $antarMode = in_array(($d['antar_mode'] ?? 'free'), ['free','zona'], true) ? $d['antar_mode'] : 'free';
 
         // Validasi: format harus punya minimal {COUNTER} (kalau gak ada,
         // nota_no duplicate setiap hari)
@@ -58,8 +59,8 @@ if ($action) {
         }
 
         try {
-            $st = $db->prepare("UPDATE outlets SET nota_prefix=?, nota_format=?, label_size=? WHERE id=? AND tenant_id=?");
-            $st->execute([$prefix, $format, $labelSize, $id, $tid]);
+            $st = $db->prepare("UPDATE outlets SET nota_prefix=?, nota_format=?, label_size=?, antar_mode=? WHERE id=? AND tenant_id=?");
+            $st->execute([$prefix, $format, $labelSize, $antarMode, $id, $tid]);
             logAudit('update', 'outlet', "Update outlet #$id: prefix=$prefix, format=$format, label=$labelSize");
             echo json_encode(['success'=>true]);
         } catch (Throwable $e) {
@@ -130,6 +131,45 @@ if ($action) {
         $d = json_decode(file_get_contents('php://input'), true);
         $db->prepare("DELETE FROM hl_parfum WHERE id=? AND tenant_id=?")->execute([(int)($d['id']??0), $tid]);
         echo json_encode(['success'=>true]);
+        exit;
+    }
+
+    if ($action === 'zona_list') {
+        $outletId = (int)($_GET['outlet_id'] ?? 0);
+        $rows = TenantQuery::raw(
+            "SELECT id, nama, fee, aktif FROM hl_zona_antar WHERE tenant_id=? AND outlet_id=? AND aktif=1 ORDER BY nama",
+            [$tid, $outletId]
+        );
+        echo json_encode(['rows'=>$rows]);
+        exit;
+    }
+
+    if ($action === 'zona_save' && $_SERVER['REQUEST_METHOD']==='POST') {
+        verifyCsrf();
+        $d = json_decode(file_get_contents('php://input'), true) ?: [];
+        $id   = (int)($d['id'] ?? 0);
+        $outletId = (int)($d['outlet_id'] ?? 0);
+        $nama = substr(trim($d['nama'] ?? ''), 0, 60);
+        $fee  = (int)($d['fee'] ?? 0);
+        if (!$nama || $outletId <= 0) { echo json_encode(['error'=>'Nama + outlet wajib']); exit; }
+
+        if ($id > 0) {
+            $st = $db->prepare("UPDATE hl_zona_antar SET nama=?, fee=? WHERE id=? AND tenant_id=? AND outlet_id=?");
+            $st->execute([$nama, $fee, $id, $tid, $outletId]);
+        } else {
+            TenantQuery::insert('hl_zona_antar', ['nama'=>$nama, 'fee'=>$fee, 'outlet_id'=>$outletId]);
+        }
+        echo json_encode(['ok'=>true]);
+        exit;
+    }
+
+    if ($action === 'zona_delete' && $_SERVER['REQUEST_METHOD']==='POST') {
+        verifyCsrf();
+        $d = json_decode(file_get_contents('php://input'), true) ?: [];
+        $id = (int)($d['id'] ?? 0);
+        $st = $db->prepare("UPDATE hl_zona_antar SET aktif=0 WHERE id=? AND tenant_id=?");
+        $st->execute([$id, $tid]);
+        echo json_encode(['ok'=>true]);
         exit;
     }
 
@@ -249,6 +289,29 @@ if ($action) {
         </div>
       </div>
 
+      <!-- Antar Jemput Mode + Zona -->
+      <div style="margin:8px 0 14px;padding:14px;background:#F9FAFB;border:1px solid #E5E7EB;border-radius:8px">
+        <label class="hl-label" style="margin-bottom:8px">🚚 Mode Antar Jemput</label>
+        <div style="display:flex;gap:10px;margin-bottom:14px">
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:6px 12px;border:1px solid #E5E7EB;border-radius:8px;background:#fff">
+            <input type="radio" name="ed_antar_mode" value="free" onchange="toggleZonaSection()"> Free
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:6px 12px;border:1px solid #E5E7EB;border-radius:8px;background:#fff">
+            <input type="radio" name="ed_antar_mode" value="zona" onchange="toggleZonaSection()"> Zona (fee per zona)
+          </label>
+        </div>
+
+        <div id="zonaSection" style="display:none">
+          <label class="hl-label">Daftar Zona</label>
+          <div id="zonaList" style="margin-bottom:10px">⏳</div>
+          <div style="display:flex;gap:6px">
+            <input type="text" id="zona_nama_new" placeholder="Zona 1 - radius 3km" class="hl-input" style="flex:1">
+            <input type="number" id="zona_fee_new" placeholder="Rp" class="hl-input" style="width:120px">
+            <button class="hl-btn hl-btn-primary hl-btn-sm" onclick="addZona()">+ Tambah</button>
+          </div>
+        </div>
+      </div>
+
       <!-- Quick templates -->
       <div style="font-size:12px;color:#6B7280;margin-bottom:6px;font-weight:600">⚡ Quick Template:</div>
       <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px">
@@ -331,6 +394,9 @@ function openEdit(r) {
   document.getElementById('ed_format').value = r.nota_format || '{PREFIX}{YYMMDD}-{COUNTER:3}';
   const lsz = (r.label_size === '58') ? '58' : '80';
   document.querySelectorAll('input[name=ed_label_size]').forEach(el => el.checked = (el.value === lsz));
+  const am = (r.antar_mode === 'zona') ? 'zona' : 'free';
+  document.querySelectorAll('input[name=ed_antar_mode]').forEach(el => el.checked = (el.value === am));
+  toggleZonaSection();
   document.getElementById('modalEdit').classList.add('open');
   livePreview();
 }
@@ -364,13 +430,60 @@ async function saveFormat() {
   const labelSize = document.querySelector('input[name=ed_label_size]:checked')?.value || '80';
   const r = await fetch('?action=save', {
     method:'POST', headers:{'Content-Type':'application/json','X-CSRF-Token':csrfToken()},
-    body: JSON.stringify({id, nota_prefix: prefix, nota_format: format, label_size: labelSize})
+    body: JSON.stringify({id, nota_prefix: prefix, nota_format: format, label_size: labelSize, antar_mode: document.querySelector('input[name=ed_antar_mode]:checked')?.value || 'free'})
   });
   const d = await r.json();
   if (d.error) { showToast(d.error, 'error'); return; }
   showToast('Format nota tersimpan', 'success');
   closeModal();
   loadOutlets();
+}
+
+function toggleZonaSection() {
+  const mode = document.querySelector('input[name=ed_antar_mode]:checked')?.value;
+  document.getElementById('zonaSection').style.display = mode === 'zona' ? 'block' : 'none';
+  if (mode === 'zona') loadZonaList();
+}
+
+async function loadZonaList() {
+  const outletId = document.getElementById('ed_id').value;
+  if (!outletId) return;
+  const r = await fetch('?action=zona_list&outlet_id=' + outletId);
+  const d = await r.json();
+  const list = document.getElementById('zonaList');
+  if (!d.rows.length) { list.innerHTML = '<div style="color:var(--gray);font-size:12px;padding:8px 0">Belum ada zona</div>'; return; }
+  list.innerHTML = d.rows.map(z => `
+    <div style="display:flex;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid #EEF1F8">
+      <span style="flex:1;font-size:13px">${esc(z.nama)}</span>
+      <span style="font-size:13px;font-weight:600;color:#0F7B6C">Rp ${Number(z.fee).toLocaleString('id-ID')}</span>
+      <button onclick="deleteZona(${z.id})" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:14px">×</button>
+    </div>
+  `).join('');
+}
+
+async function addZona() {
+  const outletId = document.getElementById('ed_id').value;
+  const nama = document.getElementById('zona_nama_new').value.trim();
+  const fee  = parseInt(document.getElementById('zona_fee_new').value) || 0;
+  if (!nama) { showToast('Nama zona wajib', 'error'); return; }
+  const r = await fetch('?action=zona_save', {
+    method:'POST', headers:{'Content-Type':'application/json','X-CSRF-Token':csrfToken()},
+    body: JSON.stringify({outlet_id: outletId, nama, fee})
+  });
+  const d = await r.json();
+  if (d.error) { showToast(d.error,'error'); return; }
+  document.getElementById('zona_nama_new').value = '';
+  document.getElementById('zona_fee_new').value = '';
+  loadZonaList();
+}
+
+async function deleteZona(id) {
+  if (!confirm('Hapus zona ini?')) return;
+  await fetch('?action=zona_delete', {
+    method:'POST', headers:{'Content-Type':'application/json','X-CSRF-Token':csrfToken()},
+    body: JSON.stringify({id})
+  });
+  loadZonaList();
 }
 
 // ── PARFUM CRUD ──
