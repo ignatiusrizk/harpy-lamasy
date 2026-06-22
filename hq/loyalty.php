@@ -111,29 +111,29 @@ require ROOT . '/hq/_layout_open.php';
 ?>
 <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:18px">
   <h1 style="margin:0">⭐ Reward Loyalty (HQ)</h1>
-  <button class="hq-btn hq-btn-primary" onclick="openEdit()">+ Tambah Reward</button>
+  <button class="hl-btn hl-btn-primary" onclick="openEdit()">+ Tambah Reward</button>
 </div>
 
 <div id="rewardList" style="min-height:200px">⏳ Memuat...</div>
 
 <!-- Modal edit -->
-<div class="hq-modal-overlay" id="modalEdit">
-  <div class="hq-modal" style="max-width:560px">
-    <div class="hq-modal-header"><span>Tambah/Edit Reward</span></div>
-    <div class="hq-modal-body">
+<div class="hl-modal-overlay" id="modalEdit">
+  <div class="hl-modal" style="max-width:560px">
+    <div class="hl-modal-header"><span>Tambah/Edit Reward</span></div>
+    <div class="hl-modal-body">
       <input type="hidden" id="e_id" value="0">
       <label>Nama Reward</label>
-      <input type="text" id="e_nama" class="hq-input" maxlength="100">
+      <input type="text" id="e_nama" class="hl-input" maxlength="100">
       <label>Deskripsi (opsional)</label>
-      <textarea id="e_desk" class="hq-input" rows="2"></textarea>
+      <textarea id="e_desk" class="hl-input" rows="2"></textarea>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
         <div>
           <label>Poin Dibutuhkan</label>
-          <input type="number" id="e_poin" class="hq-input" min="1" value="50">
+          <input type="number" id="e_poin" class="hl-input" min="1" value="50">
         </div>
         <div>
           <label>Tipe</label>
-          <select id="e_tipe" class="hq-input">
+          <select id="e_tipe" class="hl-input">
             <option value="diskon_nominal">Diskon Rp</option>
             <option value="diskon_persen">Diskon %</option>
             <option value="gratis_layanan">Gratis Layanan</option>
@@ -143,15 +143,15 @@ require ROOT . '/hq/_layout_open.php';
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
         <div>
           <label>Nilai</label>
-          <input type="number" id="e_nilai" class="hq-input" min="0">
+          <input type="number" id="e_nilai" class="hl-input" min="0">
         </div>
         <div>
           <label>Min Transaksi (Rp)</label>
-          <input type="number" id="e_min" class="hq-input" min="0" value="0">
+          <input type="number" id="e_min" class="hl-input" min="0" value="0">
         </div>
       </div>
       <label style="margin-top:10px">Max Redeem per Bulan (0 = unlimited)</label>
-      <input type="number" id="e_max" class="hq-input" min="0" value="0">
+      <input type="number" id="e_max" class="hl-input" min="0" value="0">
 
       <div style="margin-top:14px;padding:12px;background:#F9FAFB;border:1px solid #E5E7EB;border-radius:8px">
         <label style="font-weight:700;margin-bottom:8px;display:block">Berlaku di Outlet</label>
@@ -168,9 +168,9 @@ require ROOT . '/hq/_layout_open.php';
         <input type="checkbox" id="e_active" checked> Aktif
       </label>
     </div>
-    <div class="hq-modal-footer">
-      <button class="hq-btn" onclick="closeEdit()">Batal</button>
-      <button class="hq-btn hq-btn-primary" onclick="saveReward()">💾 Simpan</button>
+    <div class="hl-modal-footer">
+      <button class="hl-btn" onclick="closeEdit()">Batal</button>
+      <button class="hl-btn hl-btn-primary" onclick="saveReward()">💾 Simpan</button>
     </div>
   </div>
 </div>
@@ -197,8 +197,8 @@ async function loadList() {
           <div style="margin-top:6px">${outletsLabel}${r.is_active==0 ? '<span style="background:#FEE;color:#991B1B;font-size:11px;padding:2px 8px;border-radius:6px;margin-left:6px">Non-aktif</span>' : ''}</div>
         </div>
         <div style="display:flex;gap:6px;align-items:center">
-          <button class="hq-btn-sm" onclick='openEdit(${JSON.stringify(r)})'>✏️</button>
-          <button class="hq-btn-sm" onclick="deleteReward(${r.id})" style="color:#EF4444">🗑</button>
+          <button class="hl-btn-sm" onclick='openEdit(${JSON.stringify(r)})'>✏️</button>
+          <button class="hl-btn-sm" onclick="deleteReward(${r.id})" style="color:#EF4444">🗑</button>
         </div>
       </div>`;
   }).join('');

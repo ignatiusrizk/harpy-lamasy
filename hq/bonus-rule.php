@@ -101,21 +101,21 @@ require ROOT . '/hq/_layout_open.php';
 ?>
 <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:18px">
   <h1 style="margin:0">🎯 Bonus & Penalti Rule</h1>
-  <button class="hq-btn hq-btn-primary" onclick="openEdit()">+ Tambah Rule</button>
+  <button class="hl-btn hl-btn-primary" onclick="openEdit()">+ Tambah Rule</button>
 </div>
 
 <div id="ruleList" style="min-height:200px">⏳ Memuat...</div>
 
 <!-- Modal edit -->
-<div class="hq-modal-overlay" id="modalEdit">
-  <div class="hq-modal" style="max-width:560px">
-    <div class="hq-modal-header"><span>Tambah/Edit Rule</span></div>
-    <div class="hq-modal-body">
+<div class="hl-modal-overlay" id="modalEdit">
+  <div class="hl-modal" style="max-width:560px">
+    <div class="hl-modal-header"><span>Tambah/Edit Rule</span></div>
+    <div class="hl-modal-body">
       <input type="hidden" id="e_id" value="0">
       <label>Nama Rule</label>
-      <input type="text" id="e_nama" class="hq-input" maxlength="100" placeholder="Bonus Hadir Penuh">
+      <input type="text" id="e_nama" class="hl-input" maxlength="100" placeholder="Bonus Hadir Penuh">
       <label style="margin-top:10px">Tipe</label>
-      <select id="e_tipe" class="hq-input" onchange="updateThresholdLabel()">
+      <select id="e_tipe" class="hl-input" onchange="updateThresholdLabel()">
         <option value="hadir_penuh">Hadir Penuh</option>
         <option value="tepat_waktu">Tepat Waktu (min N hari)</option>
         <option value="lembur">Lembur (menit excess)</option>
@@ -125,11 +125,11 @@ require ROOT . '/hq/_layout_open.php';
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
         <div>
           <label id="e_threshold_label">Threshold</label>
-          <input type="number" id="e_threshold" class="hq-input" min="0" value="0">
+          <input type="number" id="e_threshold" class="hl-input" min="0" value="0">
         </div>
         <div>
           <label>Amount (Rp)</label>
-          <input type="number" id="e_amount" class="hq-input" value="0">
+          <input type="number" id="e_amount" class="hl-input" value="0">
         </div>
       </div>
       <label style="margin-top:10px;display:flex;align-items:center;gap:8px;cursor:pointer">
@@ -151,9 +151,9 @@ require ROOT . '/hq/_layout_open.php';
         <input type="checkbox" id="e_active" checked> Aktif
       </label>
     </div>
-    <div class="hq-modal-footer">
-      <button class="hq-btn" onclick="closeEdit()">Batal</button>
-      <button class="hq-btn hq-btn-primary" onclick="saveRule()">💾 Simpan</button>
+    <div class="hl-modal-footer">
+      <button class="hl-btn" onclick="closeEdit()">Batal</button>
+      <button class="hl-btn hl-btn-primary" onclick="saveRule()">💾 Simpan</button>
     </div>
   </div>
 </div>
@@ -194,8 +194,8 @@ async function loadList() {
           <div style="margin-top:6px">${outletsLabel}${r.is_active==0 ? '<span style="background:#FEE;color:#991B1B;font-size:11px;padding:2px 8px;border-radius:6px;margin-left:6px">Non-aktif</span>' : ''}</div>
         </div>
         <div style="display:flex;gap:6px;align-items:center">
-          <button class="hq-btn-sm" onclick='openEdit(${JSON.stringify(r)})'>✏️</button>
-          <button class="hq-btn-sm" onclick="deleteRule(${r.id})" style="color:#EF4444">🗑</button>
+          <button class="hl-btn-sm" onclick='openEdit(${JSON.stringify(r)})'>✏️</button>
+          <button class="hl-btn-sm" onclick="deleteRule(${r.id})" style="color:#EF4444">🗑</button>
         </div>
       </div>`;
   }).join('');
