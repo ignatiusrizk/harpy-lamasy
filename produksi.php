@@ -221,7 +221,7 @@ $pageTitle  = '🧺 Produksi';
 <?php renderHead($pageTitle); ?>
 <style>
 .ol-main { padding: 20px; }
-.ol-content { max-width: 1200px; margin: 0 auto; }
+.ol-content { max-width: 1200px; margin: 0 auto; padding-bottom: 100px; }
 .stage-tab { padding:8px 14px;border:1px solid var(--off);background:#fff;border-radius:100px;font-size:13px;font-weight:600;white-space:nowrap;cursor:pointer; }
 .stage-tab.active { background:var(--teal);color:#fff;border-color:var(--teal); }
 .stage-tab .cnt { display:inline-block;margin-left:4px;background:rgba(0,0,0,.08);padding:1px 7px;border-radius:100px;font-size:11px; }
@@ -233,6 +233,33 @@ $pageTitle  = '🧺 Produksi';
 .modal label{display:block;font-size:13px;font-weight:600;margin-top:10px;margin-bottom:4px}
 .modal input[type=text],.modal input[type=number],.modal select,.modal textarea{width:100%;box-sizing:border-box;padding:8px 10px;border:1px solid var(--off);border-radius:8px;font-size:14px}
 .modal textarea{resize:vertical}
+
+/* Buttons — local fix (global .btn not defined in harpy-erp.css; only .hl-btn exists) */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:10px 18px;border-radius:10px;font-family:var(--font);font-size:14px;font-weight:600;cursor:pointer;transition:all .2s;border:1px solid var(--off);background:#fff;color:var(--navy-d)}
+.btn:hover{border-color:var(--teal)}
+.btn-primary{background:var(--teal);color:var(--navy-d);border-color:var(--teal)}
+.btn-primary:hover{background:var(--teal-d);box-shadow:0 4px 14px rgba(53,232,213,.3)}
+
+/* Scan FAB — page signature element. Floating at thumb-reach for mobile worker. */
+.scan-fab{
+  position:fixed;right:20px;bottom:20px;z-index:150;
+  width:64px;height:64px;border-radius:50%;
+  background:var(--teal);color:var(--navy-d);
+  border:none;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  font-size:28px;
+  box-shadow:0 8px 24px rgba(53,232,213,.45), 0 2px 6px rgba(15,28,58,.12);
+  transition:transform .15s, box-shadow .2s;
+  animation:fabPulse 2.4s ease-in-out infinite;
+}
+.scan-fab:hover{box-shadow:0 12px 32px rgba(53,232,213,.55), 0 4px 10px rgba(15,28,58,.18)}
+.scan-fab:active{transform:scale(.94);animation:none}
+@keyframes fabPulse{
+  0%,100%{box-shadow:0 8px 24px rgba(53,232,213,.45), 0 2px 6px rgba(15,28,58,.12)}
+  50%{box-shadow:0 8px 24px rgba(53,232,213,.7), 0 0 0 8px rgba(53,232,213,.08)}
+}
+@media (prefers-reduced-motion:reduce){.scan-fab{animation:none}}
+@media (max-width:480px){.scan-fab{right:16px;bottom:16px;width:58px;height:58px;font-size:24px}}
 </style>
 </head>
 <body>
@@ -240,10 +267,7 @@ $pageTitle  = '🧺 Produksi';
 
 <main class="ol-main">
   <div class="ol-content">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-      <h1 style="margin:0">🧺 Produksi</h1>
-      <button class="btn btn-primary" onclick="startScan()">📷 Scan QR</button>
-    </div>
+    <h1 style="margin:0 0 16px">🧺 Produksi</h1>
 
     <!-- Stage tabs -->
     <div id="stageTabs" style="display:flex;gap:6px;overflow-x:auto;padding-bottom:8px;margin-bottom:12px;-webkit-overflow-scrolling:touch">
@@ -277,6 +301,8 @@ $pageTitle  = '🧺 Produksi';
     </div>
   </div>
 </main>
+
+<button class="scan-fab" onclick="startScan()" aria-label="Scan QR Order" title="Scan QR Order">📷</button>
 
 <script src="/assets/html5-qrcode.min.js?v=<?= @filemtime(__DIR__ . '/assets/html5-qrcode.min.js') ?: '1' ?>"></script>
 <script>
