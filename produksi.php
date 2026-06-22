@@ -272,6 +272,7 @@ $pageTitle  = '🧺 Produksi';
   </div>
 </main>
 
+<script src="/assets/html5-qrcode.min.js?v=<?= @filemtime(__DIR__ . '/assets/html5-qrcode.min.js') ?: '1' ?>"></script>
 <script>
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;')}
 
@@ -525,11 +526,54 @@ async function submitStage() {
   }
 }
 
-function startScan() {
-  // Implementation di Task 8
-  alert('Scanner akan diisi di Task 8');
+let qrInstance = null;
+
+async function startScan() {
+  document.getElementById('scanModal').classList.add('open');
+  try {
+    qrInstance = new Html5Qrcode("scanArea");
+    await qrInstance.start(
+      {facingMode: "environment"},
+      {fps: 10, qrbox: 250},
+      async (decoded) => {
+        await stopScan();
+        // Extract no_order: URL param atau bare kode
+        const m = decoded.match(/order=([A-Z0-9-]+)/i) || decoded.match(/^([A-Z0-9-]{3,})$/i);
+        if (!m) { alert('QR tidak dikenali: ' + decoded.slice(0, 60)); return; }
+        const r = await fetch('/produksi.php?action=get_by_kode&kode=' + encodeURIComponent(m[1]));
+        const order = await r.json();
+        if (order.error) { alert('❌ ' + order.error); return; }
+        // Set currentStage berdasarkan status_proses order, lalu open modal
+        const stageMap = {'masuk':'terima','cuci':'kering','kering':'setrika','setrika':'siap','siap':'diambil'};
+        const nextStage = stageMap[order.status_proses] || order.status_proses;
+        currentStage = nextStage;
+        // Sync tab UI
+        document.querySelectorAll('.stage-tab').forEach(b => b.classList.toggle('active', b.dataset.stage === nextStage));
+        await openStageModal(order.id);
+      },
+      () => {} // silent scan errors
+    );
+  } catch (e) {
+    alert('Tidak bisa akses kamera: ' + e.message + '\n\nGunakan input manual no_order.');
+    stopScan();
+    const kode = prompt('Input no_order manual:');
+    if (kode) {
+      const r = await fetch('/produksi.php?action=get_by_kode&kode=' + encodeURIComponent(kode));
+      const order = await r.json();
+      if (order.error) { alert(order.error); return; }
+      const stageMap = {'masuk':'terima','cuci':'kering','kering':'setrika','setrika':'siap','siap':'diambil'};
+      currentStage = stageMap[order.status_proses] || order.status_proses;
+      document.querySelectorAll('.stage-tab').forEach(b => b.classList.toggle('active', b.dataset.stage === currentStage));
+      await openStageModal(order.id);
+    }
+  }
 }
-function stopScan() {
+
+async function stopScan() {
+  if (qrInstance) {
+    try { await qrInstance.stop(); } catch {}
+    qrInstance = null;
+  }
   document.getElementById('scanModal').classList.remove('open');
 }
 
