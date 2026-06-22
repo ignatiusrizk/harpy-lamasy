@@ -61,11 +61,22 @@ if ($action) {
     if ($action === 'list_rewards') {
         try {
             $db = Database::get();
-            $st = $db->prepare("SELECT * FROM hl_poin_reward
-                                 WHERE tenant_id=? AND outlet_id=?
-                                 ORDER BY poin_dibutuhkan ASC");
+            // ponytail: junction logic — show global rewards + rewards scoped to this outlet
+            $st = $db->prepare(
+                "SELECT r.* FROM hl_poin_reward r
+                  WHERE r.tenant_id=? AND r.is_active=1
+                    AND (NOT EXISTS (SELECT 1 FROM hl_poin_reward_outlet WHERE reward_id=r.id)
+                         OR EXISTS (SELECT 1 FROM hl_poin_reward_outlet WHERE reward_id=r.id AND outlet_id=?))
+                  ORDER BY r.poin_dibutuhkan ASC"
+            );
             $st->execute([$tid, $oid]);
-            echo json_encode(['ok'=>true, 'rows'=>$st->fetchAll(PDO::FETCH_ASSOC)]);
+            $rows = $st->fetchAll(PDO::FETCH_ASSOC);
+            foreach ($rows as &$r) {
+                $outlets = Loyalty::applicableOutlets((int)$r['id']);
+                $r['hq_managed'] = count($outlets) !== 1; // 0=global, 2+=multi-outlet → HQ
+            }
+            unset($r);
+            echo json_encode(['ok'=>true, 'rows'=>$rows]);
         } catch (Throwable $e) { echo json_encode(['error'=>$e->getMessage()]); }
         exit;
     }
@@ -88,23 +99,30 @@ if ($action) {
 
         try {
             $db = Database::get();
+            $userRole = $user['role'] ?? '';
             if ($id > 0) {
-                // Update
+                // Edit: block kalau HQ-managed dan bukan owner/superadmin
+                if (Loyalty::isHqManaged($id) && !in_array($userRole, ['owner','superadmin'], true)) {
+                    echo json_encode(['error'=>'Reward ini dikelola HQ. Edit lewat /hq/loyalty.']); exit;
+                }
                 $db->prepare("UPDATE hl_poin_reward
                                  SET nama_reward=?, deskripsi=?, poin_dibutuhkan=?, tipe=?, nilai=?,
                                      min_transaksi=?, max_redeem_per_bulan=?, is_active=?
-                               WHERE id=? AND tenant_id=? AND outlet_id=?")
-                   ->execute([$nama, $desk, $poin, $tipe, $nilai, $minTrx, $maxBulan, $active, $id, $tid, $oid]);
+                               WHERE id=? AND tenant_id=?")
+                   ->execute([$nama, $desk, $poin, $tipe, $nilai, $minTrx, $maxBulan, $active, $id, $tid]);
                 logAudit('update_reward', 'loyalty', "Reward #$id: $nama");
                 echo json_encode(['ok'=>true, 'id'=>$id]);
             } else {
-                // Create
+                // Create: insert reward then auto-scope junction to current outlet
                 $db->prepare("INSERT INTO hl_poin_reward
                                 (tenant_id, outlet_id, nama_reward, deskripsi, poin_dibutuhkan,
                                  tipe, nilai, min_transaksi, max_redeem_per_bulan, is_active)
                               VALUES (?,?,?,?,?,?,?,?,?,?)")
                    ->execute([$tid, $oid, $nama, $desk, $poin, $tipe, $nilai, $minTrx, $maxBulan, $active]);
                 $newId = (int)$db->lastInsertId();
+                // ponytail: outlet-scope junction — single outlet only for outlet-created rewards
+                $db->prepare("INSERT IGNORE INTO hl_poin_reward_outlet (reward_id, outlet_id) VALUES (?,?)")
+                   ->execute([$newId, $oid]);
                 logAudit('create_reward', 'loyalty', "Reward baru: $nama");
                 echo json_encode(['ok'=>true, 'id'=>$newId]);
             }
@@ -118,11 +136,14 @@ if ($action) {
         $d = json_decode(file_get_contents('php://input'), true) ?: [];
         $id = (int)($d['id'] ?? 0);
         if (!$id) { echo json_encode(['error'=>'id wajib']); exit; }
+        $userRole = $user['role'] ?? '';
+        if (Loyalty::isHqManaged($id) && !in_array($userRole, ['owner','superadmin'], true)) {
+            echo json_encode(['error'=>'Reward ini dikelola HQ.']); exit;
+        }
         try {
             Database::get()
-                ->prepare("UPDATE hl_poin_reward SET is_active=1-is_active
-                            WHERE id=? AND tenant_id=? AND outlet_id=?")
-                ->execute([$id, $tid, $oid]);
+                ->prepare("UPDATE hl_poin_reward SET is_active=1-is_active WHERE id=? AND tenant_id=?")
+                ->execute([$id, $tid]);
             logAudit('toggle_reward', 'loyalty', "Reward #$id toggled");
             echo json_encode(['ok'=>true]);
         } catch (Throwable $e) { echo json_encode(['error'=>$e->getMessage()]); }
@@ -135,6 +156,10 @@ if ($action) {
         $d  = json_decode(file_get_contents('php://input'), true) ?: [];
         $id = (int)($d['id'] ?? 0);
         if (!$id) { echo json_encode(['error'=>'id wajib']); exit; }
+        $userRole = $user['role'] ?? '';
+        if (Loyalty::isHqManaged($id) && !in_array($userRole, ['owner','superadmin'], true)) {
+            echo json_encode(['error'=>'Reward ini dikelola HQ.']); exit;
+        }
         try {
             // Cek apakah pernah dipakai
             $db = Database::get();
@@ -144,8 +169,8 @@ if ($action) {
                 echo json_encode(['error'=>'Reward ini sudah pernah dipakai — non-aktifkan saja agar history tetap valid.']);
                 exit;
             }
-            $db->prepare("DELETE FROM hl_poin_reward WHERE id=? AND tenant_id=? AND outlet_id=?")
-               ->execute([$id, $tid, $oid]);
+            $db->prepare("DELETE FROM hl_poin_reward WHERE id=? AND tenant_id=?")
+               ->execute([$id, $tid]);
             logAudit('delete_reward', 'loyalty', "Reward #$id deleted");
             echo json_encode(['ok'=>true]);
         } catch (Throwable $e) { echo json_encode(['error'=>$e->getMessage()]); }
@@ -290,6 +315,7 @@ if ($action) {
 
 <script>
 const CAN_EDIT_LOYALTY = <?= hasPermission('pelanggan.edit') ? 'true' : 'false' ?>;
+const USER_ROLE = <?= json_encode($user['role'] ?? '') ?>;
 
 async function loadConfig(){
   try{
@@ -350,9 +376,13 @@ async function loadRewards(){
       const nilaiTxt = r.tipe === 'diskon_nominal' ? 'Rp ' + parseInt(r.nilai).toLocaleString('id-ID')
                     : r.tipe === 'diskon_persen'  ? r.nilai + '%'
                     : r.nilai + ' qty';
+      const badge = r.hq_managed
+        ? '<span class="pill" style="background:#DBEAFE;color:#1E40AF">🏢 HQ</span>'
+        : '<span class="pill" style="background:#FEF3C7;color:#92400E">🏪 Outlet ini</span>';
+      const canEdit = CAN_EDIT_LOYALTY && (!r.hq_managed || USER_ROLE === 'owner' || USER_ROLE === 'superadmin');
       return `<div class="reward-row ${r.is_active==1?'':'inactive'}">
         <div>
-          <div style="font-size:14px;font-weight:700;color:var(--navy)">${esc(r.nama_reward)}</div>
+          <div style="font-size:14px;font-weight:700;color:var(--navy)">${esc(r.nama_reward)} ${badge}</div>
           <div style="font-size:11px;color:var(--gray);margin-top:2px">
             <span class="pill" style="background:${bg};color:${fg}">${TIPE_LABEL[r.tipe]||r.tipe}</span>
             · Nilai: <strong>${nilaiTxt}</strong>
@@ -367,9 +397,9 @@ async function loadRewards(){
           </span>
         </div>
         <div style="display:flex;gap:4px">
-          ${CAN_EDIT_LOYALTY ? `<button class="hl-btn hl-btn-outline hl-btn-sm" onclick='editReward(${JSON.stringify(r)})'>✏️</button>` : ''}
-          ${CAN_EDIT_LOYALTY ? `<button class="hl-btn hl-btn-outline hl-btn-sm" onclick="toggleReward(${r.id})" title="${r.is_active==1?'Nonaktifkan':'Aktifkan'}">${r.is_active==1?'⏸':'▶'}</button>` : ''}
-          ${CAN_EDIT_LOYALTY ? `<button class="hl-btn hl-btn-outline hl-btn-sm" style="color:#dc2626" onclick="deleteReward(${r.id})" title="Hapus">🗑</button>` : ''}
+          ${canEdit ? `<button class="hl-btn hl-btn-outline hl-btn-sm" onclick='editReward(${JSON.stringify(r)})'>✏️</button>` : (CAN_EDIT_LOYALTY ? `<span title="Reward HQ, edit dari /hq/loyalty" style="font-size:16px;cursor:default">🔒</span>` : '')}
+          ${canEdit ? `<button class="hl-btn hl-btn-outline hl-btn-sm" onclick="toggleReward(${r.id})" title="${r.is_active==1?'Nonaktifkan':'Aktifkan'}">${r.is_active==1?'⏸':'▶'}</button>` : ''}
+          ${canEdit ? `<button class="hl-btn hl-btn-outline hl-btn-sm" style="color:#dc2626" onclick="deleteReward(${r.id})" title="Hapus">🗑</button>` : ''}
         </div>
       </div>`;
     }).join('');
