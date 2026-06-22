@@ -238,7 +238,7 @@ require __DIR__ . '/_layout_open.php';
 .metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
 .metric{background:#fff;border:1px solid #EEF1F8;border-radius:12px;padding:16px;box-shadow:0 1px 6px rgba(0,0,0,.05);border-top:3px solid #35E8D5}
 .metric.amber{border-top-color:#F59E0B}.metric.green{border-top-color:#10B981}.metric.blue{border-top-color:#3B82F6}
-.metric-num{font-size:1.4rem;font-weight:800;color:#0F1C3A;font-family:monospace}
+.metric-num{font-size:1.4rem;font-weight:800;color:#0F1C3A;font-family:var(--mono)}
 .metric-label{font-size:12px;color:#6B7280;font-weight:600;margin-top:2px}
 .panel{background:#fff;border:1px solid #EEF1F8;border-radius:14px;padding:20px;box-shadow:0 1px 6px rgba(0,0,0,.05)}
 .panel-title{font-size:14px;font-weight:700;color:#0F1C3A;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
@@ -251,7 +251,7 @@ require __DIR__ . '/_layout_open.php';
 .tbl{width:100%;border-collapse:collapse;font-size:13px}
 .tbl th{background:#F7F8FC;padding:9px 11px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;color:#6B7280}
 .tbl td{padding:10px 11px;border-top:1px solid #F0F1F4}
-.tbl .num{font-family:monospace;font-weight:700;text-align:right}
+.tbl .num{font-family:var(--mono);font-weight:700;text-align:right}
 .pill{font-size:11px;font-weight:700;padding:2px 8px;border-radius:100px}
 .pill-warn{background:#FEF3C7;color:#92400E}.pill-ok{background:#D1FAE5;color:#065F46}.pill-gray{background:#F3F4F6;color:#6B7280}
 .empty{text-align:center;padding:30px;color:#9CA3AF;font-size:13px}
@@ -387,10 +387,10 @@ async function toggleKaryawan(btn, oid) {
     d.rows.forEach(g => {
       h += `<tr style="border-top:1px solid #E5E9F2">
         <td style="padding:6px 8px">${esc(g.name)}</td>
-        <td style="padding:6px 8px;text-align:right;font-family:monospace">${fmtRp(g.gaji_pokok)}</td>
-        <td style="padding:6px 8px;text-align:right;font-family:monospace;color:#065F46">${fmtRp(g.bonus||0)}</td>
-        <td style="padding:6px 8px;text-align:right;font-family:monospace;color:#991B1B">${fmtRp(g.potongan||0)}</td>
-        <td style="padding:6px 8px;text-align:right;font-family:monospace;font-weight:700">${fmtRp(g.total)}</td>
+        <td style="padding:6px 8px;text-align:right;font-family:var(--mono)">${fmtRp(g.gaji_pokok)}</td>
+        <td style="padding:6px 8px;text-align:right;font-family:var(--mono);color:#065F46">${fmtRp(g.bonus||0)}</td>
+        <td style="padding:6px 8px;text-align:right;font-family:var(--mono);color:#991B1B">${fmtRp(g.potongan||0)}</td>
+        <td style="padding:6px 8px;text-align:right;font-family:var(--mono);font-weight:700">${fmtRp(g.total)}</td>
         <td style="padding:6px 8px;text-align:center"><span class="pill ${g.status==='dibayar'?'pill-ok':'pill-warn'}">${esc(g.status)}</span></td>
         ${CAN_MANAGE?`<td style="padding:6px 8px;white-space:nowrap">
           <button class="btn btn-light btn-sm" style="padding:3px 8px;font-size:11px" onclick="showKomponen(${g.id})">▾ Komponen</button>
@@ -412,7 +412,7 @@ async function showKomponen(gajiId) {
   const html = d.rows.map(k => `<tr>
     <td style="padding:6px 8px">${esc(k.jenis)}</td>
     <td style="padding:6px 8px">${esc(k.nama)}</td>
-    <td style="padding:6px 8px;text-align:right;font-family:monospace;font-weight:600;color:${Number(k.amount)>=0?'#065F46':'#991B1B'}">${fmtRp(k.amount)}</td>
+    <td style="padding:6px 8px;text-align:right;font-family:var(--mono);font-weight:600;color:${Number(k.amount)>=0?'#065F46':'#991B1B'}">${fmtRp(k.amount)}</td>
     <td style="padding:6px 8px;font-size:11px;color:#64748B">${esc(k.keterangan||'')}</td>
   </tr>`).join('') || '<tr><td colspan="4" style="padding:12px;text-align:center;color:#9CA3AF">Belum ada komponen.</td></tr>';
   modal.querySelector('#komponenTbody').innerHTML = html;

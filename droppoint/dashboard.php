@@ -58,7 +58,7 @@ require __DIR__ . '/_layout_open.php';
 
 <div class="card" style="background:linear-gradient(135deg,#0F1C3A,#1a2d52);color:#fff">
   <div style="font-size:11px;font-weight:700;letter-spacing:.08em;color:#35E8D5;margin-bottom:4px">💰 KOMISI PENDING</div>
-  <div style="font-size:1.6rem;font-weight:800;font-family:monospace">Rp <?= number_format($komisiPending,0,',','.') ?></div>
+  <div style="font-size:1.6rem;font-weight:800;font-family:var(--mono,monospace)">Rp <?= number_format($komisiPending,0,',','.') ?></div>
   <a href="komisi.php" style="font-size:11px;color:rgba(255,255,255,.7);text-decoration:underline;display:inline-block;margin-top:6px">Lihat rincian →</a>
 </div>
 

@@ -145,7 +145,7 @@ body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif
 .tl-text strong { color:#374151; }
 .tl-text small { color:var(--gray); display:block; }
 .h2 { font-size:13px; font-weight:700; color:#374151; margin:0 0 8px; text-transform:uppercase; letter-spacing:0.5px; }
-form input { width:100%; padding:12px 14px; border:1px solid var(--border); border-radius:10px; font-size:15px; font-family:monospace; letter-spacing:2px; text-align:center; box-sizing:border-box; }
+form input { width:100%; padding:12px 14px; border:1px solid var(--border); border-radius:10px; font-size:15px; font-family:var(--mono); letter-spacing:2px; text-align:center; box-sizing:border-box; }
 form input:focus { outline:none; border-color:var(--teal); box-shadow:0 0 0 3px rgba(15,123,108,0.1); }
 .btn { display:block; width:100%; padding:13px 18px; background:var(--teal); color:#fff; border:none; border-radius:10px; font-size:15px; font-weight:700; cursor:pointer; margin-top:10px; }
 .btn:hover { background:#0d6b5c; }
@@ -249,13 +249,13 @@ form input:focus { outline:none; border-color:var(--teal); box-shadow:0 0 0 3px 
       <?php foreach ($order['items_detail'] as $it): ?>
       <div class="item">
         <span><?= htmlspecialchars($it['nama_layanan']) ?> <small style="color:var(--gray)">× <?= rtrim(rtrim(number_format((float)$it['jumlah'], 2), '0'), '.') ?> <?= htmlspecialchars($it['satuan']) ?></small></span>
-        <span style="font-family:monospace;font-weight:600"><?= fmtMoney($it['subtotal']) ?></span>
+        <span style="font-family:var(--mono);font-weight:600"><?= fmtMoney($it['subtotal']) ?></span>
       </div>
       <?php endforeach; ?>
     </div>
     <div style="margin-top:10px;display:flex;justify-content:space-between;font-weight:700;font-size:14px">
       <span>Total Tagihan</span>
-      <span style="color:var(--teal);font-family:monospace"><?= fmtMoney($order['total']) ?></span>
+      <span style="color:var(--teal);font-family:var(--mono)"><?= fmtMoney($order['total']) ?></span>
     </div>
     <?php if ((float)($order['dp'] ?? 0) > 0): ?>
     <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--gray);margin-top:4px">

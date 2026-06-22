@@ -116,7 +116,7 @@ require __DIR__ . '/_layout_open.php';
 .tbl{width:100%;border-collapse:collapse;font-size:13px}
 .tbl th{background:#F7F8FC;padding:9px 11px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;color:#6B7280}
 .tbl td{padding:10px 11px;border-top:1px solid #F0F1F4}
-.tbl .num{font-family:monospace;font-weight:700;text-align:right}
+.tbl .num{font-family:var(--mono);font-weight:700;text-align:right}
 .pill{font-size:11px;font-weight:700;padding:2px 8px;border-radius:100px}
 .pill-ok{background:#D1FAE5;color:#065F46}
 .pill-warn{background:#FEF3C7;color:#92400E}

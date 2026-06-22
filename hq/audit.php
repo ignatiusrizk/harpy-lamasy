@@ -181,14 +181,14 @@ require __DIR__ . '/_layout_open.php';
 
   .stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}
   .stat-pill{background:#fff;border-radius:10px;padding:10px 14px;box-shadow:0 1px 6px rgba(0,0,0,.05);display:flex;align-items:center;gap:10px}
-  .stat-pill .num{font-size:1.4rem;font-weight:800;color:#0F1C3A;font-family:monospace}
+  .stat-pill .num{font-size:1.4rem;font-weight:800;color:#0F1C3A;font-family:var(--mono)}
   .stat-pill .lbl{font-size:11px;color:#6B7280;text-transform:uppercase;letter-spacing:.05em;font-weight:700}
 
   .timeline{background:#fff;border-radius:12px;box-shadow:0 1px 6px rgba(0,0,0,.05);padding:6px 0}
   .log-row{display:grid;grid-template-columns:auto 1fr auto;gap:12px;padding:13px 22px;
            border-bottom:1px solid #F3F4F6;font-size:13px;align-items:start}
   .log-row:last-child{border-bottom:none}
-  .log-time{font-family:monospace;color:#9CA3AF;font-size:11px;white-space:nowrap;line-height:1.4;padding-top:1px}
+  .log-time{font-family:var(--mono);color:#9CA3AF;font-size:11px;white-space:nowrap;line-height:1.4;padding-top:1px}
   .log-time strong{color:#0F1C3A;display:block;font-size:12px;font-weight:600}
   .log-main strong{color:#0F1C3A;font-weight:700}
   .log-main small{display:block;color:#6B7280;font-size:11px;margin-top:3px;line-height:1.5;word-break:break-word}

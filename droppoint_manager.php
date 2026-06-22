@@ -404,7 +404,7 @@ if ($action) {
 .tbl{width:100%;border-collapse:collapse;font-size:13px}
 .tbl th{background:#F7F8FC;padding:9px 11px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;color:#6B7280}
 .tbl td{padding:10px 11px;border-top:1px solid #F0F1F4}
-.tbl .num{font-family:monospace;font-weight:700;text-align:right}
+.tbl .num{font-family:var(--mono,monospace);font-weight:700;text-align:right}
 .btn{padding:7px 14px;border-radius:7px;font-weight:700;font-size:12px;border:none;cursor:pointer;font-family:inherit;text-decoration:none;display:inline-flex;align-items:center;gap:5px}
 .btn-primary{background:#0F1C3A;color:#fff}.btn-primary:hover{background:#1a2d52}
 .btn-light{background:#fff;color:#0F1C3A;border:1px solid #E5E9F2}
@@ -422,7 +422,7 @@ if ($action) {
 .fld label{display:block;font-size:12px;font-weight:700;color:#374151;margin-bottom:5px}
 .fld input,.fld select,.fld textarea{width:100%;padding:9px 12px;border:1px solid #E5E9F2;border-radius:8px;font-family:inherit;font-size:14px}
 .fld-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.creds{background:#FEF3C7;border:1px solid #FDE68A;border-radius:10px;padding:14px;margin:10px 0;font-family:monospace;font-size:13px}
+.creds{background:#FEF3C7;border:1px solid #FDE68A;border-radius:10px;padding:14px;margin:10px 0;font-family:var(--mono,monospace);font-size:13px}
 .creds strong{color:#0F1C3A;font-family:'Plus Jakarta Sans',sans-serif}
 .empty{text-align:center;padding:30px;color:#9CA3AF;font-size:13px}
 </style>
@@ -560,12 +560,12 @@ async function loadMitra(){
                    : m.komisi_model==='flat'     ? `Rp ${Number(m.komisi_flat).toLocaleString('id-ID')}/order`
                    : `Kombinasi`;
       const akunHtml = m.username
-        ? `<span style="font-family:monospace;font-size:11px">${esc(m.username)}</span><br>
+        ? `<span style="font-family:var(--mono,monospace);font-size:11px">${esc(m.username)}</span><br>
            <small style="color:${m.user_active==1?'#10B981':'#9CA3AF'}">${m.user_active==1?'aktif':'nonaktif'}</small>`
         : '<small style="color:#9CA3AF">belum dibuat</small>';
       html += `<tr>
         <td data-lbl="Mitra"><strong>${esc(m.nama_mitra)}</strong>${m.alamat?`<br><small style="color:#9CA3AF">${esc(m.alamat).substring(0,40)}</small>`:''}</td>
-        <td data-lbl="WA" style="font-family:monospace;font-size:11px">${esc(m.wa||'-')}</td>
+        <td data-lbl="WA" style="font-family:var(--mono,monospace);font-size:11px">${esc(m.wa||'-')}</td>
         <td data-lbl="Komisi">${komisi}</td>
         <td data-lbl="Order bln ini" style="text-align:center">${m.order_bulan}</td>
         <td data-lbl="Akun">${akunHtml}</td>

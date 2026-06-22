@@ -106,7 +106,7 @@ require __DIR__ . '/_layout_open.php';
 .ai-detail summary { cursor:pointer; user-select:none; padding:4px 0; font-weight:600 }
 .ai-detail summary:hover { color:#0F1C3A }
 .ai-sql { background:#1F2937; color:#A7F3D0; padding:10px 12px; border-radius:8px;
-  font-family:monospace; font-size:11px; white-space:pre-wrap; margin-top:6px; overflow-x:auto }
+  font-family:var(--mono); font-size:11px; white-space:pre-wrap; margin-top:6px; overflow-x:auto }
 .ai-table { width:100%; border-collapse:collapse; font-size:12px; margin-top:8px; background:#fff; border:1px solid #EEF1F8; border-radius:8px; overflow:hidden }
 .ai-table th { background:#F7F8FC; color:#374151; font-weight:700; padding:7px 10px; text-align:left; border-bottom:1px solid #EEF1F8; font-size:11px }
 .ai-table td { padding:6px 10px; border-bottom:1px solid #F7F8FC; color:#4B5563 }

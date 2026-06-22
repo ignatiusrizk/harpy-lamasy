@@ -246,7 +246,7 @@ require __DIR__ . '/_layout_open.php';
 
   .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}
   .stat-card{background:#fff;border-radius:12px;padding:16px 18px;box-shadow:0 1px 6px rgba(0,0,0,.05);border-top:3px solid #35E8D5}
-  .stat-num{font-size:1.5rem;font-weight:800;color:#0F1C3A;font-family:monospace}
+  .stat-num{font-size:1.5rem;font-weight:800;color:#0F1C3A;font-family:var(--mono)}
   .stat-label{font-size:12px;color:#6B7280;font-weight:600}
 
   .toolbar{background:#fff;border-radius:12px;padding:14px 18px;display:flex;gap:10px;align-items:center;
@@ -287,7 +287,7 @@ require __DIR__ . '/_layout_open.php';
   .tipe-b2b{background:#FED7AA;color:#9A3412}
   .pl-outlet{font-size:11px;color:#6B7280}
   .pl-outlet strong{color:#0F1C3A;display:block;font-size:12px}
-  .pl-num{font-family:monospace;font-weight:700;color:#0F1C3A;font-size:13px;text-align:right}
+  .pl-num{font-family:var(--mono);font-weight:700;color:#0F1C3A;font-size:13px;text-align:right}
   .pl-num small{display:block;color:#9CA3AF;font-weight:400;font-size:10px;text-transform:uppercase}
   .pl-actions{font-size:12px;color:#0891B2;font-weight:700}
 
@@ -315,13 +315,13 @@ require __DIR__ . '/_layout_open.php';
               border-radius:6px;margin-bottom:4px;font-size:12px;align-items:center}
   .order-item .ono{font-weight:700;color:#0F1C3A}
   .order-item .meta{color:#6B7280}
-  .order-item .amt{font-family:monospace;font-weight:700;color:#0F1C3A;text-align:right}
+  .order-item .amt{font-family:var(--mono);font-weight:700;color:#0F1C3A;text-align:right}
   .order-outlet-tag{background:#F0FDFB;color:#0891B2;font-size:10px;font-weight:700;padding:1px 6px;
                     border-radius:4px;margin-left:5px}
 
   .bd-row{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid #F3F4F6;font-size:13px}
   .bd-row strong{color:#0F1C3A}
-  .bd-row .bd-money{font-family:monospace;font-weight:700;color:#0F1C3A}
+  .bd-row .bd-money{font-family:var(--mono);font-weight:700;color:#0F1C3A}
 
   .btn{padding:8px 14px;border-radius:8px;font-weight:700;font-size:13px;border:none;cursor:pointer;
        font-family:inherit;text-decoration:none;display:inline-flex;align-items:center;gap:5px}

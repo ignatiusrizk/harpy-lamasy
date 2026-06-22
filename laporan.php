@@ -1187,7 +1187,7 @@ async function loadProd(){
         <td data-lbl="Izin" style="text-align:center">${r.izin}</td>
         <td data-lbl="Sakit" style="text-align:center">${r.sakit}</td>
         <td data-lbl="Alpha" style="text-align:center">${r.alpha>0?`<span style="background:#FEE2E2;color:#991B1B;font-size:11px;font-weight:700;padding:2px 7px;border-radius:100px">${r.alpha}</span>`:'0'}</td>
-        <td data-lbl="Order Handle" style="text-align:right;font-family:monospace;font-weight:700">${r.order_handle}</td>
+        <td data-lbl="Order Handle" style="text-align:right;font-family:var(--mono);font-weight:700">${r.order_handle}</td>
         <td data-lbl="Skor" style="text-align:center"><span style="${pillClass};font-size:11px;font-weight:700;padding:2px 9px;border-radius:100px">${skor}%</span></td>
       </tr>`;
     });

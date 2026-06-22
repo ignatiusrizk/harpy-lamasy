@@ -916,17 +916,17 @@ if ($_dashRole === 'kasir'):
 ?>
 <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px" class="rk-grid3">
   <div style="background:#fff;border-radius:12px;padding:18px;box-shadow:0 1px 6px rgba(0,0,0,.05);border-top:3px solid #35E8D5">
-    <div style="font-size:1.4rem;font-weight:800;color:#0F1C3A;font-family:monospace"><?= (int)$kasirStats['total'] ?></div>
+    <div style="font-size:1.4rem;font-weight:800;color:#0F1C3A;font-family:var(--mono)"><?= (int)$kasirStats['total'] ?></div>
     <div style="font-size:12px;color:#6B7280;font-weight:600">Transaksi Saya Hari Ini</div>
     <div style="font-size:11px;color:#9CA3AF;margin-top:3px">Rp <?= number_format((int)$kasirStats['omset'], 0, ',', '.') ?></div>
   </div>
   <div style="background:#fff;border-radius:12px;padding:18px;box-shadow:0 1px 6px rgba(0,0,0,.05);border-top:3px solid #3B82F6">
-    <div style="font-size:1.4rem;font-weight:800;color:#0F1C3A;font-family:monospace"><?= $orderMasuk ?></div>
+    <div style="font-size:1.4rem;font-weight:800;color:#0F1C3A;font-family:var(--mono)"><?= $orderMasuk ?></div>
     <div style="font-size:12px;color:#6B7280;font-weight:600">Order Masuk Hari Ini</div>
     <div style="font-size:11px;color:#9CA3AF;margin-top:3px">Semua kasir outlet</div>
   </div>
   <div style="background:#fff;border-radius:12px;padding:18px;box-shadow:0 1px 6px rgba(0,0,0,.05);border-top:3px solid #F59E0B">
-    <div style="font-size:1.4rem;font-weight:800;color:#0F1C3A;font-family:monospace"><?= $orderSiap ?></div>
+    <div style="font-size:1.4rem;font-weight:800;color:#0F1C3A;font-family:var(--mono)"><?= $orderSiap ?></div>
     <div style="font-size:12px;color:#6B7280;font-weight:600">Siap Diambil</div>
     <div style="font-size:11px;color:#9CA3AF;margin-top:3px">Perlu notif pelanggan</div>
   </div>
@@ -970,12 +970,12 @@ if ($_dashRole === 'kasir'):
 ?>
 <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:20px" class="rk-grid2">
   <div style="background:#fff;border-radius:12px;padding:18px;box-shadow:0 1px 6px rgba(0,0,0,.05);border-top:3px solid #F59E0B">
-    <div style="font-size:1.5rem;font-weight:800;color:#0F1C3A;font-family:monospace"><?= $perluKerja ?></div>
+    <div style="font-size:1.5rem;font-weight:800;color:#0F1C3A;font-family:var(--mono)"><?= $perluKerja ?></div>
     <div style="font-size:12px;color:#6B7280;font-weight:600">Perlu Dikerjakan</div>
     <div style="font-size:11px;color:#9CA3AF;margin-top:3px">Status: cuci / kering / setrika</div>
   </div>
   <div style="background:#fff;border-radius:12px;padding:18px;box-shadow:0 1px 6px rgba(0,0,0,.05);border-top:3px solid #34D399">
-    <div style="font-size:1.5rem;font-weight:800;color:#0F1C3A;font-family:monospace"><?= $selesaiHariIni ?></div>
+    <div style="font-size:1.5rem;font-weight:800;color:#0F1C3A;font-family:var(--mono)"><?= $selesaiHariIni ?></div>
     <div style="font-size:12px;color:#6B7280;font-weight:600">Selesai Hari Ini</div>
     <div style="font-size:11px;color:#9CA3AF;margin-top:3px">Status: siap</div>
   </div>
@@ -1027,11 +1027,11 @@ if ($_dashRole === 'kasir'):
 ?>
 <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:20px" class="rk-grid2">
   <div style="background:#fff;border-radius:12px;padding:18px;box-shadow:0 1px 6px rgba(0,0,0,.05);border-top:3px solid #F59E0B">
-    <div style="font-size:1.5rem;font-weight:800;color:#0F1C3A;font-family:monospace"><?= $siapAntar ?></div>
+    <div style="font-size:1.5rem;font-weight:800;color:#0F1C3A;font-family:var(--mono)"><?= $siapAntar ?></div>
     <div style="font-size:12px;color:#6B7280;font-weight:600">Siap Antar Hari Ini</div>
   </div>
   <div style="background:#fff;border-radius:12px;padding:18px;box-shadow:0 1px 6px rgba(0,0,0,.05);border-top:3px solid #34D399">
-    <div style="font-size:1.5rem;font-weight:800;color:#0F1C3A;font-family:monospace"><?= $sudahAntar ?></div>
+    <div style="font-size:1.5rem;font-weight:800;color:#0F1C3A;font-family:var(--mono)"><?= $sudahAntar ?></div>
     <div style="font-size:12px;color:#6B7280;font-weight:600">Sudah Diantar Hari Ini</div>
   </div>
 </div>
@@ -1478,7 +1478,7 @@ async function loadExtras(){
           return `<div style="margin-bottom:7px">
             <div style="display:flex;justify-content:space-between;font-size:12px">
               <span>${SEG_LBL[s.seg]||s.seg}</span>
-              <span style="font-family:monospace;font-weight:700">${fmt(s.total)} <small style="color:#9CA3AF">${pct}%</small></span>
+              <span style="font-family:var(--mono);font-weight:700">${fmt(s.total)} <small style="color:#9CA3AF">${pct}%</small></span>
             </div>
             <div style="background:#EEF1F8;border-radius:100px;height:5px;margin-top:2px"><div style="background:#35E8D5;height:100%;width:${pct}%;border-radius:100px"></div></div>
           </div>`;
@@ -1494,7 +1494,7 @@ async function loadExtras(){
               <div style="font-weight:700;color:#0F1C3A;font-size:12px">${medal} ${p.nama||'-'}</div>
               <div style="font-size:10px;color:#9CA3AF">${p.ord||0} order</div>
             </div>
-            <div style="font-family:monospace;font-weight:700;font-size:12px">${fmt(p.spend)}</div>
+            <div style="font-family:var(--mono);font-weight:700;font-size:12px">${fmt(p.spend)}</div>
           </div>`;
         }).join('')
       : '<div style="color:#9CA3AF">Belum ada pelanggan terdaftar</div>';
@@ -1507,12 +1507,12 @@ async function loadExtras(){
     document.getElementById('wowBox').innerHTML = `
       <div style="margin-bottom:8px">
         <div style="font-size:11px;color:#6B7280">Omset minggu ini</div>
-        <div style="font-family:monospace;font-weight:800;color:#0F1C3A">${fmt(w.this_omset)}</div>
+        <div style="font-family:var(--mono);font-weight:800;color:#0F1C3A">${fmt(w.this_omset)}</div>
         <div style="font-size:11px">${arrow(oPct)} vs ${fmt(w.last_omset)} mgg lalu</div>
       </div>
       <div>
         <div style="font-size:11px;color:#6B7280">Order minggu ini</div>
-        <div style="font-family:monospace;font-weight:800;color:#0F1C3A">${w.this_order} order</div>
+        <div style="font-family:var(--mono);font-weight:800;color:#0F1C3A">${w.this_order} order</div>
         <div style="font-size:11px">${arrow(orPct)} vs ${w.last_order} mgg lalu</div>
       </div>`;
   } catch(e){}

@@ -524,7 +524,7 @@ require __DIR__ . '/_layout_open.php';
   .kr-card.inactive{opacity:.6;background:#F9FAFB}
   .perf-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:8px}
   .perf-card{background:#F9FAFB;border-radius:8px;padding:10px 14px;font-size:12px}
-  .perf-card strong{display:block;font-size:1.05rem;color:#0F1C3A;font-family:monospace;font-weight:800}
+  .perf-card strong{display:block;font-size:1.05rem;color:#0F1C3A;font-family:var(--mono);font-weight:800}
   .perf-card small{color:#6B7280}
 
   .karyawan-grid{display:grid;grid-template-columns:1fr;gap:10px}
@@ -974,7 +974,7 @@ async function showDetail(id){
     <div class="section">
       <div class="section-label">💳 Rekening Bank <small style="color:#9CA3AF;font-weight:400;text-transform:none">(untuk penggajian)</small></div>
       <div class="info-row"><span class="lbl">Bank</span><span class="val">${escapeHtml(k.bank_nama || '-')}</span></div>
-      <div class="info-row"><span class="lbl">No. Rekening</span><span class="val" style="font-family:monospace">${escapeHtml(k.no_rekening || '-')}</span></div>
+      <div class="info-row"><span class="lbl">No. Rekening</span><span class="val" style="font-family:var(--mono)">${escapeHtml(k.no_rekening || '-')}</span></div>
       <div class="info-row"><span class="lbl">Atas Nama</span><span class="val">${escapeHtml(k.bank_atasnama || '-')}</span></div>
     </div>` : ''}
 

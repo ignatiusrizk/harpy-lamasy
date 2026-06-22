@@ -224,10 +224,10 @@ require __DIR__ . '/_layout_open.php';
   .main-pill{background:#F0FDFB;color:#0891B2;font-size:9px;font-weight:800;padding:2px 7px;border-radius:4px}
 
   .ocard-metric{font-size:12px;color:#6B7280}
-  .ocard-metric strong{color:#0F1C3A;font-weight:800;font-family:monospace;display:block;font-size:14px;margin-bottom:1px}
+  .ocard-metric strong{color:#0F1C3A;font-weight:800;font-family:var(--mono);display:block;font-size:14px;margin-bottom:1px}
 
   .ocard-coin{font-size:12px;color:#6B7280}
-  .ocard-coin .num{color:#0F1C3A;font-weight:800;font-family:monospace;font-size:14px;display:block;margin-bottom:1px}
+  .ocard-coin .num{color:#0F1C3A;font-weight:800;font-family:var(--mono);font-size:14px;display:block;margin-bottom:1px}
   .ocard-coin small{font-size:10px;color:#9CA3AF;text-transform:uppercase}
 
   .ocard-actions{display:flex;flex-direction:column;gap:5px;align-items:flex-end}

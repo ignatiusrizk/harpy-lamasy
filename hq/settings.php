@@ -390,7 +390,7 @@ require __DIR__ . '/_layout_open.php';
   .info-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:14px}
   .info-card{background:linear-gradient(135deg,#F0FDFB,#fff);border:1px solid rgba(53,232,213,.2);
              border-radius:10px;padding:14px}
-  .info-num{font-size:1.4rem;font-weight:800;color:#0F1C3A;font-family:monospace;margin-bottom:2px}
+  .info-num{font-size:1.4rem;font-weight:800;color:#0F1C3A;font-family:var(--mono);margin-bottom:2px}
   .info-label{font-size:11px;color:#6B7280;font-weight:700;text-transform:uppercase;letter-spacing:.05em}
 
   .outlet-coin-row{display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:12px;
@@ -402,7 +402,7 @@ require __DIR__ . '/_layout_open.php';
   .st-trial{background:#DBEAFE;color:#1E40AF}
   .st-grace{background:#FEF3C7;color:#92400E}
   .st-active{background:#D1FAE5;color:#065F46}
-  .coin-num{font-family:monospace;font-weight:700;text-align:right;color:#0F1C3A}
+  .coin-num{font-family:var(--mono);font-weight:700;text-align:right;color:#0F1C3A}
   .coin-num small{display:block;color:#9CA3AF;font-weight:400;font-size:10px;text-transform:uppercase}
   .coin-trial{color:#F59E0B}
 
@@ -943,8 +943,8 @@ async function loadTopupHistory(){
               <tr style="border-top:1px solid #F3F4F6">
                 <td style="padding:9px 10px">${new Date(r.paid_at || r.created_at).toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'})}</td>
                 <td style="padding:9px 10px">${escapeHtml(r.type || 'topup')}</td>
-                <td style="padding:9px 10px;text-align:right;font-family:monospace;font-weight:700">Rp ${Number(r.amount||0).toLocaleString('id-ID')}</td>
-                <td style="padding:9px 10px;text-align:right;font-family:monospace">${Number(r.coin_amount||0).toLocaleString('id-ID')}</td>
+                <td style="padding:9px 10px;text-align:right;font-family:var(--mono);font-weight:700">Rp ${Number(r.amount||0).toLocaleString('id-ID')}</td>
+                <td style="padding:9px 10px;text-align:right;font-family:var(--mono)">${Number(r.coin_amount||0).toLocaleString('id-ID')}</td>
                 <td style="padding:9px 10px">
                   <span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:100px;
                               background:${r.status==='success'?'#D1FAE5':'#FEF3C7'};
@@ -992,10 +992,10 @@ async function loadCoinUsage(){
                   <div style="font-weight:600">${escapeHtml(r.feature_used || '-')}</div>
                   ${r.description ? `<div style="font-size:10px;color:#9CA3AF;margin-top:2px">${escapeHtml(r.description)}</div>` : ''}
                 </td>
-                <td style="padding:9px 10px;text-align:right;font-family:monospace;font-weight:700;color:#EF4444">
+                <td style="padding:9px 10px;text-align:right;font-family:var(--mono);font-weight:700;color:#EF4444">
                   -${Number(Math.abs(r.amount||0)).toLocaleString('id-ID')}
                 </td>
-                <td style="padding:9px 10px;text-align:right;font-family:monospace;color:#6B7280">${Number(r.balance_after||0).toLocaleString('id-ID')}</td>
+                <td style="padding:9px 10px;text-align:right;font-family:var(--mono);color:#6B7280">${Number(r.balance_after||0).toLocaleString('id-ID')}</td>
               </tr>
             `).join('')}
           </tbody>

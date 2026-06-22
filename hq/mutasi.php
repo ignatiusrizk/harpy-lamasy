@@ -93,7 +93,7 @@ require __DIR__ . '/_layout_open.php';
   .row{display:grid;grid-template-columns:auto 1fr auto;gap:14px;padding:14px 22px;
        border-bottom:1px solid #F3F4F6;font-size:13px;align-items:start}
   .row:last-child{border-bottom:none}
-  .row-date{font-family:monospace;color:#9CA3AF;font-size:11px;white-space:nowrap;line-height:1.4}
+  .row-date{font-family:var(--mono);color:#9CA3AF;font-size:11px;white-space:nowrap;line-height:1.4}
   .row-date strong{color:#0F1C3A;display:block;font-size:12px;font-weight:600}
   .row-main strong{color:#0F1C3A;font-weight:700;font-size:14px;display:block;margin-bottom:3px}
   .row-main .info{font-size:12px;color:#6B7280;line-height:1.6}
@@ -109,7 +109,7 @@ require __DIR__ . '/_layout_open.php';
 
   .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}
   .stat{background:#fff;border-radius:10px;padding:12px 14px;box-shadow:0 1px 6px rgba(0,0,0,.05)}
-  .stat-num{font-size:1.4rem;font-weight:800;color:#0F1C3A;font-family:monospace}
+  .stat-num{font-size:1.4rem;font-weight:800;color:#0F1C3A;font-family:var(--mono)}
   .stat-lbl{font-size:11px;color:#6B7280;text-transform:uppercase;letter-spacing:.05em;font-weight:700}
 
   .empty{text-align:center;padding:60px 20px;color:#9CA3AF;font-size:13px}

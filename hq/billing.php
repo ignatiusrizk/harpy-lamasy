@@ -105,7 +105,7 @@ require __DIR__ . '/_layout_open.php';
 .tbl{width:100%;border-collapse:collapse;font-size:13px}
 .tbl th{background:#F7F8FC;padding:9px 11px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;color:#6B7280}
 .tbl td{padding:10px 11px;border-top:1px solid #F0F1F4}
-.tbl .num{font-family:monospace;font-weight:700;text-align:right}
+.tbl .num{font-family:var(--mono);font-weight:700;text-align:right}
 .bar{background:#EEF1F8;border-radius:100px;height:7px;overflow:hidden;margin-top:3px}
 .bar-fill{height:100%;background:#35E8D5}
 .bar-fill.over{background:#EF4444}
@@ -288,7 +288,7 @@ function renderFeatures(rows){
     return `<div style="margin-bottom:9px">
       <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:2px">
         <span>${FEATURE_LABEL[r.feature]||esc(r.feature)} <span style="color:#9CA3AF;font-size:11px">(${r.cnt}×)</span></span>
-        <span style="font-family:monospace;font-weight:700">${fmt(r.used)} <span style="color:#9CA3AF;font-weight:400">${pct}%</span></span>
+        <span style="font-family:var(--mono);font-weight:700">${fmt(r.used)} <span style="color:#9CA3AF;font-weight:400">${pct}%</span></span>
       </div>
       <div class="bar"><div class="bar-fill" style="width:${pct}%"></div></div>
     </div>`;

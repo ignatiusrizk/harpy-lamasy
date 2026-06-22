@@ -179,7 +179,7 @@ async function loadList() {
   const r = await fetch('?action=list');
   const d = await r.json();
   const list = document.getElementById('ruleList');
-  if (!d.rows.length) { list.innerHTML = '<div style="padding:40px;text-align:center;color:#94A3B8">Belum ada rule</div>'; return; }
+  if (!d.rows.length) { list.innerHTML = '<div style="padding:60px 20px;text-align:center;background:#fff;border-radius:12px;border:1px dashed #CBD5E1"><div style="font-size:48px;margin-bottom:8px">🎯</div><div style="font-weight:700;font-size:16px;color:#0F1C3A;margin-bottom:4px">Belum ada rule bonus/penalti</div><div style="color:#64748B;font-size:13px;margin-bottom:14px">Bikin rule untuk hitung bonus auto saat generate slip gaji</div><button class="hl-btn hl-btn-primary" onclick="openModal()">+ Tambah Rule</button></div>'; return; }
   list.innerHTML = d.rows.map(r => {
     const outletsLabel = r.outlets.length === 0
       ? '<span style="background:#D1FAE5;color:#065F46;padding:2px 8px;border-radius:6px;font-size:11px">🌐 Semua outlet</span>'

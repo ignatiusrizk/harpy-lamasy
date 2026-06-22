@@ -122,7 +122,7 @@ async function openDetail(id){
     const itemsHtml = (o.items||[]).map(i =>
       `<div style="display:flex;justify-content:space-between;padding:5px 0;font-size:13px;border-bottom:1px dashed #F1F5F9">
         <div>${escDp(i.nama_layanan)} <span style="color:#9CA3AF">· ${Number(i.jumlah).toLocaleString('id-ID')} ${escDp(i.satuan)}</span></div>
-        <div style="font-family:monospace">Rp ${Number(i.subtotal).toLocaleString('id-ID')}</div>
+        <div style="font-family:var(--mono,monospace)">Rp ${Number(i.subtotal).toLocaleString('id-ID')}</div>
       </div>`).join('');
     const bayarBadge = o.status_bayar === 'lunas'
       ? '<span class="pill" style="background:#D1FAE5;color:#065F46">✓ Lunas</span>'
@@ -139,10 +139,10 @@ async function openDetail(id){
       </div>
       <div style="background:#F8FAFC;border-radius:9px;padding:10px 12px;margin-bottom:10px">${itemsHtml || '<em style="color:#9CA3AF;font-size:12px">Tidak ada item</em>'}</div>
       <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:700;color:#0F1C3A;padding:4px 0;border-top:1px solid #E5E9F2">
-        <span>Total</span><span style="font-family:monospace">Rp ${Number(o.total).toLocaleString('id-ID')}</span>
+        <span>Total</span><span style="font-family:var(--mono,monospace)">Rp ${Number(o.total).toLocaleString('id-ID')}</span>
       </div>
       ${o.sisa_bayar > 0 ? `<div style="display:flex;justify-content:space-between;font-size:12px;color:#dc2626;padding:4px 0">
-        <span>Sisa bayar</span><span style="font-family:monospace">Rp ${Number(o.sisa_bayar).toLocaleString('id-ID')}</span></div>` : ''}
+        <span>Sisa bayar</span><span style="font-family:var(--mono,monospace)">Rp ${Number(o.sisa_bayar).toLocaleString('id-ID')}</span></div>` : ''}
       ${o.catatan ? `<div style="background:#FEF3C7;border-left:3px solid #F59E0B;padding:8px 10px;border-radius:6px;font-size:12px;color:#92400E;margin-top:10px">📝 ${escDp(o.catatan)}</div>` : ''}
       <div style="display:grid;gap:8px;margin-top:14px">
         ${o.wa_url ? `<a href="${o.wa_url}" target="_blank" class="btn btn-wa">💬 Hubungi Pelanggan via WA</a>` : ''}

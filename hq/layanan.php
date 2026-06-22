@@ -187,7 +187,7 @@ require __DIR__ . '/_layout_open.php';
 .lyn-table tr:hover td{background:#FAFBFC}
 .lyn-nama{font-weight:700;color:#0F1C3A}
 .lyn-kat{font-size:11px;color:#6B7280}
-.lyn-harga{font-family:monospace;font-weight:800;color:#0F1C3A}
+.lyn-harga{font-family:var(--mono);font-weight:800;color:#0F1C3A}
 .lyn-cov{font-size:12px}
 .lyn-cov-bar{display:inline-block;background:#E5E9F2;border-radius:100px;height:6px;width:60px;overflow:hidden;vertical-align:middle;margin-right:6px}
 .lyn-cov-fill{height:100%;background:#35E8D5}

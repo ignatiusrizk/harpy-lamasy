@@ -174,7 +174,7 @@ require __DIR__ . '/_layout_open.php';
 
 .cc-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px }
 .cc-nama { font-size:15px; font-weight:800; color:#0F1C3A; line-height:1.2 }
-.cc-tel { font-size:11px; color:#6B7280; margin-top:3px; font-family:monospace }
+.cc-tel { font-size:11px; color:#6B7280; margin-top:3px; font-family:var(--mono) }
 .cc-ratio { background:#FEE2E2; color:#991B1B; font-size:10px; font-weight:800; padding:3px 8px;
   border-radius:100px; white-space:nowrap }
 .cc-ratio.warning { background:#FEF3C7; color:#92400E }
@@ -182,7 +182,7 @@ require __DIR__ . '/_layout_open.php';
 
 .cc-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin:10px 0;
   background:#F7F8FC; border-radius:8px; padding:10px }
-.cc-stat-num { font-size:14px; font-weight:800; color:#0F1C3A; font-family:monospace }
+.cc-stat-num { font-size:14px; font-weight:800; color:#0F1C3A; font-family:var(--mono) }
 .cc-stat-label { font-size:10px; color:#6B7280; text-transform:uppercase; letter-spacing:.04em; margin-top:2px }
 
 .cc-layanan { font-size:11px; color:#6B7280; margin-bottom:10px }

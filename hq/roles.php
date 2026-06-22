@@ -250,7 +250,7 @@ require __DIR__ . '/_layout_open.php';
   .rcard-desc{font-size:12px;color:#6B7280;margin-bottom:14px;min-height:32px;line-height:1.5}
   .rcard-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;font-size:12px}
   .rcard-stat{background:#F9FAFB;border-radius:8px;padding:10px;text-align:center}
-  .rcard-stat strong{display:block;font-size:1.1rem;color:#0F1C3A;font-family:monospace;font-weight:800}
+  .rcard-stat strong{display:block;font-size:1.1rem;color:#0F1C3A;font-family:var(--mono);font-weight:800}
   .rcard-stat small{color:#9CA3AF;font-size:10px;text-transform:uppercase;letter-spacing:.04em;font-weight:600}
   .rcard-actions{display:flex;gap:6px}
   .rcard-actions .btn{flex:1;justify-content:center}

@@ -76,7 +76,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .wrap{max-width:520px;margin:0 auto}
 .back{display:inline-block;color:#64748B;text-decoration:none;font-size:13px;margin-bottom:14px}
 .card{background:#fff;border-radius:14px;padding:16px 18px;margin-bottom:12px;box-shadow:0 2px 10px rgba(15,28,58,.06)}
-.no-order{font-family:monospace;background:#F0FDFB;color:#0F766E;padding:3px 9px;border-radius:7px;display:inline-block;font-size:13px;margin-bottom:8px}
+.no-order{font-family:var(--mono,monospace);background:#F0FDFB;color:#0F766E;padding:3px 9px;border-radius:7px;display:inline-block;font-size:13px;margin-bottom:8px}
 .status-pill{display:inline-block;padding:4px 12px;border-radius:100px;font-size:12.5px;font-weight:600;background:#DBEAFE;color:#1E40AF}
 .row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #F1F5F9}
 .row:last-child{border-bottom:none}

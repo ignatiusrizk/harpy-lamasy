@@ -52,7 +52,7 @@ body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:#F4F7FB;col
 .pl-diambil,.pl-selesai{background:#D1FAE5;color:#065F46}
 .stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
 .stat-card{background:#fff;border-radius:10px;padding:12px;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.04)}
-.stat-num{font-size:1.5rem;font-weight:800;color:#0F1C3A;font-family:monospace;line-height:1}
+.stat-num{font-size:1.5rem;font-weight:800;color:#0F1C3A;font-family:var(--mono,monospace);line-height:1}
 .stat-label{font-size:11px;color:#6B7280;font-weight:600;margin-top:3px}
 </style>
 </head>

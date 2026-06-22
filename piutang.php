@@ -335,14 +335,14 @@ require_once ROOT . '/core/CoinLedger.php';
 <style>
 .summary{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px}
 .sum-card{background:#fff;border:1px solid #E5E9F2;border-radius:12px;padding:16px;box-shadow:0 1px 4px rgba(0,0,0,.04)}
-.sum-card .v{font-size:1.4rem;font-weight:800;color:#0F1C3A;font-family:monospace}
+.sum-card .v{font-size:1.4rem;font-weight:800;color:#0F1C3A;font-family:var(--mono)}
 .sum-card .l{font-size:12px;color:#6B7280;font-weight:600;margin-top:4px}
 .sum-card.warn .v{color:#F59E0B}
 .sum-card.danger .v{color:#EF4444}
 .tbl{width:100%;border-collapse:collapse;font-size:13px;background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.04)}
 .tbl th{background:#F7F8FC;padding:9px 11px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;color:#6B7280}
 .tbl td{padding:10px 11px;border-top:1px solid #F0F1F4}
-.tbl .num{font-family:monospace;font-weight:700;text-align:right}
+.tbl .num{font-family:var(--mono);font-weight:700;text-align:right}
 .pill{font-size:10px;font-weight:700;padding:2px 8px;border-radius:100px;text-transform:uppercase}
 .pl-belum_tagih{background:#F3F4F6;color:#6B7280}
 .pl-sudah_tagih{background:#DBEAFE;color:#1E40AF}

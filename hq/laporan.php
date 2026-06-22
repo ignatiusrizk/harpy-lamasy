@@ -616,7 +616,7 @@ require __DIR__ . '/_layout_open.php';
   .metric.green{border-top-color:#34D399}.metric.red{border-top-color:#EF4444}
   .metric.purple{border-top-color:#8B5CF6}.metric.orange{border-top-color:#F59E0B}
   .metric.blue{border-top-color:#3B82F6}
-  .metric-num{font-size:1.4rem;font-weight:800;color:#0F1C3A;font-family:monospace;margin-bottom:3px}
+  .metric-num{font-size:1.4rem;font-weight:800;color:#0F1C3A;font-family:var(--mono);margin-bottom:3px}
   .metric-label{font-size:12px;color:#6B7280;font-weight:600}
   .metric-sub{font-size:11px;color:#9CA3AF;margin-top:4px}
   .metric-growth{font-size:11px;font-weight:700;padding:2px 8px;border-radius:100px;display:inline-block;margin-top:4px}
@@ -629,7 +629,7 @@ require __DIR__ . '/_layout_open.php';
   .wk-card.worst{border-left:4px solid #6B7280;background:linear-gradient(135deg,#F9FAFB,#fff)}
   .wk-label{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px}
   .wk-name{font-size:1.15rem;font-weight:800;color:#0F1C3A;margin-bottom:4px}
-  .wk-omset{font-size:1.2rem;font-weight:800;color:#0F1C3A;font-family:monospace}
+  .wk-omset{font-size:1.2rem;font-weight:800;color:#0F1C3A;font-family:var(--mono)}
   .wk-omset small{display:block;font-size:11px;font-weight:400;color:#9CA3AF;margin-top:2px}
   .panel-title{font-size:14px;font-weight:700;color:#0F1C3A;margin-bottom:14px;
                display:flex;justify-content:space-between;align-items:center;gap:8px}
@@ -640,7 +640,7 @@ require __DIR__ . '/_layout_open.php';
                        font-weight:800;text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid #E5E7EB;white-space:nowrap}
   table.outlets-tbl th:first-child{text-align:left}
   table.outlets-tbl td{padding:12px 10px;border-bottom:1px solid #F3F4F6;text-align:right;
-                       font-family:monospace;font-weight:700;color:#0F1C3A;white-space:nowrap}
+                       font-family:var(--mono);font-weight:700;color:#0F1C3A;white-space:nowrap}
   table.outlets-tbl td:first-child{text-align:left;font-family:inherit}
   table.outlets-tbl tr:last-child td{border-bottom:none}
   table.outlets-tbl tr.total-row{background:#F0FDFB}
@@ -656,7 +656,7 @@ require __DIR__ . '/_layout_open.php';
   .top-row .rank.r1{background:#F59E0B}.top-row .rank.r2{background:#94A3B8}.top-row .rank.r3{background:#D97706}
   .top-row .name strong{color:#0F1C3A;font-weight:700}
   .top-row .name small{display:block;color:#9CA3AF;font-size:11px;margin-top:1px}
-  .top-row .amt{font-family:monospace;font-weight:700;color:#0F1C3A}
+  .top-row .amt{font-family:var(--mono);font-weight:700;color:#0F1C3A}
 
   .grid-2{display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:18px}
 
@@ -1073,7 +1073,7 @@ function renderPnl(d){
                 ${opt.border?'border-top:1px solid #EEF1F8;margin-top:4px;padding-top:10px':''};
                 color:${opt.color||'#374151'};font-weight:${opt.bold?'800':opt.head?'700':'400'}">
       <span>${label}</span>
-      <span style="font-family:monospace;font-weight:${opt.bold?'800':'600'}">${fmtRp(val)}</span>
+      <span style="font-family:var(--mono);font-weight:${opt.bold?'800':'600'}">${fmtRp(val)}</span>
     </div>`;
 
   let html = '';
@@ -1111,7 +1111,7 @@ function renderSegmen(seg){
     return `<div style="margin-bottom:10px">
       <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:3px">
         <span style="font-weight:600;color:#0F1C3A">${SEGMEN_LABEL[s.segmen]||escapeHtml(s.segmen)}</span>
-        <span style="font-family:monospace;font-weight:700">${fmtRp(s.total)} <span style="color:#9CA3AF;font-weight:400">(${pct}%)</span></span>
+        <span style="font-family:var(--mono);font-weight:700">${fmtRp(s.total)} <span style="color:#9CA3AF;font-weight:400">(${pct}%)</span></span>
       </div>
       <div style="background:#EEF1F8;border-radius:100px;height:7px;overflow:hidden">
         <div style="background:#35E8D5;height:100%;width:${pct}%"></div>
@@ -1132,7 +1132,7 @@ function renderKas(kas){
     ${rows.length ? rows.map(r=>`
       <div style="display:flex;justify-content:space-between;font-size:12px;padding:3px 0;color:#374151">
         <span>${escapeHtml(r.kategori)} <span style="color:#9CA3AF">(${r.cnt})</span></span>
-        <span style="font-family:monospace">${fmtRp(r.total)}</span>
+        <span style="font-family:var(--mono)">${fmtRp(r.total)}</span>
       </div>`).join('') : '<div style="font-size:11px;color:#9CA3AF">—</div>'}`;
   box.innerHTML = sec('⬇️ Kas Masuk', kas.masuk, '#10B981', kas.total_masuk)
     + '<div style="height:8px"></div>'
@@ -1414,7 +1414,7 @@ function renderKeuLr(d) {
   const box = document.getElementById('keuLrContent');
   document.getElementById('keuLrPeriode').textContent = '· ' + (d.periode||'');
   const row = (lbl, val, cls='') => `<div class="keu-row ${cls}">
-    <span>${lbl}</span><span style="font-family:monospace;font-weight:${cls.includes('total')||cls.includes('subtotal')?'800':'600'}">${fmtRp(val)}</span></div>`;
+    <span>${lbl}</span><span style="font-family:var(--mono);font-weight:${cls.includes('total')||cls.includes('subtotal')?'800':'600'}">${fmtRp(val)}</span></div>`;
   const head = lbl => `<div class="keu-section-head">${lbl}</div>`;
 
   let h = head('💰 PENDAPATAN');
@@ -1445,7 +1445,7 @@ function renderKeuLr(d) {
   const laba = d.laba_bersih || 0;
   const mc = laba >= 0 ? '#065F46' : '#991B1B';
   h += `<div class="keu-row total" style="color:${mc}">
-    <span>LABA BERSIH</span><span style="font-family:monospace;font-weight:800;font-size:15px">${fmtRp(laba)}</span></div>`;
+    <span>LABA BERSIH</span><span style="font-family:var(--mono);font-weight:800;font-size:15px">${fmtRp(laba)}</span></div>`;
   const margin = d.margin || 0;
   const mCls = laba >= 0 ? (margin >= 15 ? 'ok' : 'warn') : 'bad';
   h += `<div style="display:flex;align-items:center;gap:8px;margin-top:10px;font-size:12px;color:#6B7280">
@@ -1474,7 +1474,7 @@ function renderKeuNeraca(d) {
     : `<span class="keu-badge bad">✗ TIDAK SEIMBANG (selisih ${fmtRp(d.selisih||0)})</span>`;
 
   const row = (lbl, val, cls='') => `<div class="keu-row ${cls}">
-    <span>${lbl}</span><span style="font-family:monospace;font-weight:${cls.includes('total')||cls.includes('subtotal')?'800':'600'}">${fmtRp(val)}</span></div>`;
+    <span>${lbl}</span><span style="font-family:var(--mono);font-weight:${cls.includes('total')||cls.includes('subtotal')?'800':'600'}">${fmtRp(val)}</span></div>`;
   const head = lbl => `<div class="keu-section-head">${lbl}</div>`;
 
   let aH = head('ASET LANCAR');
@@ -1539,10 +1539,10 @@ function renderKeuArus(d) {
   const box = document.getElementById('keuArusContent');
   document.getElementById('keuArusPeriode').textContent = '· ' + (d.periode||'');
   const row = (lbl, val, indent=false) => `<div class="keu-row ${indent?'indent':''}">
-    <span>${lbl}</span><span style="font-family:monospace;font-weight:600">${fmtRp(val)}</span></div>`;
+    <span>${lbl}</span><span style="font-family:var(--mono);font-weight:600">${fmtRp(val)}</span></div>`;
   const net = (lbl, val) => `<div style="display:flex;justify-content:space-between;padding:9px 0;font-size:13px;
       font-weight:700;color:${val>=0?'#065F46':'#991B1B'};border-bottom:2px solid #E5E7EB;margin-bottom:8px">
-    <span>${lbl}</span><span style="font-family:monospace">${fmtRp(val)}</span></div>`;
+    <span>${lbl}</span><span style="font-family:var(--mono)">${fmtRp(val)}</span></div>`;
   const sec = (title, color) => `<div class="keu-section-head" style="color:${color};margin-top:12px">${title}</div>`;
 
   let h = sec('🔄 AKTIVITAS OPERASIONAL', '#10B981');
@@ -1566,7 +1566,7 @@ function renderKeuArus(d) {
   h += `<div style="display:flex;justify-content:space-between;padding:12px 0;font-size:15px;font-weight:800;
       color:${total>=0?'#065F46':'#991B1B'};border-top:2px solid #0F1C3A;margin-top:4px">
     <span>KENAIKAN/(PENURUNAN) KAS BERSIH</span>
-    <span style="font-family:monospace">${fmtRp(total)}</span>
+    <span style="font-family:var(--mono)">${fmtRp(total)}</span>
   </div>`;
   box.innerHTML = h;
 }
@@ -1615,7 +1615,7 @@ function renderKeuRasio(d) {
         <div><span style="font-size:13px;font-weight:600;color:#0F1C3A">${cfg.label}</span>
           <span style="font-size:11px;color:#9CA3AF;margin-left:8px">${cfg.desc}</span></div>
         <div style="display:flex;align-items:center;gap:8px">
-          <span style="font-family:monospace;font-weight:700;font-size:14px">${cfg.fmt(val)}</span>
+          <span style="font-family:var(--mono);font-weight:700;font-size:14px">${cfg.fmt(val)}</span>
           <span class="keu-badge ${bCls}">${bText}</span>
         </div>
       </div>
@@ -1641,7 +1641,7 @@ function renderKeuRasio(d) {
     <div><div style="font-size:13px;font-weight:600;color:#0F1C3A">BEP (Titik Impas)</div>
       <div style="font-size:11px;color:#9CA3AF">Omset minimum agar tidak merugi</div></div>
     <div style="text-align:right">
-      <div style="font-family:monospace;font-weight:700;font-size:14px">${fmtRp(d.bep_rupiah||0)}</div>
+      <div style="font-family:var(--mono);font-weight:700;font-size:14px">${fmtRp(d.bep_rupiah||0)}</div>
       <span class="keu-badge ${bepCls}" style="margin-top:4px;display:inline-block">${bepTxt}</span>
     </div>
   </div>`;

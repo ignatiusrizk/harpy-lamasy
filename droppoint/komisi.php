@@ -61,7 +61,7 @@ require __DIR__ . '/_layout_open.php';
 <div class="card" style="background:linear-gradient(135deg,#0F1C3A,#1a2d52);color:#fff">
   <div style="font-size:11px;font-weight:700;letter-spacing:.08em;color:#35E8D5;margin-bottom:4px">💰 PERIODE BERJALAN</div>
   <div style="font-size:12px;color:rgba(255,255,255,.6);margin-bottom:10px"><?= date('d M', strtotime($mStart)) ?> – <?= date('d M Y', strtotime($mEnd)) ?></div>
-  <div style="font-size:1.9rem;font-weight:800;font-family:monospace">Rp <?= number_format($komisi,0,',','.') ?></div>
+  <div style="font-size:1.9rem;font-weight:800;font-family:var(--mono,monospace)">Rp <?= number_format($komisi,0,',','.') ?></div>
   <div style="font-size:11px;color:rgba(255,255,255,.6);margin-top:6px;line-height:1.6">
     <strong style="color:rgba(255,255,255,.85)">Rincian:</strong><br>
     <?php if (!$breakdown): ?><em>Belum ada order bulan ini</em><?php else: foreach ($breakdown as $b) echo mitraEsc($b).'<br>'; endif; ?>
@@ -91,7 +91,7 @@ require __DIR__ . '/_layout_open.php';
         </div>
       </div>
       <div style="text-align:right">
-        <div style="font-family:monospace;font-weight:800;color:#0F1C3A;font-size:14px">Rp <?= number_format((int)$h['total_komisi'],0,',','.') ?></div>
+        <div style="font-family:var(--mono,monospace);font-weight:800;color:#0F1C3A;font-size:14px">Rp <?= number_format((int)$h['total_komisi'],0,',','.') ?></div>
         <?php if ($h['status'] === 'dibayar'): ?>
           <div style="font-size:10px;color:#065F46;font-weight:700">✓ Dibayar <?= date('d M', strtotime($h['dibayar_at'])) ?></div>
         <?php else: ?>

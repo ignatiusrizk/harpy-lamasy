@@ -351,7 +351,7 @@ require __DIR__ . '/_layout_open.php';
             display:inline-block;margin-top:5px;letter-spacing:.05em}
   .scope-account{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff}
   .scope-outlet{background:#DBEAFE;color:#1E40AF}
-  .pm-nilai{font-family:monospace;font-weight:700;color:#0F1C3A;font-size:15px}
+  .pm-nilai{font-family:var(--mono);font-weight:700;color:#0F1C3A;font-size:15px}
   .pm-nilai small{display:block;color:#9CA3AF;font-weight:400;font-size:10px;text-transform:uppercase}
   .pm-target{font-size:11px;color:#6B7280}
   .pm-target strong{color:#0F1C3A;display:block;font-size:12px;margin-bottom:3px}

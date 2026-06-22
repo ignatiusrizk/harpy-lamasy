@@ -214,7 +214,7 @@ if ($action) {
 .timer-green .kb-timer-txt{color:#065F46}
 .timer-amber .kb-timer-txt{color:#92400E}
 .timer-red   .kb-timer-txt{color:#991B1B}
-.kb-total{font-family:monospace;color:#0F1C3A;font-weight:700;font-size:10px}
+.kb-total{font-family:var(--mono);color:#0F1C3A;font-weight:700;font-size:10px}
 .kb-btn{display:block;width:100%;padding:6px 8px;border:none;border-radius:6px;font-size:11px;font-weight:700;
   cursor:pointer;font-family:inherit;background:#0F1C3A;color:#fff;text-align:center}
 .kb-btn:hover{background:#1a2d52}
