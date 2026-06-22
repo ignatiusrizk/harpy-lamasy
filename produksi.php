@@ -222,6 +222,11 @@ $pageTitle  = '🧺 Produksi';
 .stage-tab.active .cnt { background:rgba(255,255,255,.25); }
 .order-card { background:#fff;border:1px solid var(--off);border-radius:12px;padding:12px 14px;cursor:pointer;transition:border .2s; }
 .order-card:active { border-color:var(--teal); }
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(15,28,58,.6);backdrop-filter:blur(4px);z-index:200;align-items:center;justify-content:center;padding:20px}
+.modal-overlay.open{display:flex}
+.modal label{display:block;font-size:13px;font-weight:600;margin-top:10px;margin-bottom:4px}
+.modal input[type=text],.modal input[type=number],.modal select,.modal textarea{width:100%;box-sizing:border-box;padding:8px 10px;border:1px solid var(--off);border-radius:8px;font-size:14px}
+.modal textarea{resize:vertical}
 </style>
 </head>
 <body>
@@ -301,9 +306,223 @@ async function loadCards() {
   }
 }
 
+// ── Task 7: Stage forms ──────────────────────────────
+let mesinCache = { cuci: null, kering: null };
+
+async function getMesinList(jenis) {
+  if (mesinCache[jenis]) return mesinCache[jenis];
+  const r = await fetch('/produksi.php?action=mesin_list&jenis=' + jenis);
+  const d = await r.json();
+  mesinCache[jenis] = d.rows || [];
+  return mesinCache[jenis];
+}
+
 function openStageModal(orderId) {
-  // Implementation di Task 7
-  alert('Stage modal akan diisi di Task 7. Order id: ' + orderId);
+  // Stage diambil dari tab aktif (currentStage). Tidak perlu fetch ulang —
+  // form input tidak butuh detail order; submit-nya hanya kirim orderId + stage.
+  const body = document.getElementById('stageModalBody');
+  body.innerHTML = renderStageForm(currentStage, orderId);
+  document.getElementById('stageModal').classList.add('open');
+}
+
+function closeStageModal() {
+  document.getElementById('stageModal').classList.remove('open');
+}
+
+function renderStageForm(stage, orderId) {
+  const head = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+    <h3 style="margin:0">${stageTitle(stage)}</h3>
+    <button onclick="closeStageModal()" style="background:none;border:none;font-size:24px;cursor:pointer">×</button>
+  </div>
+  <input type="hidden" id="f_orderId" value="${orderId}">
+  <input type="hidden" id="f_stage" value="${stage}">`;
+
+  if (stage === 'terima') {
+    return head + `
+      <label>Foto Kondisi (max 3)</label>
+      <input type="file" accept="image/*" capture="environment" multiple onchange="onFotoPick(this)" id="f_foto">
+      <div id="fotoPreview" style="display:flex;gap:6px;flex-wrap:wrap;margin:8px 0"></div>
+      <label>Catatan Kondisi</label>
+      <textarea id="f_catatan" rows="3" placeholder="Noda, robek, atau hal khusus..."></textarea>
+      <button class="btn btn-primary" style="width:100%;margin-top:14px" onclick="submitStage()">💾 Simpan Dokumentasi</button>`;
+  }
+
+  if (stage === 'cuci') {
+    return head + `
+      <label>Mesin Cuci</label>
+      <select id="f_mesin"><option value="">-- Pilih --</option></select>
+      <label style="margin-top:10px">Berat Masuk (kg)</label>
+      <input type="number" step="0.1" min="0" id="f_berat" placeholder="5.0">
+      <label style="margin-top:10px">Program</label>
+      <select id="f_program">
+        <option value="putih">Putih</option>
+        <option value="berwarna">Berwarna</option>
+        <option value="halus">Halus</option>
+        <option value="jeans">Jeans</option>
+      </select>
+      <label style="margin-top:10px">Catatan</label>
+      <textarea id="f_catatan" rows="2"></textarea>
+      <button class="btn btn-primary" style="width:100%;margin-top:14px" onclick="submitStage()">▶ Mulai Cuci</button>`;
+  }
+
+  if (stage === 'kering') {
+    return head + `
+      <label>Mesin Pengering</label>
+      <select id="f_mesin"><option value="">-- Pilih --</option></select>
+      <label style="margin-top:10px">Durasi Target (menit)</label>
+      <input type="number" min="1" id="f_durasi" placeholder="45">
+      <label style="margin-top:10px">Suhu</label>
+      <select id="f_suhu">
+        <option value="rendah">Rendah</option>
+        <option value="sedang" selected>Sedang</option>
+        <option value="tinggi">Tinggi</option>
+      </select>
+      <button class="btn btn-primary" style="width:100%;margin-top:14px" onclick="submitStage()">▶ Mulai Kering</button>`;
+  }
+
+  if (stage === 'setrika') {
+    return head + `
+      <label>Foto Hasil (opsional)</label>
+      <input type="file" accept="image/*" capture="environment" multiple onchange="onFotoPick(this)" id="f_foto">
+      <div id="fotoPreview" style="display:flex;gap:6px;flex-wrap:wrap;margin:8px 0"></div>
+      <label>Catatan</label>
+      <textarea id="f_catatan" rows="2"></textarea>
+      <button class="btn btn-primary" style="width:100%;margin-top:14px" onclick="submitStage()">▶ Mulai Setrika</button>`;
+  }
+
+  if (stage === 'siap') {
+    return head + `
+      <label>Lokasi Rak / Nomor Plastik</label>
+      <input type="text" id="f_lokasi" maxlength="50" placeholder="Rak A-12 / Plastik #5">
+      <label style="margin-top:10px">Foto Packing (opsional)</label>
+      <input type="file" accept="image/*" capture="environment" multiple onchange="onFotoPick(this)" id="f_foto">
+      <div id="fotoPreview" style="display:flex;gap:6px;flex-wrap:wrap;margin:8px 0"></div>
+      <button class="btn btn-primary" style="width:100%;margin-top:14px" onclick="submitStage()">✅ Tandai Siap</button>`;
+  }
+
+  if (stage === 'diambil') {
+    return head + `
+      <label>Foto Serah Terima (wajib)</label>
+      <input type="file" accept="image/*" capture="environment" onchange="onFotoPick(this)" id="f_foto" required>
+      <div id="fotoPreview" style="display:flex;gap:6px;flex-wrap:wrap;margin:8px 0"></div>
+      <label style="margin-top:10px">Tanda Tangan</label>
+      <canvas id="sigCanvas" width="400" height="120" style="border:1px solid var(--off);border-radius:8px;width:100%;touch-action:none"></canvas>
+      <button onclick="clearSig()" style="margin-top:4px;font-size:12px">Bersihkan TTD</button>
+      <label style="margin-top:10px">Catatan</label>
+      <textarea id="f_catatan" rows="2"></textarea>
+      <button class="btn btn-primary" style="width:100%;margin-top:14px" onclick="submitStage()">📦 Tandai Diambil</button>`;
+  }
+
+  return head + '<p style="color:var(--red)">Stage tidak dikenali</p>';
+}
+
+function stageTitle(s) {
+  return {
+    'terima': '📥 Terima Cucian',
+    'cuci': '🫧 Mulai Cuci',
+    'kering': '💨 Mulai Kering',
+    'setrika': '👔 Mulai Setrika',
+    'siap': '✅ Tandai Siap',
+    'diambil': '📦 Tandai Diambil',
+  }[s] || s;
+}
+
+// ── Foto upload state
+let uploadedFoto = [];
+
+async function onFotoPick(input) {
+  uploadedFoto = [];
+  document.getElementById('fotoPreview').innerHTML = '⏳ Upload...';
+  for (const f of input.files) {
+    const fd = new FormData();
+    fd.append('foto', f);
+    fd.append('_csrf', CSRF);
+    const r = await fetch('/produksi.php?action=upload_foto', {
+      method:'POST', headers:{'X-CSRF-Token':CSRF}, body: fd
+    });
+    const d = await r.json();
+    if (d.ok) uploadedFoto.push(d.path);
+  }
+  document.getElementById('fotoPreview').innerHTML = uploadedFoto.map(p =>
+    `<img src="/${p}" style="width:64px;height:64px;object-fit:cover;border-radius:6px">`
+  ).join('');
+}
+
+// ── Signature canvas (stage diambil)
+function setupSig() {
+  const c = document.getElementById('sigCanvas');
+  if (!c) return;
+  const ctx = c.getContext('2d');
+  ctx.strokeStyle = '#000'; ctx.lineWidth = 2; ctx.lineCap = 'round';
+  let drawing = false;
+  const pos = (e) => {
+    const rect = c.getBoundingClientRect();
+    const t = e.touches ? e.touches[0] : e;
+    return {x: (t.clientX - rect.left) * c.width / rect.width,
+            y: (t.clientY - rect.top) * c.height / rect.height};
+  };
+  const start = (e) => { drawing = true; const p = pos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); e.preventDefault(); };
+  const move  = (e) => { if (!drawing) return; const p = pos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); e.preventDefault(); };
+  const end   = () => { drawing = false; };
+  c.addEventListener('mousedown', start); c.addEventListener('mousemove', move); c.addEventListener('mouseup', end);
+  c.addEventListener('touchstart', start, {passive:false}); c.addEventListener('touchmove', move, {passive:false}); c.addEventListener('touchend', end);
+}
+function clearSig() {
+  const c = document.getElementById('sigCanvas');
+  if (c) c.getContext('2d').clearRect(0,0,c.width,c.height);
+}
+
+// Wrap openStageModal: render dulu (sync), lalu populate mesin dropdown + setup signature (async)
+const _origOpenStageModal = openStageModal;
+openStageModal = async function(orderId) {
+  _origOpenStageModal(orderId);
+  uploadedFoto = [];
+
+  // Populate mesin dropdown kalau form punya field mesin
+  const mesinEl = document.getElementById('f_mesin');
+  if (mesinEl) {
+    const jenis = (currentStage === 'cuci') ? 'cuci' : 'kering';
+    const mesins = await getMesinList(jenis);
+    mesinEl.innerHTML = '<option value="">-- Pilih --</option>' +
+      mesins.map(m => `<option value="${m.id}">${esc(m.nama)} (${esc(m.kode||'')})</option>`).join('');
+  }
+
+  // Setup signature canvas kalau stage = diambil
+  setupSig();
+};
+
+async function submitStage() {
+  const orderId = parseInt(document.getElementById('f_orderId').value);
+  const stage   = document.getElementById('f_stage').value;
+  const catatan = document.getElementById('f_catatan')?.value || '';
+  const data = {};
+  if (document.getElementById('f_mesin'))   data.mesin_id = document.getElementById('f_mesin').value;
+  if (document.getElementById('f_berat'))   data.berat    = document.getElementById('f_berat').value;
+  if (document.getElementById('f_program')) data.program  = document.getElementById('f_program').value;
+  if (document.getElementById('f_durasi'))  data.durasi   = document.getElementById('f_durasi').value;
+  if (document.getElementById('f_suhu'))    data.suhu     = document.getElementById('f_suhu').value;
+  if (document.getElementById('f_lokasi'))  data.lokasi   = document.getElementById('f_lokasi').value;
+
+  let signature = '';
+  const sig = document.getElementById('sigCanvas');
+  if (sig) signature = sig.toDataURL('image/png');
+
+  if (stage === 'diambil' && uploadedFoto.length === 0) {
+    alert('Foto serah terima wajib diisi.'); return;
+  }
+
+  const r = await fetch('/produksi.php?action=save_stage', {
+    method:'POST',
+    headers:{'Content-Type':'application/json','X-CSRF-Token':CSRF},
+    body: JSON.stringify({transaksi_id: orderId, stage, data, foto: uploadedFoto, catatan, signature})
+  });
+  const d = await r.json();
+  if (d.ok) {
+    closeStageModal();
+    loadCards();
+  } else {
+    alert('❌ ' + (d.error || 'Gagal simpan'));
+  }
 }
 
 function startScan() {
