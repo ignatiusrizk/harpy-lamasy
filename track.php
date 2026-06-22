@@ -88,6 +88,23 @@ if ($order) {
 // Greeting
 $jam = (int)date('H');
 $greet = $jam < 11 ? 'Selamat pagi' : ($jam < 15 ? 'Selamat siang' : ($jam < 18 ? 'Selamat sore' : 'Selamat malam'));
+
+// Cek bukti penyerahan (dari produksi stage 'diambil') — untuk display di status final
+$bukti = null;
+if ($order && in_array(($order['status_proses'] ?? ''), ['diambil','selesai'], true)) {
+    try {
+        $bs = $db->prepare("SELECT data_json, foto_paths, catatan, created_at
+                              FROM hl_proses_input
+                             WHERE transaksi_id=? AND stage='diambil'
+                          ORDER BY id DESC LIMIT 1");
+        $bs->execute([(int)$order['id']]);
+        $bukti = $bs->fetch(PDO::FETCH_ASSOC);
+        if ($bukti) {
+            $bukti['data']  = json_decode($bukti['data_json'] ?: '{}', true) ?: [];
+            $bukti['fotos'] = array_filter(array_map('trim', explode(',', $bukti['foto_paths'] ?? '')));
+        }
+    } catch (Throwable) { $bukti = null; }
+}
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -220,9 +237,34 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
           🎉 Yuk diambil! Cucian sudah rapi menunggu kamu.
         </div>
       <?php elseif ($order['status_proses'] === 'diambil' || $order['status_proses'] === 'selesai'): ?>
+        <?php
+          $jenis = $bukti['data']['jenis'] ?? 'ambil_sendiri';
+          $tglSelesai = !empty($order['tgl_selesai']) ? date('d M Y', strtotime($order['tgl_selesai'])) : (!empty($bukti['created_at']) ? date('d M Y', strtotime($bukti['created_at'])) : '-');
+        ?>
         <div class="countdown success">
-          ✅ Order sudah diambil pada <?= !empty($order['tgl_selesai']) ? date('d M Y', strtotime($order['tgl_selesai'])) : '-' ?>
+          <?php if ($jenis === 'diantarkan'): ?>
+            🛵 Cucian sudah diantar pada <?= htmlspecialchars($tglSelesai) ?>. Terima kasih!
+          <?php else: ?>
+            ✅ Order sudah diambil pada <?= htmlspecialchars($tglSelesai) ?>
+          <?php endif; ?>
         </div>
+        <?php if (!empty($bukti['fotos'])): ?>
+        <div style="margin-top:14px;padding:14px;background:#F0FDF4;border:1px solid #BBF7D0;border-radius:12px">
+          <div style="font-size:13px;font-weight:700;color:#166534;margin-bottom:8px">
+            📸 Bukti <?= $jenis === 'diantarkan' ? 'antar' : 'serah terima' ?>
+          </div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <?php foreach ($bukti['fotos'] as $fp): if (!str_starts_with($fp, 'uploads/foto_proses/')) continue; ?>
+              <a href="/<?= htmlspecialchars($fp) ?>" target="_blank">
+                <img src="/<?= htmlspecialchars($fp) ?>" alt="Bukti" style="width:120px;height:120px;object-fit:cover;border-radius:8px;border:1px solid #BBF7D0">
+              </a>
+            <?php endforeach; ?>
+          </div>
+          <?php if (!empty($bukti['catatan'])): ?>
+            <div style="margin-top:8px;font-size:12.5px;color:#166534">📝 <?= htmlspecialchars($bukti['catatan']) ?></div>
+          <?php endif; ?>
+        </div>
+        <?php endif; ?>
       <?php endif; ?>
 
       <!-- DETAIL ORDER -->

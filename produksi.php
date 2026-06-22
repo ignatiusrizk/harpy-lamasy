@@ -231,8 +231,16 @@ $pageTitle  = '🧺 Produksi';
 .modal-overlay{display:none;position:fixed;inset:0;background:rgba(15,28,58,.6);backdrop-filter:blur(4px);z-index:200;align-items:center;justify-content:center;padding:20px}
 .modal-overlay.open{display:flex}
 .modal label{display:block;font-size:13px;font-weight:600;margin-top:10px;margin-bottom:4px}
-.modal input[type=text],.modal input[type=number],.modal select,.modal textarea{width:100%;box-sizing:border-box;padding:8px 10px;border:1px solid var(--off);border-radius:8px;font-size:14px}
-.modal textarea{resize:vertical}
+.modal input[type=text],.modal input[type=number],.modal select,.modal textarea{width:100%;box-sizing:border-box;padding:9px 11px;border:1px solid var(--off);border-radius:8px;font-size:14px;font-family:var(--font);background:#fff}
+.modal input[type=text]:focus,.modal input[type=number]:focus,.modal select:focus,.modal textarea:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px rgba(53,232,213,.18)}
+.modal textarea{resize:vertical;min-height:60px}
+.modal input[type=file]{width:100%;box-sizing:border-box;padding:12px;border:1.5px dashed rgba(27,45,90,.2);border-radius:8px;background:#FAFBFC;font-size:13px;cursor:pointer;transition:all .15s}
+.modal input[type=file]:hover{border-color:var(--teal);background:#F0FDFC}
+.modal label{display:block;font-size:12.5px;font-weight:700;color:var(--navy-d);letter-spacing:.01em;margin-top:14px;margin-bottom:6px}
+.modal .stage-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;padding-bottom:12px;border-bottom:1px solid var(--off)}
+.modal .stage-header h3{margin:0;font-size:17px}
+.modal .stage-close{background:none;border:none;font-size:24px;line-height:1;cursor:pointer;color:var(--gray);padding:0 4px}
+.modal .stage-close:hover{color:var(--navy-d)}
 
 /* Buttons — local fix (global .btn not defined in harpy-erp.css; only .hl-btn exists) */
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:10px 18px;border-radius:10px;font-family:var(--font);font-size:14px;font-weight:600;cursor:pointer;transition:all .2s;border:1px solid var(--off);background:#fff;color:var(--navy-d)}
@@ -276,7 +284,7 @@ $pageTitle  = '🧺 Produksi';
       <button class="stage-tab"        data-stage="kering"  onclick="switchStage('kering')">💨 Kering <span class="cnt"></span></button>
       <button class="stage-tab"        data-stage="setrika" onclick="switchStage('setrika')">👔 Setrika <span class="cnt"></span></button>
       <button class="stage-tab"        data-stage="siap"    onclick="switchStage('siap')">✅ Siap <span class="cnt"></span></button>
-      <button class="stage-tab"        data-stage="diambil" onclick="switchStage('diambil')">📦 Diambil <span class="cnt"></span></button>
+      <button class="stage-tab"        data-stage="diambil" onclick="switchStage('diambil')">📦 Diambil/Diantar <span class="cnt"></span></button>
     </div>
 
     <!-- Card list -->
@@ -363,9 +371,9 @@ function closeStageModal() {
 }
 
 function renderStageForm(stage, orderId) {
-  const head = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-    <h3 style="margin:0">${stageTitle(stage)}</h3>
-    <button onclick="closeStageModal()" style="background:none;border:none;font-size:24px;cursor:pointer">×</button>
+  const head = `<div class="stage-header">
+    <h3>${stageTitle(stage)}</h3>
+    <button class="stage-close" onclick="closeStageModal()" aria-label="Tutup">×</button>
   </div>
   <input type="hidden" id="f_orderId" value="${orderId}">
   <input type="hidden" id="f_stage" value="${stage}">`;
@@ -435,18 +443,42 @@ function renderStageForm(stage, orderId) {
 
   if (stage === 'diambil') {
     return head + `
-      <label>Foto Serah Terima (wajib)</label>
+      <label>Jenis Penyerahan</label>
+      <select id="f_jenis" onchange="toggleDeliveryFields()">
+        <option value="ambil_sendiri">📦 Diambil pelanggan di outlet</option>
+        <option value="diantarkan">🛵 Diantarkan ke pelanggan</option>
+      </select>
+
+      <label>Foto Bukti (wajib)</label>
       <input type="file" accept="image/*" capture="environment" onchange="onFotoPick(this)" id="f_foto" required>
       <div id="fotoPreview" style="display:flex;gap:6px;flex-wrap:wrap;margin:8px 0"></div>
-      <label style="margin-top:10px">Tanda Tangan</label>
-      <canvas id="sigCanvas" width="400" height="120" style="border:1px solid var(--off);border-radius:8px;width:100%;touch-action:none"></canvas>
-      <button onclick="clearSig()" style="margin-top:4px;font-size:12px">Bersihkan TTD</button>
-      <label style="margin-top:10px">Catatan</label>
-      <textarea id="f_catatan" rows="2"></textarea>
-      <button class="btn btn-primary" style="width:100%;margin-top:14px" onclick="submitStage()">📦 Tandai Diambil</button>`;
+
+      <div id="sigSection">
+        <label>Tanda Tangan Pelanggan</label>
+        <canvas id="sigCanvas" width="400" height="120" style="border:1px solid var(--off);border-radius:8px;width:100%;touch-action:none;background:#fff"></canvas>
+        <button type="button" onclick="clearSig()" style="margin-top:4px;font-size:12px;background:none;border:none;color:var(--gray);cursor:pointer;text-decoration:underline">Bersihkan TTD</button>
+      </div>
+
+      <label>Catatan</label>
+      <textarea id="f_catatan" rows="2" placeholder="Optional: alamat antar, nama penerima, dll"></textarea>
+      <button class="btn btn-primary" style="width:100%;margin-top:14px" onclick="submitStage()" id="btnDiambil">📦 Tandai Selesai</button>`;
   }
 
   return head + '<p style="color:var(--red)">Stage tidak dikenali</p>';
+}
+
+function toggleDeliveryFields() {
+  const jenis = document.getElementById('f_jenis')?.value;
+  const sigSection = document.getElementById('sigSection');
+  const btn = document.getElementById('btnDiambil');
+  if (!sigSection) return;
+  if (jenis === 'diantarkan') {
+    sigSection.style.display = 'none';
+    if (btn) btn.textContent = '🛵 Tandai Diantar';
+  } else {
+    sigSection.style.display = 'block';
+    if (btn) btn.textContent = '📦 Tandai Diambil';
+  }
 }
 
 function stageTitle(s) {
@@ -456,7 +488,7 @@ function stageTitle(s) {
     'kering': '💨 Mulai Kering',
     'setrika': '👔 Mulai Setrika',
     'siap': '✅ Tandai Siap',
-    'diambil': '📦 Tandai Diambil',
+    'diambil': '📦 Selesai (Diambil / Diantar)',
   }[s] || s;
 }
 
@@ -535,13 +567,17 @@ async function submitStage() {
   if (document.getElementById('f_durasi'))  data.durasi   = document.getElementById('f_durasi').value;
   if (document.getElementById('f_suhu'))    data.suhu     = document.getElementById('f_suhu').value;
   if (document.getElementById('f_lokasi'))  data.lokasi   = document.getElementById('f_lokasi').value;
+  if (document.getElementById('f_jenis'))   data.jenis    = document.getElementById('f_jenis').value;
 
+  // Signature: hanya kalau ambil_sendiri (diantarkan = no signature, customer not present)
   let signature = '';
-  const sig = document.getElementById('sigCanvas');
-  if (sig) signature = sig.toDataURL('image/png');
+  if (stage === 'diambil' && data.jenis === 'ambil_sendiri') {
+    const sig = document.getElementById('sigCanvas');
+    if (sig) signature = sig.toDataURL('image/png');
+  }
 
   if (stage === 'diambil' && uploadedFoto.length === 0) {
-    alert('Foto serah terima wajib diisi.'); return;
+    alert('Foto bukti wajib diisi.'); return;
   }
 
   const r = await fetch('/produksi.php?action=save_stage', {
