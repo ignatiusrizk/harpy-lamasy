@@ -1153,7 +1153,9 @@ textarea{resize:vertical;min-height:64px}
     <div class="modal-footer" style="gap:6px;flex-wrap:wrap">
       <button class="btn btn-outline" onclick="closeModal()">Tutup</button>
       <button class="btn btn-green" onclick="printStruk()">🖨️ Print Struk</button>
-      <button class="btn btn-teal-sm" onclick="kirimNotaWA()" title="Kirim nota via WhatsApp (150 koin)">📲 Kirim WA</button>
+      <button class="btn btn-teal-sm" onclick="lastSaved && openWaForOrder(lastSaved.id, 'order_diterima')" title="Kirim konfirmasi penerimaan order via WhatsApp">📱 Kirim WA</button>
+      <button class="btn btn-teal-sm" onclick="lastSaved && openWaForOrder(lastSaved.id, 'struk_lunas')" title="Kirim struk lunas via WhatsApp">📱 WA Struk</button>
+      <button class="btn btn-teal-sm" onclick="kirimNotaWA()" title="Kirim nota via WhatsApp (150 koin)">📲 Kirim WA (koin)</button>
       <a id="openStrukBtn" href="#" target="_blank" class="btn btn-teal-sm">↗ Buka Penuh</a>
       <button class="btn btn-teal-sm" onclick="window.location.href='/orders'">📋 Orders</button>
     </div>
@@ -1961,6 +1963,21 @@ function printStruk() {
   }
 }
 function closeModal()  { document.getElementById('modalStruk').classList.remove('open'); }
+
+// ── WA Link (Task 3) — akan dipindah ke components.php di Task 4 ──
+async function openWaForOrder(orderId, template) {
+  try {
+    const r = await fetch(`/api/wa_link.php?order_id=${orderId}&t=${template}`);
+    const j = await r.json();
+    if (j.url) {
+      window.open(j.url, '_blank', 'noopener');
+    } else {
+      alert(j.error || 'Gagal generate link WA.');
+    }
+  } catch (e) {
+    alert('Network error: ' + e.message);
+  }
+}
 
 // ── Kirim Nota via WA (150 koin) ──
 async function kirimNotaWA() {
