@@ -1,14 +1,20 @@
 <?php
 // p.php — Portal pelanggan login entry via QR token
 
-define('ROOT', __DIR__);
-require_once ROOT . '/master/config/db.php';
-require_once ROOT . '/core/Database.php';
-
 ini_set('session.cookie_httponly', 1);
 ini_set('session.cookie_secure',   1);
 ini_set('session.cookie_samesite', 'Strict');
 if (session_status() === PHP_SESSION_NONE) session_start();
+
+if (!headers_sent()) {
+    header('X-Content-Type-Options: nosniff');
+    header('X-Frame-Options: SAMEORIGIN');
+    header('Referrer-Policy: strict-origin-when-cross-origin');
+}
+
+define('ROOT', __DIR__);
+require_once ROOT . '/master/config/db.php';
+require_once ROOT . '/core/Database.php';
 
 $token = trim($_GET['t'] ?? '');
 $nextOrder = trim($_GET['o'] ?? '');
