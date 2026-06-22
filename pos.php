@@ -1072,6 +1072,7 @@ textarea{resize:vertical;min-height:64px}
 
               <!-- DAFTAR REWARD (dynamic) -->
               <div id="rewardsList" style="display:none;margin-bottom:8px;max-height:180px;overflow-y:auto"></div>
+              <input type="hidden" id="f_reward_id" value="0"> <!-- ponytail: reward_id for loyalty redeem -->
 
               <!-- INPUT MANUAL POIN -->
               <div style="display:flex;gap:8px;align-items:flex-end;padding-top:8px;border-top:1px dashed rgba(8,145,178,.25)">
@@ -1727,14 +1728,14 @@ function renderRewards(rewards, poin){
         <div style="font-size:10px;color:#64748B">${tipeLabel} · <strong>${r.poin_dibutuhkan} poin</strong>${!ok?' · butuh '+r.kurang+' lagi':''}</div>
       </div>
       ${ok
-        ? `<button type="button" class="btn btn-teal-sm" style="padding:5px 11px;font-size:11px;white-space:nowrap" onclick="useReward(${r.poin_dibutuhkan},${parseInt(r.nilai)},'${r.tipe}','${esc(r.nama_reward)}')">✓ Pakai</button>`
+        ? `<button type="button" class="btn btn-teal-sm" style="padding:5px 11px;font-size:11px;white-space:nowrap" onclick="useReward(${r.id},${r.poin_dibutuhkan},${parseInt(r.nilai)},'${r.tipe}','${esc(r.nama_reward)}')">✓ Pakai</button>`
         : `<span style="font-size:10px;color:#94A3B8">🔒</span>`}
     </div>`;
   }).join('');
 }
 
-function useReward(poin, nilai, tipe, nama){
-  // Set redeem ke jumlah poin reward — recalc otomatis applied
+function useReward(rewardId, poin, nilai, tipe, nama){
+  document.getElementById('f_reward_id').value = rewardId;
   document.getElementById('f_redeem_poin').value = poin;
   showToast('🎁 Reward dipakai: ' + nama, 'success');
   recalc();
@@ -1886,6 +1887,7 @@ async function doSaveTransaksi() {
     tipe_order:     document.getElementById('f_tipe_order').value,
     parfum:         document.getElementById('f_parfum')?.value || '',
     redeem_poin:    (LOYALTY.enabled && currentPelangganId) ? (parseInt(document.getElementById('f_redeem_poin')?.value||0)||0) : 0,
+    reward_id:      parseInt(document.getElementById('f_reward_id')?.value||0)||0,
     dp:             document.getElementById('f_dp').value,
     use_deposit:    document.getElementById('f_use_deposit')?.checked ? 1 : 0,
     deposit_amount: parseFloat(document.getElementById('f_deposit_amount')?.value)||0,
@@ -2100,6 +2102,7 @@ function resetForm() {
   document.getElementById('f_estimasi').value=localDateStr(est);
   currentPelangganId=null; currentPelangganPoin=0;
   const rp=document.getElementById('f_redeem_poin'); if(rp) rp.value='0';
+  const ri=document.getElementById('f_reward_id'); if(ri) ri.value='0';
   updateLoyaltyBox();
   if (typeof clearFoto === 'function') clearFoto();
   // Reset antar section
