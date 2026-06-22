@@ -193,7 +193,6 @@ function renderTopbar(string $activePage = '', bool $minimalMode = false): void 
             'label' => 'Settings',
             'items' => [
                 'outlet-settings' => ['label'=>'Outlet & Nota',  'url'=>'/outlet-settings', 'perm'=>'settings.roles'],
-                'struk'        => ['label'=>'Struk & Invoice',   'url'=>'/struk',        'perm'=>'settings.roles'],
                 'settings'     => ['label'=>'Role & Permission', 'url'=>'/settings',     'perm'=>'settings.roles'],
                 'audit'        => ['label'=>'Audit Log',         'url'=>'/audit',         'perm'=>'audit.view'],
                 'owner_report' => ['label'=>'Notifikasi Owner',  'url'=>'/owner-report',

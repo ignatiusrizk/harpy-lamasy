@@ -304,8 +304,12 @@ require_once ROOT . '/components.php';
 </style>
 </head>
 <body>
-<?php renderTopbar('struk'); ?>
+<?php renderTopbar('outlet-settings'); ?>
 <div class="struk-wrap">
+  <div class="settings-tabs" style="display:flex;gap:2px;margin-bottom:18px;border-bottom:1px solid var(--off)">
+    <a href="/outlet-settings" class="settings-tab" style="padding:11px 18px;border-bottom:3px solid transparent;color:var(--gray);font-weight:600;font-size:14px;text-decoration:none">🏢 Outlet & Nota</a>
+    <a href="/struk" class="settings-tab active" style="padding:11px 18px;border-bottom:3px solid var(--teal);color:var(--navy-d);font-weight:700;font-size:14px;text-decoration:none">🧾 Struk & Invoice</a>
+  </div>
 
   <div class="struk-header">
     <h1>🧾 Kustomisasi Struk & Invoice
