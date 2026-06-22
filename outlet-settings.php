@@ -167,8 +167,10 @@ if ($action) {
         verifyCsrf();
         $d = json_decode(file_get_contents('php://input'), true) ?: [];
         $id = (int)($d['id'] ?? 0);
-        $st = $db->prepare("UPDATE hl_zona_antar SET aktif=0 WHERE id=? AND tenant_id=?");
-        $st->execute([$id, $tid]);
+        $outletId = (int)($d['outlet_id'] ?? 0);
+        if ($outletId <= 0) { echo json_encode(['error'=>'outlet_id wajib']); exit; }
+        $st = $db->prepare("UPDATE hl_zona_antar SET aktif=0 WHERE id=? AND tenant_id=? AND outlet_id=?");
+        $st->execute([$id, $tid, $outletId]);
         echo json_encode(['ok'=>true]);
         exit;
     }
@@ -479,9 +481,10 @@ async function addZona() {
 
 async function deleteZona(id) {
   if (!confirm('Hapus zona ini?')) return;
+  const outletId = document.getElementById('ed_id').value;
   await fetch('?action=zona_delete', {
     method:'POST', headers:{'Content-Type':'application/json','X-CSRF-Token':csrfToken()},
-    body: JSON.stringify({id})
+    body: JSON.stringify({id, outlet_id: parseInt(outletId)})
   });
   loadZonaList();
 }
