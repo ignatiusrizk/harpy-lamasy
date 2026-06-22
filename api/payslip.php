@@ -57,6 +57,14 @@ $bonus    = (float) ($row['bonus'] ?? 0);
 $potongan = (float) ($row['potongan'] ?? 0);
 $total    = (float) ($row['total'] ?? 0);
 
+// Load komponen kalau ada
+$komponen = [];
+try {
+    $st = Database::get()->prepare("SELECT jenis, nama, amount, keterangan FROM hl_gaji_komponen WHERE gaji_id=? ORDER BY jenis='pokok' DESC, amount DESC, id");
+    $st->execute([(int)$row['id']]);
+    $komponen = $st->fetchAll(PDO::FETCH_ASSOC);
+} catch (Throwable) {}
+
 $autoPrint = !empty($_GET['auto_print']);
 ?>
 <!DOCTYPE html>
@@ -153,6 +161,30 @@ body { font-family: 'Helvetica', Arial, sans-serif; margin: 0; padding: 32px 40p
   </div>
 </div>
 
+<?php if (!empty($komponen)): ?>
+<table style="width:100%;border-collapse:collapse;margin-top:10px;font-size:13px">
+  <thead><tr style="background:#F3F4F6"><th align="left" style="padding:6px">Komponen</th><th align="right" style="padding:6px">Jumlah</th></tr></thead>
+  <tbody>
+    <?php foreach ($komponen as $k): ?>
+    <tr>
+      <td style="padding:5px 6px;border-bottom:1px solid #E5E7EB">
+        <?= htmlspecialchars($k['nama']) ?>
+        <?php if (!empty($k['keterangan'])): ?>
+          <div style="font-size:11px;color:#6B7280"><?= htmlspecialchars($k['keterangan']) ?></div>
+        <?php endif; ?>
+      </td>
+      <td align="right" style="padding:5px 6px;border-bottom:1px solid #E5E7EB;font-weight:600;color:<?= $k['amount']>=0 ? '#065F46' : '#991B1B' ?>">
+        Rp <?= number_format((int)$k['amount'], 0, ',', '.') ?>
+      </td>
+    </tr>
+    <?php endforeach; ?>
+    <tr style="background:#F0FDF4">
+      <td style="padding:8px 6px;font-weight:700">TOTAL</td>
+      <td align="right" style="padding:8px 6px;font-weight:700;font-size:15px;color:#0F766E">Rp <?= number_format((int)$total, 0, ',', '.') ?></td>
+    </tr>
+  </tbody>
+</table>
+<?php else: ?>
 <table class="ps-table">
   <thead>
     <tr>
@@ -182,6 +214,7 @@ body { font-family: 'Helvetica', Arial, sans-serif; margin: 0; padding: 32px 40p
     <?php endif; ?>
   </tbody>
 </table>
+<?php endif; ?>
 
 <div class="ps-total">
   <span class="ps-total-label">Gaji Bersih (Take Home Pay)</span>
