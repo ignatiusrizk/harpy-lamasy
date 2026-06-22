@@ -92,8 +92,8 @@ if ($action) {
         $signature = $d['signature'] ?? '';
         $catatan   = trim($d['catatan'] ?? '');
 
-        // Validate foto path (XSS guard)
-        if ($fotoPath && !str_starts_with($fotoPath, 'uploads/foto_antar/')) {
+        // Validate foto path (XSS + path traversal guard)
+        if ($fotoPath && (!str_starts_with($fotoPath, 'uploads/foto_antar/') || str_contains($fotoPath, '..'))) {
             $fotoPath = '';
         }
 
