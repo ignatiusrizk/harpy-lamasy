@@ -89,6 +89,19 @@ if ($order) {
 $jam = (int)date('H');
 $greet = $jam < 11 ? 'Selamat pagi' : ($jam < 15 ? 'Selamat siang' : ($jam < 18 ? 'Selamat sore' : 'Selamat malam'));
 
+// Section status antar (kalau ada hl_antar_jemput row untuk order ini)
+if ($order) {
+    try {
+        $as = $db->prepare("SELECT aj.*, k.nama AS kurir_nama, k.no_hp AS kurir_hp
+                              FROM hl_antar_jemput aj
+                         LEFT JOIN hl_kurir k ON k.id = aj.kurir_id
+                             WHERE aj.transaksi_id=? AND aj.tipe='antar'
+                          ORDER BY aj.id DESC LIMIT 1");
+        $as->execute([(int)$order['id']]);
+        $antar = $as->fetch(PDO::FETCH_ASSOC);
+    } catch (Throwable) { $antar = null; }
+} else { $antar = null; }
+
 // Cek bukti penyerahan (dari produksi stage 'diambil') — untuk display di status final
 $bukti = null;
 if ($order && in_array(($order['status_proses'] ?? ''), ['diambil','selesai'], true)) {
@@ -304,6 +317,22 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
           <div class="big">Saldo: <?= number_format((int)($order['saldo_poin'] ?? 0)) ?> poin</div>
           <small>Tukar poin untuk diskon di transaksi berikutnya!</small>
         </div>
+      <?php endif; ?>
+
+      <?php if (!empty($antar) && in_array($antar['status'], ['assigned','menuju','sampai','done'], true)): ?>
+      <div style="margin-top:14px;padding:14px 16px;background:#EFF6FF;border:1px solid #BFDBFE;border-radius:12px">
+        <div style="font-weight:700;color:#1E40AF;margin-bottom:6px">🛵 Status Antar</div>
+        <?php if (!empty($antar['kurir_nama'])): ?>
+          <div style="font-size:13.5px">Kurir: <strong><?= htmlspecialchars($antar['kurir_nama']) ?></strong>
+          <?php if ($antar['kurir_hp']): ?> · <a href="tel:<?= htmlspecialchars($antar['kurir_hp']) ?>" style="color:#1E40AF"><?= htmlspecialchars($antar['kurir_hp']) ?></a><?php endif; ?>
+          </div>
+        <?php endif; ?>
+        <div style="font-size:13px;margin-top:4px;color:#1E40AF">Status: <strong>
+          <?php
+            $stMap = ['assigned'=>'Kurir di-assign','menuju'=>'Dalam perjalanan','sampai'=>'Sampai lokasi','done'=>'Selesai diantar'];
+            echo htmlspecialchars($stMap[$antar['status']] ?? $antar['status']);
+          ?></strong> · <?= !empty($antar['updated_at']) ? date('H:i', strtotime($antar['updated_at'])) : '' ?></div>
+      </div>
       <?php endif; ?>
 
       <!-- OUTLET INFO -->

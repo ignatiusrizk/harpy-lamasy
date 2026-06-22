@@ -13,6 +13,36 @@ $oid = TenantResolver::outletId();
 $db  = Database::get();
 
 $action = $_GET['action'] ?? '';
+$view = $_GET['view'] ?? '';
+$reportDate = $_GET['date'] ?? date('Y-m-d');
+
+if ($view === 'report') {
+    // ponytail: simple aggregate, no extra abstraction
+    $stats = TenantQuery::rawOne(
+        "SELECT
+           SUM(tipe='jemput') AS jml_jemput,
+           SUM(tipe='antar') AS jml_antar,
+           SUM(status='done') AS jml_done,
+           SUM(status IN ('pending','assigned','menuju','sampai')) AS jml_ongoing,
+           SUM(status='cancel') AS jml_cancel,
+           ROUND(AVG(CASE WHEN status='done' THEN TIMESTAMPDIFF(MINUTE, created_at, done_at) ELSE NULL END)) AS avg_minutes,
+           SUM(CASE WHEN tipe='antar' AND status='done' THEN fee ELSE 0 END) AS fee_total
+         FROM hl_antar_jemput
+        WHERE tenant_id=? AND outlet_id=? AND DATE(created_at)=?",
+        [$tid, $oid, $reportDate]
+    );
+    $perKurir = TenantQuery::raw(
+        "SELECT k.nama, COUNT(*) AS total, SUM(aj.status='done') AS done,
+                ROUND(AVG(CASE WHEN aj.status='done' THEN TIMESTAMPDIFF(MINUTE, aj.created_at, aj.done_at) ELSE NULL END)) AS avg_min
+           FROM hl_antar_jemput aj
+      LEFT JOIN hl_kurir k ON k.id = aj.kurir_id
+          WHERE aj.tenant_id=? AND aj.outlet_id=? AND DATE(aj.created_at)=? AND aj.kurir_id IS NOT NULL
+          GROUP BY k.id, k.nama
+          ORDER BY done DESC, total DESC",
+        [$tid, $oid, $reportDate]
+    );
+}
+
 if ($action) {
     header('Content-Type: application/json');
 
@@ -142,6 +172,38 @@ renderHead($pageTitle);
 renderTopbar($activePage);
 ?>
 <div class="hl-main">
+<?php if ($view === 'report'): ?>
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px">
+    <h1 style="margin:0">📊 Report Antar Jemput</h1>
+    <div>
+      <input type="date" value="<?= htmlspecialchars($reportDate) ?>" onchange="window.location='?view=report&date='+this.value" class="hl-input" style="width:auto;display:inline-block">
+      <a href="?" class="hl-btn hl-btn-outline">← Kembali</a>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:18px">
+    <div class="hl-card" style="padding:14px;text-align:center"><div style="color:var(--gray);font-size:11px;text-transform:uppercase">Total</div><div style="font-size:24px;font-weight:800"><?= (int)($stats['jml_jemput'] + $stats['jml_antar']) ?></div><div style="font-size:11px;color:var(--gray)">📥 <?= (int)$stats['jml_jemput'] ?> · 📤 <?= (int)$stats['jml_antar'] ?></div></div>
+    <div class="hl-card" style="padding:14px;text-align:center"><div style="color:var(--gray);font-size:11px;text-transform:uppercase">Selesai</div><div style="font-size:24px;font-weight:800;color:#065F46"><?= (int)$stats['jml_done'] ?></div></div>
+    <div class="hl-card" style="padding:14px;text-align:center"><div style="color:var(--gray);font-size:11px;text-transform:uppercase">On-going</div><div style="font-size:24px;font-weight:800;color:#92400E"><?= (int)$stats['jml_ongoing'] ?></div></div>
+    <div class="hl-card" style="padding:14px;text-align:center"><div style="color:var(--gray);font-size:11px;text-transform:uppercase">Avg Waktu</div><div style="font-size:24px;font-weight:800"><?= (int)$stats['avg_minutes'] ?: '-' ?>m</div></div>
+    <div class="hl-card" style="padding:14px;text-align:center"><div style="color:var(--gray);font-size:11px;text-transform:uppercase">Fee</div><div style="font-size:24px;font-weight:800">Rp <?= number_format((int)$stats['fee_total'], 0, ',', '.') ?></div></div>
+  </div>
+
+  <h2 style="font-size:16px;margin:0 0 10px">Performance Kurir</h2>
+  <?php if (empty($perKurir)): ?>
+    <div style="padding:30px;text-align:center;color:var(--gray)">Belum ada data</div>
+  <?php else: ?>
+  <div class="hl-card" style="padding:0">
+    <?php foreach ($perKurir as $k): ?>
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid #EEF1F8">
+      <div><strong>🛵 <?= htmlspecialchars($k['nama']) ?></strong></div>
+      <div style="font-size:13.5px;color:var(--gray)"><?= (int)$k['done'] ?>/<?= (int)$k['total'] ?> selesai · avg <?= (int)$k['avg_min'] ?: '-' ?>m</div>
+    </div>
+    <?php endforeach; ?>
+  </div>
+  <?php endif; ?>
+
+<?php else: ?>
   <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px">
     <h1 style="margin:0">🚚 Antar Jemput</h1>
     <div style="display:flex;gap:8px">
@@ -158,6 +220,7 @@ renderTopbar($activePage);
   </div>
 
   <div id="ajList" style="display:grid;gap:10px;grid-template-columns:1fr">⏳ Memuat...</div>
+<?php endif; ?>
 </div>
 
 <!-- Modal Create -->
