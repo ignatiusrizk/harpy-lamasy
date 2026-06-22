@@ -638,7 +638,7 @@ if ($action) {
                  . "\nTerima kasih.\n_{$brandName}_";
         } else {
             $statusLabel = ['masuk'=>'Diterima','cuci'=>'Sedang Dicuci','kering'=>'Sedang Dikeringkan',
-                'setrika'=>'Sedang Disetrika','siap'=>'Siap Diambil','diambil'=>'Sudah Diambil'];
+                'setrika'=>'Sedang Disetrika','siap'=>'Siap Diambil','diambil'=>'Sudah Diambil/Diantar'];
             $stLabel = $statusLabel[$t['status_proses']] ?? $t['status_proses'];
             $msg = "Halo *{$t['nama_pelanggan']}*,\n\n"
                  . "Update status laundry Anda di *{$brandName}*:\n\n"
@@ -909,7 +909,7 @@ textarea{resize:vertical;min-height:64px}
     </div>
     <div class="stat-card" onclick="filterByStatus('diambil')" id="statDiambil">
       <div class="stat-num" id="sDiambil">-</div>
-      <div class="stat-label">📦 Diambil</div>
+      <div class="stat-label">📦 Diambil/Diantar</div>
     </div>
   </div>
 
@@ -970,7 +970,7 @@ textarea{resize:vertical;min-height:64px}
         <option value="kering">💨 Kering</option>
         <option value="setrika">👔 Setrika</option>
         <option value="siap">✅ Siap</option>
-        <option value="diambil">📦 Diambil</option>
+        <option value="diambil">📦 Diambil/Diantar</option>
       </select>
       <button class="btn btn-teal-sm btn-sm" onclick="applyBulkStatus()">✓ Terapkan</button>
       <button class="btn btn-outline btn-sm" style="background:rgba(255,255,255,.1);color:#fff;border-color:rgba(255,255,255,.2)" onclick="clearBulkSelection()">✕ Batal</button>
@@ -1381,7 +1381,7 @@ async function openDetail(id) {
 
   const statuses = [
     ['masuk','📥 Masuk'],['cuci','🫧 Cuci'],['kering','💨 Kering'],
-    ['setrika','👔 Setrika'],['siap','✅ Siap'],['diambil','📦 Diambil']
+    ['setrika','👔 Setrika'],['siap','✅ Siap'],['diambil','📦 Diambil/Diantar']
   ];
 
   document.getElementById('modalBody').innerHTML = `
@@ -1744,7 +1744,7 @@ function printLabel() {
 }
 
 // ── HELPERS ───────────────────────────────────────────
-function statusLabel(s){return{'masuk':'📥 Masuk','cuci':'🫧 Cuci','kering':'💨 Kering','setrika':'👔 Setrika','siap':'✅ Siap','diambil':'📦 Diambil'}[s]||s}
+function statusLabel(s){return{'masuk':'📥 Masuk','cuci':'🫧 Cuci','kering':'💨 Kering','setrika':'👔 Setrika','siap':'✅ Siap','diambil':'📦 Diambil/Diantar'}[s]||s}
 function bayarLabel(s){return{'lunas':'✅ Lunas','dp':'⚡ DP','belum_bayar':'⏳ Belum Bayar'}[s]||s}
 // Progress % visual per status (inspired by Smartlink — visual KPI)
 function prosesPercent(s){return{'masuk':10,'cuci':30,'kering':50,'setrika':70,'siap':90,'diambil':100}[s]||0}
@@ -1770,7 +1770,7 @@ async function cetakUlang(id) {
 
   const isFull = parseFloat(d.dp) >= parseFloat(d.total);
   const metodeTxt = {'cash':'Cash','transfer':'Transfer Bank','qris':'QRIS'}[d.metode_bayar] || d.metode_bayar;
-  const statusProsesLabel = {'masuk':'Diterima','cuci':'Sedang Dicuci','kering':'Sedang Dikeringkan','setrika':'Sedang Disetrika','siap':'Siap Diambil','diambil':'Sudah Diambil'}[d.status_proses] || d.status_proses;
+  const statusProsesLabel = {'masuk':'Diterima','cuci':'Sedang Dicuci','kering':'Sedang Dikeringkan','setrika':'Sedang Disetrika','siap':'Siap Diambil','diambil':'Sudah Diambil/Diantar'}[d.status_proses] || d.status_proses;
 
   const itemRows = (d.items||[]).map(item => `
     <div class="struk-item">
