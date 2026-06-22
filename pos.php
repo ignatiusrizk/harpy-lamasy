@@ -281,22 +281,59 @@ if ($action) {
 
             // ── Loyalty redeem (poin → diskon) — hitung nilai dulu, deduct setelah insert ──
             $redeemValue = 0;
-            if ($redeemPoin > 0 && $pel_id && Loyalty::isEnabled($tid)) {
+            $rewardId    = max(0, (int)($data['reward_id'] ?? 0));
+
+            if (($redeemPoin > 0 || $rewardId > 0) && $pel_id && Loyalty::isEnabled($tid)) {
                 $cfg = Loyalty::config($tid);
-                // Clamp by saldo poin + by rupiah (jangan melebihi subtotal - diskon manual)
                 $balPoin   = Loyalty::balance($tid, (int)$pel_id);
                 $maxRupiah = max(0, $subtotal - $diskon);
-                $maxPoin   = min($balPoin, (int)floor($maxRupiah / $cfg['poin_value']));
-                $redeemPoin = min($redeemPoin, $maxPoin);
-                if ($redeemPoin > 0) {
-                    $redeemValue = $redeemPoin * $cfg['poin_value'];
-                    if ($catatan === '') $catatan = "Redeem $redeemPoin poin (-Rp " . number_format($redeemValue,0,',','.') . ")";
-                    else $catatan .= " · Redeem $redeemPoin poin (-Rp " . number_format($redeemValue,0,',','.') . ")";
+
+                if ($rewardId > 0) {
+                    // Validate reward applicable di outlet ini via junction
+                    $reward = TenantQuery::rawOne(
+                        "SELECT r.* FROM hl_poin_reward r
+                          WHERE r.id=? AND r.tenant_id=? AND r.is_active=1
+                            AND (NOT EXISTS (SELECT 1 FROM hl_poin_reward_outlet WHERE reward_id=r.id)
+                                 OR EXISTS (SELECT 1 FROM hl_poin_reward_outlet WHERE reward_id=r.id AND outlet_id=?))
+                          LIMIT 1",
+                        [$rewardId, $tid, $oid]
+                    );
+                    if ($reward && $balPoin >= (int)$reward['poin_dibutuhkan']) {
+                        $redeemPoin = (int)$reward['poin_dibutuhkan'];
+                        // Compute discount per tipe
+                        switch ($reward['tipe']) {
+                            case 'diskon_nominal':
+                                $redeemValue = (int)$reward['nilai'];
+                                break;
+                            case 'diskon_persen':
+                                $redeemValue = (int)floor($maxRupiah * ((int)$reward['nilai'] / 100));
+                                break;
+                            case 'gratis_layanan':
+                                $redeemValue = (int)$reward['nilai'];
+                                break;
+                        }
+                        $redeemValue = min($redeemValue, $maxRupiah);
+                        if ($catatan === '') $catatan = "Reward: " . $reward['nama_reward'];
+                        else $catatan .= " · Reward: " . $reward['nama_reward'];
+                    } else {
+                        $rewardId   = 0;
+                        $redeemPoin = 0;
+                    }
                 } else {
-                    $redeemPoin = 0;
+                    // Manual numeric redeem (existing behavior)
+                    $maxPoin    = min($balPoin, (int)floor($maxRupiah / $cfg['poin_value']));
+                    $redeemPoin = min($redeemPoin, $maxPoin);
+                    if ($redeemPoin > 0) {
+                        $redeemValue = $redeemPoin * $cfg['poin_value'];
+                        if ($catatan === '') $catatan = "Redeem $redeemPoin poin (-Rp " . number_format($redeemValue,0,',','.') . ")";
+                        else $catatan .= " · Redeem $redeemPoin poin (-Rp " . number_format($redeemValue,0,',','.') . ")";
+                    } else {
+                        $redeemPoin = 0;
+                    }
                 }
             } else {
                 $redeemPoin = 0;
+                $rewardId   = 0;
             }
 
             // Biaya tambahan = SUM dari per-item biaya_express (server-side
@@ -419,7 +456,7 @@ if ($action) {
 
             // Deduct poin redeem (dalam transaksi yang sama) — transaksi_id terisi
             if ($redeemPoin > 0 && $pel_id) {
-                Loyalty::redeemInTx($db, $tid, $oid, (int)$pel_id, $redeemPoin, (int)$trx_id, $user['id']);
+                Loyalty::redeemInTx($db, $tid, $oid, (int)$pel_id, $redeemPoin, (int)$trx_id, $user['id'], $rewardId > 0 ? $rewardId : null);
             }
 
             // Deduct saldo deposit (audit trail di hl_deposit_usage)

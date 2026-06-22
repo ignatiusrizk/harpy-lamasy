@@ -235,7 +235,7 @@ class Loyalty
      * @throws RuntimeException kalau poin kurang.
      */
     public static function redeemInTx(
-        PDO $db, int $tenantId, ?int $outletId, int $pelangganId, int $poin, ?int $transaksiId, ?int $userId = null
+        PDO $db, int $tenantId, ?int $outletId, int $pelangganId, int $poin, ?int $transaksiId, ?int $userId = null, ?int $rewardId = null
     ): int {
         if ($poin <= 0) return 0;
         $cfg = self::config($tenantId);
@@ -245,14 +245,15 @@ class Loyalty
         $bal = (int)$cur->fetchColumn();
         if ($bal < $poin) throw new RuntimeException("Poin tidak cukup (saldo: $bal).");
 
-        $newBal = $bal - $poin;
+        $newBal  = $bal - $poin;
+        // ponytail: reward_id stored in keterangan suffix (no schema column needed yet)
+        $ket = $rewardId ? "Reward #$rewardId ($poin poin) di POS" : "Redeem $poin poin di POS";
         $db->prepare("UPDATE hl_pelanggan SET poin_balance=? WHERE id=? AND tenant_id=?")
            ->execute([$newBal, $pelangganId, $tenantId]);
         $db->prepare("INSERT INTO hl_loyalty_log
                         (tenant_id, outlet_id, pelanggan_id, transaksi_id, type, poin, balance_after, keterangan, created_by)
                       VALUES (?,?,?,?,'redeem',?,?,?,?)")
-           ->execute([$tenantId, $outletId, $pelangganId, $transaksiId, -$poin, $newBal,
-                      "Redeem $poin poin di POS", $userId]);
+           ->execute([$tenantId, $outletId, $pelangganId, $transaksiId, -$poin, $newBal, $ket, $userId]);
         return $poin * $cfg['poin_value'];
     }
 
