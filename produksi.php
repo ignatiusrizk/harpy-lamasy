@@ -214,9 +214,14 @@ $pageTitle  = '🧺 Produksi';
 <?php require __DIR__ . '/components.php'; ?>
 <?php renderHead($pageTitle); ?>
 <style>
-/* Placeholder styles akan ditambahkan di Task 6 */
 .ol-main { padding: 20px; }
 .ol-content { max-width: 1200px; margin: 0 auto; }
+.stage-tab { padding:8px 14px;border:1px solid var(--off);background:#fff;border-radius:100px;font-size:13px;font-weight:600;white-space:nowrap;cursor:pointer; }
+.stage-tab.active { background:var(--teal);color:#fff;border-color:var(--teal); }
+.stage-tab .cnt { display:inline-block;margin-left:4px;background:rgba(0,0,0,.08);padding:1px 7px;border-radius:100px;font-size:11px; }
+.stage-tab.active .cnt { background:rgba(255,255,255,.25); }
+.order-card { background:#fff;border:1px solid var(--off);border-radius:12px;padding:12px 14px;cursor:pointer;transition:border .2s; }
+.order-card:active { border-color:var(--teal); }
 </style>
 </head>
 <body>
@@ -224,12 +229,94 @@ $pageTitle  = '🧺 Produksi';
 
 <main class="ol-main">
   <div class="ol-content">
-    <h1 style="margin:0 0 16px">🧺 Produksi</h1>
-    <div id="produksiRoot">
-      <p style="color:var(--gray)">Stub — UI ditambahkan di Task 6.</p>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <h1 style="margin:0">🧺 Produksi</h1>
+      <button class="btn btn-primary" onclick="startScan()">📷 Scan QR</button>
+    </div>
+
+    <!-- Stage tabs -->
+    <div id="stageTabs" style="display:flex;gap:6px;overflow-x:auto;padding-bottom:8px;margin-bottom:12px;-webkit-overflow-scrolling:touch">
+      <button class="stage-tab active" data-stage="terima"  onclick="switchStage('terima')">📥 Terima <span class="cnt"></span></button>
+      <button class="stage-tab"        data-stage="cuci"    onclick="switchStage('cuci')">🫧 Cuci <span class="cnt"></span></button>
+      <button class="stage-tab"        data-stage="kering"  onclick="switchStage('kering')">💨 Kering <span class="cnt"></span></button>
+      <button class="stage-tab"        data-stage="setrika" onclick="switchStage('setrika')">👔 Setrika <span class="cnt"></span></button>
+      <button class="stage-tab"        data-stage="siap"    onclick="switchStage('siap')">✅ Siap <span class="cnt"></span></button>
+      <button class="stage-tab"        data-stage="diambil" onclick="switchStage('diambil')">📦 Diambil <span class="cnt"></span></button>
+    </div>
+
+    <!-- Card list -->
+    <div id="cardList" style="display:grid;gap:10px;grid-template-columns:1fr">
+      <div style="text-align:center;padding:40px;color:var(--gray)">⏳ Memuat...</div>
+    </div>
+
+    <!-- Modal stage form (filled di Task 7) -->
+    <div id="stageModal" class="modal-overlay" style="align-items:center;justify-content:center;padding:20px">
+      <div class="modal" style="max-width:480px;max-height:90vh;overflow-y:auto">
+        <div id="stageModalBody"></div>
+      </div>
+    </div>
+
+    <!-- Modal scanner (filled di Task 8) -->
+    <div id="scanModal" class="modal-overlay" style="align-items:center;justify-content:center;padding:20px">
+      <div class="modal" style="max-width:480px">
+        <h3 style="margin:0 0 12px">📷 Scan QR Order</h3>
+        <div id="scanArea" style="width:100%;min-height:300px"></div>
+        <button class="btn" onclick="stopScan()" style="margin-top:12px;width:100%">Batal</button>
+      </div>
     </div>
   </div>
 </main>
+
+<script>
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;')}
+
+let currentStage = 'terima';
+const CSRF = document.querySelector('meta[name=csrf-token]')?.content || '';
+
+function switchStage(stage) {
+  currentStage = stage;
+  document.querySelectorAll('.stage-tab').forEach(b => b.classList.toggle('active', b.dataset.stage === stage));
+  loadCards();
+}
+
+async function loadCards() {
+  const list = document.getElementById('cardList');
+  list.innerHTML = '<div style="text-align:center;padding:30px;color:var(--gray)">⏳ Memuat...</div>';
+  try {
+    const r = await fetch('/produksi.php?action=list&stage=' + currentStage);
+    const d = await r.json();
+    if (d.error) { list.innerHTML = '<div style="padding:20px;color:var(--red)">❌ ' + d.error + '</div>'; return; }
+    if (!d.rows.length) {
+      list.innerHTML = '<div style="text-align:center;padding:40px;color:var(--gray)">Tidak ada order di stage ini</div>';
+      return;
+    }
+    list.innerHTML = d.rows.map(r => `
+      <div class="order-card" onclick="openStageModal(${r.id})">
+        <div style="font-weight:700;font-size:15px">#${r.no_order} · ${esc(r.nama_pelanggan||'(no name)')}</div>
+        <div style="color:var(--gray);font-size:13px;margin-top:3px">${r.jml_item} item · Rp ${Number(r.total||0).toLocaleString('id-ID')}</div>
+        <div style="margin-top:8px"><span class="badge b-${r.status_proses}">${r.status_proses}</span></div>
+      </div>`).join('');
+  } catch (e) {
+    list.innerHTML = '<div style="padding:20px;color:var(--red)">❌ Network error: ' + e.message + '</div>';
+  }
+}
+
+function openStageModal(orderId) {
+  // Implementation di Task 7
+  alert('Stage modal akan diisi di Task 7. Order id: ' + orderId);
+}
+
+function startScan() {
+  // Implementation di Task 8
+  alert('Scanner akan diisi di Task 8');
+}
+function stopScan() {
+  document.getElementById('scanModal').classList.remove('open');
+}
+
+// Initial load
+loadCards();
+</script>
 
 <?php renderToast(); ?>
 </body>
