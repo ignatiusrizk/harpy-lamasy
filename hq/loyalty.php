@@ -48,7 +48,7 @@ if ($action) {
         $minTransaksi = max(0, (int)($d['min_transaksi'] ?? 0));
         $maxRedeem   = max(0, (int)($d['max_redeem_per_bulan'] ?? 0));
         $isActive    = !empty($d['is_active']) ? 1 : 0;
-        $scope       = $d['scope'] ?? 'all'; // 'all' | 'selected'
+        $scope       = in_array(($d['scope'] ?? ''), ['all', 'selected'], true) ? $d['scope'] : 'all';
         $outletIds   = array_map('intval', (array)($d['outlet_ids'] ?? []));
 
         if (!$nama) { echo json_encode(['error'=>'Nama wajib']); exit; }
