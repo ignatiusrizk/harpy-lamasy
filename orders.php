@@ -1709,9 +1709,18 @@ async function saveEdit() {
 
   if (d.success) {
     showToast('✅ Order berhasil diupdate!', 'success');
+    const o = currentOrderData;
+    const naikSiap = payload.status_proses === 'siap' && o && o.status_proses !== 'siap';
     closeModal();
     loadOrders();
     loadSummary();
+    if (naikSiap && o.telepon) {
+      const phone = String(o.telepon).replace(/[^0-9]/g,'').replace(/^0/,'62').replace(/^8/,'628');
+      if (/^[0-9]{9,15}$/.test(phone) && confirm('Kirim WA "siap diambil" ke pelanggan?')) {
+        const msg = `Halo ${o.nama_pelanggan} ✨\nPesanan #${o.no_order} sudah siap diambil di ${OUTLET_NAMA}.\nTotal: Rp ${Number(o.total||0).toLocaleString('id-ID')}\n\nDitunggu ya!`;
+        window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(msg), '_blank');
+      }
+    }
   } else {
     showToast('❌ ' + (d.error||'Gagal'), 'error');
   }
