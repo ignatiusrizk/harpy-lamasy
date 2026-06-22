@@ -493,6 +493,41 @@ if ($action) {
                 ]);
             }
 
+            // Auto-INSERT antar row kalau cb_antar dicentang (bypass perm antar.manage — kasir authorized via pos.create)
+            $antarActive = !empty($data['antar_active'] ?? '');
+            if ($antarActive) {
+                $alamat   = substr(trim($data['antar_alamat']  ?? ''), 0, 255);
+                $antCat   = substr(trim($data['antar_catatan'] ?? ''), 0, 255);
+                $zonaId   = (int)($data['antar_zona'] ?? 0) ?: null;
+                if ($alamat !== '' || $antCat !== '') {
+                    $fee = 0;
+                    if ($zonaId) {
+                        $z = TenantQuery::rawOne(
+                            "SELECT fee FROM hl_zona_antar WHERE id=? AND tenant_id=? AND outlet_id=? AND aktif=1",
+                            [$zonaId, $tid, $oid]
+                        );
+                        if ($z) $fee = (int)$z['fee'];
+                    }
+                    try {
+                        TenantQuery::insert('hl_antar_jemput', [
+                            'tipe'         => 'antar',
+                            'transaksi_id' => $trx_id,
+                            'pelanggan_id' => $pel_id ?: null,
+                            'nama'         => $nama_pel,
+                            'telepon'      => $telepon,
+                            'alamat'       => $alamat  ?: null,
+                            'zona_id'      => $zonaId,
+                            'fee'          => $fee,
+                            'catatan'      => $antCat  ?: null,
+                            'created_by'   => $user['id'],
+                            'outlet_id'    => $oid,
+                        ]);
+                    } catch (Throwable $e) {
+                        error_log('[pos antar auto-create] ' . $e->getMessage());
+                    }
+                }
+            }
+
             $db->commit();
             logAudit('create', 'orders', 'Buat order baru: ' . $no . ' - ' . $nama_pel, $no);
 
@@ -1855,6 +1890,10 @@ async function doSaveTransaksi() {
     deposit_amount: parseFloat(document.getElementById('f_deposit_amount')?.value)||0,
     metode_bayar:   document.getElementById('f_metode').value,
     foto_masuk:     document.getElementById('f_foto_path').value || '',
+    antar_active:   document.getElementById('cb_antar')?.checked ? 1 : 0,
+    antar_alamat:   document.getElementById('antar_alamat')?.value || '',
+    antar_catatan:  document.getElementById('antar_catatan')?.value || '',
+    antar_zona:     parseInt(document.getElementById('antar_zona')?.value) || 0,
     items
   };
 
@@ -1870,23 +1909,6 @@ async function doSaveTransaksi() {
           method:'POST', headers:{'Content-Type':'application/json','X-CSRF-Token':csrfToken()},
           body: JSON.stringify({voucher_id:appliedVoucher.voucher_id||null,promo_id:appliedVoucher.promo_id||null,no_order:data.no_order})
         });
-      }
-      // Auto-create antar row kalau checkbox antar dicentang
-      if (document.getElementById('cb_antar')?.checked) {
-        const antarPayload = {
-          tipe: 'antar',
-          transaksi_id: data.id,
-          pelanggan_id: data.pelanggan_id || null,
-          nama: document.getElementById('f_nama').value || data.nama_pelanggan,
-          telepon: document.getElementById('f_telepon').value || '',
-          alamat: document.getElementById('antar_alamat').value || null,
-          catatan: document.getElementById('antar_catatan').value || 'Antar dari POS',
-          zona_id: parseInt(document.getElementById('antar_zona').value) || null,
-        };
-        fetch('/antar-jemput.php?action=create', {
-          method:'POST', headers:{'Content-Type':'application/json','X-CSRF-Token':csrfToken()},
-          body: JSON.stringify(antarPayload)
-        }).catch(e => console.warn('Antar auto-create failed', e));
       }
       showToast('✅ Order ' + data.no_order + ' tersimpan!', 'success');
       lastSaved = data;
