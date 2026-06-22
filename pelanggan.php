@@ -54,6 +54,29 @@ try {
     $poin = (int)($st->fetchColumn() ?: 0);
 } catch (Throwable) {}
 
+// Cari outlet last order pelanggan untuk scope rewards
+$lastOutletId = 0;
+try {
+    $st = $db->prepare("SELECT outlet_id FROM hl_transaksi WHERE pelanggan_id=? ORDER BY id DESC LIMIT 1");
+    $st->execute([(int)$pel['id']]);
+    $lastOutletId = (int)($st->fetchColumn() ?: 0);
+} catch (Throwable) {}
+
+// Load rewards yang apply di outlet tsb + tenant scope
+$rewards = [];
+if ($lastOutletId > 0) {
+    require_once ROOT . '/core/Loyalty.php';
+    // Tenant_id dari outlet
+    try {
+        $st = $db->prepare("SELECT tenant_id FROM outlets WHERE id=? LIMIT 1");
+        $st->execute([$lastOutletId]);
+        $tid = (int)($st->fetchColumn() ?: 0);
+        if ($tid > 0) {
+            $rewards = Loyalty::availableRewards($tid, $lastOutletId, $poin);
+        }
+    } catch (Throwable) {}
+}
+
 // Order aktif (status_proses bukan diambil/selesai)
 $activeOrders = [];
 try {
@@ -137,6 +160,23 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
     <div class="kv"><span class="lbl">Deposit</span><span class="val">Rp <?= number_format($saldoDeposit, 0, ',', '.') ?></span></div>
     <div class="kv"><span class="lbl">Poin Loyalty</span><span class="val"><?= number_format($poin, 0, ',', '.') ?></span></div>
   </div>
+
+  <?php if (!empty($rewards)): ?>
+  <div class="card">
+    <h2>🎁 Hadiah Tersedia</h2>
+    <?php foreach ($rewards as $r): ?>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #F1F5F9">
+        <div style="flex:1">
+          <div style="font-weight:600;font-size:14px;<?= $r['bisa_redeem'] ? '' : 'color:#94A3B8' ?>">
+            <?= $r['bisa_redeem'] ? '✅' : '⏳' ?> <?= htmlspecialchars($r['nama_reward']) ?>
+          </div>
+          <div style="font-size:11px;color:#64748B;margin-top:2px"><?= (int)$r['poin_dibutuhkan'] ?> poin<?= $r['bisa_redeem'] ? '' : ' (butuh ' . (int)$r['kurang'] . ' lagi)' ?></div>
+        </div>
+      </div>
+    <?php endforeach; ?>
+    <div style="margin-top:10px;font-size:12px;color:#64748B;font-style:italic">💡 Kunjungi outlet untuk menukarkan hadiah</div>
+  </div>
+  <?php endif; ?>
 
   <div class="card">
     <h2>🧺 Order Aktif (<?= count($activeOrders) ?>)</h2>
