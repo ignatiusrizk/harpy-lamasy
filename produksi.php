@@ -95,6 +95,102 @@ if ($action) {
         exit;
     }
 
+    if ($action === 'upload_foto' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+        verifyCsrf();
+        require_once ROOT . '/core/FileUpload.php';
+        $f = $_FILES['foto'] ?? null;
+        if (!$f) { echo json_encode(['error' => 'File foto tidak ditemukan']); exit; }
+        $res = FileUpload::uploadImage($f, 'uploads/foto_proses', 't' . $tid . '_o' . $oid);
+        if (!empty($res['error'])) { echo json_encode(['error' => $res['error']]); exit; }
+        echo json_encode(['ok' => true, 'path' => $res['path']]);
+        exit;
+    }
+
+    if ($action === 'save_stage' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+        verifyCsrf();
+        $d = json_decode(file_get_contents('php://input'), true) ?: [];
+        $transaksiId = (int)($d['transaksi_id'] ?? 0);
+        $stage       = $d['stage'] ?? '';
+        $dataFields  = $d['data'] ?? [];
+        $fotoPaths   = $d['foto'] ?? [];          // array of paths
+        $catatan     = trim($d['catatan'] ?? '');
+        $signature   = $d['signature'] ?? '';     // data URL untuk stage diambil
+
+        if ($transaksiId <= 0 || !array_key_exists($stage, STAGE_FROM)) {
+            echo json_encode(['error' => 'Input tidak valid']); exit;
+        }
+
+        // Decode signature dataURL → save as PNG → append to foto_paths
+        if ($signature && preg_match('/^data:image\/png;base64,(.+)$/', $signature, $m)) {
+            $bin = base64_decode($m[1]);
+            if ($bin !== false && strlen($bin) < 1000000) { // 1MB cap
+                $fn = 'uploads/foto_proses/sig_t' . $tid . '_o' . $oid . '_' . bin2hex(random_bytes(8)) . '.png';
+                if (file_put_contents(ROOT . '/' . $fn, $bin) !== false) {
+                    $fotoPaths[] = $fn;
+                }
+            }
+        }
+
+        try {
+            $db->beginTransaction();
+            $st = $db->prepare(
+                "SELECT status_proses FROM hl_transaksi
+                  WHERE id=? AND tenant_id=? AND outlet_id=? FOR UPDATE"
+            );
+            $st->execute([$transaksiId, $tid, $oid]);
+            $current = $st->fetchColumn();
+            if ($current === false) { throw new Exception('Order tidak ditemukan'); }
+
+            $expectedFrom = STAGE_FROM[$stage];
+            if ($expectedFrom !== null && $current !== $expectedFrom) {
+                throw new Exception('Order sudah diupdate worker lain. Refresh halaman.');
+            }
+
+            // Insert input record (outlet_id explicit — hl_proses_input not in outletTables)
+            TenantQuery::insert('hl_proses_input', [
+                'outlet_id'    => $oid,
+                'transaksi_id' => $transaksiId,
+                'stage'        => $stage,
+                'karyawan_id'  => $userId,
+                'data_json'    => json_encode($dataFields),
+                'foto_paths'   => implode(',', $fotoPaths),
+                'catatan'      => $catatan,
+            ]);
+
+            // Update status (kecuali stage 'terima')
+            $newStatus = STAGE_TO[$stage];
+            if ($newStatus !== null) {
+                $upd = $db->prepare(
+                    "UPDATE hl_transaksi SET status_proses=?, updated_at=NOW()
+                      WHERE id=? AND tenant_id=? AND outlet_id=?"
+                );
+                $upd->execute([$newStatus, $transaksiId, $tid, $oid]);
+
+                // Log status change
+                // Schema: id, tenant_id, transaksi_id, status_lama, status_baru, tipe, catatan, oleh, created_at
+                $byName = currentUser()['nama'] ?? '';
+                $logSt = $db->prepare(
+                    "INSERT INTO hl_proses_log (tenant_id, transaksi_id, status_lama, status_baru, tipe, catatan, oleh)
+                     VALUES (?, ?, ?, ?, 'produksi', ?, ?)"
+                );
+                $logSt->execute([
+                    $tid, $transaksiId, $current, $newStatus,
+                    'Stage ' . $stage . ' via /produksi',
+                    $byName,
+                ]);
+            }
+
+            logAudit('proses_stage', 'transaksi', "id={$transaksiId} stage={$stage}");
+            $db->commit();
+            echo json_encode(['ok' => true]);
+        } catch (Throwable $e) {
+            if ($db->inTransaction()) $db->rollBack();
+            error_log('[produksi save_stage] ' . $e->getMessage());
+            echo json_encode(['error' => $e->getMessage()]);
+        }
+        exit;
+    }
+
     echo json_encode(['error' => 'Unknown action: ' . $action]);
     exit;
 }
