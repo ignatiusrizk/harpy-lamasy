@@ -1153,7 +1153,7 @@ textarea{resize:vertical;min-height:64px}
     <div class="modal-footer" style="gap:6px;flex-wrap:wrap">
       <button class="btn btn-outline" onclick="closeModal()">Tutup</button>
       <button class="btn btn-green" onclick="printStruk()">🖨️ Print Struk</button>
-      <button class="btn btn-teal-sm" onclick="printLabel()" title="Cetak label stiker 58mm untuk produksi">🏷 Label</button>
+      <button class="btn btn-teal-sm" onclick="printLabel(event)" title="Cetak label stiker · Shift+klik untuk ganti ukuran (58/80mm)">🏷 Label</button>
       <button class="btn btn-teal-sm" onclick="kirimNotaWA()" title="Kirim nota via WhatsApp (150 koin)">📲 Kirim WA</button>
       <a id="openStrukBtn" href="#" target="_blank" class="btn btn-teal-sm">↗ Buka Penuh</a>
       <button class="btn btn-teal-sm" onclick="window.location.href='/orders'">📋 Orders</button>
@@ -1961,10 +1961,17 @@ function printStruk() {
     window.print();
   }
 }
-function printLabel() {
+function printLabel(ev) {
   const id = lastSaved?.id;
   if (!id) { showToast('❌ Order belum tersimpan', 'error'); return; }
-  window.open('/api/label.php?id=' + id, '_blank', 'width=320,height=480');
+  let size = localStorage.getItem('labelSize');
+  if (!size || (ev && ev.shiftKey)) {
+    size = prompt('Ukuran printer label?\n\nKetik 58 atau 80', size || '80');
+    if (size !== '58' && size !== '80') return;
+    localStorage.setItem('labelSize', size);
+    showToast('✅ Ukuran label disimpan: ' + size + 'mm', 'success');
+  }
+  window.open('/api/label.php?id=' + id + '&size=' + size, '_blank', 'width=380,height=520');
 }
 function closeModal()  { document.getElementById('modalStruk').classList.remove('open'); }
 

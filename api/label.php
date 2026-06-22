@@ -11,11 +11,19 @@ require_once ROOT . '/middleware/tenant_guard.php';
 require_once ROOT . '/core/TenantQuery.php';
 require_once ROOT . '/core/TenantResolver.php';
 
-$id  = (int)($_GET['id'] ?? 0);
-$tid = TenantResolver::id();
-$oid = TenantResolver::outletId();
+$id   = (int)($_GET['id'] ?? 0);
+$size = (string)($_GET['size'] ?? '80');
+if (!in_array($size, ['58','80'], true)) $size = '80';
+$tid  = TenantResolver::id();
+$oid  = TenantResolver::outletId();
 
 if ($id <= 0) { http_response_code(400); exit('Bad id'); }
+
+// Sizing per width
+$widthMm  = $size === '58' ? 58 : 80;
+$qrMm     = $size === '58' ? 35 : 48;
+$qrPx     = $size === '58' ? 180 : 240;
+$kodeSize = $size === '58' ? 18 : 24;
 
 $order = TenantQuery::rawOne(
     "SELECT t.no_order, t.nama_pelanggan, t.estimasi_selesai, o.nama_outlet
@@ -34,18 +42,18 @@ $tgl    = $order['estimasi_selesai']
     ? date('d M Y', strtotime($order['estimasi_selesai']))
     : '-';
 
-$qrSrc  = 'https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=' . urlencode($kode);
+$qrSrc  = "https://api.qrserver.com/v1/create-qr-code/?size={$qrPx}x{$qrPx}&data=" . urlencode($kode);
 ?><!doctype html>
 <html lang="id">
 <head>
 <meta charset="utf-8">
 <title>Label <?= htmlspecialchars($kode) ?></title>
 <style>
-  @page { size: 58mm auto; margin: 0; }
+  @page { size: <?= $widthMm ?>mm auto; margin: 0; }
   *, *::before, *::after { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; }
   body {
-    width: 58mm;
+    width: <?= $widthMm ?>mm;
     font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
     color: #000;
     background: #fff;
@@ -64,7 +72,7 @@ $qrSrc  = 'https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=' . url
     padding-bottom: 1.5mm;
   }
   .kode {
-    font-size: 18pt;
+    font-size: <?= $kodeSize ?>pt;
     font-weight: 800;
     letter-spacing: .02em;
     margin: 1mm 0 2mm;
@@ -72,8 +80,8 @@ $qrSrc  = 'https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=' . url
   }
   .qr {
     margin: 1mm auto 2mm;
-    width: 35mm;
-    height: 35mm;
+    width: <?= $qrMm ?>mm;
+    height: <?= $qrMm ?>mm;
   }
   .qr img { width: 100%; height: 100%; display: block; }
   .meta { font-size: 9pt; line-height: 1.35; margin-top: 1mm; }
@@ -84,7 +92,7 @@ $qrSrc  = 'https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=' . url
   /* Layar (preview sebelum print) */
   @media screen {
     body { background: #eee; padding: 16px; display: flex; justify-content: center; }
-    .label { background: #fff; box-shadow: 0 4px 20px rgba(0,0,0,.15); width: 58mm; }
+    .label { background: #fff; box-shadow: 0 4px 20px rgba(0,0,0,.15); width: <?= $widthMm ?>mm; }
   }
 </style>
 </head>
