@@ -158,6 +158,7 @@ if ($action) {
         if ($id <= 0) { echo json_encode(['error'=>'Input invalid']); exit; }
         $st = $db->prepare("UPDATE hl_antar_jemput SET status='cancel', updated_at=NOW() WHERE id=? AND tenant_id=? AND outlet_id=? AND status NOT IN ('done','cancel')");
         $st->execute([$id, $tid, $oid]);
+        if (!$st->rowCount()) { echo json_encode(['error'=>'Tidak ditemukan atau sudah selesai/dibatalkan']); exit; }
         logAudit('antar_cancel', 'antar_jemput', "id=$id");
         echo json_encode(['ok'=>true]);
         exit;

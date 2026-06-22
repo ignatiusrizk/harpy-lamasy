@@ -32,11 +32,11 @@ if ($action) {
             "SELECT aj.*, t.no_order, t.nama_pelanggan AS order_nama
                FROM hl_antar_jemput aj
           LEFT JOIN hl_transaksi t ON t.id = aj.transaksi_id
-              WHERE aj.tenant_id=? AND aj.kurir_id=?
+              WHERE aj.tenant_id=? AND aj.outlet_id=? AND aj.kurir_id=?
                 AND aj.status IN ('assigned','menuju','sampai')
                 AND DATE(aj.updated_at) >= ?
               ORDER BY FIELD(aj.status,'menuju','sampai','assigned'), aj.slot_waktu ASC",
-            [$tid, $kurirId, date('Y-m-d', strtotime('-1 day'))]
+            [$tid, $oid, $kurirId, date('Y-m-d', strtotime('-1 day'))]
         );
         echo json_encode(['rows' => $rows]);
         exit;
@@ -52,8 +52,8 @@ if ($action) {
 
         try {
             $db->beginTransaction();
-            $st = $db->prepare("SELECT status FROM hl_antar_jemput WHERE id=? AND tenant_id=? AND kurir_id=? FOR UPDATE");
-            $st->execute([$id, $tid, $kurirId]);
+            $st = $db->prepare("SELECT status FROM hl_antar_jemput WHERE id=? AND tenant_id=? AND outlet_id=? AND kurir_id=? FOR UPDATE");
+            $st->execute([$id, $tid, $oid, $kurirId]);
             $current = $st->fetchColumn();
             if ($current === false) { throw new Exception('Tugas tidak ditemukan'); }
 
@@ -61,8 +61,8 @@ if ($action) {
             $allowedFrom = ['menuju'=>'assigned', 'sampai'=>'menuju'];
             if ($current !== $allowedFrom[$next]) { throw new Exception('Transisi tidak valid (current=' . $current . ')'); }
 
-            $upd = $db->prepare("UPDATE hl_antar_jemput SET status=?, updated_at=NOW() WHERE id=? AND tenant_id=? AND kurir_id=?");
-            $upd->execute([$next, $id, $tid, $kurirId]);
+            $upd = $db->prepare("UPDATE hl_antar_jemput SET status=?, updated_at=NOW() WHERE id=? AND tenant_id=? AND outlet_id=? AND kurir_id=?");
+            $upd->execute([$next, $id, $tid, $oid, $kurirId]);
             logAudit('antar_status', 'antar_jemput', "id=$id status=$next");
             $db->commit();
             echo json_encode(['ok'=>true]);
@@ -111,8 +111,8 @@ if ($action) {
 
         try {
             $db->beginTransaction();
-            $st = $db->prepare("SELECT status, tipe FROM hl_antar_jemput WHERE id=? AND tenant_id=? AND kurir_id=? FOR UPDATE");
-            $st->execute([$id, $tid, $kurirId]);
+            $st = $db->prepare("SELECT status, tipe FROM hl_antar_jemput WHERE id=? AND tenant_id=? AND outlet_id=? AND kurir_id=? FOR UPDATE");
+            $st->execute([$id, $tid, $oid, $kurirId]);
             $row = $st->fetch(PDO::FETCH_ASSOC);
             if (!$row) { throw new Exception('Tugas tidak ditemukan'); }
             if ($row['status'] !== 'sampai') { throw new Exception('Status harus sampai dulu sebelum selesai'); }
@@ -120,8 +120,8 @@ if ($action) {
             // Antar wajib foto
             if ($row['tipe'] === 'antar' && !$fotoPath) { throw new Exception('Foto bukti wajib untuk antar'); }
 
-            $upd = $db->prepare("UPDATE hl_antar_jemput SET status='done', done_at=NOW(), foto_bukti=?, signature_path=?, catatan=COALESCE(NULLIF(?,''),catatan), updated_at=NOW() WHERE id=? AND tenant_id=? AND kurir_id=?");
-            $upd->execute([$fotoPath ?: null, $sigPath, $catatan, $id, $tid, $kurirId]);
+            $upd = $db->prepare("UPDATE hl_antar_jemput SET status='done', done_at=NOW(), foto_bukti=?, signature_path=?, catatan=COALESCE(NULLIF(?,''),catatan), updated_at=NOW() WHERE id=? AND tenant_id=? AND outlet_id=? AND kurir_id=?");
+            $upd->execute([$fotoPath ?: null, $sigPath, $catatan, $id, $tid, $oid, $kurirId]);
             logAudit('antar_done', 'antar_jemput', "id=$id tipe=" . $row['tipe']);
             $db->commit();
             echo json_encode(['ok'=>true]);

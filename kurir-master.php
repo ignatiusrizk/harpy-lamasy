@@ -72,7 +72,7 @@ if ($action) {
 
         // Generate username dari nama (slugify) + 3 digit random
         $base = preg_replace('/[^a-z0-9]/', '', strtolower($kurir['nama']));
-        $username = substr($base, 0, 8) . rand(100,999);
+        $username = substr($base, 0, 8) . bin2hex(random_bytes(3));
         $password = bin2hex(random_bytes(4)); // 8 char
         $hash     = password_hash($password, PASSWORD_DEFAULT);
 
@@ -92,7 +92,7 @@ if ($action) {
         } catch (Throwable $e) {
             if ($db->inTransaction()) $db->rollBack();
             error_log('[kurir create_account] ' . $e->getMessage());
-            echo json_encode(['error' => 'Gagal buat akun: ' . $e->getMessage()]);
+            echo json_encode(['error' => 'Gagal membuat akun. Coba lagi.']);
         }
         exit;
     }
