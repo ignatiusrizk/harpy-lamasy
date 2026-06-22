@@ -220,7 +220,7 @@ require_once ROOT . '/components.php';
 <?php renderHead('Kustomisasi Struk'); ?>
 <style>
 /* ── Layout ── */
-.struk-wrap { max-width: 1180px; margin: 0 auto; padding: 20px 16px 60px; }
+/* struk-wrap deprecated — pakai .hl-main biar konsisten dengan /outlet-settings */
 .struk-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; flex-wrap:wrap; gap:10px; }
 .struk-header h1 { font-size:1.35rem; font-weight:800; color:var(--navy); }
 .struk-header h1 small { display:block; font-size:13px; font-weight:400; color:var(--gray); margin-top:2px; }
@@ -305,7 +305,7 @@ require_once ROOT . '/components.php';
 </head>
 <body>
 <?php renderTopbar('outlet-settings'); ?>
-<div class="struk-wrap">
+<div class="hl-main">
   <div class="settings-tabs" style="display:flex;gap:2px;margin-bottom:18px;border-bottom:1px solid var(--off)">
     <a href="/outlet-settings" class="settings-tab" style="padding:11px 18px;border-bottom:3px solid transparent;color:var(--gray);font-weight:600;font-size:14px;text-decoration:none">🏢 Outlet & Nota</a>
     <a href="/struk" class="settings-tab active" style="padding:11px 18px;border-bottom:3px solid var(--teal);color:var(--navy-d);font-weight:700;font-size:14px;text-decoration:none">🧾 Struk & Invoice</a>
@@ -358,7 +358,7 @@ require_once ROOT . '/components.php';
     </div>
 
   </div><!-- /struk-grid -->
-</div><!-- /struk-wrap -->
+</div><!-- /hl-main -->
 
 <?php renderToast(); ?>
 <script>
