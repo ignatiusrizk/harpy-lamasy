@@ -273,6 +273,7 @@ if ($action) {
                         'total_visit_count'     => 1,
                         'registered_outlet_id'  => $oid,
                         'outlet_id'             => $oid, // legacy compat
+                        'portal_token'          => bin2hex(random_bytes(16)),
                     ]);
                     $pel_id = $db->lastInsertId();
                 }

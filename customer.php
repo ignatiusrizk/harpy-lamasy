@@ -104,6 +104,7 @@ if ($action) {
                 'metode_bayar'         => $metodeBayar,
                 'registered_outlet_id' => $currentOid, // catat outlet pertama daftar
                 'outlet_id'            => $currentOid, // legacy compat
+                'portal_token'         => bin2hex(random_bytes(16)),
             ]);
         }
         logAudit(!empty($d['id'])?'update':'create','customer',(!empty($d['id'])?'Edit':'Tambah').' customer: '.$nama);
@@ -172,6 +173,21 @@ if ($action) {
         require_once ROOT . '/core/SegmentasiManager.php';
         $changed = SegmentasiManager::updateAll($tid, $oid, true);
         echo json_encode(['ok'=>true, 'changed'=>$changed]);
+        exit;
+    }
+
+    if ($action === 'regen_token' && $_SERVER['REQUEST_METHOD']==='POST') {
+        verifyCsrf();
+        requirePermission('pelanggan.edit');
+        $d  = json_decode(file_get_contents('php://input'), true) ?: [];
+        $id = (int)($d['id'] ?? 0);
+        if ($id <= 0) { echo json_encode(['error'=>'Input invalid']); exit; }
+        $newToken = bin2hex(random_bytes(16));
+        $st = Database::get()->prepare("UPDATE hl_pelanggan SET portal_token=? WHERE id=? AND tenant_id=?");
+        $st->execute([$newToken, $id, $tid]);
+        if (!$st->rowCount()) { echo json_encode(['error'=>'Tidak ditemukan']); exit; }
+        logAudit('portal_token_regen', 'pelanggan', "pelanggan_id=$id");
+        echo json_encode(['ok'=>true]);
         exit;
     }
 
@@ -509,6 +525,7 @@ function renderCustomer() {
           <div class="cust-list-stat"><strong>${c.total_order||0}</strong>Order</div>
           <div class="cust-list-stat"><strong>Rp ${parseFloat(c.total_omset||0).toLocaleString('id-ID')}</strong>Omset</div>
           <div class="cust-list-stat"><strong>${c.last_order?fmtDate(c.last_order):'-'}</strong>Terakhir</div>
+          ${CAN_EDIT_CUST ? `<button class="hl-btn hl-btn-outline hl-btn-sm" onclick="event.stopPropagation();regenToken(${c.id})" title="Regenerate portal token (struk lama jadi invalid)">🔄</button>` : ''}
         </div>
       </div>`).join('');
   } else {
@@ -710,6 +727,17 @@ function openModal(data=null) {
   document.getElementById('modalCust').classList.add('open');
 }
 function closeModal() { document.getElementById('modalCust').classList.remove('open'); }
+
+async function regenToken(id) {
+  if (!confirm('Regenerate portal token? Struk lama dengan token lama tidak akan bisa login lagi.')) return;
+  const r = await fetch('customer.php?action=regen_token', {
+    method:'POST', headers:{'Content-Type':'application/json','X-CSRF-Token':csrfToken()},
+    body: JSON.stringify({id})
+  });
+  const d = await r.json();
+  if (d.error) { showToast(d.error,'error'); return; }
+  showToast('✅ Token regenerated. Cetak struk baru untuk pelanggan ini.', 'success');
+}
 
 async function saveCustomer() {
   const nama = document.getElementById('f_nama').value.trim();
