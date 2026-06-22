@@ -124,19 +124,21 @@ if ($action) {
             echo json_encode(['error' => 'Input tidak valid']); exit;
         }
 
-        // Decode signature dataURL → save as PNG → append to foto_paths
-        if ($signature && preg_match('/^data:image\/png;base64,(.+)$/', $signature, $m)) {
-            $bin = base64_decode($m[1]);
-            if ($bin !== false && strlen($bin) < 1000000) { // 1MB cap
-                $fn = 'uploads/foto_proses/sig_t' . $tid . '_o' . $oid . '_' . bin2hex(random_bytes(8)) . '.png';
-                if (file_put_contents(ROOT . '/' . $fn, $bin) !== false) {
-                    $fotoPaths[] = $fn;
-                }
-            }
-        }
-
+        $signaturePath = null;
         try {
             $db->beginTransaction();
+
+            // Decode signature INSIDE transaction so we can clean up on rollback
+            if ($signature && preg_match('/^data:image\/png;base64,(.+)$/', $signature, $m)) {
+                $bin = base64_decode($m[1]);
+                if ($bin !== false && strlen($bin) < 1000000) { // 1MB cap
+                    $fn = 'uploads/foto_proses/sig_t' . $tid . '_o' . $oid . '_' . bin2hex(random_bytes(8)) . '.png';
+                    if (file_put_contents(ROOT . '/' . $fn, $bin) !== false) {
+                        $signaturePath = $fn;
+                        $fotoPaths[] = $fn;
+                    }
+                }
+            }
             $st = $db->prepare(
                 "SELECT status_proses FROM hl_transaksi
                   WHERE id=? AND tenant_id=? AND outlet_id=? FOR UPDATE"
@@ -189,6 +191,10 @@ if ($action) {
             echo json_encode(['ok' => true]);
         } catch (Throwable $e) {
             if ($db->inTransaction()) $db->rollBack();
+            // Cleanup orphan signature file on failure
+            if (!empty($signaturePath) && file_exists(ROOT . '/' . $signaturePath)) {
+                @unlink(ROOT . '/' . $signaturePath);
+            }
             error_log('[produksi save_stage] ' . $e->getMessage());
             // Allow specific known error messages, generic for unknown
             $msg = $e->getMessage();
