@@ -18,27 +18,36 @@ $oid = TenantResolver::outletId();
 $action = $_GET['action'] ?? '';
 $db = Database::get();
 
-// ── API: list piutang + summary ──
+// ── API: list piutang + summary (paginated) ──
 if ($action === 'list') {
     header('Content-Type: application/json');
-    $statusF = $_GET['status'] ?? '';
+    $statusF  = $_GET['status'] ?? '';
+    $page     = max(1, (int)($_GET['page'] ?? 1));
+    $perPage  = min(100, max(10, (int)($_GET['per_page'] ?? 30)));
+    $offset   = ($page - 1) * $perPage;
     try {
         $where = "p.tenant_id=? AND p.outlet_id=?"; $params = [$tid, $oid];
         if ($statusF) { $where .= " AND p.status=?"; $params[] = $statusF; }
+
+        // Total count untuk pagination
+        $cntStmt = $db->prepare("SELECT COUNT(*) FROM hl_piutang p WHERE $where");
+        $cntStmt->execute($params);
+        $total = (int)$cntStmt->fetchColumn();
 
         $stmt = $db->prepare("
             SELECT p.*,
                    pl.nama AS pelanggan_nama, pl.telepon AS pelanggan_wa,
                    DATEDIFF(p.jatuh_tempo, CURDATE()) AS hari_tempo
               FROM hl_piutang p
-              JOIN hl_pelanggan pl ON pl.id=p.pelanggan_id AND pl.tenant_id=p.tenant_id AND pl.tenant_id=p.tenant_id
+              JOIN hl_pelanggan pl ON pl.id=p.pelanggan_id AND pl.tenant_id=p.tenant_id
              WHERE $where
-             ORDER BY p.status!='lunas' DESC, p.jatuh_tempo ASC LIMIT 200
+             ORDER BY p.status!='lunas' DESC, p.jatuh_tempo ASC
+             LIMIT $perPage OFFSET $offset
         ");
         $stmt->execute($params);
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        // Summary
+        // Summary (full scope, tidak terpengaruh pagination)
         $sumStmt = $db->prepare("SELECT
               COALESCE(SUM(CASE WHEN status!='lunas' THEN sisa_tagihan ELSE 0 END),0) outstanding,
               COALESCE(SUM(CASE WHEN status!='lunas' AND jatuh_tempo BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 7 DAY) THEN sisa_tagihan ELSE 0 END),0) due_week,
@@ -47,7 +56,15 @@ if ($action === 'list') {
         $sumStmt->execute([$tid, $oid]);
         $summary = $sumStmt->fetch(PDO::FETCH_ASSOC);
 
-        echo json_encode(['ok'=>true, 'rows'=>$rows, 'summary'=>$summary]);
+        echo json_encode([
+            'ok'       => true,
+            'rows'     => $rows,
+            'summary'  => $summary,
+            'page'     => $page,
+            'per_page' => $perPage,
+            'total'    => $total,
+            'has_more' => ($offset + count($rows)) < $total,
+        ]);
     } catch (Throwable $e) { echo json_encode(['error'=>$e->getMessage()]); }
     exit;
 }
@@ -470,31 +487,37 @@ const CSRF = document.querySelector('meta[name="csrf-token"]').content;
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const fmtRp = n => 'Rp ' + Number(n||0).toLocaleString('id-ID');
 let curFilter = '';
+let curPage = 1;
+const PER_PAGE = 30;
 let bayarSisa = 0;
 let pelangganList = [];
 
 function setFilter(f){
   curFilter = f;
+  curPage = 1;
   document.querySelectorAll('[data-filter]').forEach(b => b.classList.toggle('hl-btn-primary', b.dataset.filter===f));
   loadList();
 }
 function closeModal(id){ document.getElementById(id).classList.remove('open'); }
 
-async function loadList(){
+async function loadList(append = false){
   const box = document.getElementById('listBox');
+  if (!append) curPage = 1;
   try {
-    const r = await fetch('piutang.php?action=list' + (curFilter?'&status='+curFilter:''));
+    const params = new URLSearchParams({page: curPage, per_page: PER_PAGE});
+    if (curFilter) params.set('status', curFilter);
+    const r = await fetch('piutang.php?action=list&' + params.toString());
     const d = await r.json();
     if (d.error){ box.innerHTML = `<div class="empty">⚠️ ${esc(d.error)}</div>`; return; }
     document.getElementById('sumOut').textContent  = fmtRp(d.summary.outstanding);
     document.getElementById('sumDue').textContent  = fmtRp(d.summary.due_week);
     document.getElementById('sumOver').textContent = fmtRp(d.summary.overdue);
-    if (!d.rows.length){ box.innerHTML = `<div class="hl-empty-v2">
+    if (!d.rows.length && curPage === 1){ box.innerHTML = `<div class="hl-empty-v2">
       <div class="e-icon">💼</div>
       <div class="e-title">Belum ada piutang</div>
       <div class="e-sub">Tagihan B2B yang belum lunas akan muncul di sini</div>
     </div>`; return; }
-    let html = '<div style="overflow-x:auto"><table class="tbl hl-stack-mobile"><thead><tr><th>Pelanggan</th><th>Periode</th><th>Jatuh Tempo</th><th style="text-align:right">Tagihan</th><th style="text-align:right">Sisa</th><th>Status</th><th></th></tr></thead><tbody>';
+    let rowsHtml = '';
     d.rows.forEach(r => {
       const ht = parseInt(r.hari_tempo);
       let tempoStr = new Date(r.jatuh_tempo).toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'});
@@ -514,7 +537,7 @@ async function loadList(){
            class="hl-btn hl-btn-outline btn-sm" style="font-size:11px" title="Generate Invoice B2B (200 coin)">📄 Invoice</a>
         ${CAN_PIUTANG_WRITE ? `<button class="hl-btn hl-btn-primary btn-sm" onclick="openBayar(${r.id}, '${esc(r.pelanggan_nama)}', ${r.sisa_tagihan})">💵 Bayar</button>` : ''}
       `;
-      html += `<tr>
+      rowsHtml += `<tr>
         <td data-lbl="Pelanggan"><strong>${esc(r.pelanggan_nama)}</strong><br><small style="color:#9CA3AF">${esc(r.pelanggan_wa||'-')}</small></td>
         <td data-lbl="Periode">${new Date(r.periode_start).toLocaleDateString('id-ID',{day:'2-digit',month:'short'})} – ${new Date(r.periode_end).toLocaleDateString('id-ID',{day:'2-digit',month:'short'})}<br><small style="color:#9CA3AF">${r.total_order} order</small></td>
         <td data-lbl="Jatuh Tempo">${tempoStr}</td>
@@ -524,9 +547,42 @@ async function loadList(){
         <td style="white-space:nowrap">${actions}</td>
       </tr>`;
     });
-    html += '</tbody></table></div>';
-    box.innerHTML = html;
+
+    if (append) {
+      // Append rows to existing tbody (cumulative load)
+      const tbody = box.querySelector('tbody');
+      if (tbody) tbody.insertAdjacentHTML('beforeend', rowsHtml);
+    } else {
+      // Initial / filter reload — render full table shell
+      box.innerHTML =
+        '<div style="overflow-x:auto"><table class="tbl hl-stack-mobile"><thead><tr>' +
+        '<th>Pelanggan</th><th>Periode</th><th>Jatuh Tempo</th>' +
+        '<th style="text-align:right">Tagihan</th><th style="text-align:right">Sisa</th>' +
+        '<th>Status</th><th></th></tr></thead><tbody>' + rowsHtml +
+        '</tbody></table></div>' +
+        '<div id="pgFooter" style="margin-top:14px;text-align:center"></div>';
+    }
+
+    // Footer: load-more button atau counter
+    const footer = document.getElementById('pgFooter');
+    if (footer) {
+      const shown = (curPage - 1) * PER_PAGE + d.rows.length;
+      if (d.has_more) {
+        footer.innerHTML = `<button class="hl-btn hl-btn-outline" onclick="loadMore()">
+          ⬇️ Muat lebih banyak <small style="color:#9CA3AF">(${shown}/${d.total})</small>
+        </button>`;
+      } else if (d.total > PER_PAGE) {
+        footer.innerHTML = `<small style="color:#9CA3AF">Menampilkan ${d.total} piutang</small>`;
+      } else {
+        footer.innerHTML = '';
+      }
+    }
   } catch(e){ box.innerHTML = `<div class="empty">⚠️ ${esc(e.message)}</div>`; }
+}
+
+async function loadMore(){
+  curPage++;
+  await loadList(true);
 }
 
 // Generate
