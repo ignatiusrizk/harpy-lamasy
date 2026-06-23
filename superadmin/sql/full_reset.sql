@@ -38,6 +38,7 @@ BEGIN
   DECLARE cur CURSOR FOR
     SELECT table_name FROM information_schema.tables
     WHERE table_schema = DATABASE()
+      AND table_type = 'BASE TABLE'  -- skip VIEW (e.g. hl_bahan_stok)
       AND (
         (table_name LIKE 'hl\_%' AND table_name <> 'hl_splash_tips')
         OR table_name IN (
