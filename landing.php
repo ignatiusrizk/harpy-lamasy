@@ -866,6 +866,100 @@ img { max-width: 100%; }
 /* ── FAQ ── */
 .faq-item button:hover span:first-child { color: #35E8D5; }
 </style>
+
+<!-- JSON-LD Structured Data -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "name": "LAMASY",
+  "legalName": "PT Harpy Sinergi Mandiri",
+  "url": "https://lamasy.harpy.id/",
+  "logo": "https://lamasy.harpy.id/assets/icon-512.png",
+  "description": "Platform ERP Laundry modern dengan AI terintegrasi untuk owner laundry Indonesia.",
+  "contactPoint": {
+    "@type": "ContactPoint",
+    "contactType": "customer service",
+    "areaServed": "ID",
+    "availableLanguage": ["Indonesian"]
+  }
+}
+</script>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "LAMASY",
+  "operatingSystem": "Web",
+  "applicationCategory": "BusinessApplication",
+  "description": "ERP Laundry modern dengan AI terintegrasi. POS, Laporan SAK EMKM, manajemen karyawan, integrasi WhatsApp.",
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "IDR",
+    "description": "Trial 7 hari gratis, lanjut bayar sesuai pemakaian via Coin"
+  },
+  "url": "https://lamasy.harpy.id/",
+  "screenshot": "https://lamasy.harpy.id/assets/og-image.png"
+}
+</script>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Apa itu LAMASY?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "LAMASY adalah platform ERP laundry modern dengan AI terintegrasi. Cocok untuk owner laundry 1-3 outlet sampai chain multi-outlet."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Berapa biaya pakai LAMASY?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Trial 7 hari gratis tanpa kartu kredit. Setelah itu bayar sesuai pemakaian via Coin — tidak ada langganan bulanan."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Fitur apa saja yang ada di LAMASY?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "POS otomatis, laporan keuangan SAK EMKM, manajemen karyawan + absensi, integrasi WhatsApp, AI briefing harian, multi-outlet konsolidasi, dan 50+ fitur lainnya."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Apakah data saya aman di LAMASY?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Data terisolasi per tenant (multi-tenant proper), HTTPS encrypted, audit log lengkap, backup harian. Hanya kamu yang akses data outlet kamu."
+      }
+    }
+  ]
+}
+</script>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "Home",
+      "item": "https://lamasy.harpy.id/"
+    }
+  ]
+}
+</script>
 </head>
 <body>
 <div class="bg-grid"></div>
