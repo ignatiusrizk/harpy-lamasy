@@ -16,9 +16,8 @@ $oid  = TenantResolver::outletId();
 $user = currentUser() ?? [];
 $csrf = getCsrfToken();
 
-// Hanya owner / admin yang bisa edit template
-$canEdit = in_array($user['role'] ?? '', ['owner','superadmin','admin'], true)
-        || hasPermission('settings.roles');
+// Hanya admin-level yang bisa edit template (F1 RBAC v2)
+$canEdit = TenantResolver::isAdminLevel() || hasPermission('settings.roles');
 
 // ── AJAX actions ──────────────────────────────────────
 $action = $_GET['action'] ?? '';

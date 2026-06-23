@@ -5,8 +5,8 @@ define('ROOT', dirname(__DIR__));
 require_once ROOT . '/middleware/hq_guard.php';
 require_once ROOT . '/core/Loyalty.php';
 
-$role = currentUser()['role'] ?? '';
-if (!in_array($role, ['owner','superadmin'], true)) {
+// Owner-level only — defensive check setelah hq_guard (F1 RBAC v2)
+if (!TenantResolver::isOwnerLevel()) {
     http_response_code(403);
     die('Akses hanya untuk owner.');
 }
