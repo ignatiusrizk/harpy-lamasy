@@ -135,7 +135,7 @@ if ($action) {
       <div class="sa-card-body">
         <div class="form-group" style="margin-bottom:14px;">
           <label style="font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ash);">Target Penerima</label>
-          <select id="bcTarget" style="width:100%;margin-top:6px;padding:10px;background:var(--crease-soft);border:1px solid var(--crease);border-radius:8px;color:var(--ink);font-family:var(--font);" onchange="toggleCustomList()">
+          <select id="bcTarget" style="width:100%;margin-top:6px;padding:10px;background:var(--slate-elev);border:1px solid var(--crease);border-radius:8px;color:var(--glow);font-family:var(--font);" onchange="toggleCustomList()">
             <option value="semua">Semua Tenant (Aktif + Trial)</option>
             <option value="active">Hanya Aktif</option>
             <option value="trial">Hanya Trial</option>
@@ -147,7 +147,7 @@ if ($action) {
         <!-- Custom checkboxes -->
         <div id="customList" style="display:none;margin-bottom:14px;">
           <label style="font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ash);">Pilih Tenant</label>
-          <div style="margin-top:6px;max-height:200px;overflow-y:auto;background:var(--linen);border:1px solid var(--crease);border-radius:8px;padding:8px;" id="tenantCheckboxes">
+          <div style="margin-top:6px;max-height:200px;overflow-y:auto;background:rgba(10,15,31,.4);border:1px solid var(--crease);border-radius:8px;padding:8px;" id="tenantCheckboxes">
             <div style="color:var(--ash-dim);font-size:13px;">Memuat...</div>
           </div>
           <div style="display:flex;gap:8px;margin-top:8px;">
@@ -158,17 +158,17 @@ if ($action) {
 
         <div class="form-group" style="margin-bottom:14px;">
           <label style="font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ash);">Subjek (untuk log)</label>
-          <input type="text" id="bcSubject" placeholder="Contoh: Promo Coin September" style="width:100%;margin-top:6px;padding:10px;background:var(--crease-soft);border:1px solid var(--crease);border-radius:8px;color:var(--ink);font-family:var(--font);font-size:13.5px;"/>
+          <input type="text" id="bcSubject" placeholder="Contoh: Promo Coin September" style="width:100%;margin-top:6px;padding:10px;background:var(--slate-elev);border:1px solid var(--crease);border-radius:8px;color:var(--glow);font-family:var(--font);font-size:13.5px;"/>
         </div>
 
         <div class="form-group" style="margin-bottom:6px;">
           <label style="font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ash);">Pesan WA</label>
-          <textarea id="bcMessage" placeholder="Halo {nama_outlet}, kami ingin menginfokan..." style="width:100%;margin-top:6px;padding:10px;background:var(--crease-soft);border:1px solid var(--crease);border-radius:8px;color:var(--ink);font-family:var(--font);font-size:13.5px;resize:vertical;min-height:140px;" oninput="updatePreview()"></textarea>
+          <textarea id="bcMessage" placeholder="Halo {nama_outlet}, kami ingin menginfokan..." style="width:100%;margin-top:6px;padding:10px;background:var(--slate-elev);border:1px solid var(--crease);border-radius:8px;color:var(--glow);font-family:var(--font);font-size:13.5px;resize:vertical;min-height:140px;" oninput="updatePreview()"></textarea>
         </div>
         <div style="font-size:11.5px;color:var(--ash-dim);margin-bottom:16px;">
-          Variabel: <code style="background:var(--crease-soft);padding:2px 6px;border-radius:4px;">{nama_outlet}</code>
-          <code style="background:var(--crease-soft);padding:2px 6px;border-radius:4px;">{owner_name}</code>
-          <code style="background:var(--crease-soft);padding:2px 6px;border-radius:4px;">{coin_balance}</code>
+          Variabel: <code style="background:var(--slate-elev);padding:2px 6px;border-radius:4px;">{nama_outlet}</code>
+          <code style="background:var(--slate-elev);padding:2px 6px;border-radius:4px;">{owner_name}</code>
+          <code style="background:var(--slate-elev);padding:2px 6px;border-radius:4px;">{coin_balance}</code>
         </div>
         <div style="display:flex;gap:10px;">
           <button class="sa-btn sa-btn-outline" onclick="previewBroadcast()">👁️ Preview</button>
@@ -207,7 +207,7 @@ fetch('broadcast.php?action=all_tenants', { headers: {'X-Requested-With':'XMLHtt
     allTenants = rows;
     const el = document.getElementById('tenantCheckboxes');
     el.innerHTML = rows.map(t => `
-      <label style="display:flex;align-items:center;gap:8px;padding:6px 4px;cursor:pointer;font-size:13px;color:var(--ink);">
+      <label style="display:flex;align-items:center;gap:8px;padding:6px 4px;cursor:pointer;font-size:13px;color:var(--glow);">
         <input type="checkbox" class="tenant-cb" value="${t.id}" style="accent-color:#6366F1;"/>
         ${esc(t.nama_outlet)} <small style="color:var(--ash);">${esc(t.owner_name)}</small>
       </label>`).join('');
@@ -255,14 +255,14 @@ function previewBroadcast() {
       }
 
       document.getElementById('previewBody').innerHTML = `
-        <div style="background:#EEF2FF;border:1px solid #C7D2FE;border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:14px;color:var(--ink);">
+        <div style="background:rgba(53,232,213,.08);border:1px solid rgba(53,232,213,.30);border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:14px;color:var(--glow);">
           <strong style="color:var(--sa);">Akan dikirim ke ${d.count} tenant</strong>
         </div>
         <div style="font-size:12px;color:var(--ash);margin-bottom:10px;">Sampel preview (3 pertama):</div>
         ${d.sample.map(s => `
-          <div style="background:var(--linen);border:1px solid var(--crease-soft);border-radius:8px;padding:12px;margin-bottom:10px;">
+          <div style="background:rgba(10,15,31,.4);border:1px solid var(--crease-soft);border-radius:8px;padding:12px;margin-bottom:10px;">
             <div style="font-size:12px;font-weight:700;color:var(--sa);margin-bottom:6px;">${esc(s.nama_outlet)} — ${esc(s.owner_name)}</div>
-            <div style="font-size:13px;color:var(--ink);white-space:pre-wrap;">${esc(s.message)}</div>
+            <div style="font-size:13px;color:var(--glow);white-space:pre-wrap;">${esc(s.message)}</div>
           </div>`).join('')}`;
     });
 }
@@ -303,8 +303,8 @@ function sendBroadcast() {
         </p>
         <div style="max-height:400px;overflow-y:auto;">
           ${d.links.map(l => `
-            <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--linen);border:1px solid var(--crease-soft);border-radius:8px;margin-bottom:6px;">
-              <span style="font-size:13px;color:var(--ink);">${esc(l.nama)}</span>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:rgba(10,15,31,.4);border:1px solid var(--crease-soft);border-radius:8px;margin-bottom:6px;">
+              <span style="font-size:13px;color:var(--glow);">${esc(l.nama)}</span>
               <a href="${esc(l.url)}" target="_blank" class="sa-btn sa-btn-sm sa-btn-wa">💬 Kirim WA</a>
             </div>`).join('')}
         </div>`;

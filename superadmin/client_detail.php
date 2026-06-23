@@ -478,7 +478,7 @@ $billingStat = $bsSt->fetch(PDO::FETCH_ASSOC);
 <!-- Tabs -->
 <div class="sa-tabs">
   <button class="sa-tab active" onclick="showTab('profil')">👤 Profil</button>
-  <button class="sa-tab" onclick="showTab('outlets')">🏪 Outlets <span style="font-size:10px;background:var(--crease);padding:1px 6px;border-radius:10px;margin-left:3px;"><?= count($outletList) ?></span></button>
+  <button class="sa-tab" onclick="showTab('outlets')">🏪 Outlets <span style="font-size:10px;background:var(--slate-elev);padding:1px 6px;border-radius:10px;margin-left:3px;"><?= count($outletList) ?></span></button>
   <button class="sa-tab" onclick="showTab('health')">💊 Health</button>
   <button class="sa-tab" onclick="showTab('stats')">📊 Stats</button>
   <button class="sa-tab" onclick="showTab('coins')">🪙 Coin History</button>
@@ -767,13 +767,13 @@ $billingStat = $bsSt->fetch(PDO::FETCH_ASSOC);
       <div class="sa-grid-4" style="margin-bottom:0;">
         <div>
           <div style="font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--ash-dim);margin-bottom:6px;">Saldo Coin</div>
-          <div style="font-size:22px;font-weight:800;font-family:var(--mono);color:#92400E;">
+          <div style="font-size:22px;font-weight:800;font-family:var(--mono);color:#F59E0B;">
             <?= number_format($effectiveCoin) ?>
           </div>
           <div style="font-size:11px;color:var(--ash-dim);">
             coin tersedia
             <?php if ($trialCoinTotal > 0): ?>
-              <span style="color:#92400E;background:#FEF3C7;border-radius:3px;padding:1px 5px;margin-left:4px;">
+              <span style="color:#F59E0B;background:#FEF3C7;border-radius:3px;padding:1px 5px;margin-left:4px;">
                 🎁 <?= number_format($trialCoinTotal) ?> trial
               </span>
             <?php endif; ?>
@@ -875,7 +875,7 @@ $billingStat = $bsSt->fetch(PDO::FETCH_ASSOC);
   <div class="sa-card" style="margin-bottom:16px;">
     <div class="sa-card-body">
       <div style="display:flex;gap:10px;">
-        <textarea id="newNoteText" placeholder="Tulis catatan..." style="flex:1;padding:10px;background:var(--crease-soft);border:1px solid var(--crease);border-radius:8px;color:var(--ink);font-family:var(--font);font-size:13.5px;resize:vertical;min-height:80px;"></textarea>
+        <textarea id="newNoteText" placeholder="Tulis catatan..." style="flex:1;padding:10px;background:var(--slate-elev);border:1px solid var(--crease);border-radius:8px;color:var(--glow);font-family:var(--font);font-size:13.5px;resize:vertical;min-height:80px;"></textarea>
         <button class="sa-btn sa-btn-primary" onclick="addNote()" style="align-self:flex-end;">Simpan</button>
       </div>
     </div>
@@ -891,7 +891,7 @@ $billingStat = $bsSt->fetch(PDO::FETCH_ASSOC);
       <div class="sa-grid-2" style="gap:10px;margin-bottom:10px;">
         <div>
           <label style="font-size:11px;color:var(--ash);font-weight:600;letter-spacing:.06em;text-transform:uppercase;">Channel</label>
-          <select id="commChannel" style="width:100%;margin-top:6px;padding:8px;background:var(--crease-soft);border:1px solid var(--crease);border-radius:8px;color:var(--ink);font-family:var(--font);">
+          <select id="commChannel" style="width:100%;margin-top:6px;padding:8px;background:var(--slate-elev);border:1px solid var(--crease);border-radius:8px;color:var(--glow);font-family:var(--font);">
             <option value="wa">WhatsApp</option>
             <option value="email">Email</option>
             <option value="call">Telepon</option>
@@ -900,7 +900,7 @@ $billingStat = $bsSt->fetch(PDO::FETCH_ASSOC);
         </div>
         <div>
           <label style="font-size:11px;color:var(--ash);font-weight:600;letter-spacing:.06em;text-transform:uppercase;">Tipe</label>
-          <select id="commType" style="width:100%;margin-top:6px;padding:8px;background:var(--crease-soft);border:1px solid var(--crease);border-radius:8px;color:var(--ink);font-family:var(--font);">
+          <select id="commType" style="width:100%;margin-top:6px;padding:8px;background:var(--slate-elev);border:1px solid var(--crease);border-radius:8px;color:var(--glow);font-family:var(--font);">
             <option value="support">Support</option>
             <option value="onboarding">Onboarding</option>
             <option value="billing">Billing</option>
@@ -909,8 +909,8 @@ $billingStat = $bsSt->fetch(PDO::FETCH_ASSOC);
           </select>
         </div>
       </div>
-      <input type="text" id="commSubject" placeholder="Subjek..." style="width:100%;padding:9px 12px;background:var(--crease-soft);border:1px solid var(--crease);border-radius:8px;color:var(--ink);font-family:var(--font);font-size:13.5px;margin-bottom:10px;"/>
-      <textarea id="commMessage" placeholder="Pesan / catatan komunikasi..." style="width:100%;padding:10px;background:var(--crease-soft);border:1px solid var(--crease);border-radius:8px;color:var(--ink);font-family:var(--font);font-size:13.5px;resize:vertical;min-height:80px;"></textarea>
+      <input type="text" id="commSubject" placeholder="Subjek..." style="width:100%;padding:9px 12px;background:var(--slate-elev);border:1px solid var(--crease);border-radius:8px;color:var(--glow);font-family:var(--font);font-size:13.5px;margin-bottom:10px;"/>
+      <textarea id="commMessage" placeholder="Pesan / catatan komunikasi..." style="width:100%;padding:10px;background:var(--slate-elev);border:1px solid var(--crease);border-radius:8px;color:var(--glow);font-family:var(--font);font-size:13.5px;resize:vertical;min-height:80px;"></textarea>
       <div style="margin-top:10px;text-align:right;">
         <button class="sa-btn sa-btn-primary" onclick="addComm()">Simpan Komunikasi</button>
       </div>
@@ -949,15 +949,15 @@ $billingStat = $bsSt->fetch(PDO::FETCH_ASSOC);
     <div class="sa-card" id="topupSection">
       <div class="sa-card-header">
         <h3>🪙 Topup Coin</h3>
-        <span style="font-size:11px;background:<?= $coinMode === 'per_outlet' ? '#7C3AED' : '#0369A1' ?>;color:var(--ink);padding:3px 10px;border-radius:100px;font-weight:700;letter-spacing:.04em;">
+        <span style="font-size:11px;background:<?= $coinMode === 'per_outlet' ? '#7C3AED' : '#0369A1' ?>;color:var(--glow);padding:3px 10px;border-radius:100px;font-weight:700;letter-spacing:.04em;">
           <?= $coinMode === 'per_outlet' ? 'PER-OUTLET' : 'SHARED' ?>
         </span>
       </div>
       <div class="sa-card-body">
         <p style="font-size:13px;color:var(--ash);margin-bottom:14px;">
-          Saldo shared: <strong style="color:#92400E;"><?= number_format($tenant['coin_balance']) ?> coin</strong>
+          Saldo shared: <strong style="color:#F59E0B;"><?= number_format($tenant['coin_balance']) ?> coin</strong>
           <?php if ($trialCoinTotal > 0): ?>
-            <span style="font-size:11px;background:#FEF3C7;color:#92400E;border-radius:4px;padding:1px 6px;margin-left:4px;">
+            <span style="font-size:11px;background:#FEF3C7;color:#F59E0B;border-radius:4px;padding:1px 6px;margin-left:4px;">
               🎁 <?= number_format($trialCoinTotal) ?> trial
             </span>
           <?php endif; ?>
@@ -965,7 +965,7 @@ $billingStat = $bsSt->fetch(PDO::FETCH_ASSOC);
         <?php if ($coinMode === 'per_outlet'): ?>
         <div class="form-group" style="margin-bottom:12px;">
           <label style="font-size:11px;color:var(--ash);font-weight:600;letter-spacing:.06em;text-transform:uppercase;">Outlet Tujuan</label>
-          <select id="topupOutletId" style="width:100%;margin-top:6px;padding:10px;background:var(--crease-soft);border:1px solid var(--crease);border-radius:8px;color:var(--ink);font-family:var(--font);font-size:13px;">
+          <select id="topupOutletId" style="width:100%;margin-top:6px;padding:10px;background:var(--slate-elev);border:1px solid var(--crease);border-radius:8px;color:var(--glow);font-family:var(--font);font-size:13px;">
             <?php foreach ($outletList as $o): ?>
               <option value="<?= (int)$o['id'] ?>">
                 <?= htmlspecialchars($o['nama_outlet']) ?>
@@ -979,11 +979,11 @@ $billingStat = $bsSt->fetch(PDO::FETCH_ASSOC);
         <?php endif; ?>
         <div class="form-group" style="margin-bottom:12px;">
           <label style="font-size:11px;color:var(--ash);font-weight:600;letter-spacing:.06em;text-transform:uppercase;">Jumlah Coin</label>
-          <input type="number" id="topupAmt" placeholder="Contoh: 50000" style="width:100%;margin-top:6px;padding:10px;background:var(--crease-soft);border:1px solid var(--crease);border-radius:8px;color:var(--ink);font-family:var(--font);font-size:14px;"/>
+          <input type="number" id="topupAmt" placeholder="Contoh: 50000" style="width:100%;margin-top:6px;padding:10px;background:var(--slate-elev);border:1px solid var(--crease);border-radius:8px;color:var(--glow);font-family:var(--font);font-size:14px;"/>
         </div>
         <div class="form-group" style="margin-bottom:14px;">
           <label style="font-size:11px;color:var(--ash);font-weight:600;letter-spacing:.06em;text-transform:uppercase;">Keterangan</label>
-          <input type="text" id="topupNoteAksi" placeholder="Alasan topup..." style="width:100%;margin-top:6px;padding:10px;background:var(--crease-soft);border:1px solid var(--crease);border-radius:8px;color:var(--ink);font-family:var(--font);font-size:14px;"/>
+          <input type="text" id="topupNoteAksi" placeholder="Alasan topup..." style="width:100%;margin-top:6px;padding:10px;background:var(--slate-elev);border:1px solid var(--crease);border-radius:8px;color:var(--glow);font-family:var(--font);font-size:14px;"/>
         </div>
         <button class="sa-btn sa-btn-primary" onclick="doTopup()">Topup Sekarang</button>
       </div>
@@ -994,7 +994,7 @@ $billingStat = $bsSt->fetch(PDO::FETCH_ASSOC);
       <div class="sa-card-header"><h3>⚙️ Mode Coin</h3></div>
       <div class="sa-card-body">
         <p style="font-size:13px;color:var(--ash);margin-bottom:14px;">
-          Mode aktif saat ini: <strong style="color:#92400E;"><?= $coinMode === 'per_outlet' ? 'Per-Outlet' : 'Shared' ?></strong>
+          Mode aktif saat ini: <strong style="color:#F59E0B;"><?= $coinMode === 'per_outlet' ? 'Per-Outlet' : 'Shared' ?></strong>
         </p>
         <p style="font-size:12px;color:var(--ash-dim);margin-bottom:14px;line-height:1.5;">
           <strong style="color:var(--ash)">Shared</strong>: semua outlet pakai 1 pool coin bersama (tenants.coin_balance).<br>
@@ -1035,7 +1035,7 @@ $billingStat = $bsSt->fetch(PDO::FETCH_ASSOC);
       <div class="sa-card-body">
         <p style="font-size:13px;color:var(--ash);margin-bottom:14px;">Trial berakhir: <strong><?= $tenant['trial_ends_at'] ? date('d M Y', strtotime($tenant['trial_ends_at'])) : '-' ?></strong></p>
         <div style="display:flex;gap:10px;align-items:center;">
-          <input type="number" id="extendDays" value="7" min="1" max="30" style="width:80px;padding:9px;background:var(--crease-soft);border:1px solid var(--crease);border-radius:8px;color:var(--ink);font-family:var(--font);"/>
+          <input type="number" id="extendDays" value="7" min="1" max="30" style="width:80px;padding:9px;background:var(--slate-elev);border:1px solid var(--crease);border-radius:8px;color:var(--glow);font-family:var(--font);"/>
           <span style="color:var(--ash);font-size:13px;">hari</span>
           <button class="sa-btn sa-btn-primary" onclick="doExtendTrial()">Perpanjang</button>
         </div>
@@ -1047,12 +1047,12 @@ $billingStat = $bsSt->fetch(PDO::FETCH_ASSOC);
       <div class="sa-card-header"><h3>🔑 Reset Password User</h3></div>
       <div class="sa-card-body">
         <div style="display:flex;flex-direction:column;gap:10px;">
-          <select id="resetUserId" style="padding:9px;background:var(--crease-soft);border:1px solid var(--crease);border-radius:8px;color:var(--ink);font-family:var(--font);">
+          <select id="resetUserId" style="padding:9px;background:var(--slate-elev);border:1px solid var(--crease);border-radius:8px;color:var(--glow);font-family:var(--font);">
             <?php foreach ($users as $u): ?>
             <option value="<?= $u['id'] ?>"><?= htmlspecialchars($u['name'] . ' (' . $u['username'] . ')') ?></option>
             <?php endforeach; ?>
           </select>
-          <input type="text" id="newPassword" placeholder="Password baru (min 6 karakter)" style="padding:9px 12px;background:var(--crease-soft);border:1px solid var(--crease);border-radius:8px;color:var(--ink);font-family:var(--font);"/>
+          <input type="text" id="newPassword" placeholder="Password baru (min 6 karakter)" style="padding:9px 12px;background:var(--slate-elev);border:1px solid var(--crease);border-radius:8px;color:var(--glow);font-family:var(--font);"/>
           <button class="sa-btn sa-btn-outline" onclick="doResetPassword()">Reset Password</button>
         </div>
       </div>
@@ -1065,9 +1065,9 @@ $billingStat = $bsSt->fetch(PDO::FETCH_ASSOC);
   <div class="sa-modal" style="max-width:420px;">
     <h3>⚖️ Adjustment Coin</h3>
     <p style="font-size:13px;color:var(--ash);margin-bottom:4px;">
-      Saldo saat ini: <strong style="color:#92400E;" id="adjCurrentBal"><?= number_format($tenant['coin_balance']) ?> coin</strong>
+      Saldo saat ini: <strong style="color:#F59E0B;" id="adjCurrentBal"><?= number_format($tenant['coin_balance']) ?> coin</strong>
       <?php if ($trialCoinTotal > 0): ?>
-        <span style="font-size:11px;background:#FEF3C7;color:#92400E;border-radius:4px;padding:1px 6px;margin-left:4px;">+ <?= number_format($trialCoinTotal) ?> trial (tidak terpengaruh)</span>
+        <span style="font-size:11px;background:#FEF3C7;color:#F59E0B;border-radius:4px;padding:1px 6px;margin-left:4px;">+ <?= number_format($trialCoinTotal) ?> trial (tidak terpengaruh)</span>
       <?php endif; ?>
     </p>
     <p style="font-size:11px;color:var(--ash-dim);margin-bottom:14px;">Adjustment hanya mengubah saldo shared pool (bukan coin trial).</p>
@@ -1078,7 +1078,7 @@ $billingStat = $bsSt->fetch(PDO::FETCH_ASSOC);
           Jumlah Coin *
         </label>
         <input type="number" id="adjCoin" placeholder="Positif = tambah, negatif = kurangi"
-               style="width:100%;padding:10px 12px;background:var(--crease-soft);border:1.5px solid var(--crease);border-radius:8px;color:var(--ink);font-family:var(--mono);font-size:14px;outline:none;"
+               style="width:100%;padding:10px 12px;background:var(--slate-elev);border:1.5px solid var(--crease);border-radius:8px;color:var(--glow);font-family:var(--mono);font-size:14px;outline:none;"
                oninput="previewAdj()"/>
         <div id="adjPreview" style="font-size:12px;color:var(--ash-dim);margin-top:5px;"></div>
       </div>
@@ -1087,7 +1087,7 @@ $billingStat = $bsSt->fetch(PDO::FETCH_ASSOC);
         <label style="font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--ash);display:block;margin-bottom:6px;">
           Alasan *
         </label>
-        <select id="adjReason" style="width:100%;padding:9px 12px;background:var(--crease-soft);border:1.5px solid var(--crease);border-radius:8px;color:var(--ink);font-family:var(--font);font-size:13px;outline:none;">
+        <select id="adjReason" style="width:100%;padding:9px 12px;background:var(--slate-elev);border:1.5px solid var(--crease);border-radius:8px;color:var(--glow);font-family:var(--font);font-size:13px;outline:none;">
           <option value="kompensasi_downtime">Kompensasi downtime</option>
           <option value="bonus_referral">Bonus referral</option>
           <option value="koreksi_error">Koreksi error</option>
@@ -1101,7 +1101,7 @@ $billingStat = $bsSt->fetch(PDO::FETCH_ASSOC);
           Catatan Internal
         </label>
         <input type="text" id="adjNote" placeholder="Keterangan tambahan (opsional)"
-               style="width:100%;padding:10px 12px;background:var(--crease-soft);border:1.5px solid var(--crease);border-radius:8px;color:var(--ink);font-family:var(--font);font-size:13px;outline:none;"/>
+               style="width:100%;padding:10px 12px;background:var(--slate-elev);border:1.5px solid var(--crease);border-radius:8px;color:var(--glow);font-family:var(--font);font-size:13px;outline:none;"/>
       </div>
     </div>
 
@@ -1157,7 +1157,7 @@ $billingStat = $bsSt->fetch(PDO::FETCH_ASSOC);
           <div style="color:var(--ash-dim);font-size:13px;padding:16px 0;">Belum ada aktivitas yang tercatat.</div>
           <?php endif;
       } catch (Throwable $e) {
-          echo '<div style="color:#991B1B;font-size:13px;">Gagal memuat aktivitas: ' . htmlspecialchars($e->getMessage()) . '</div>';
+          echo '<div style="color:#F43F5E;font-size:13px;">Gagal memuat aktivitas: ' . htmlspecialchars($e->getMessage()) . '</div>';
       } ?>
     </div>
   </div>
@@ -1207,7 +1207,7 @@ $billingStat = $bsSt->fetch(PDO::FETCH_ASSOC);
       dalam <strong>mode read-only</strong>. Semua aksi tulis akan diblokir.<br><br>
       Sesi ini akan dicatat di audit log.
     </p>
-    <div style="background:#FFFBEB;border:1px solid #FDE68A;border-radius:10px;padding:12px 16px;margin-bottom:20px;font-size:12.5px;color:#92400E;">
+    <div style="background:rgba(245,158,11,.10);border:1px solid rgba(245,158,11,.30);border-radius:10px;padding:12px 16px;margin-bottom:20px;font-size:12.5px;color:#F59E0B;">
       ⚠️ Jangan gunakan fitur ini untuk mengakses data sensitif tenant tanpa keperluan yang jelas.
     </div>
     <form method="POST" action="/superadmin/impersonate.php" onsubmit="return validateImpersonateForm()">
@@ -1219,8 +1219,8 @@ $billingStat = $bsSt->fetch(PDO::FETCH_ASSOC);
         </label>
         <textarea name="reason" id="impersonateReason" required
           placeholder="Contoh: Investigasi laporan bug kasir tidak bisa input order..."
-          style="width:100%;padding:10px 12px;background:var(--crease-soft);border:1px solid var(--crease);
-                 border-radius:8px;color:var(--ink);font-size:13px;resize:vertical;min-height:72px;box-sizing:border-box;
+          style="width:100%;padding:10px 12px;background:var(--slate-elev);border:1px solid var(--crease);
+                 border-radius:8px;color:var(--glow);font-size:13px;resize:vertical;min-height:72px;box-sizing:border-box;
                  font-family:inherit;outline:none;"
           maxlength="200" rows="3"></textarea>
         <div style="text-align:right;font-size:11px;color:var(--ash-dim);margin-top:3px;">
@@ -1273,7 +1273,7 @@ function loadCoinHistory() {
         <td style="font-family:var(--mono);">${parseInt(r.amount).toLocaleString('id-ID')}</td>
         <td style="font-size:12px;color:var(--ash);">${esc(r.feature_used||'-')}</td>
         <td style="font-size:12px;color:var(--ash);">${esc(r.description||'-')}</td>
-        <td style="font-family:var(--mono);color:#92400E;">${parseInt(r.balance_after).toLocaleString('id-ID')}</td>
+        <td style="font-family:var(--mono);color:#F59E0B;">${parseInt(r.balance_after).toLocaleString('id-ID')}</td>
       </tr>`).join('');
     });
 }
@@ -1300,7 +1300,7 @@ function loadBilling() {
           <td><span class="sa-badge ${typeCls[p.type]||'sa-badge-indigo'}" style="font-size:10px;">${typeLabel[p.type]||p.type}</span></td>
           <td style="font-size:12px;color:var(--ash);">${esc(pkgBdl)}</td>
           <td style="font-family:var(--mono);font-size:13px;font-weight:600;">${p.nominal_dibayar > 0 ? rupiah(p.nominal_dibayar) : '—'}</td>
-          <td style="font-family:var(--mono);color:#92400E;">${p.coin_dikreditkan > 0 ? '+' + parseInt(p.coin_dikreditkan).toLocaleString('id-ID') : (p.coin_dikreditkan < 0 ? parseInt(p.coin_dikreditkan).toLocaleString('id-ID') : '—')}</td>
+          <td style="font-family:var(--mono);color:#F59E0B;">${p.coin_dikreditkan > 0 ? '+' + parseInt(p.coin_dikreditkan).toLocaleString('id-ID') : (p.coin_dikreditkan < 0 ? parseInt(p.coin_dikreditkan).toLocaleString('id-ID') : '—')}</td>
           <td style="font-family:var(--mono);font-size:11px;color:var(--ash);">${esc(p.ref_transfer||'—')}</td>
           <td style="font-size:11px;color:var(--ash-dim);">${esc(p.superadmin_nama||'—')}</td>
           <td>${waHtml}</td>
@@ -1332,7 +1332,7 @@ function previewAdj() {
   const el = document.getElementById('adjPreview');
   if (!val) { el.textContent = ''; return; }
   const sign = val > 0 ? '+' : '';
-  el.innerHTML = `${sign}${val.toLocaleString('id-ID')} coin → saldo baru: <strong style="color:#92400E;">${newBal.toLocaleString('id-ID')} coin</strong>`;
+  el.innerHTML = `${sign}${val.toLocaleString('id-ID')} coin → saldo baru: <strong style="color:#F59E0B;">${newBal.toLocaleString('id-ID')} coin</strong>`;
 }
 
 function submitAdjustment() {
@@ -1362,9 +1362,9 @@ function loadNotes() {
       const el = document.getElementById('notesContainer');
       if (!notes.length) { el.innerHTML='<p style="color:var(--ash-dim);font-size:13px;">Belum ada catatan.</p>'; return; }
       el.innerHTML = notes.map(n => `
-        <div style="background:var(--linen);border:1px solid rgba(255,255,255,${n.is_pinned?'.2':'.07'});border-radius:10px;padding:14px 16px;margin-bottom:10px;position:relative;">
-          ${n.is_pinned ? '<span style="color:#92400E;font-size:12px;">📌 Pinned</span><br>' : ''}
-          <div style="font-size:14px;color:var(--ink);white-space:pre-wrap;margin-bottom:8px;">${esc(n.note)}</div>
+        <div style="background:rgba(10,15,31,.4);border:1px solid rgba(255,255,255,${n.is_pinned?'.2':'.07'});border-radius:10px;padding:14px 16px;margin-bottom:10px;position:relative;">
+          ${n.is_pinned ? '<span style="color:#F59E0B;font-size:12px;">📌 Pinned</span><br>' : ''}
+          <div style="font-size:14px;color:var(--glow);white-space:pre-wrap;margin-bottom:8px;">${esc(n.note)}</div>
           <div style="font-size:11px;color:var(--ash-dim);">${esc(n.sa_nama||'Admin')} · ${fmtDate(n.created_at)}</div>
           <div style="position:absolute;top:12px;right:12px;display:flex;gap:6px;">
             <button class="sa-btn sa-btn-sm sa-btn-outline" onclick="pinNote(${n.id})">${n.is_pinned?'Unpin':'Pin'}</button>
@@ -1406,7 +1406,7 @@ function loadComms() {
       const chIcons = { wa:'💬', email:'📧', call:'📞', system:'⚙️' };
       el.innerHTML = items.map(c => `
         <div style="display:flex;gap:12px;margin-bottom:14px;">
-          <div style="width:36px;height:36px;border-radius:50%;background:#C7D2FE;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:16px;">${chIcons[c.channel]||'💬'}</div>
+          <div style="width:36px;height:36px;border-radius:50%;background:rgba(53,232,213,.18);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:16px;">${chIcons[c.channel]||'💬'}</div>
           <div style="flex:1;">
             <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
               <strong style="font-size:13.5px;">${esc(c.subject||'(tanpa subjek)')}</strong>
@@ -1567,7 +1567,7 @@ async function loadMigrations() {
                 <td style="font-size:11.5px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${r.file_name}">${r.file_name}</td>
                 <td style="min-width:110px;">
                     <div style="font-size:11.5px;color:var(--ink-soft);margin-bottom:3px;">${r.success_rows}/${r.total_rows}</div>
-                    <div style="height:4px;background:var(--crease-soft);border-radius:2px;overflow:hidden;"><div style="height:100%;background:${c};width:${pct}%;"></div></div>
+                    <div style="height:4px;background:var(--slate-elev);border-radius:2px;overflow:hidden;"><div style="height:100%;background:${c};width:${pct}%;"></div></div>
                 </td>
                 <td style="font-size:11.5px;">${r.is_assisted?'<span class="sa-badge sa-badge-yellow" style="font-size:10px;">Assisted</span>':'<span style="font-size:11px;color:var(--ash-dim);">Self</span>'}</td>
                 <td>${MIG_STATUS[r.status]||'?'} <span style="font-size:11.5px;">${r.status}</span></td>
@@ -1576,7 +1576,7 @@ async function loadMigrations() {
             </tr>`;
         }).join('');
     } catch(e) {
-        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:#991B1B;padding:24px;">Gagal: ${e.message}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:#F43F5E;padding:24px;">Gagal: ${e.message}</td></tr>`;
     }
 }
 
@@ -1646,7 +1646,7 @@ async function loadTenantErrors(page) {
         pg.innerHTML = html;
 
     } catch(e) {
-        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:#991B1B;padding:24px;">Gagal: ${e.message}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:#F43F5E;padding:24px;">Gagal: ${e.message}</td></tr>`;
     }
 }
 </script>

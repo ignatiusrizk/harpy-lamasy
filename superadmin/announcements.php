@@ -148,11 +148,11 @@ function _notifyTenantsAnnouncement(PDO $db, int $annId, string $target, string 
 
 .ann-type { display:inline-block;font-size:10px;font-weight:700;letter-spacing:.08em;
   text-transform:uppercase;padding:2px 7px;border-radius:20px;margin-bottom:8px; }
-.ann-type-fitur_baru  { background:#EEF2FF;color:var(--indigo); }
-.ann-type-maintenance { background:#FECACA; color:#991B1B; }
-.ann-type-penting     { background:#FFFBEB;color:#92400E; }
-.ann-type-promo       { background:#ECFDF5;color:var(--sage); }
-.ann-type-umum        { background:var(--crease-soft);color:var(--ash); }
+.ann-type-fitur_baru  { background:rgba(53,232,213,.08);color:var(--indigo); }
+.ann-type-maintenance { background:rgba(244,63,94,.18); color:#F43F5E; }
+.ann-type-penting     { background:rgba(245,158,11,.10);color:#F59E0B; }
+.ann-type-promo       { background:rgba(132,204,22,.10);color:var(--sage); }
+.ann-type-umum        { background:var(--slate-elev);color:var(--ash); }
 
 .ann-status-published { color:var(--sage); }
 .ann-status-draft     { color:var(--ash-dim); }
@@ -163,10 +163,10 @@ function _notifyTenantsAnnouncement(PDO $db, int $annId, string $target, string 
   border-radius:8px;padding:10px 14px;display:flex;align-items:center;
   justify-content:space-between;margin:12px 0;font-size:13px;font-weight:600;
 }
-.banner-preview.blue  { background:#EFF6FF;color:#1D4ED8;border:1px solid #BFDBFE; }
-.banner-preview.green { background:#F0FDF4;color:#166534;border:1px solid #BBF7D0; }
-.banner-preview.amber { background:#FFFBEB;color:#92400E;border:1px solid #FDE68A; }
-.banner-preview.red   { background:#FEF2F2;color:#991B1B;border:1px solid #FECACA; }
+.banner-preview.blue  { background:rgba(167,139,250,.10);color:#1D4ED8;border:1px solid rgba(167,139,250,.30); }
+.banner-preview.green { background:rgba(132,204,22,.08);color:#166534;border:1px solid rgba(132,204,22,.30); }
+.banner-preview.amber { background:rgba(245,158,11,.10);color:#F59E0B;border:1px solid rgba(245,158,11,.30); }
+.banner-preview.red   { background:rgba(244,63,94,.10);color:#F43F5E;border:1px solid rgba(244,63,94,.30); }
 
 /* ── Form modal ─────────────────────────────────── */
 .ann-form-group { margin-bottom:14px; }
@@ -178,7 +178,7 @@ function _notifyTenantsAnnouncement(PDO $db, int $annId, string $target, string 
 .sw2 { position:relative;display:inline-block;width:38px;height:20px; }
 .sw2 input { opacity:0;width:0;height:0; }
 .sw2-slider { position:absolute;inset:0;border-radius:20px;
-  background:var(--crease);cursor:pointer;transition:.2s; }
+  background:var(--slate-elev);cursor:pointer;transition:.2s; }
 .sw2 input:checked+.sw2-slider { background:var(--sa); }
 .sw2-slider::before { content:'';position:absolute;width:14px;height:14px;
   border-radius:50%;background:#fff;left:3px;top:3px;transition:.2s; }
@@ -288,7 +288,7 @@ function _notifyTenantsAnnouncement(PDO $db, int $annId, string $target, string 
       </div>
 
       <!-- Banner + Pin options -->
-      <div style="background:var(--linen);border:1px solid var(--crease-soft);border-radius:10px;padding:14px;margin-bottom:14px;">
+      <div style="background:rgba(10,15,31,.4);border:1px solid var(--crease-soft);border-radius:10px;padding:14px;margin-bottom:14px;">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
           <div>
             <div style="font-size:13px;font-weight:600;color:var(--white);">📌 Pin di atas</div>
@@ -406,7 +406,7 @@ function loadList() {
             <button class="sa-btn sa-btn-sm sa-btn-outline" onclick="togglePin(${r.id})">
               ${r.is_pinned?'📌 Unpin':'📌 Pin'}
             </button>
-            <button class="sa-btn sa-btn-sm sa-btn-outline" style="color:#991B1B;border-color:rgba(239,68,68,.3);"
+            <button class="sa-btn sa-btn-sm sa-btn-outline" style="color:#F43F5E;border-color:rgba(239,68,68,.3);"
                     onclick="deleteAnn(${r.id},'${esc(r.title)}')">🗑</button>
           </div>
         </div>`).join('')+'</div>';

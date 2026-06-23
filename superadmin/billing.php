@@ -419,7 +419,7 @@ if ($action) {
     <a href="payments.php" class="sa-btn sa-btn-sm sa-btn-primary">+ Konfirmasi Pembayaran</a>
   </div>
 
-  <div class="b-filter-bar" style="padding:14px 20px;border-bottom:1px solid var(--crease-soft);margin-bottom:0;background:var(--linen);">
+  <div class="b-filter-bar" style="padding:14px 20px;border-bottom:1px solid var(--crease-soft);margin-bottom:0;background:rgba(10,15,31,.4);">
     <input type="text" id="bSearch" placeholder="🔍 Cari tenant / referensi…" oninput="debounceLoad()">
     <select id="bMonth" onchange="bPage=1;loadList()">
       <option value="">Semua Bulan</option>

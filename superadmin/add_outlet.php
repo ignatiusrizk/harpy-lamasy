@@ -194,7 +194,7 @@ $csrf = saGetCsrf();
 <?php saRenderHead('Tambah Outlet'); ?>
 <style>
 .wiz-card {
-  background: var(--linen);
+  background: rgba(10,15,31,.4);
   border: 1px solid var(--crease);
   border-radius: 16px; padding: 28px;
   max-width: 580px;
@@ -224,10 +224,10 @@ $csrf = saGetCsrf();
 .radio-opt {
   display: flex; align-items: flex-start; gap: 10px;
   padding: 12px 14px; border-radius: 10px; cursor: pointer;
-  border: 1.5px solid var(--crease); background: var(--linen);
+  border: 1.5px solid var(--crease); background: rgba(10,15,31,.4);
   transition: all .15s;
 }
-.radio-opt:hover { border-color: rgba(99,102,241,.3); background: #EEF2FF; }
+.radio-opt:hover { border-color: rgba(99,102,241,.3); background: rgba(53,232,213,.08); }
 .radio-opt input[type=radio] { margin-top: 2px; accent-color: var(--sa); flex-shrink: 0; }
 .radio-opt .opt-label { font-size: 13px; font-weight: 600; color: var(--white); }
 .radio-opt .opt-sub   { font-size: 11px; color: var(--ash-dim); margin-top: 2px; }
@@ -256,7 +256,7 @@ $csrf = saGetCsrf();
   flex-shrink: 0;
 }
 .wstep.done   { color: #6EE7B7; }
-.wstep.active { color: var(--white); background: #EEF2FF; border: 1px solid #C7D2FE; }
+.wstep.active { color: var(--white); background: rgba(53,232,213,.08); border: 1px solid #C7D2FE; }
 .wstep-num {
   width: 28px; height: 28px; border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
@@ -356,7 +356,7 @@ $csrf = saGetCsrf();
       <input type="hidden" name="_csrf" value="<?= htmlspecialchars($csrf) ?>"/>
       <input type="hidden" name="step" value="2"/>
 
-      <div style="background:#EEF2FF;border:1px solid #EEF2FF;border-radius:10px;padding:14px 16px;font-size:13px;margin-bottom:20px;">
+      <div style="background:rgba(53,232,213,.08);border:1px solid #EEF2FF;border-radius:10px;padding:14px 16px;font-size:13px;margin-bottom:20px;">
         <strong>Mode Coin Tenant:</strong>
         <?php if ($tenant['coin_mode'] === 'per_outlet'): ?>
           <span style="color:var(--indigo)">Per Outlet</span> — setiap outlet punya saldo sendiri.
@@ -411,7 +411,7 @@ $csrf = saGetCsrf();
       <?php endif; ?>
     </table>
 
-    <div style="background:#EEF2FF;border:1px solid #EEF2FF;border-radius:10px;padding:14px 16px;font-size:13px;color:var(--ink-soft);margin-bottom:20px;">
+    <div style="background:rgba(53,232,213,.08);border:1px solid #EEF2FF;border-radius:10px;padding:14px 16px;font-size:13px;color:var(--ink-soft);margin-bottom:20px;">
       Sistem akan membuat: <strong style="color:var(--white)">1 outlet &bull; 3 layanan default</strong>
     </div>
 
@@ -437,7 +437,7 @@ $csrf = saGetCsrf();
       dan dapat diakses oleh user tenant.
     </p>
 
-    <div style="background:var(--linen);border:1px solid var(--crease);border-radius:10px;padding:16px;text-align:left;font-size:13px;margin-bottom:20px;">
+    <div style="background:rgba(10,15,31,.4);border:1px solid var(--crease);border-radius:10px;padding:16px;text-align:left;font-size:13px;margin-bottom:20px;">
       <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--crease-soft);">
         <span style="color:var(--ash)">Outlet ID</span>
         <span style="font-family:var(--mono)">#<?= $result['outlet_id'] ?></span>
@@ -447,7 +447,7 @@ $csrf = saGetCsrf();
         <span style="font-family:var(--mono)"><?= htmlspecialchars($result['slug']) ?></span>
       </div>
       <?php if ($result['note']): ?>
-      <div style="padding:8px 0;color:#92400E;font-size:12px;"><?= htmlspecialchars($result['note']) ?></div>
+      <div style="padding:8px 0;color:#F59E0B;font-size:12px;"><?= htmlspecialchars($result['note']) ?></div>
       <?php endif; ?>
     </div>
 

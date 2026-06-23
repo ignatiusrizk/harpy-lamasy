@@ -191,7 +191,7 @@ body::before {
 }
 .login-card {
   position: relative; z-index: 1;
-  background: var(--linen);
+  background: rgba(10,15,31,.4);
   backdrop-filter: blur(20px);
   border: 1px solid var(--crease);
   border-radius: 20px;
@@ -222,7 +222,7 @@ body::before {
 .sa-warning {
   display: flex; align-items: center; gap: 8px;
   padding: 10px 14px; border-radius: 9px;
-  background: #EEF2FF; border: 1px solid #C7D2FE;
+  background: rgba(53,232,213,.08); border: 1px solid #C7D2FE;
   font-size: 12px; color: var(--ash); margin-bottom: 20px;
 }
 .divider {
@@ -237,7 +237,7 @@ body::before {
   display: flex; align-items: flex-start; gap: 8px;
 }
 .alert-error   { background: #FECACA; border: 1px solid #FCA5A5; color: #FCA5A5; }
-.alert-success { background: #ECFDF5; border: 1px solid #A7F3D0; color: #6EE7B7; }
+.alert-success { background: rgba(132,204,22,.10); border: 1px solid #A7F3D0; color: #6EE7B7; }
 .form-group { display: flex; flex-direction: column; gap: 7px; margin-bottom: 18px; }
 label { font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--ash); }
 .input-wrap { position: relative; }
@@ -253,7 +253,7 @@ input[type="text"], input[type="password"] {
 }
 input:focus {
   border-color: var(--sa);
-  background: #EEF2FF;
+  background: rgba(53,232,213,.08);
   box-shadow: 0 0 0 3px #EEF2FF;
 }
 input::placeholder { color: var(--ash-dim); }

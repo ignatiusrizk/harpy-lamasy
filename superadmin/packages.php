@@ -148,7 +148,7 @@ if ($action) {
 .fg-check label { font-size: 13px; color: var(--ink-soft); text-transform: none; letter-spacing: 0; font-weight: 500; }
 
 .bundle-featured {
-  background: #EEF2FF; color: #A5B4FC;
+  background: rgba(53,232,213,.08); color: #A5B4FC;
   border: 1px solid #C7D2FE;
   font-size: 10px; font-weight: 700; padding: 1px 7px; border-radius: 20px;
 }
@@ -348,11 +348,11 @@ function refreshActivationCard() {
   if (discount > 0 && fee > 0) {
     display += ` <span style="font-size:14px;color:var(--ash-dim);text-decoration:line-through">${display}</span>`
              + ` → <span style="color:var(--sage);">Rp ${final.toLocaleString('id-ID')}</span>`
-             + ` <span style="font-size:13px;color:#92400E;">(−${discount}%)</span>`;
+             + ` <span style="font-size:13px;color:#F59E0B;">(−${discount}%)</span>`;
     display = 'Rp ' + parseInt(fee).toLocaleString('id-ID')
             + ` <span style="font-size:16px;color:var(--ash-dim);text-decoration:line-through;margin-left:8px;"></span>`;
     display = `<span style="font-family:var(--mono);">Rp ${final.toLocaleString('id-ID')}</span>`
-            + ` <span style="font-size:13px;color:#92400E;margin-left:6px;">−${discount}%</span>`;
+            + ` <span style="font-size:13px;color:#F59E0B;margin-left:6px;">−${discount}%</span>`;
   }
   document.getElementById('activationFeeDisplay').innerHTML = display;
 }

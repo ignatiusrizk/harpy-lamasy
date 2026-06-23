@@ -100,32 +100,32 @@ $csrf = saGetCsrf();
 <style>
   .kpi-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:14px; margin-bottom:20px; }
   .kpi-card {
-    background:var(--linen); border:1px solid var(--crease);
+    background:rgba(10,15,31,.4); border:1px solid var(--crease);
     border-radius:12px; padding:16px;
   }
   .kpi-label { font-size:11px; color:var(--ash); text-transform:uppercase; letter-spacing:.05em; }
-  .kpi-value { font-size:22px; font-weight:800; margin-top:6px; font-family:var(--mono); color:var(--ink); }
+  .kpi-value { font-size:22px; font-weight:800; margin-top:6px; font-family:var(--mono); color:var(--glow); }
   .kpi-value.positive { color:#86EFAC; }
-  .kpi-value.negative { color:#991B1B; }
+  .kpi-value.negative { color:#F43F5E; }
   .kpi-sub { font-size:11px; color:var(--ash); margin-top:4px; }
 
   .range-bar {
     display:flex; gap:10px; align-items:center; margin-bottom:18px; flex-wrap:wrap;
-    background:var(--linen); padding:12px 14px; border-radius:10px;
+    background:rgba(10,15,31,.4); padding:12px 14px; border-radius:10px;
   }
   .range-bar input[type=date] {
-    background:var(--crease-soft); border:1px solid var(--crease);
-    border-radius:6px; padding:6px 10px; color:var(--ink); font-size:13px;
+    background:var(--slate-elev); border:1px solid var(--crease);
+    border-radius:6px; padding:6px 10px; color:var(--glow); font-size:13px;
   }
   .quick-pill {
-    background:var(--crease-soft); color:var(--ink); border:1px solid var(--crease);
+    background:var(--slate-elev); color:var(--glow); border:1px solid var(--crease);
     padding:6px 12px; border-radius:6px; cursor:pointer; font-size:12px; font-weight:600;
   }
-  .quick-pill:hover { background:var(--crease); color:var(--ink); }
+  .quick-pill:hover { background:var(--slate-elev); color:var(--glow); }
 
   .margin-cell { font-family:var(--mono); font-weight:700; }
   .margin-cell.positive { color:#86EFAC; }
-  .margin-cell.negative { color:#991B1B; }
+  .margin-cell.negative { color:#F43F5E; }
 
   .feature-badge {
     background:rgba(168,85,247,.18); color:#C4B5FD;
@@ -133,15 +133,15 @@ $csrf = saGetCsrf();
   }
 
   .budget-input {
-    background:var(--crease-soft); border:1px solid var(--crease);
-    border-radius:6px; padding:6px 10px; color:var(--ink); font-size:12px; font-family:var(--mono);
+    background:var(--slate-elev); border:1px solid var(--crease);
+    border-radius:6px; padding:6px 10px; color:var(--glow); font-size:12px; font-family:var(--mono);
     width:90px;
   }
 
-  .chart-card { background:var(--linen); border:1px solid var(--crease-soft); border-radius:12px; padding:16px; }
+  .chart-card { background:rgba(10,15,31,.4); border:1px solid var(--crease-soft); border-radius:12px; padding:16px; }
   .bar-row { display:flex; align-items:center; gap:8px; margin-bottom:6px; }
   .bar-row .bar-label { width:90px; font-size:11px; color:var(--ink-soft); font-family:var(--mono); }
-  .bar-row .bar-track { flex:1; background:var(--crease-soft); border-radius:4px; height:18px; position:relative; overflow:hidden; }
+  .bar-row .bar-track { flex:1; background:var(--slate-elev); border-radius:4px; height:18px; position:relative; overflow:hidden; }
   .bar-row .bar-fill { position:absolute; left:0; top:0; bottom:0; background:linear-gradient(90deg, #35E8D5, #1CC4B2); border-radius:4px; }
   .bar-row .bar-val { font-size:11px; color:var(--ink-soft); min-width:80px; text-align:right; font-family:var(--mono); }
 </style>
@@ -225,7 +225,7 @@ $csrf = saGetCsrf();
 
 <!-- Trend Chart -->
 <div class="chart-card">
-  <h3 style="font-size:14px;font-weight:700;margin-bottom:14px;color:var(--ink);">Trend Harian (Cost vs Revenue)</h3>
+  <h3 style="font-size:14px;font-weight:700;margin-bottom:14px;color:var(--glow);">Trend Harian (Cost vs Revenue)</h3>
   <div id="trendChart"><div style="text-align:center;padding:32px;color:var(--ash-dim);">Memuat...</div></div>
 </div>
 

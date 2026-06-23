@@ -580,7 +580,7 @@ $pageTitle  = 'Platform Settings';
   .set-tabs{display:flex;gap:4px;margin-bottom:28px;border-bottom:1px solid var(--crease-soft);padding-bottom:0}
   .set-tab{padding:10px 18px;font-size:13px;font-weight:600;color:var(--ash);border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;border-radius:6px 6px 0 0;transition:color .15s,border-color .15s}
   .set-tab:hover{color:var(--ink)}
-  .set-tab.active{color:var(--sa);border-bottom-color:var(--sa);background:#EEF2FF}
+  .set-tab.active{color:var(--sa);border-bottom-color:var(--sa);background:rgba(53,232,213,.08)}
   .set-panel{display:none}.set-panel.active{display:block}
 
   /* ── Content cards ── */
@@ -592,9 +592,9 @@ $pageTitle  = 'Platform Settings';
   .set-field{margin-bottom:16px}
   .set-field label{display:block;font-size:11px;font-weight:700;color:var(--text-muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em}
   .set-field input,.set-field textarea,.set-field select{
-    width:100%;padding:10px 12px;background:var(--crease-soft);
+    width:100%;padding:10px 12px;background:var(--slate-elev);
     border:1px solid var(--crease);border-radius:8px;
-    color:var(--ink);font-size:14px;font-family:inherit;
+    color:var(--glow);font-size:14px;font-family:inherit;
     outline:none;transition:border-color .15s,box-shadow .15s;
   }
   .set-field textarea{resize:vertical;min-height:72px}
@@ -607,7 +607,7 @@ $pageTitle  = 'Platform Settings';
   .toggle-row{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
   .toggle-switch{position:relative;display:inline-block;width:52px;height:28px;flex-shrink:0}
   .toggle-switch input{opacity:0;width:0;height:0}
-  .toggle-slider{position:absolute;inset:0;background:var(--crease);border-radius:28px;cursor:pointer;transition:.2s}
+  .toggle-slider{position:absolute;inset:0;background:var(--slate-elev);border-radius:28px;cursor:pointer;transition:.2s}
   .toggle-slider:before{content:'';position:absolute;width:20px;height:20px;left:4px;bottom:4px;background:#fff;border-radius:50%;transition:.2s;box-shadow:0 1px 4px rgba(0,0,0,.3)}
   .toggle-switch input:checked + .toggle-slider{background:#EF4444}
   .toggle-switch input:checked + .toggle-slider:before{transform:translateX(24px)}
@@ -617,7 +617,7 @@ $pageTitle  = 'Platform Settings';
 
   /* ── Demo stat boxes ── */
   .stat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:12px}
-  .stat-box{background:#EEF2FF;border:1px solid #EEF2FF;border-radius:12px;padding:16px;text-align:center}
+  .stat-box{background:rgba(53,232,213,.08);border:1px solid #EEF2FF;border-radius:12px;padding:16px;text-align:center}
   .stat-val{font-size:24px;font-weight:800;color:var(--indigo);font-family:var(--mono)}
   .stat-label{font-size:11px;color:var(--text-muted);margin-top:5px}
 
@@ -625,19 +625,19 @@ $pageTitle  = 'Platform Settings';
   .tos-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid var(--crease-soft)}
   .tos-row:last-child{border-bottom:none}
   .tos-badge{font-size:11px;padding:3px 10px;border-radius:20px;font-weight:700;white-space:nowrap}
-  .tos-badge.current{background:#EEF2FF;color:var(--indigo);border:1px solid #C7D2FE}
-  .tos-badge.old{background:var(--crease-soft);color:var(--ash-dim);border:1px solid var(--crease)}
+  .tos-badge.current{background:rgba(53,232,213,.08);color:var(--indigo);border:1px solid rgba(53,232,213,.30)}
+  .tos-badge.old{background:var(--slate-elev);color:var(--ash-dim);border:1px solid var(--crease)}
 
   /* ── Alert boxes (inline warning in settings) ── */
   .alert-box{padding:12px 16px;border-radius:10px;font-size:13px;margin-bottom:16px}
-  .alert-warn{background:#FEF2F2;border:1px solid #FECACA;color:#991B1B}
-  .alert-ok{background:#EEF2FF;border:1px solid #C7D2FE;color:var(--indigo)}
+  .alert-warn{background:rgba(244,63,94,.10);border:1px solid rgba(244,63,94,.30);color:#F43F5E}
+  .alert-ok{background:rgba(53,232,213,.08);border:1px solid rgba(53,232,213,.30);color:var(--indigo)}
 
   /* ── Toast (settings page — routes through saShowToast via redirect) ── */
   #toast-set{
     position:fixed;bottom:28px;right:24px;
     background:rgba(22,35,72,.95);backdrop-filter:blur(8px);
-    color:var(--ink);padding:12px 20px;border-radius:12px;font-size:13px;
+    color:var(--glow);padding:12px 20px;border-radius:12px;font-size:13px;
     display:none;z-index:9999;box-shadow:0 8px 24px rgba(0,0,0,.4);
     border:1px solid var(--crease);
   }
@@ -775,7 +775,7 @@ $pageTitle  = 'Platform Settings';
       <label>Ringkasan Perubahan</label>
       <textarea id="tosSummary" rows="3" placeholder="Apa yang berubah di versi ini..."></textarea>
     </div>
-    <div style="background:#FEF2F2;border:1px solid #FECACA;border-radius:8px;padding:12px;font-size:12.5px;color:#991B1B;margin-bottom:16px">
+    <div style="background:rgba(244,63,94,.10);border:1px solid rgba(244,63,94,.30);border-radius:8px;padding:12px;font-size:12.5px;color:#F43F5E;margin-bottom:16px">
       ⚠️ Setelah rilis, <strong>semua tenant</strong> wajib accept ulang ToS sebelum bisa lanjut. Pastikan ini perlu dilakukan.
     </div>
     <button class="sa-btn sa-btn-outline" onclick="releaseTos()">📋 Rilis Versi Baru</button>
@@ -809,7 +809,7 @@ $pageTitle  = 'Platform Settings';
     </p>
 
     <div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ash);margin-bottom:8px">Constant Default (db.php)</div>
-    <div id="notifConst" style="background:var(--linen);border:1px solid var(--crease);border-radius:8px;padding:10px 14px;margin-bottom:20px;font-family:monospace;font-size:12.5px;color:var(--ink-soft)">Loading…</div>
+    <div id="notifConst" style="background:rgba(10,15,31,.4);border:1px solid var(--crease);border-radius:8px;padding:10px 14px;margin-bottom:20px;font-family:monospace;font-size:12.5px;color:var(--ink-soft)">Loading…</div>
 
     <div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ash);margin-bottom:8px">Super Admin Opt-In</div>
     <div id="notifAdminList" style="display:flex;flex-direction:column;gap:10px;margin-bottom:24px"></div>
@@ -891,24 +891,24 @@ $pageTitle  = 'Platform Settings';
       <div class="form-group">
         <label>Slug * <span style="font-weight:400;color:var(--ash);font-size:11px">(a-z, 0-9, _)</span></label>
         <input type="text" id="re_slug" placeholder="misal: marketing"
-               style="width:100%;padding:10px 14px;background:var(--crease-soft);border:1.5px solid var(--crease);border-radius:8px;color:var(--ink);font-size:14px;outline:none">
+               style="width:100%;padding:10px 14px;background:var(--slate-elev);border:1.5px solid var(--crease);border-radius:8px;color:var(--glow);font-size:14px;outline:none">
       </div>
       <div class="form-group">
         <label>Nama Role *</label>
         <input type="text" id="re_name" placeholder="Marketing"
-               style="width:100%;padding:10px 14px;background:var(--crease-soft);border:1.5px solid var(--crease);border-radius:8px;color:var(--ink);font-size:14px;outline:none">
+               style="width:100%;padding:10px 14px;background:var(--slate-elev);border:1.5px solid var(--crease);border-radius:8px;color:var(--glow);font-size:14px;outline:none">
       </div>
     </div>
     <div class="form-group" style="margin-bottom:16px">
       <label>Deskripsi</label>
       <input type="text" id="re_desc" placeholder="Untuk siapa role ini, akses apa"
-             style="width:100%;padding:10px 14px;background:var(--crease-soft);border:1.5px solid var(--crease);border-radius:8px;color:var(--ink);font-size:14px;outline:none">
+             style="width:100%;padding:10px 14px;background:var(--slate-elev);border:1.5px solid var(--crease);border-radius:8px;color:var(--glow);font-size:14px;outline:none">
     </div>
     <div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ash);margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">
       <span>Permissions</span>
       <span><a href="#" onclick="rolePermsToggleAll(true);return false" style="color:var(--sa);text-decoration:none">All</a> · <a href="#" onclick="rolePermsToggleAll(false);return false" style="color:var(--ash);text-decoration:none">None</a></span>
     </div>
-    <div id="rolePermsList" style="max-height:340px;overflow-y:auto;padding:8px;background:var(--linen);border:1px solid var(--crease-soft);border-radius:10px">
+    <div id="rolePermsList" style="max-height:340px;overflow-y:auto;padding:8px;background:rgba(10,15,31,.4);border:1px solid var(--crease-soft);border-radius:10px">
       <div style="color:var(--ash);text-align:center;padding:14px">Loading…</div>
     </div>
     <div style="display:flex;gap:10px;margin-top:18px;justify-content:flex-end">
@@ -925,26 +925,26 @@ $pageTitle  = 'Platform Settings';
     <div class="form-group">
       <label>Username *</label>
       <input type="text" id="tc_username" placeholder="a-z, 0-9, underscore, 3-30 char"
-             style="width:100%;padding:10px 14px;background:var(--crease-soft);border:1.5px solid var(--crease);border-radius:8px;color:var(--ink);font-size:14px;outline:none">
+             style="width:100%;padding:10px 14px;background:var(--slate-elev);border:1.5px solid var(--crease);border-radius:8px;color:var(--glow);font-size:14px;outline:none">
     </div>
     <div class="form-group">
       <label>Nama Lengkap *</label>
       <input type="text" id="tc_name" placeholder="Nama tampil di panel"
-             style="width:100%;padding:10px 14px;background:var(--crease-soft);border:1.5px solid var(--crease);border-radius:8px;color:var(--ink);font-size:14px;outline:none">
+             style="width:100%;padding:10px 14px;background:var(--slate-elev);border:1.5px solid var(--crease);border-radius:8px;color:var(--glow);font-size:14px;outline:none">
     </div>
     <div class="form-group">
       <label>Email (untuk notif)</label>
       <input type="email" id="tc_email" placeholder="email@harpy.id"
-             style="width:100%;padding:10px 14px;background:var(--crease-soft);border:1.5px solid var(--crease);border-radius:8px;color:var(--ink);font-size:14px;outline:none">
+             style="width:100%;padding:10px 14px;background:var(--slate-elev);border:1.5px solid var(--crease);border-radius:8px;color:var(--glow);font-size:14px;outline:none">
     </div>
     <div class="form-group">
       <label>Password * (min 8 karakter)</label>
       <input type="password" id="tc_password" placeholder="••••••••"
-             style="width:100%;padding:10px 14px;background:var(--crease-soft);border:1.5px solid var(--crease);border-radius:8px;color:var(--ink);font-size:14px;outline:none">
+             style="width:100%;padding:10px 14px;background:var(--slate-elev);border:1.5px solid var(--crease);border-radius:8px;color:var(--glow);font-size:14px;outline:none">
     </div>
     <div class="form-group">
       <label>Role *</label>
-      <select id="tc_role_id" style="width:100%;padding:10px 14px;background:rgba(15,28,58,.9);border:1.5px solid var(--crease);border-radius:8px;color:var(--ink);font-size:14px;outline:none">
+      <select id="tc_role_id" style="width:100%;padding:10px 14px;background:rgba(15,28,58,.9);border:1.5px solid var(--crease);border-radius:8px;color:var(--glow);font-size:14px;outline:none">
         <option value="">Pilih role...</option>
       </select>
     </div>
@@ -963,21 +963,21 @@ $pageTitle  = 'Platform Settings';
     <div class="form-group">
       <label>Nama Lengkap *</label>
       <input type="text" id="te_name"
-             style="width:100%;padding:10px 14px;background:var(--crease-soft);border:1.5px solid var(--crease);border-radius:8px;color:var(--ink);font-size:14px;outline:none">
+             style="width:100%;padding:10px 14px;background:var(--slate-elev);border:1.5px solid var(--crease);border-radius:8px;color:var(--glow);font-size:14px;outline:none">
     </div>
     <div class="form-group">
       <label>Email</label>
       <input type="email" id="te_email"
-             style="width:100%;padding:10px 14px;background:var(--crease-soft);border:1.5px solid var(--crease);border-radius:8px;color:var(--ink);font-size:14px;outline:none">
+             style="width:100%;padding:10px 14px;background:var(--slate-elev);border:1.5px solid var(--crease);border-radius:8px;color:var(--glow);font-size:14px;outline:none">
     </div>
     <div class="form-group">
       <label>Role *</label>
-      <select id="te_role_id" style="width:100%;padding:10px 14px;background:rgba(15,28,58,.9);border:1.5px solid var(--crease);border-radius:8px;color:var(--ink);font-size:14px;outline:none">
+      <select id="te_role_id" style="width:100%;padding:10px 14px;background:rgba(15,28,58,.9);border:1.5px solid var(--crease);border-radius:8px;color:var(--glow);font-size:14px;outline:none">
       </select>
     </div>
     <div class="form-group">
       <label>Status</label>
-      <select id="te_is_active" style="width:100%;padding:10px 14px;background:rgba(15,28,58,.9);border:1.5px solid var(--crease);border-radius:8px;color:var(--ink);font-size:14px;outline:none">
+      <select id="te_is_active" style="width:100%;padding:10px 14px;background:rgba(15,28,58,.9);border:1.5px solid var(--crease);border-radius:8px;color:var(--glow);font-size:14px;outline:none">
         <option value="1">Aktif</option>
         <option value="0">Nonaktif</option>
       </select>
@@ -997,7 +997,7 @@ $pageTitle  = 'Platform Settings';
     <div class="form-group">
       <label>Password Baru * (min 8 karakter)</label>
       <input type="password" id="tp_password" placeholder="Password baru"
-             style="width:100%;padding:10px 14px;background:var(--crease-soft);border:1.5px solid var(--crease);border-radius:8px;color:var(--ink);font-size:14px;outline:none">
+             style="width:100%;padding:10px 14px;background:var(--slate-elev);border:1.5px solid var(--crease);border-radius:8px;color:var(--glow);font-size:14px;outline:none">
     </div>
     <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px">
       <button class="sa-btn sa-btn-outline" onclick="closeTeamModals()">Batal</button>
@@ -1010,7 +1010,7 @@ $pageTitle  = 'Platform Settings';
 <div id="tipsEditModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9998;align-items:center;justify-content:center;padding:20px">
   <div style="background:#1a2540;border-radius:14px;padding:24px;max-width:540px;width:100%;max-height:90vh;overflow-y:auto;border:1px solid var(--crease)">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-      <h3 id="tipsModalTitle" style="margin:0;color:var(--ink);font-size:16px;font-weight:700">➕ Tambah Tip</h3>
+      <h3 id="tipsModalTitle" style="margin:0;color:var(--glow);font-size:16px;font-weight:700">➕ Tambah Tip</h3>
       <button onclick="closeTipsEdit()" style="background:none;border:none;color:var(--ash);font-size:22px;cursor:pointer">×</button>
     </div>
     <input type="hidden" id="tip_id"/>
@@ -1078,7 +1078,7 @@ async function loadTipsList() {
     wrap.innerHTML = j.data.map(t => {
         const activeStyle = t.is_active == 1
             ? 'border-color:rgba(53,232,213,.3);background:rgba(53,232,213,.04)'
-            : 'border-color:var(--crease-soft);background:var(--linen);opacity:.6';
+            : 'border-color:var(--crease-soft);background:rgba(10,15,31,.4);opacity:.6';
         const scope = t.tenant_id ? `Tenant #${t.tenant_id}` : '🌍 Global';
         const cta = t.cta_label ? `<span style="background:rgba(53,232,213,.15);color:#35E8D5;padding:2px 8px;border-radius:8px;font-size:11px;margin-left:6px">${esc(t.cta_label)}</span>` : '';
         return `<div style="padding:14px 16px;border:1px solid var(--crease);border-radius:10px;${activeStyle}">
@@ -1086,7 +1086,7 @@ async function loadTipsList() {
             <div style="flex:1;min-width:0">
               <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
                 <span style="font-size:20px">${esc(t.icon||'💡')}</span>
-                <strong style="color:var(--ink);font-size:14px">${esc(t.judul)}</strong>
+                <strong style="color:var(--glow);font-size:14px">${esc(t.judul)}</strong>
                 ${cta}
               </div>
               <div style="font-size:12px;color:var(--ash);line-height:1.5">${esc(t.konten)}</div>
@@ -1206,7 +1206,7 @@ async function loadMaintStatus() {
     const d = await (await fetch('settings.php?action=maintenance_status', {headers:{'X-Requested-With':'XMLHttpRequest'}})).json();
     const el = document.getElementById('maintStatus');
     const dot = d.active
-        ? '<span class="status-dot" style="background:#E24B4A;display:inline-block"></span> <strong style="color:#991B1B">AKTIF</strong>'
+        ? '<span class="status-dot" style="background:#E24B4A;display:inline-block"></span> <strong style="color:#F43F5E">AKTIF</strong>'
         : '<span class="status-dot" style="background:#35E8D5;display:inline-block"></span> <strong style="color:#35E8D5">NONAKTIF</strong>';
     el.innerHTML = dot + (d.active && d.message ? `<br><span style="font-size:12px;opacity:.6;margin-top:4px;display:block">${d.message}</span>` : '');
     document.getElementById('maintToggle').checked = d.active;
@@ -1282,13 +1282,13 @@ async function loadNotify() {
   // Render admins
   const adminWrap = document.getElementById('notifAdminList');
   adminWrap.innerHTML = (r.admins || []).map(a => `
-    <div style="display:grid;grid-template-columns:1fr 1.5fr auto;gap:10px;align-items:center;padding:12px 14px;background:var(--linen);border:1px solid var(--crease);border-radius:9px">
+    <div style="display:grid;grid-template-columns:1fr 1.5fr auto;gap:10px;align-items:center;padding:12px 14px;background:rgba(10,15,31,.4);border:1px solid var(--crease);border-radius:9px">
       <div>
-        <div style="font-weight:700;color:var(--ink);font-size:13.5px">${escapeHtml(a.name || a.username)}</div>
+        <div style="font-weight:700;color:var(--glow);font-size:13.5px">${escapeHtml(a.name || a.username)}</div>
         <div style="font-size:11px;color:var(--ash);font-family:monospace">@${escapeHtml(a.username)}</div>
       </div>
       <input type="email" id="ne_${a.id}" value="${escapeHtml(a.email || '')}" placeholder="email@harpy.id"
-        style="background:var(--crease-soft);border:1.5px solid var(--crease);border-radius:7px;padding:7px 10px;color:var(--ink);font-size:13px;outline:none">
+        style="background:var(--slate-elev);border:1.5px solid var(--crease);border-radius:7px;padding:7px 10px;color:var(--glow);font-size:13px;outline:none">
       <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:var(--ink-soft)">
         <input type="checkbox" id="nx_${a.id}" ${a.notify_enabled == 1 ? 'checked' : ''}>
         <span>Notify</span>
@@ -1303,9 +1303,9 @@ async function loadNotify() {
     logWrap.innerHTML = '<div style="padding:14px;color:var(--ash);text-align:center;font-size:13px">Belum ada notif terkirim.</div>';
   } else {
     logWrap.innerHTML = r.logs.map(l => `
-      <div style="padding:10px 14px;background:var(--linen);border:1px solid var(--crease-soft);border-radius:7px;display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:12.5px">
+      <div style="padding:10px 14px;background:rgba(10,15,31,.4);border:1px solid var(--crease-soft);border-radius:7px;display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:12.5px">
         <div style="flex:1;min-width:0">
-          <div style="font-weight:600;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(l.subject || '(no subject)')}</div>
+          <div style="font-weight:600;color:var(--glow);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(l.subject || '(no subject)')}</div>
           <div style="font-size:11px;color:var(--ash);margin-top:2px">${escapeHtml(l.event_type)} · ${escapeHtml(l.recipients || '-')}</div>
         </div>
         <div style="font-size:11px;color:var(--ash);white-space:nowrap;font-family:monospace">${escapeHtml(l.sent_at)}</div>
@@ -1376,7 +1376,7 @@ async function loadTeam() {
       : '-';
     const rowData = JSON.stringify(a).replace(/'/g,"&apos;");
     return `<tr>
-      <td><strong style="color:var(--ink)">${escapeHtml(a.name)}</strong></td>
+      <td><strong style="color:var(--glow)">${escapeHtml(a.name)}</strong></td>
       <td><code style="color:var(--indigo);font-size:12px">@${escapeHtml(a.username)}</code></td>
       <td style="font-size:12px;color:var(--ink-soft)">${escapeHtml(a.email||'—')}</td>
       <td><span class="sa-badge ${roleBadge}">${escapeHtml(a.role_name||'—')}</span></td>
@@ -1517,7 +1517,7 @@ async function loadRoles() {
     return `
       <tr>
         <td>
-          <div style="font-weight:700;color:var(--ink)">${escapeHtml(role.name)}${sys ? ' <span style="background:#EEF2FF;color:var(--sa);font-size:10px;padding:2px 6px;border-radius:4px;font-weight:600;margin-left:6px">SYSTEM</span>' : ''}</div>
+          <div style="font-weight:700;color:var(--glow)">${escapeHtml(role.name)}${sys ? ' <span style="background:rgba(53,232,213,.08);color:var(--sa);font-size:10px;padding:2px 6px;border-radius:4px;font-weight:600;margin-left:6px">SYSTEM</span>' : ''}</div>
           <div style="font-size:11px;color:var(--ash);margin-top:2px">${escapeHtml(role.description || '-')}</div>
         </td>
         <td><code style="font-family:var(--mono);font-size:12px;color:var(--ash)">${escapeHtml(role.slug)}</code></td>
@@ -1525,7 +1525,7 @@ async function loadRoles() {
         <td><span style="background:rgba(53,232,213,.1);color:#35E8D5;font-weight:700;padding:2px 8px;border-radius:4px;font-size:12px">${role.perm_count}</span></td>
         <td style="text-align:right;white-space:nowrap">
           <button class="sa-btn sa-btn-secondary" style="padding:5px 12px;font-size:11px" onclick="openRoleEdit(${role.id})">Edit</button>
-          ${sys ? '' : `<button class="sa-btn" style="padding:5px 12px;font-size:11px;background:#FECACA;color:#991B1B;border:1px solid #FCA5A5;margin-left:4px" onclick="deleteRole(${role.id},'${escapeHtml(role.name)}')">Hapus</button>`}
+          ${sys ? '' : `<button class="sa-btn" style="padding:5px 12px;font-size:11px;background:rgba(244,63,94,.18);color:#F43F5E;border:1px solid rgba(244,63,94,.40);margin-left:4px" onclick="deleteRole(${role.id},'${escapeHtml(role.name)}')">Hapus</button>`}
         </td>
       </tr>`;
   }).join('');
@@ -1563,7 +1563,7 @@ async function openRoleEdit(id) {
 
   const wrap = document.getElementById('rolePermsList');
   wrap.innerHTML = Object.keys(byModule).sort().map(mod => `
-    <div style="margin-bottom:12px;padding:10px;background:var(--linen);border-radius:8px;border:1px solid var(--linen)">
+    <div style="margin-bottom:12px;padding:10px;background:rgba(10,15,31,.4);border-radius:8px;border:1px solid var(--linen)">
       <div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ash);margin-bottom:8px;display:flex;justify-content:space-between">
         <span>${escapeHtml(mod)}</span>
         <a href="#" onclick="rolePermsToggleModule('${escapeHtml(mod)}',true);return false" style="color:var(--sa);text-decoration:none;font-size:10px">all</a>
@@ -1572,7 +1572,7 @@ async function openRoleEdit(id) {
         <label style="display:flex;align-items:flex-start;gap:8px;padding:6px;cursor:pointer;border-radius:5px" data-mod="${escapeHtml(mod)}">
           <input type="checkbox" class="re_perm" value="${p.id}" ${currentPermIds.includes(Number(p.id)) ? 'checked' : ''} style="margin-top:3px">
           <div style="flex:1">
-            <div style="font-size:12.5px;color:var(--ink);font-weight:600">${escapeHtml(p.perm_key)}</div>
+            <div style="font-size:12.5px;color:var(--glow);font-weight:600">${escapeHtml(p.perm_key)}</div>
             <div style="font-size:11px;color:var(--ash);line-height:1.4">${escapeHtml(p.description || '-')}${p.notif_events ? ` <span style="color:#35E8D5;font-size:10px;margin-left:4px">📬 ${escapeHtml(p.notif_events)}</span>` : ''}</div>
           </div>
         </label>

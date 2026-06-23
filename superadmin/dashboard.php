@@ -323,13 +323,13 @@ if ($action) {
     </div>
     <div class="sa-card-body">
       <div class="sa-grid-2" style="margin-bottom:18px;gap:12px;">
-        <div style="text-align:center;padding:18px 12px;background:#EEF2FF;border-radius:12px;border:1px solid #C7D2FE;">
+        <div style="text-align:center;padding:18px 12px;background:rgba(53,232,213,.08);border-radius:12px;border:1px solid rgba(53,232,213,.30);">
           <div id="aw-published" class="sa-mini-stat indigo" style="margin:0;display:block;">
             <div class="val" style="font-size:36px;">—</div>
             <div class="lbl" style="margin-top:5px;">Published Aktif</div>
           </div>
         </div>
-        <div style="text-align:center;padding:18px 12px;background:var(--linen);border-radius:12px;border:1px solid var(--crease-soft);">
+        <div style="text-align:center;padding:18px 12px;background:rgba(10,15,31,.4);border-radius:12px;border:1px solid var(--crease-soft);">
           <div id="aw-draft" class="sa-mini-stat" style="margin:0;display:block;">
             <div class="val" id="aw-draft-val" style="font-size:36px;color:var(--ash);">—</div>
             <div class="lbl" style="margin-top:5px;">Draft</div>
@@ -369,10 +369,10 @@ if ($action) {
     </div>
 
     <?php if (!empty($_aiAbusers)): ?>
-    <div style="margin-top:14px;background:#FEF2F2;border:1px solid #FCA5A5;border-radius:10px;padding:14px 16px">
+    <div style="margin-top:14px;background:rgba(244,63,94,.10);border:1px solid rgba(244,63,94,.40);border-radius:10px;padding:14px 16px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-        <div style="font-size:13px;font-weight:700;color:#991B1B">⚠️ <?= count($_aiAbusers) ?> tenant hit rate limit AI hari ini</div>
-        <a href="/superadmin/health.php" style="color:#991B1B;font-size:11px;font-weight:700;text-decoration:none">Cek detail →</a>
+        <div style="font-size:13px;font-weight:700;color:#F43F5E">⚠️ <?= count($_aiAbusers) ?> tenant hit rate limit AI hari ini</div>
+        <a href="/superadmin/health.php" style="color:#F43F5E;font-size:11px;font-weight:700;text-decoration:none">Cek detail →</a>
       </div>
       <table style="width:100%;font-size:12px;color:var(--ink-soft)">
         <thead><tr style="text-align:left;color:var(--ash);font-size:10px;text-transform:uppercase">
@@ -562,7 +562,7 @@ fetch('dashboard.php?action=support_widget', { headers: { 'X-Requested-With': 'X
           const col = tk.age_hours >= 24 ? '#F87171' : tk.age_hours >= 6 ? '#FBBF24' : '#FCD34D';
           return `<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--linen);">
             <div style="flex:1;min-width:0;">
-              <div style="font-size:12.5px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(tk.subject||'(tanpa subjek)')}</div>
+              <div style="font-size:12.5px;color:var(--glow);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(tk.subject||'(tanpa subjek)')}</div>
               <div style="font-size:11px;color:var(--ash-dim);">${esc(tk.nama_outlet||'')}</div>
             </div>
             <span style="color:${col};font-family:var(--mono);font-size:12px;margin-left:10px;white-space:nowrap;">${tk.age_hours}j</span>

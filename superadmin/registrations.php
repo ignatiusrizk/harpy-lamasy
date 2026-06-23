@@ -208,7 +208,7 @@ if ($action) {
   border-bottom: 2px solid transparent; margin-bottom: -1px;
   transition: all .15s; display: flex; align-items: center; gap: 6px;
 }
-.reg-tab:hover { color: var(--ink); }
+.reg-tab:hover { color: var(--glow); }
 .reg-tab.active { color: var(--sa); border-bottom-color: var(--sa); }
 .reg-tab .badge {
   background: var(--crease); border-radius: 20px;
@@ -220,10 +220,10 @@ if ($action) {
   display: inline-flex; align-items: center; gap: 4px;
   padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600;
 }
-.s-pending         { background: #FFFBEB; color: #FCD34D; border: 1px solid #FDE68A; }
-.s-payment_pending { background: #EEF2FF; color: #A5B4FC; border: 1px solid #C7D2FE; }
+.s-pending         { background: rgba(245,158,11,.10); color: #FCD34D; border: 1px solid #FDE68A; }
+.s-payment_pending { background: rgba(53,232,213,.08); color: #A5B4FC; border: 1px solid #C7D2FE; }
 .s-provisioning    { background: rgba(59,130,246,.15); color: #93C5FD; border: 1px solid rgba(59,130,246,.25); }
-.s-completed       { background: #ECFDF5; color: #6EE7B7; border: 1px solid #A7F3D0; }
+.s-completed       { background: rgba(132,204,22,.10); color: #6EE7B7; border: 1px solid #A7F3D0; }
 .s-failed          { background: #FECACA;  color: #FCA5A5; border: 1px solid #FCA5A5; }
 .s-cancelled       { background: rgba(107,114,128,.15); color: #D1D5DB; border: 1px solid rgba(107,114,128,.25); }
 
@@ -231,14 +231,14 @@ if ($action) {
   display: inline-block; padding: 2px 8px; border-radius: 20px;
   font-size: 10px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase;
 }
-.src-assisted    { background: #EEF2FF; color: #A5B4FC; }
-.src-self_service { background: #ECFDF5; color: #6EE7B7; }
+.src-assisted    { background: rgba(53,232,213,.08); color: #A5B4FC; }
+.src-self_service { background: rgba(132,204,22,.10); color: #6EE7B7; }
 
 .wa-link {
   color: #86efac; font-size: 12px; text-decoration: none;
   display: inline-flex; align-items: center; gap: 4px;
 }
-.wa-link:hover { color: var(--ink); }
+.wa-link:hover { color: var(--glow); }
 
 /* CREATE MODAL form rows */
 .form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
@@ -263,7 +263,7 @@ if ($action) {
 <div class="sa-card" style="margin-bottom:0;">
   <div style="padding:14px 20px;border-bottom:1px solid var(--crease-soft);display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
     <input type="text" id="searchInput" placeholder="Cari nama outlet, owner, WA..."
-           style="flex:1;min-width:200px;padding:8px 12px;background:var(--crease-soft);border:1px solid var(--crease);border-radius:var(--r);color:var(--white);font-family:var(--font);font-size:13px;outline:none;"
+           style="flex:1;min-width:200px;padding:8px 12px;background:var(--slate-elev);border:1px solid var(--crease);border-radius:var(--r);color:var(--white);font-family:var(--font);font-size:13px;outline:none;"
            onkeyup="debounceLoad()" />
     <span id="totalLabel" style="font-size:12px;color:var(--ash-dim);white-space:nowrap;"></span>
   </div>
@@ -462,7 +462,7 @@ function renderTable(j) {
     }
 
     const reqTypeBadge = r.request_type === 'add_outlet'
-      ? `<span class="src-badge" style="background:#ECFDF5;color:var(--sage)">+Outlet</span>`
+      ? `<span class="src-badge" style="background:rgba(132,204,22,.10);color:var(--sage)">+Outlet</span>`
       : '';
 
     return `

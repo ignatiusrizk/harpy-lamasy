@@ -361,13 +361,13 @@ $allTenants = $db->query("SELECT id, nama_perusahaan, nama_perusahaan AS nama_ou
       </div>
       <div class="form-group" style="margin-bottom:12px;">
         <label>Outlet</label>
-        <select id="asOutletId" style="width:100%;padding:10px;background:var(--crease-soft);border:1.5px solid var(--crease);border-radius:8px;color:var(--ink);font-family:var(--font);font-size:13px;outline:none;">
+        <select id="asOutletId" style="width:100%;padding:10px;background:var(--slate-elev);border:1.5px solid var(--crease);border-radius:8px;color:var(--glow);font-family:var(--font);font-size:13px;outline:none;">
           <option value="">— Pilih outlet —</option>
         </select>
       </div>
       <div class="form-group" style="margin-bottom:12px;">
         <label>Jenis Data</label>
-        <select id="asEntity" style="width:100%;padding:10px;background:var(--crease-soft);border:1.5px solid var(--crease);border-radius:8px;color:var(--ink);font-family:var(--font);font-size:13px;outline:none;">
+        <select id="asEntity" style="width:100%;padding:10px;background:var(--slate-elev);border:1.5px solid var(--crease);border-radius:8px;color:var(--glow);font-family:var(--font);font-size:13px;outline:none;">
           <option value="pelanggan">Pelanggan</option>
           <option value="layanan">Layanan</option>
           <option value="karyawan">Karyawan</option>
@@ -378,7 +378,7 @@ $allTenants = $db->query("SELECT id, nama_perusahaan, nama_perusahaan AS nama_ou
       <div class="form-group" style="margin-bottom:16px;">
         <label>File (CSV / Excel)</label>
         <input type="file" id="asFile" accept=".csv,.xlsx,.xls"
-               style="width:100%;padding:10px;background:var(--crease-soft);border:1.5px solid var(--crease);border-radius:8px;color:var(--ink);font-size:13px;">
+               style="width:100%;padding:10px;background:var(--slate-elev);border:1.5px solid var(--crease);border-radius:8px;color:var(--glow);font-size:13px;">
       </div>
       <div class="sa-modal-footer">
         <button class="sa-btn sa-btn-outline" onclick="closeModal('assistedModal')">Batal</button>
@@ -495,7 +495,7 @@ async function loadJobs(page) {
         pg.innerHTML = html;
 
     } catch(e) {
-        tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;color:#991B1B;padding:24px;">Gagal: ${esc(e.message)}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;color:#F43F5E;padding:24px;">Gagal: ${esc(e.message)}</td></tr>`;
     }
 }
 
@@ -580,7 +580,7 @@ function renderAssistedMapping(d) {
         const opts = ['', ...targetFields].map(f => `<option value="${f}" ${f===(info.target_field||'')?'selected':''}>${f||'(skip)'}</option>`).join('');
         return `<tr>
             <td style="font-family:var(--mono);font-size:11px;">${esc(src)}</td>
-            <td><select style="background:var(--crease-soft);border:1px solid var(--crease);border-radius:6px;color:var(--ink);padding:4px 8px;font-size:11.5px;" data-src="${esc(src)}">${opts}</select></td>
+            <td><select style="background:var(--slate-elev);border:1px solid var(--crease);border-radius:6px;color:var(--glow);padding:4px 8px;font-size:11.5px;" data-src="${esc(src)}">${opts}</select></td>
             <td style="font-size:11px;color:var(--ash-dim);">${cf}%</td>
         </tr>`;
     }).join('');
@@ -614,10 +614,10 @@ async function submitAssistedImport() {
         document.getElementById('asResultContent').innerHTML = `
             <div style="display:flex;gap:20px;text-align:center;margin-bottom:16px;">
                 <div style="flex:1;"><div style="font-size:28px;font-weight:800;color:var(--sage);">${d.success}</div><div style="font-size:11.5px;color:var(--ash);">✓ Berhasil</div></div>
-                <div style="flex:1;"><div style="font-size:28px;font-weight:800;color:#991B1B;">${d.failed}</div><div style="font-size:11.5px;color:var(--ash);">✗ Gagal</div></div>
+                <div style="flex:1;"><div style="font-size:28px;font-weight:800;color:#F43F5E;">${d.failed}</div><div style="font-size:11.5px;color:var(--ash);">✗ Gagal</div></div>
                 <div style="flex:1;"><div style="font-size:28px;font-weight:800;color:#D1D5DB;">${d.skipped}</div><div style="font-size:11.5px;color:var(--ash);">⊘ Skip</div></div>
             </div>
-            <div style="background:rgba(16,185,129,.07);border:1px solid #A7F3D0;border-radius:8px;padding:10px 14px;font-size:12.5px;color:var(--sage);">
+            <div style="background:rgba(16,185,129,.07);border:1px solid rgba(132,204,22,.30);border-radius:8px;padding:10px 14px;font-size:12.5px;color:var(--sage);">
                 ✅ Billing <strong>Rp 200.000</strong> sudah dicatat ke saas_manual_payments.
             </div>
             ${d.failed > 0 ? `<div style="margin-top:10px;"><a href="?action=error_report&job_id=${d.job_id}" class="sa-btn sa-btn-sm sa-btn-danger">⬇ Download Error Report</a></div>` : ''}

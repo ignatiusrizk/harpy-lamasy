@@ -304,7 +304,7 @@ if ($action) {
 .live-badge {
     display: inline-flex; align-items: center; gap: 5px;
     padding: 3px 10px; border-radius: 20px;
-    background: #ECFDF5; border: 1px solid #A7F3D0;
+    background: rgba(132,204,22,.10); border: 1px solid #A7F3D0;
     font-size: 11px; font-weight: 600; color: #6EE7B7;
 }
 .live-dot {
@@ -332,7 +332,7 @@ if ($action) {
 
 .chart-wrap {
     position: relative; height: 200px;
-    background: var(--linen);
+    background: rgba(10,15,31,.4);
     border-radius: 10px; overflow: hidden;
 }
 canvas { width: 100% !important; }
@@ -511,7 +511,7 @@ canvas { width: 100% !important; }
         </div>
 
         <div id="coinDaysAlert" style="display:none;" class="sa-card" style="border-color:rgba(245,158,11,.3);background:rgba(245,158,11,.05);margin-bottom:12px;">
-          <div class="sa-card-body" style="padding:10px 14px;color:#92400E;font-size:13px;">
+          <div class="sa-card-body" style="padding:10px 14px;color:#F59E0B;font-size:13px;">
             ⚠️ Estimasi platform kehabisan coin dalam <strong id="coinDaysVal">?</strong> hari
           </div>
         </div>
@@ -609,10 +609,10 @@ canvas { width: 100% !important; }
 <?php
   $aiToday = getAIUsageStats(date('Y-m-d'));
 ?>
-<div style="background:var(--linen);border:1px solid var(--crease);border-radius:14px;padding:24px;margin-top:24px">
+<div style="background:rgba(10,15,31,.4);border:1px solid var(--crease);border-radius:14px;padding:24px;margin-top:24px">
   <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:16px;flex-wrap:wrap;gap:12px">
     <div>
-      <h3 style="margin:0 0 4px;font-size:16px;font-weight:700;color:var(--ink)">🤖 AI Usage Stats — Hari Ini</h3>
+      <h3 style="margin:0 0 4px;font-size:16px;font-weight:700;color:var(--glow)">🤖 AI Usage Stats — Hari Ini</h3>
       <p style="margin:0;font-size:12px;color:var(--ash)">Per fitur · semua tenant · <?= date('d M Y') ?></p>
     </div>
     <div style="display:flex;gap:16px;font-size:12px">
@@ -825,7 +825,7 @@ async function loadFeatureUsage(days) {
             </div>
         `).join('');
     } catch(e) {
-        body.innerHTML = '<div style="color:#991B1B;font-size:13px;">Gagal memuat.</div>';
+        body.innerHTML = '<div style="color:#F43F5E;font-size:13px;">Gagal memuat.</div>';
     }
 }
 
@@ -856,8 +856,8 @@ async function loadCoinAnalytics() {
         listEl.innerHTML = d.top_burners.map((r, i) => `
             <div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--linen);">
               <span style="width:20px;font-size:13px;color:var(--ash-dim);font-family:var(--mono);">${i+1}</span>
-              <span style="flex:1;font-size:13px;color:var(--ink);">${esc(r.nama_perusahaan||r.nama_outlet||'Tenant #'+r.tenant_id)}</span>
-              <span style="font-family:var(--mono);font-size:12px;color:#92400E;">${fmt(+r.burned)} 🪙</span>
+              <span style="flex:1;font-size:13px;color:var(--glow);">${esc(r.nama_perusahaan||r.nama_outlet||'Tenant #'+r.tenant_id)}</span>
+              <span style="font-family:var(--mono);font-size:12px;color:#F59E0B;">${fmt(+r.burned)} 🪙</span>
             </div>
         `).join('');
     } catch(e) {
@@ -929,7 +929,7 @@ async function loadErrors(page) {
         renderPagination(d.page, d.pages, 'loadErrors');
 
     } catch(e) {
-        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:#991B1B;padding:32px;">Gagal memuat: ${esc(e.message)}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:#F43F5E;padding:32px;">Gagal memuat: ${esc(e.message)}</td></tr>`;
     }
 }
 

@@ -374,25 +374,25 @@ if ($action) {
   display: inline-flex; align-items: center; gap: 4px;
   padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700;
 }
-.pay-type-setup    { background: #EEF2FF; color: #A5B4FC; border: 1px solid #C7D2FE; }
-.pay-type-topup    { background: #ECFDF5;  color: #6EE7B7; border: 1px solid #A7F3D0; }
-.pay-type-adj      { background: #FFFBEB;  color: #FCD34D; border: 1px solid #FDE68A; }
+.pay-type-setup    { background: rgba(53,232,213,.08); color: #A5B4FC; border: 1px solid #C7D2FE; }
+.pay-type-topup    { background: rgba(132,204,22,.10);  color: #6EE7B7; border: 1px solid #A7F3D0; }
+.pay-type-adj      { background: rgba(245,158,11,.10);  color: #FCD34D; border: 1px solid #FDE68A; }
 .pay-type-custom   { background: rgba(107,114,128,.15); color: #D1D5DB; border: 1px solid rgba(107,114,128,.2); }
 .pay-status-confirmed { color: #6EE7B7; font-size: 12px; }
 .pay-status-pending   { color: #FCD34D; font-size: 12px; }
 .pay-status-cancelled { color: var(--ash-dim); font-size: 12px; text-decoration: line-through; }
-.pay-nominal { font-family: var(--mono); font-size: 13px; font-weight: 600; color: var(--ink); }
+.pay-nominal { font-family: var(--mono); font-size: 13px; font-weight: 600; color: var(--glow); }
 .pay-coin    { font-family: var(--mono); font-size: 12px; color: #FCD34D; }
 
 /* ── Stats mini bar ── */
 .pay-stats { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 20px; }
 .pay-stat  {
-  background: var(--linen); border: 1px solid var(--crease);
+  background: rgba(10,15,31,.4); border: 1px solid var(--crease);
   border-radius: 12px; padding: 14px 20px; flex: 1; min-width: 140px;
 }
 .pay-stat .label { font-size: 10px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase;
   color: var(--ash-dim); margin-bottom: 6px; }
-.pay-stat .value { font-size: 22px; font-weight: 800; font-family: var(--mono); color: var(--ink); }
+.pay-stat .value { font-size: 22px; font-weight: 800; font-family: var(--mono); color: var(--glow); }
 .pay-stat .sub   { font-size: 11px; color: var(--ash-dim); margin-top: 3px; }
 .pay-stat.green  { border-color: #A7F3D0; background: rgba(16,185,129,.07); }
 .pay-stat.yellow { border-color: #FDE68A; background: rgba(245,158,11,.07); }
@@ -430,33 +430,33 @@ if ($action) {
   padding: 10px 14px; cursor: pointer; border-bottom: 1px solid var(--crease-soft);
   display: flex; align-items: center; justify-content: space-between; gap: 10px;
 }
-.tenant-option:hover { background: #EEF2FF; }
+.tenant-option:hover { background: rgba(53,232,213,.08); }
 .tenant-option:last-child { border-bottom: none; }
-.tenant-option .t-name { font-size: 13px; font-weight: 600; color: var(--ink); }
+.tenant-option .t-name { font-size: 13px; font-weight: 600; color: var(--glow); }
 .tenant-option .t-meta { font-size: 11px; color: var(--ash); }
 .tenant-selected {
   display: flex; align-items: center; justify-content: space-between;
-  background: #EEF2FF; border: 1.5px solid rgba(99,102,241,.3);
+  background: rgba(53,232,213,.08); border: 1.5px solid rgba(99,102,241,.3);
   border-radius: 8px; padding: 10px 14px;
 }
 .tenant-selected .t-info { flex: 1; }
-.tenant-selected .t-info strong { font-size: 13px; color: var(--ink); display: block; }
+.tenant-selected .t-info strong { font-size: 13px; color: var(--glow); display: block; }
 .tenant-selected .t-info small  { font-size: 11px; color: var(--ash); }
 .tenant-selected button { background: none; border: none; color: var(--ash);
   cursor: pointer; font-size: 16px; padding: 0 4px; }
-.tenant-selected button:hover { color: var(--ink); }
+.tenant-selected button:hover { color: var(--glow); }
 
 /* ── Package/bundle selector ── */
 .pkg-options { display: flex; flex-direction: column; gap: 6px; }
 .pkg-option {
   display: flex; align-items: center; justify-content: space-between;
   padding: 10px 14px; border-radius: 8px; cursor: pointer;
-  border: 1.5px solid var(--crease); background: var(--linen);
+  border: 1.5px solid var(--crease); background: rgba(10,15,31,.4);
   transition: border-color .15s, background .15s;
 }
 .pkg-option:hover { border-color: rgba(99,102,241,.4); background: rgba(99,102,241,.07); }
-.pkg-option.selected { border-color: var(--sa); background: #EEF2FF; }
-.pkg-option .p-name { font-size: 13px; font-weight: 600; color: var(--ink); }
+.pkg-option.selected { border-color: var(--sa); background: rgba(53,232,213,.08); }
+.pkg-option .p-name { font-size: 13px; font-weight: 600; color: var(--glow); }
 .pkg-option .p-meta { font-size: 11px; color: var(--ash); }
 .pkg-option .p-price { font-family: var(--mono); font-size: 13px; font-weight: 700; color: #6EE7B7; text-align: right; }
 .pkg-option .p-price small { display: block; font-size: 10px; color: var(--ash); font-family: var(--font); }
@@ -873,11 +873,11 @@ function renderPackageOptions(){
   el.innerHTML = _packages.map(p => `
     <div class="pkg-option" data-id="${p.id}" onclick="selectPackage(this, ${JSON.stringify(p).replace(/"/g,'&quot;')})">
       <div>
-        <div class="p-name">${esc(p.nama)} ${p.is_custom ? '<span style="font-size:10px;color:#92400E;">(Custom)</span>' : ''}</div>
+        <div class="p-name">${esc(p.nama)} ${p.is_custom ? '<span style="font-size:10px;color:#F59E0B;">(Custom)</span>' : ''}</div>
         <div class="p-meta">Coin awal: ${coin(p.coin_awal)} · Max outlet: ${p.max_outlets||'∞'} · Trial: ${p.trial_hari} hari</div>
       </div>
       <div class="p-price">
-        ${p.is_custom ? '<span style="color:#92400E;">Nego</span>' : rp(p.setup_fee)}
+        ${p.is_custom ? '<span style="color:#F59E0B;">Nego</span>' : rp(p.setup_fee)}
         <small>${p.is_custom ? '' : 'setup fee'}</small>
       </div>
     </div>`).join('');

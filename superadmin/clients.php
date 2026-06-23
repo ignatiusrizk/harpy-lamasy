@@ -214,7 +214,7 @@ if ($action) {
 <style>
 .cl-tabs {
   display:flex; gap:6px; margin-bottom:20px;
-  background:var(--linen);
+  background:rgba(10,15,31,.4);
   border:1px solid var(--crease-soft);
   border-radius:12px; padding:5px; width:fit-content;
 }
@@ -224,7 +224,7 @@ if ($action) {
   background:transparent; color:var(--ash);
   transition:all .15s;
 }
-.cl-tab:hover  { background:var(--crease-soft); color:var(--ink); }
+.cl-tab:hover  { background:var(--slate-elev); color:var(--glow); }
 .cl-tab.active {
   background:rgba(99,102,241,.18); border:1px solid rgba(99,102,241,.3);
   color:var(--white);
@@ -235,14 +235,14 @@ if ($action) {
 
 .outlet-status-active    { color:var(--sage); font-weight:600; font-size:12.5px; }
 .outlet-status-pending   { color:var(--amber); font-weight:600; font-size:12.5px; }
-.outlet-status-suspended { color:#991B1B; font-weight:600; font-size:12.5px; }
+.outlet-status-suspended { color:#F43F5E; font-weight:600; font-size:12.5px; }
 .outlet-status-inactive  { color:var(--ash-dim); font-size:12.5px; }
 
 .main-badge {
   display:inline-block; font-size:9px; font-weight:700; letter-spacing:.06em;
   text-transform:uppercase; padding:2px 7px; border-radius:10px;
-  background:#EEF2FF; color:var(--indigo);
-  border:1px solid #C7D2FE;
+  background:rgba(53,232,213,.08); color:var(--indigo);
+  border:1px solid rgba(53,232,213,.30);
   margin-left:5px; vertical-align:middle;
 }
 .setup-done   { color:var(--sage); font-size:12px; }
@@ -479,7 +479,7 @@ function loadTenants() {
       renderPagination(data.page, data.pages, data.total, 'gotoTenants', 'tenantsPagination');
     }).catch(() => {
       document.getElementById('tenantsBody').innerHTML =
-        '<tr><td colspan="9" style="text-align:center;color:#991B1B;padding:24px;">Gagal memuat data.</td></tr>';
+        '<tr><td colspan="9" style="text-align:center;color:#F43F5E;padding:24px;">Gagal memuat data.</td></tr>';
     });
 }
 
@@ -506,7 +506,7 @@ function renderTenants(rows) {
         <small style="color:var(--ash-dim);font-family:var(--mono);font-size:10px;">${esc(t.slug)}</small>
       </td>
       <td>${esc(t.owner_name)}</td>
-      <td><a href="https://wa.me/${esc(t.owner_wa)}" target="_blank" style="color:#15803D;text-decoration:none;font-family:var(--mono);font-size:12px;">${esc(t.owner_wa)}</a></td>
+      <td><a href="https://wa.me/${esc(t.owner_wa)}" target="_blank" style="color:#84CC16;text-decoration:none;font-family:var(--mono);font-size:12px;">${esc(t.owner_wa)}</a></td>
       <td>${outletInfo}</td>
       <td>${statusBadge(t.status)}</td>
       <td>${coinHtml(t.coin_balance)}</td>
@@ -541,7 +541,7 @@ function loadOutlets() {
       renderPagination(data.page, data.pages, data.total, 'gotoOutlets', 'outletsPagination');
     }).catch(() => {
       document.getElementById('outletsBody').innerHTML =
-        '<tr><td colspan="8" style="text-align:center;color:#991B1B;padding:24px;">Gagal memuat data.</td></tr>';
+        '<tr><td colspan="8" style="text-align:center;color:#F43F5E;padding:24px;">Gagal memuat data.</td></tr>';
     });
 }
 
@@ -564,7 +564,7 @@ function renderOutlets(rows) {
         <small style="color:var(--ash-dim);font-family:var(--mono);font-size:10px;">${esc(o.slug)}</small>
       </td>
       <td>
-        <a href="client_detail.php?id=${o.tenant_id}" style="color:var(--ink);text-decoration:none;font-weight:600;">${esc(o.nama_perusahaan)}</a><br>
+        <a href="client_detail.php?id=${o.tenant_id}" style="color:var(--glow);text-decoration:none;font-weight:600;">${esc(o.nama_perusahaan)}</a><br>
         <small style="color:var(--ash-dim);font-size:11px;">${esc(o.owner_name)}</small>
       </td>
       <td style="font-size:12px;color:var(--ash);">${esc(o.kota || '—')}</td>

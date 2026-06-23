@@ -237,11 +237,11 @@ $csrf = saGetCsrf();
   .cp-toolbar { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:14px; }
   .cp-tabs { display:flex; gap:6px; flex-wrap:wrap; }
   .cp-tab {
-    background:var(--crease-soft); color:var(--ink-soft); border:1px solid var(--crease);
+    background:var(--slate-elev); color:var(--ink-soft); border:1px solid var(--crease);
     padding:7px 14px; border-radius:8px; cursor:pointer; font-size:13px; font-weight:600;
     transition:all .15s;
   }
-  .cp-tab:hover { background:var(--crease-soft); color:var(--ink); }
+  .cp-tab:hover { background:var(--slate-elev); color:var(--glow); }
   .cp-tab.active { background:var(--sa); color:#0F1C3A; border-color:var(--sa); }
 
   .cat-badge {
@@ -250,11 +250,11 @@ $csrf = saGetCsrf();
   }
   .cat-ai       { background:rgba(168,85,247,.18); color:#C4B5FD; }
   .cat-whatsapp { background:rgba(34,197,94,.18); color:#86EFAC; }
-  .cat-dokumen  { background:rgba(59,130,246,.18); color:#1E40AF; }
-  .cat-export   { background:rgba(245,158,11,.18); color:#92400E; }
+  .cat-dokumen  { background:rgba(59,130,246,.18); color:#35E8D5; }
+  .cat-export   { background:rgba(245,158,11,.18); color:#F59E0B; }
   .cat-lainnya  { background:rgba(156,163,175,.18); color:#D1D5DB; }
 
-  .price-cell { font-weight:700; color:#92400E; font-family:var(--mono); }
+  .price-cell { font-weight:700; color:#F59E0B; font-family:var(--mono); }
   .min-cell   { font-size:11px; color:var(--ash); font-family:var(--mono); }
   .feat-key   { font-family:var(--mono); font-size:10px; color:var(--ash); margin-top:2px; }
 
@@ -264,15 +264,15 @@ $csrf = saGetCsrf();
   }
   .modal-overlay.open { display:flex; }
   .modal-box {
-    background:var(--paper); color:var(--ink); border:1px solid var(--crease);
+    background:var(--slate); color:var(--glow); border:1px solid var(--crease);
     border-radius:14px; padding:24px; max-width:520px; width:100%; max-height:90vh; overflow-y:auto;
   }
   .modal-title { font-size:16px; font-weight:800; margin-bottom:18px; padding-bottom:12px; border-bottom:1px solid var(--crease); }
   .form-row { margin-bottom:14px; }
   .form-row label { display:block; font-size:12px; font-weight:600; color:var(--ink-soft); margin-bottom:6px; }
   .form-row input, .form-row select, .form-row textarea {
-    width:100%; padding:10px 12px; background:var(--crease-soft); border:1px solid var(--crease);
-    border-radius:8px; color:var(--ink); font-size:13px; font-family:var(--font);
+    width:100%; padding:10px 12px; background:var(--slate-elev); border:1px solid var(--crease);
+    border-radius:8px; color:var(--glow); font-size:13px; font-family:var(--font);
   }
   .form-row textarea { resize:vertical; min-height:60px; }
   .form-row small { display:block; font-size:11px; color:var(--ash); margin-top:4px; }
@@ -283,13 +283,13 @@ $csrf = saGetCsrf();
     padding:4px 10px; border-radius:20px; font-size:11px; font-weight:700;
   }
   .toggle-pill.on  { background:rgba(34,197,94,.15); color:#86EFAC; }
-  .toggle-pill.off { background:#FECACA; color:#991B1B; }
+  .toggle-pill.off { background:rgba(244,63,94,.18); color:#F43F5E; }
   .toggle-pill .dot { width:8px; height:8px; border-radius:50%; }
   .toggle-pill.on .dot  { background:#10B981; }
   .toggle-pill.off .dot { background:#EF4444; }
 
   .alert-msg { padding:10px 14px; border-radius:8px; font-size:13px; margin-bottom:14px; }
-  .alert-msg.error   { background:#FECACA; color:#991B1B; border:1px solid rgba(239,68,68,.3); }
+  .alert-msg.error   { background:rgba(244,63,94,.18); color:#F43F5E; border:1px solid rgba(239,68,68,.3); }
   .alert-msg.success { background:rgba(34,197,94,.15); color:#86EFAC; border:1px solid rgba(34,197,94,.3); }
 
   .tab-pane { display:none; }
@@ -437,7 +437,7 @@ $csrf = saGetCsrf();
       <textarea id="f_catatan" rows="2" placeholder="cth: AI cost $0.01/call, margin 3x"></textarea>
     </div>
     <div class="form-row">
-      <label>Alasan Perubahan <span style="color:#991B1B">*</span></label>
+      <label>Alasan Perubahan <span style="color:#F43F5E">*</span></label>
       <textarea id="f_alasan" rows="2" placeholder="Wajib diisi kalau ada perubahan harga / status..."></textarea>
       <small>Wajib kalau ubah harga atau toggle status. Tercatat di history.</small>
     </div>
@@ -502,7 +502,7 @@ async function loadPricing() {
   const url = '/superadmin/coin_pricing.php?action=list' + (currentKat ? '&kategori=' + currentKat : '');
   const r = await fetch(url);
   const j = await r.json();
-  if (!j.ok) { tb.innerHTML = `<tr><td colspan="7" style="color:#991B1B;padding:24px;text-align:center;">${esc(j.error || 'Gagal load')}</td></tr>`; return; }
+  if (!j.ok) { tb.innerHTML = `<tr><td colspan="7" style="color:#F43F5E;padding:24px;text-align:center;">${esc(j.error || 'Gagal load')}</td></tr>`; return; }
   if (j.rows.length === 0) {
     tb.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--ash-dim);">Belum ada fitur</td></tr>';
     return;
@@ -540,14 +540,14 @@ async function loadHistory() {
   tb.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--ash-dim);">Memuat...</td></tr>';
   const r = await fetch('/superadmin/coin_pricing.php?action=history');
   const j = await r.json();
-  if (!j.ok) { tb.innerHTML = `<tr><td colspan="7" style="color:#991B1B;padding:24px;text-align:center;">${esc(j.error || 'Gagal load')}</td></tr>`; return; }
+  if (!j.ok) { tb.innerHTML = `<tr><td colspan="7" style="color:#F43F5E;padding:24px;text-align:center;">${esc(j.error || 'Gagal load')}</td></tr>`; return; }
   if (j.rows.length === 0) {
     tb.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--ash-dim);">Belum ada history perubahan</td></tr>';
     return;
   }
   tb.innerHTML = j.rows.map(r => {
     const priceDiff = Number(r.harga_baru) - Number(r.harga_lama);
-    const diffClass = priceDiff > 0 ? 'color:#991B1B' : (priceDiff < 0 ? 'color:#86EFAC' : 'color:var(--ash)');
+    const diffClass = priceDiff > 0 ? 'color:#F43F5E' : (priceDiff < 0 ? 'color:#86EFAC' : 'color:var(--ash)');
     const statusChange = (r.is_active_lama != null && Number(r.is_active_lama) !== Number(r.is_active_baru))
       ? `<span class="toggle-pill ${r.is_active_baru==1?'on':'off'}"><span class="dot"></span>${r.is_active_baru==1?'Aktif':'Nonaktif'}</span>`
       : '<span style="color:var(--ash-dim);font-size:11px;">—</span>';

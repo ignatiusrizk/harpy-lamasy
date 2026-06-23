@@ -291,17 +291,17 @@ if ($action) {
 <?php saRenderHead('Support Tickets'); ?>
 <style>
 /* ── Status badges ──────────────────────────────── */
-.t-open           { background:#FFFBEB;color:#92400E; }
-.t-in_progress    { background:#EEF2FF; color:var(--indigo); }
+.t-open           { background:rgba(245,158,11,.10);color:#F59E0B; }
+.t-in_progress    { background:rgba(53,232,213,.08); color:var(--indigo); }
 .t-waiting_tenant { background:rgba(168,85,247,.15); color:#D8B4FE; }
-.t-resolved       { background:#ECFDF5; color:var(--sage); }
-.t-closed         { background:var(--crease-soft);color:var(--ash-dim); }
+.t-resolved       { background:rgba(132,204,22,.10); color:var(--sage); }
+.t-closed         { background:var(--slate-elev);color:var(--ash-dim); }
 
 /* ── Priority ───────────────────────────────────── */
-.p-low      { background:var(--crease-soft);color:var(--ash-dim); }
-.p-normal   { background:#EEF2FF; color:var(--indigo); }
-.p-high     { background:#FFFBEB; color:#92400E; }
-.p-critical { background:#FECACA;  color:#991B1B; }
+.p-low      { background:var(--slate-elev);color:var(--ash-dim); }
+.p-normal   { background:rgba(53,232,213,.08); color:var(--indigo); }
+.p-high     { background:rgba(245,158,11,.10); color:#F59E0B; }
+.p-critical { background:rgba(244,63,94,.18);  color:#F43F5E; }
 
 /* ── SLA indicator ──────────────────────────────── */
 .sla-dot { width:8px;height:8px;border-radius:50%;flex-shrink:0;display:inline-block; }
@@ -312,11 +312,11 @@ if ($action) {
 
 /* ── Stats alert ────────────────────────────────── */
 .sla-alert {
-  background:#FECACA;border:1px solid #FCA5A5;
+  background:rgba(244,63,94,.18);border:1px solid rgba(244,63,94,.40);
   border-radius:var(--r);padding:12px 16px;display:flex;align-items:center;
-  gap:10px;color:#991B1B;font-size:13px;font-weight:600;margin-bottom:20px;
+  gap:10px;color:#F43F5E;font-size:13px;font-weight:600;margin-bottom:20px;
 }
-.sla-alert a { color:#991B1B;text-decoration:underline;margin-left:6px; }
+.sla-alert a { color:#F43F5E;text-decoration:underline;margin-left:6px; }
 
 /* ── Thread bubble ──────────────────────────────── */
 .thread-wrap { display:flex;flex-direction:column;gap:10px;padding:4px 0 12px; }
@@ -329,9 +329,9 @@ if ($action) {
   padding:10px 14px;border-radius:12px;font-size:13px;
   line-height:1.55;white-space:pre-wrap;word-break:break-word;
 }
-.bubble.tenant  .bubble-body { background:var(--crease-soft);border:1px solid var(--crease); border-top-left-radius:4px; }
-.bubble.admin   .bubble-body { background:#EEF2FF;border:1px solid #C7D2FE; border-top-left-radius:4px; }
-.bubble.internal .bubble-body { background:#FFFBEB;border:1px dashed rgba(245,158,11,.3);font-style:italic; }
+.bubble.tenant  .bubble-body { background:var(--slate-elev);border:1px solid var(--crease); border-top-left-radius:4px; }
+.bubble.admin   .bubble-body { background:rgba(53,232,213,.08);border:1px solid rgba(53,232,213,.30); border-top-left-radius:4px; }
+.bubble.internal .bubble-body { background:rgba(245,158,11,.10);border:1px dashed rgba(245,158,11,.3);font-style:italic; }
 .bubble-time { font-size:10.5px;color:var(--ash-dim); }
 
 /* ── Reply area ─────────────────────────────────── */
@@ -355,7 +355,7 @@ if ($action) {
   display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:16px;
 }
 .sup-filter select, .sup-filter input {
-  background:var(--crease-soft);border:1px solid var(--crease);
+  background:var(--slate-elev);border:1px solid var(--crease);
   color:var(--white);border-radius:7px;padding:7px 11px;font-size:12.5px;
   font-family:var(--font);outline:none;transition:border-color .15s;
 }
@@ -485,7 +485,7 @@ if ($action) {
     </div>
 
     <!-- Ticket meta bar -->
-    <div id="detailMeta" style="padding:12px 20px;background:var(--linen);border-bottom:1px solid var(--crease-soft);display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:12px;">
+    <div id="detailMeta" style="padding:12px 20px;background:rgba(10,15,31,.4);border-bottom:1px solid var(--crease-soft);display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:12px;">
     </div>
 
     <!-- Thread -->

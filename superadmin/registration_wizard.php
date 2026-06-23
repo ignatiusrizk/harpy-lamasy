@@ -518,7 +518,7 @@ $csrf = saGetCsrf();
   flex-shrink: 0;
 }
 .wstep.done   { color: #6EE7B7; }
-.wstep.active { color: var(--white); background: #EEF2FF; border: 1px solid #C7D2FE; }
+.wstep.active { color: var(--white); background: rgba(53,232,213,.08); border: 1px solid #C7D2FE; }
 .wstep-num {
   width: 28px; height: 28px; border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
@@ -535,7 +535,7 @@ $csrf = saGetCsrf();
 
 /* ── Form card ──────────────────────────────────── */
 .wiz-card {
-  background: var(--linen);
+  background: rgba(10,15,31,.4);
   border: 1px solid var(--crease);
   border-radius: 16px; padding: 28px;
   max-width: 640px;
@@ -566,10 +566,10 @@ $csrf = saGetCsrf();
 .radio-opt {
   display: flex; align-items: flex-start; gap: 10px;
   padding: 12px 14px; border-radius: 10px; cursor: pointer;
-  border: 1.5px solid var(--crease); background: var(--linen);
+  border: 1.5px solid var(--crease); background: rgba(10,15,31,.4);
   transition: all .15s;
 }
-.radio-opt:hover  { border-color: rgba(99,102,241,.3); background: #EEF2FF; }
+.radio-opt:hover  { border-color: rgba(99,102,241,.3); background: rgba(53,232,213,.08); }
 .radio-opt input[type=radio] { margin-top: 2px; accent-color: var(--sa); flex-shrink: 0; }
 .radio-opt .opt-label { font-size: 13px; font-weight: 600; color: var(--white); }
 .radio-opt .opt-sub   { font-size: 11px; color: var(--ash-dim); margin-top: 2px; }
@@ -582,7 +582,7 @@ $csrf = saGetCsrf();
   margin-top: 12px; line-height: 1.6;
 }
 .pay-info-box.yellow { background: rgba(245,158,11,.06); border-color: #FDE68A; }
-.pay-info-box.blue   { background: #EEF2FF; border-color: #C7D2FE; }
+.pay-info-box.blue   { background: rgba(53,232,213,.08); border-color: #C7D2FE; }
 
 /* ── Review table ───────────────────────────────── */
 .review-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 20px; }
@@ -599,7 +599,7 @@ $csrf = saGetCsrf();
 .done-screen { text-align: center; padding: 20px 0; }
 .done-icon { font-size: 56px; margin-bottom: 16px; }
 .done-creds {
-  background: #EEF2FF; border: 1.5px solid #C7D2FE;
+  background: rgba(53,232,213,.08); border: 1.5px solid #C7D2FE;
   border-radius: 12px; padding: 18px 20px; text-align: left;
   margin: 20px 0; font-family: var(--mono);
 }
@@ -609,7 +609,7 @@ $csrf = saGetCsrf();
 .wa-preview {
   background: rgba(37,211,102,.06); border: 1.5px solid rgba(37,211,102,.15);
   border-radius: 12px; padding: 16px 18px; text-align: left; margin: 16px 0;
-  font-size: 13px; color: var(--ink); white-space: pre-wrap; line-height: 1.6;
+  font-size: 13px; color: var(--glow); white-space: pre-wrap; line-height: 1.6;
 }
 .copy-btn {
   display: inline-flex; align-items: center; gap: 6px;
@@ -617,7 +617,7 @@ $csrf = saGetCsrf();
   background: rgba(37,211,102,.12); border: 1px solid rgba(37,211,102,.25);
   color: #86efac; cursor: pointer; transition: all .15s;
 }
-.copy-btn:hover { background: rgba(37,211,102,.25); color: var(--ink); }
+.copy-btn:hover { background: rgba(37,211,102,.25); color: var(--glow); }
 .error-box {
   background: #FECACA; border: 1px solid rgba(239,68,68,.3);
   color: #FCA5A5; padding: 12px 16px; border-radius: 10px; margin-bottom: 20px; font-size: 13px;
@@ -784,7 +784,7 @@ $csrf = saGetCsrf();
       <?php if ((float)($wiz['discount_pct'] ?? 0) > 0 && (int)($wiz['setup_fee_ori'] ?? 0) > 0): ?>
         <span style="text-decoration:line-through;color:var(--ash-dim);">Rp <?= number_format((int)$wiz['setup_fee_ori'], 0, ',', '.') ?></span>
         <strong style="color:var(--sage);margin-left:6px;">Rp <?= number_format((int)$wiz['setup_fee'], 0, ',', '.') ?></strong>
-        <span style="color:#92400E;font-size:12px;margin-left:4px;">(−<?= (float)$wiz['discount_pct'] ?>%)</span>
+        <span style="color:#F59E0B;font-size:12px;margin-left:4px;">(−<?= (float)$wiz['discount_pct'] ?>%)</span>
       <?php else: ?>
         <strong style="color:var(--sage);"><?= (int)($wiz['setup_fee'] ?? 0) > 0 ? 'Rp ' . number_format((int)$wiz['setup_fee'], 0, ',', '.') : 'Gratis' ?></strong>
       <?php endif; ?>
@@ -929,7 +929,7 @@ $csrf = saGetCsrf();
         ?>
           <span style="text-decoration:line-through;color:var(--ash-dim);font-size:12px;margin-right:6px;">Rp <?= number_format($feeOri, 0, ',', '.') ?></span>
           <strong style="color:var(--sage);">Rp <?= number_format($feeFin, 0, ',', '.') ?></strong>
-          <span style="color:#92400E;font-size:12px;margin-left:4px;">(−<?= $disc ?>%)</span>
+          <span style="color:#F59E0B;font-size:12px;margin-left:4px;">(−<?= $disc ?>%)</span>
         <?php else: ?>
           Rp <?= number_format($feeFin, 0, ',', '.') ?>
         <?php endif; ?>
@@ -962,7 +962,7 @@ $csrf = saGetCsrf();
       <?php endif; ?>
     </table>
 
-    <div style="background:#EEF2FF;border:1px solid #EEF2FF;border-radius:10px;padding:14px 16px;font-size:13px;color:var(--ink-soft);margin-bottom:20px;">
+    <div style="background:rgba(53,232,213,.08);border:1px solid #EEF2FF;border-radius:10px;padding:14px 16px;font-size:13px;color:var(--ink-soft);margin-bottom:20px;">
       Sistem akan membuat: <strong style="color:var(--white)">1 tenant &bull; 1 outlet &bull; 1 user admin &bull; 3 layanan default</strong>
     </div>
 
@@ -989,7 +989,7 @@ $csrf = saGetCsrf();
         <?php if ($result['coin_credited'] > 0): ?>
           <br><span style="color:var(--sage);">+<?= number_format($result['coin_credited'],0,',','.') ?> coin dikreditkan.</span>
         <?php elseif ($result['payment_status'] === 'belum_bayar'): ?>
-          <br><span style="color:#92400E;">Coin belum dikreditkan — konfirmasi pembayaran setelah diterima.</span>
+          <br><span style="color:#F59E0B;">Coin belum dikreditkan — konfirmasi pembayaran setelah diterima.</span>
         <?php endif; ?>
       </p>
 

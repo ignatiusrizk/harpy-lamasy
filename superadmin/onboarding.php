@@ -208,7 +208,7 @@ function renderTable(rows) {
     const pct = Math.round(n / 5 * 100);
     const color = pct === 100 ? '#10B981' : pct >= 60 ? '#F59E0B' : '#EF4444';
     return `<div style="display:flex;align-items:center;gap:6px;">
-      <div style="flex:1;height:6px;background:var(--crease);border-radius:3px;overflow:hidden;">
+      <div style="flex:1;height:6px;background:var(--slate-elev);border-radius:3px;overflow:hidden;">
         <div style="width:${pct}%;height:100%;background:${color};border-radius:3px;transition:width .3s;"></div>
       </div>
       <span style="font-size:11px;color:var(--ash);font-family:var(--mono);">${n}/5</span>
@@ -231,7 +231,7 @@ function renderTable(rows) {
     return `<tr style="${rowBg}">
       <td>
         <a href="client_detail.php?id=${r.id}" style="color:var(--white);text-decoration:none;font-weight:600;">${esc(r.nama_outlet)}</a>
-        ${stuck ? '<br><span style="font-size:10px;color:#991B1B;">⚠ Stuck</span>' : ''}
+        ${stuck ? '<br><span style="font-size:10px;color:#F43F5E;">⚠ Stuck</span>' : ''}
       </td>
       <td style="font-size:12.5px;">${esc(r.owner_name)}</td>
       <td style="text-align:center;">${stepIcon(r.step1)}</td>

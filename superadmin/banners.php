@@ -171,7 +171,7 @@ renderSaHeader('🎨 Dashboard Banners');
     <!-- Preview -->
     <div style="margin-top:14px">
       <label style="font-size:12px;color:#6B7280;font-weight:600">Preview:</label>
-      <div id="banPreview" style="border-radius:12px;padding:18px 24px;margin-top:6px;display:flex;align-items:center;gap:18px;background:linear-gradient(135deg,#0F7B6C,#10B981);color:var(--ink)">
+      <div id="banPreview" style="border-radius:12px;padding:18px 24px;margin-top:6px;display:flex;align-items:center;gap:18px;background:linear-gradient(135deg,#0F7B6C,#10B981);color:var(--glow)">
         <span style="font-size:32px" id="prevIcon">⭐</span>
         <div style="flex:1">
           <div style="font-weight:800;font-size:16px" id="prevJudul">Judul Banner</div>
@@ -209,7 +209,7 @@ async function loadBanners() {
   const list = document.getElementById('bannerList');
   const r = await fetch('?action=list');
   const d = await r.json();
-  if (d.error) { list.innerHTML = `<div style="background:#FEF2F2;border:1px solid #FCA5A5;padding:14px;border-radius:8px;color:#991B1B">${esc(d.error)}</div>`; return; }
+  if (d.error) { list.innerHTML = `<div style="background:rgba(244,63,94,.10);border:1px solid rgba(244,63,94,.40);padding:14px;border-radius:8px;color:#F43F5E">${esc(d.error)}</div>`; return; }
   const rows = d.rows || [];
   if (!rows.length) { list.innerHTML = '<div style="padding:40px;text-align:center;color:#9CA3AF">Belum ada banner. Klik "Tambah Banner" untuk mulai.</div>'; return; }
   list.innerHTML = rows.map(r => `
