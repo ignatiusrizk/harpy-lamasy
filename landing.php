@@ -967,7 +967,7 @@ img { max-width: 100%; }
 <!-- ── NAVBAR ──────────────────────────────────────── -->
 <nav class="navbar" id="navbar">
   <a href="/landing.php" class="nav-logo">
-    <img src="/assets/logo.png?v=<?= @filemtime(__DIR__.'/assets/logo.png') ?: '3' ?>" alt="LAMASY" style="height:36px; vertical-align:middle; margin-right:8px;">
+    <img src="/assets/logo.png?v=<?= @filemtime(__DIR__.'/assets/logo.png') ?: '3' ?>" alt="LAMASY" width="36" height="36" loading="eager" fetchpriority="high" style="vertical-align:middle; margin-right:8px;">
     LAMASY
   </a>
   <ul class="nav-links">
@@ -1979,7 +1979,7 @@ function switchCmpTab(tab, btn) {
   <div class="footer-grid">
     <div>
       <div class="footer-logo">
-        <img src="/assets/logo.png?v=<?= @filemtime(__DIR__.'/assets/logo.png') ?: '3' ?>" alt="LAMASY" style="height:40px; vertical-align:middle; margin-right:8px;">
+        <img src="/assets/logo.png?v=<?= @filemtime(__DIR__.'/assets/logo.png') ?: '3' ?>" alt="LAMASY" width="40" height="40" loading="lazy" style="vertical-align:middle; margin-right:8px;">
         LAMASY <span style="font-size:13px;font-weight:500;color:rgba(255,255,255,.45);">by Harpy</span>
       </div>
       <div class="footer-tagline">Platform manajemen laundry modern untuk bisnis yang lebih rapi.</div>
