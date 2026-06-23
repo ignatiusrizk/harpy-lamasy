@@ -140,15 +140,18 @@ if ($action) {
                 $p = preg_replace('/[^0-9]/','',$cur['telepon']);
                 if (strpos($p,'0')===0) $p = '62'.substr($p,1);
                 elseif (strpos($p,'62')!==0) $p = '62'.$p;
-                $txt = "Halo *{$cur['nama_pelanggan']}*, cucian kamu sudah selesai dan siap diambil! 🎉\n"
+                // Plain ASCII — beberapa hop transport (urlencode → wa.me redirect →
+                // api.whatsapp.com) inconsistent dgn emoji multi-byte, kadang ke-replace
+                // jadi U+FFFD. Pakai text aja biar reliable.
+                $txt = "Halo *{$cur['nama_pelanggan']}*, cucian kamu sudah selesai dan siap diambil!\n"
                      . "Order: {$cur['no_order']}\n"
                      . "Total: Rp " . number_format((int)$cur['total'],0,',','.');
                 if ($poinEarned > 0) {
-                    $txt .= "\n\n🌟 Kamu dapat *{$poinEarned} poin* dari transaksi ini!"
+                    $txt .= "\n\nKamu dapat *{$poinEarned} poin* dari transaksi ini!"
                           . "\nSaldo poin: *{$saldoPoin} poin*";
                     if ($nextReward) {
                         $kurang = (int)$nextReward['poin_dibutuhkan'] - $saldoPoin;
-                        $txt .= "\nButuh *{$kurang} poin* lagi untuk *{$nextReward['nama_reward']}* 🎁";
+                        $txt .= "\nButuh *{$kurang} poin* lagi untuk *{$nextReward['nama_reward']}*";
                     }
                 }
                 $waUrl = "https://wa.me/$p?text=" . urlencode($txt);

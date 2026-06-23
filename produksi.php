@@ -432,6 +432,7 @@ function renderStageForm(stage, orderId) {
       <div id="fotoPreview" style="display:flex;gap:6px;flex-wrap:wrap;margin:8px 0"></div>
       <label>Catatan Kondisi</label>
       <textarea id="f_catatan" rows="3" placeholder="Noda, robek, atau hal khusus..."></textarea>
+      <p style="margin:8px 0 0;font-size:11px;color:#64748B">💡 Simpan ini hanya mencatat dokumentasi terima. Untuk pindah ke stage Cuci, gunakan tombol "→ Cuci" di halaman <a href="/kanban" style="color:var(--teal);text-decoration:underline">Kanban</a>.</p>
       <button class="btn btn-primary" style="width:100%;margin-top:14px" onclick="submitStage()">💾 Simpan Dokumentasi</button>`;
   }
 

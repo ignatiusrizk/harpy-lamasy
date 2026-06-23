@@ -293,9 +293,10 @@ function switchTipe(t) {
 }
 
 async function loadList() {
+  const list = document.getElementById('ajList');
+  if (!list) return; // view=report tidak punya #ajList, skip
   const r = await fetch('?action=list&tipe=' + currentTipe);
   const d = await r.json();
-  const list = document.getElementById('ajList');
   if (!d.rows.length) { list.innerHTML = '<div style="text-align:center;padding:40px;color:var(--gray)">Belum ada antar jemput hari ini</div>'; return; }
   list.innerHTML = d.rows.map(r => `
     <div class="hl-card" style="padding:14px 16px">
