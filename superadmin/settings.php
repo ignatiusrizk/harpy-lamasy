@@ -7,6 +7,7 @@
 if (!defined('SA_ROOT')) define('SA_ROOT', __DIR__);
 require_once SA_ROOT . '/middleware/superadmin_guard.php';
 require_once SA_ROOT . '/superadmin_components.php';
+require_once SA_ROOT . '/../core/SaPermission.php';
 
 $db    = Database::get();
 $admin = saCurrentAdmin();
@@ -299,6 +300,147 @@ if (!empty($_SERVER['HTTP_X_REQUESTED_WITH'])) {
           . '<p style="color:#9CA3AF;font-size:12px;margin-top:24px">— LAMASY Admin System</p>',
             (string)($admin['id'] ?? 0));
         echo json_encode(['ok' => true, 'message' => 'Test email dikirim ke recipient list aktif.']);
+        exit;
+    }
+
+    // ── SA Team: list ────────────────────────────────
+    if ($action === 'team_list') {
+        SaPermission::require('super_admins.manage');
+        $admins = $db->query(
+            "SELECT sa.id, sa.username, sa.name, sa.email, sa.notify_enabled,
+                    sa.is_active, sa.last_login, sa.created_at,
+                    r.slug AS role_slug, r.name AS role_name
+             FROM super_admins sa
+             LEFT JOIN sa_roles r ON r.id = sa.role_id
+             ORDER BY sa.id ASC"
+        )->fetchAll(PDO::FETCH_ASSOC);
+        $roles = $db->query("SELECT id, slug, name FROM sa_roles ORDER BY id")->fetchAll(PDO::FETCH_ASSOC);
+        echo json_encode(['ok' => true, 'admins' => $admins, 'roles' => $roles]);
+        exit;
+    }
+
+    // ── SA Team: create ──────────────────────────────
+    if ($action === 'team_create') {
+        SaPermission::require('super_admins.manage');
+        saVerifyCsrf();
+        $username = trim($_POST['username'] ?? '');
+        $name     = trim($_POST['name']     ?? '');
+        $email    = trim($_POST['email']    ?? '');
+        $password = $_POST['password']       ?? '';
+        $roleId   = (int)($_POST['role_id'] ?? 0);
+
+        if (!$username || !$name || !$password || !$roleId) {
+            echo json_encode(['error' => 'Username, nama, password, dan role wajib diisi']); exit;
+        }
+        if (!preg_match('/^[a-z0-9_]{3,30}$/', $username)) {
+            echo json_encode(['error' => 'Username hanya boleh huruf kecil, angka, underscore (3-30 karakter)']); exit;
+        }
+        if (strlen($password) < 8) {
+            echo json_encode(['error' => 'Password minimal 8 karakter']); exit;
+        }
+        if ($email && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            echo json_encode(['error' => 'Email tidak valid']); exit;
+        }
+
+        // Check username unique
+        $exists = $db->prepare("SELECT id FROM super_admins WHERE username=? LIMIT 1");
+        $exists->execute([$username]);
+        if ($exists->fetchColumn()) {
+            echo json_encode(['error' => 'Username sudah digunakan']); exit;
+        }
+
+        // Check role exists
+        $roleCheck = $db->prepare("SELECT id FROM sa_roles WHERE id=?");
+        $roleCheck->execute([$roleId]);
+        if (!$roleCheck->fetchColumn()) {
+            echo json_encode(['error' => 'Role tidak valid']); exit;
+        }
+
+        $hash = password_hash($password, PASSWORD_DEFAULT);
+        $db->prepare(
+            "INSERT INTO super_admins (username, name, email, password, role_id, notify_enabled, is_active)
+             VALUES (?,?,?,?,?,1,1)"
+        )->execute([$username, $name, $email ?: null, $hash, $roleId]);
+        $newId = (int)$db->lastInsertId();
+
+        logSuperAdminAction('sa_team_create', null, "Buat SA baru: @$username ($name), role_id=$roleId");
+        echo json_encode(['ok' => true, 'id' => $newId]);
+        exit;
+    }
+
+    // ── SA Team: update ──────────────────────────────
+    if ($action === 'team_update') {
+        SaPermission::require('super_admins.manage');
+        saVerifyCsrf();
+        $id       = (int)($_POST['id']      ?? 0);
+        $name     = trim($_POST['name']     ?? '');
+        $email    = trim($_POST['email']    ?? '');
+        $roleId   = (int)($_POST['role_id'] ?? 0);
+        $isActive = (int)($_POST['is_active'] ?? 1);
+
+        if (!$id || !$name || !$roleId) {
+            echo json_encode(['error' => 'ID, nama, dan role wajib diisi']); exit;
+        }
+        if ($email && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            echo json_encode(['error' => 'Email tidak valid']); exit;
+        }
+
+        // Check target role — cannot demote an owner unless requester is also owner
+        $targetRow = $db->prepare("SELECT sa.role_id, r.slug FROM super_admins sa LEFT JOIN sa_roles r ON r.id=sa.role_id WHERE sa.id=?");
+        $targetRow->execute([$id]);
+        $target = $targetRow->fetch(PDO::FETCH_ASSOC);
+        if (!$target) { echo json_encode(['error' => 'Admin tidak ditemukan']); exit; }
+
+        // Non-owner cannot edit owner admin
+        if ($target['slug'] === 'owner' && !SaPermission::has('super_admins.manage')) {
+            echo json_encode(['error' => 'Hanya Owner yang bisa edit akun Owner lain']); exit;
+        }
+
+        $db->prepare(
+            "UPDATE super_admins SET name=?, email=?, role_id=?, is_active=? WHERE id=?"
+        )->execute([$name, $email ?: null, $roleId, $isActive, $id]);
+
+        logSuperAdminAction('sa_team_update', null, "Update SA #$id: name=$name role_id=$roleId is_active=$isActive");
+        echo json_encode(['ok' => true]);
+        exit;
+    }
+
+    // ── SA Team: reset password ──────────────────────
+    if ($action === 'team_reset_password') {
+        SaPermission::require('super_admins.manage');
+        saVerifyCsrf();
+        $id       = (int)($_POST['id']       ?? 0);
+        $password = $_POST['new_password']    ?? '';
+        if (!$id)             { echo json_encode(['error' => 'ID tidak valid']); exit; }
+        if (strlen($password) < 8) { echo json_encode(['error' => 'Password minimal 8 karakter']); exit; }
+
+        $hash = password_hash($password, PASSWORD_DEFAULT);
+        $db->prepare("UPDATE super_admins SET password=? WHERE id=?")->execute([$hash, $id]);
+        logSuperAdminAction('sa_team_reset_pw', null, "Reset password SA #$id");
+        echo json_encode(['ok' => true]);
+        exit;
+    }
+
+    // ── SA Team: delete (soft) ───────────────────────
+    if ($action === 'team_delete') {
+        SaPermission::require('super_admins.manage');
+        saVerifyCsrf();
+        $id = (int)($_POST['id'] ?? 0);
+        if (!$id) { echo json_encode(['error' => 'ID tidak valid']); exit; }
+
+        // Cannot soft-delete owner role
+        $roleCheck = $db->prepare(
+            "SELECT r.slug FROM super_admins sa LEFT JOIN sa_roles r ON r.id=sa.role_id WHERE sa.id=?"
+        );
+        $roleCheck->execute([$id]);
+        $roleSlug = $roleCheck->fetchColumn();
+        if ($roleSlug === 'owner') {
+            echo json_encode(['error' => 'Akun Owner tidak bisa dihapus']); exit;
+        }
+
+        $db->prepare("UPDATE super_admins SET is_active=0 WHERE id=?")->execute([$id]);
+        logSuperAdminAction('sa_team_delete', null, "Soft-delete SA #$id");
+        echo json_encode(['ok' => true]);
         exit;
     }
 
