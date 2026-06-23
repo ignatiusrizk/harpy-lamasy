@@ -52,16 +52,28 @@ BEGIN
       );
   DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = 1;
 
+  -- Force FK off di session level dalam procedure scope
+  SET FOREIGN_KEY_CHECKS = 0;
+
   OPEN cur;
   read_loop: LOOP
     FETCH cur INTO tname;
     IF done THEN LEAVE read_loop; END IF;
-    SET @s = CONCAT('TRUNCATE TABLE `', tname, '`');
+    -- DELETE FROM (bukan TRUNCATE) — TRUNCATE strict di FK relations
+    -- meski FK_CHECKS=0. DELETE works dengan FK_CHECKS=0.
+    SET @s = CONCAT('DELETE FROM `', tname, '`');
     PREPARE stmt FROM @s;
     EXECUTE stmt;
     DEALLOCATE PREPARE stmt;
+    -- Reset AUTO_INCREMENT supaya ID balik dari 1
+    SET @s2 = CONCAT('ALTER TABLE `', tname, '` AUTO_INCREMENT = 1');
+    PREPARE stmt2 FROM @s2;
+    EXECUTE stmt2;
+    DEALLOCATE PREPARE stmt2;
   END LOOP;
   CLOSE cur;
+
+  SET FOREIGN_KEY_CHECKS = 1;
 END //
 
 DELIMITER ;
