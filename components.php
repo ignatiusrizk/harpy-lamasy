@@ -717,6 +717,10 @@ function renderToast(): void { ?>
     if (!empty($_SESSION['pending_splash']) && empty($_SESSION['is_demo'])) {
         $splash = $_SESSION['pending_splash'];
         unset($_SESSION['pending_splash']);
+        // Set session flag SEKARANG supaya kalau user nav cepat dan POST
+        // /api/splash_seen.php belum sempat insert DB row, splash tetap
+        // gak muncul lagi dalam sesi ini. DB row jadi guard cross-session.
+        $_SESSION['splash_shown'] = true;
         renderSplash($splash);
     }
     ?>
@@ -934,7 +938,7 @@ function renderOnboardingSplash(array $data): void
       <div class="splash-card splash-onboarding">
         <button class="splash-close" onclick="closeSplash('onboarding', null)" aria-label="Tutup">×</button>
         <div class="splash-icon">🎉</div>
-        <h2>Selamat datang di LaMaSy!</h2>
+        <h2>Selamat datang di LAMASY!</h2>
         <p>Yuk selesaikan setup outlet kamu supaya bisa langsung terima order.</p>
 
         <div class="splash-progress">
@@ -1018,10 +1022,12 @@ function renderSplashScripts(): void
     <script>
     function markSplashSeen(type, refId) {
       const csrf = document.querySelector('meta[name="csrf-token"]')?.content || '';
+      // keepalive: true supaya request tetap di-flush kalau user nav cepat
       fetch('/api/splash_seen.php', {
         method: 'POST',
         headers: { 'Content-Type':'application/json', 'X-CSRF-Token': csrf },
-        body: JSON.stringify({ type, ref_id: refId })
+        body: JSON.stringify({ type, ref_id: refId }),
+        keepalive: true
       }).catch(() => {});
     }
     function closeSplash(type, refId) {
