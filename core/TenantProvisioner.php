@@ -134,6 +134,15 @@ class TenantProvisioner
 
     private static function seedRoles(PDO $db, int $tenantId): array
     {
+        // 5 system role default. NOTE: 'manager' role di-check di beberapa
+        // tempat (hq_guard.php, login.php, components.php) sebagai role
+        // "HQ-limited" yang seharusnya bisa akses HQ tapi tidak bisa
+        // billing/manage outlet. Tapi belum di-seed di sini — itu dead path
+        // sampai feature manager benar-benar di-implement. Owner yang butuh
+        // manager-style access sementara bisa bikin custom role via /hq/roles
+        // dgn nama "Manager" + permission terbatas (string enum akan jadi
+        // 'staff' per karyawan.php mapping, tapi permission table dipakai
+        // untuk check sebenarnya post-F2 fix).
         $roles = [
             'owner'    => ['Owner',    'Akses penuh ke semua fitur',          1],
             'admin'    => ['Admin',    'Kelola order, kas, laporan, karyawan', 1],
@@ -196,6 +205,7 @@ class TenantProvisioner
             ['layanan.delete',       'layanan',   'delete',        'Hapus layanan'],
             ['promo.view',           'promo',     'view',          'Lihat promo & voucher'],
             ['promo.create',         'promo',     'create',        'Buat promo baru'],
+            ['promo.edit',           'promo',     'edit',          'Edit promo existing'],
             ['promo.delete',         'promo',     'delete',        'Hapus promo'],
             ['settings.roles',       'settings',  'roles',         'Kelola role & permission'],
             ['settings.outlet',      'settings',  'outlet',        'Edit info outlet'],
@@ -225,7 +235,7 @@ class TenantProvisioner
         $adminExclude   = [
             'settings.roles', 'audit.view', 'karyawan.delete',
             'layanan.create', 'layanan.edit', 'layanan.delete',
-            'promo.create', 'promo.delete',
+            'promo.create', 'promo.edit', 'promo.delete',
             'inventori.manage', 'mesin.manage',
             'bonus_rule.manage',
             'keuangan.edit',

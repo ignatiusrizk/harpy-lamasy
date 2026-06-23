@@ -58,9 +58,11 @@ if ($action) {
 
     // SAVE PROMO
     if ($action === 'save_promo' && $_SERVER['REQUEST_METHOD']==='POST') {
-        if (!hasPermission('promo.create') && !hasPermission('promo.edit')) { echo json_encode(['error'=>'Akses ditolak']); exit; }
         verifyCsrf();
         $d = json_decode(file_get_contents('php://input'), true);
+        $isEdit = !empty($d['id']);
+        if ($isEdit && !hasPermission('promo.edit'))   { echo json_encode(['error'=>'Akses ditolak']); exit; }
+        if (!$isEdit && !hasPermission('promo.create')) { echo json_encode(['error'=>'Akses ditolak']); exit; }
         $nama = substr(trim(strip_tags($d['nama'] ?? '')), 0, 100);
         if (!$nama) { echo json_encode(['error'=>'Nama wajib diisi']); exit; }
 
