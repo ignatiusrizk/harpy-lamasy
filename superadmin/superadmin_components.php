@@ -675,12 +675,21 @@ function saRenderNavClose(): void { ?>
       document.getElementById('saOverlay').classList.remove('open');
       document.body.style.overflow='';
     }
-    function saFetch(url, opts={}){
+    async function saFetch(url, opts={}){
       // ⚠️ Spread opts DULU, lalu headers — supaya CSRF header tidak ter-overwrite
-      return fetch(url, {
-        ...opts,
-        headers: { 'X-CSRF-Token': saCsrf(), 'X-Requested-With': 'XMLHttpRequest', ...(opts.headers||{}) },
-      });
+      // Auto-parses JSON. Returns: {ok:bool, ...payload} on success, {ok:false, error:msg} on failure.
+      try {
+        const res = await fetch(url, {
+          ...opts,
+          headers: { 'X-CSRF-Token': saCsrf(), 'X-Requested-With': 'XMLHttpRequest', ...(opts.headers||{}) },
+        });
+        const json = await res.json().catch(() => ({ error: 'Response bukan JSON valid' }));
+        // Normalize: kalau backend gak set "ok" tapi gak ada "error" — anggap ok:true.
+        if (typeof json.ok === 'undefined') json.ok = !json.error;
+        return json;
+      } catch (e) {
+        return { ok: false, error: 'Network error: ' + e.message };
+      }
     }
     function saPost(url, data){
       const fd = new FormData();
