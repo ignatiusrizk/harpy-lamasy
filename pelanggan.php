@@ -153,7 +153,8 @@ $csrf = pelangganCsrf();
 <meta name="theme-color" content="#0F1C3A">
 <meta name="csrf-token" content="<?= htmlspecialchars($csrf) ?>">
 <link rel="manifest" href="/assets/manifest.json">
-<link rel="apple-touch-icon" href="/assets/logo.png">
+<link rel="icon" type="image/png" href="/assets/icon-192.png?v=<?= @filemtime(__DIR__.'/assets/icon-192.png') ?: '3' ?>">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon-180.png?v=<?= @filemtime(__DIR__.'/assets/apple-touch-icon-180.png') ?: '3' ?>">
 <title>Portal — <?= htmlspecialchars($pel['nama']) ?></title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
