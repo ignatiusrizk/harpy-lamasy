@@ -1499,33 +1499,6 @@ function addLayananItem(id, nama, satuan, harga) {
   if (qMin > 0) showToast(`Min. order ${nama}: ${qMin} ${satuan}`, 'info');
 }
 
-// ── Auto-update estimasi selesai berdasarkan layanan + tier express ──
-function applyMaxEstimasi(){
-  if (!items.length) return;
-  // Max estimasi_jam dari semua items (kalau ada tier express, pakai tier-nya)
-  let maxJam = 0;
-  items.forEach(it => {
-    let jam = parseInt(it.estimasi_jam) || 24;
-    if (it.express_tier_nama && Array.isArray(availableTiers)) {
-      const tier = availableTiers.find(t => t.nama_tier === it.express_tier_nama);
-      if (tier && tier.estimasi_jam) jam = parseInt(tier.estimasi_jam);
-    }
-    if (jam > maxJam) maxJam = jam;
-  });
-  if (maxJam <= 0) return;
-  // Dari tanggal masuk + maxJam → hitung estimasi selesai
-  const tglMasuk = document.getElementById('f_tanggal').value;
-  if (!tglMasuk) return;
-  const masuk = new Date(tglMasuk + 'T08:00:00');
-  const selesai = new Date(masuk.getTime() + maxJam * 3600 * 1000);
-  const fe = document.getElementById('f_estimasi');
-  if (fe) {
-    fe.value = localDateStr(selesai);
-    const hint = document.getElementById('estHint');
-    if (hint) hint.innerHTML = `⏱ Estimasi: <strong>${maxJam} jam</strong> dari layanan yang dipilih`;
-  }
-}
-
 // ── Quick-create layanan modal ──
 function openLayananQuick(){
   const m = document.getElementById('lynQuickModal');
