@@ -9,29 +9,27 @@
 --
 -- Cara run di phpMyAdmin:
 --   1. Buka DB u269895997_harpy_master → tab SQL
---   2. Di field "Delimiter" (bawah area SQL) ganti ; menjadi $$
---      (perlu karena ada CREATE PROCEDURE dengan ; di dalamnya)
---   3. Paste isi file ini → Go
+--   2. Paste isi file ini
+--   3. Delimiter field di bawah biarkan default ";"
+--   4. Klik Go
 --
--- Setelah jalan:
---   - Login tenant TIDAK BISA (semua hl_users hilang)
---   - Login SuperAdmin di /superadmin/login.php (Rizky tetap)
---   - Tenant baru bisa di-onboard via /superadmin/onboarding.php
+-- (Script ini pakai DELIMITER directive internal, phpMyAdmin handles it)
 -- ════════════════════════════════════════════════════════════════
 
 -- ── PRE-FLIGHT CHECK (opsional, run separately dulu) ───────────
 -- SELECT id, username, name FROM super_admins;
---   Catat username Rizky. Kalau bukan 'rizky', edit baris DELETE
---   di bagian KELOMPOK 4 di bawah.
+--   Catat username Rizky. Kalau bukan 'rizky', edit baris DELETE di bawah.
 
-SET FOREIGN_KEY_CHECKS = 0$$
-SET SQL_SAFE_UPDATES = 0$$
+SET FOREIGN_KEY_CHECKS = 0;
+SET SQL_SAFE_UPDATES = 0;
 
 -- ════════════════════════════════════════════════════════════════
 -- Stored procedure: TRUNCATE semua tabel yang masuk daftar wipe
 -- Auto-skip kalau tabel ga ada (handler 1146)
 -- ════════════════════════════════════════════════════════════════
-DROP PROCEDURE IF EXISTS lamasy_full_reset$$
+DROP PROCEDURE IF EXISTS lamasy_full_reset;
+
+DELIMITER //
 
 CREATE PROCEDURE lamasy_full_reset()
 BEGIN
@@ -41,7 +39,6 @@ BEGIN
     SELECT table_name FROM information_schema.tables
     WHERE table_schema = DATABASE()
       AND (
-        -- Semua hl_* kecuali hl_splash_tips (global catalog)
         (table_name LIKE 'hl\_%' AND table_name <> 'hl_splash_tips')
         OR table_name IN (
           'outlets','tenants','coin_ledger','payments',
@@ -65,16 +62,18 @@ BEGIN
     DEALLOCATE PREPARE stmt;
   END LOOP;
   CLOSE cur;
-END$$
+END //
 
-CALL lamasy_full_reset()$$
-DROP PROCEDURE lamasy_full_reset$$
+DELIMITER ;
+
+CALL lamasy_full_reset();
+DROP PROCEDURE lamasy_full_reset;
 
 -- ════════════════════════════════════════════════════════════════
 -- KELOMPOK 4 — Super admin cleanup
 -- HATI-HATI: edit username 'rizky' kalau username asli berbeda
 -- ════════════════════════════════════════════════════════════════
-DELETE FROM super_admins WHERE username NOT IN ('rizky')$$
+DELETE FROM super_admins WHERE username NOT IN ('rizky');
 
 -- ════════════════════════════════════════════════════════════════
 -- TIDAK DI-TRUNCATE (sengaja — catalog/master data):
@@ -89,8 +88,8 @@ DELETE FROM super_admins WHERE username NOT IN ('rizky')$$
 --   ✓ hl_splash_tips             (global tips catalog superadmin-managed)
 -- ════════════════════════════════════════════════════════════════
 
-SET FOREIGN_KEY_CHECKS = 1$$
-SET SQL_SAFE_UPDATES = 1$$
+SET FOREIGN_KEY_CHECKS = 1;
+SET SQL_SAFE_UPDATES = 1;
 
 -- ── VERIFY HASIL ───────────────────────────────────────────────
 SELECT 'super_admins' AS tabel, COUNT(*) AS sisa FROM super_admins
@@ -101,7 +100,7 @@ UNION ALL SELECT 'hl_pelanggan',  COUNT(*) FROM hl_pelanggan
 UNION ALL SELECT 'hl_transaksi',  COUNT(*) FROM hl_transaksi
 UNION ALL SELECT 'saas_packages (keep)',    COUNT(*) FROM saas_packages
 UNION ALL SELECT 'saas_coin_pricing (keep)', COUNT(*) FROM saas_coin_pricing
-UNION ALL SELECT 'hl_splash_tips (keep)',   COUNT(*) FROM hl_splash_tips$$
+UNION ALL SELECT 'hl_splash_tips (keep)',   COUNT(*) FROM hl_splash_tips;
 
 -- Expected output:
 --   super_admins        = 1 (Rizky)
