@@ -1228,8 +1228,23 @@ async function generateBriefing(){
     btn.disabled = false;
     if (d.error) {
       document.getElementById('aiBriefLoading').style.display = 'none';
-      document.getElementById('aiBriefEmpty').style.display = 'block';
-      document.getElementById('aiBriefEmpty').textContent = '⚠️ ' + d.error;
+      const emptyEl = document.getElementById('aiBriefEmpty');
+      emptyEl.style.display = 'block';
+      // Friendly handler khusus rate_limited
+      if (d.error === 'rate_limited') {
+        emptyEl.innerHTML = `
+          <div style="background:#FEF3C7;border:1px solid #FDE68A;border-left:4px solid #F59E0B;padding:14px 16px;border-radius:10px;font-size:13px;color:#78350F;text-align:left">
+            <div style="font-weight:700;margin-bottom:6px">⏰ Briefing harian sudah dipakai</div>
+            <div style="line-height:1.6;margin-bottom:10px">${(d.message || 'Jatah AI Briefing harian sudah habis.').replace(/[<>]/g,'')}</div>
+            <div style="font-size:12px;color:#92400E">💡 Tetap mau coba? Topup coin untuk extra request, atau tunggu reset besok pagi.</div>
+          </div>`;
+      } else {
+        emptyEl.innerHTML = `
+          <div style="background:#FEE2E2;border:1px solid #FCA5A5;border-left:4px solid #EF4444;padding:14px 16px;border-radius:10px;font-size:13px;color:#7F1D1D;text-align:left">
+            <div style="font-weight:700;margin-bottom:4px">❌ Gagal generate briefing</div>
+            <div>${(d.message || d.error || '').replace(/[<>]/g,'')}</div>
+          </div>`;
+      }
       return;
     }
     showBriefing(d.briefing, d.generated_at, d.from_cache);

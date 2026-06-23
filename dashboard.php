@@ -1668,7 +1668,25 @@ async function loadBriefing(){
         </div>`;
       return;
     }
-    if(d.error){document.getElementById('aiBriefingContent').innerHTML=`<div style="color:var(--red);font-size:13px">❌ ${d.error}</div>`;return;}
+    if(d.error){
+      // Friendly handler khusus rate_limited
+      if(d.error === 'rate_limited'){
+        document.getElementById('aiBriefingContent').innerHTML = `
+          <div style="background:#FEF3C7;border:1px solid #FDE68A;border-left:4px solid #F59E0B;padding:14px 16px;border-radius:10px;font-size:13px;color:#78350F">
+            <div style="font-weight:700;margin-bottom:6px;display:flex;align-items:center;gap:6px">⏰ Briefing harian sudah dipakai</div>
+            <div style="line-height:1.6;margin-bottom:10px">${esc(d.message || 'Jatah AI Briefing harian sudah habis.')}</div>
+            <div style="font-size:12px;color:#92400E">💡 Tetap mau coba? Topup coin untuk extra request, atau tunggu reset besok pagi.</div>
+          </div>`;
+        return;
+      }
+      // Generic error fallback
+      document.getElementById('aiBriefingContent').innerHTML = `
+        <div style="background:#FEE2E2;border:1px solid #FCA5A5;border-left:4px solid #EF4444;padding:14px 16px;border-radius:10px;font-size:13px;color:#7F1D1D">
+          <div style="font-weight:700;margin-bottom:4px">❌ Gagal generate briefing</div>
+          <div>${esc(d.message || d.error)}</div>
+        </div>`;
+      return;
+    }
     const data=d.data;
     const cmap={baik:'var(--green)',waspada:'var(--yellow)',kritis:'var(--red)'};
     const imap={baik:'✅',waspada:'⚠️',kritis:'🚨'};
