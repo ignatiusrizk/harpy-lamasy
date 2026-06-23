@@ -26,6 +26,9 @@ if ($action) {
         $q       = trim($_GET['q'] ?? '');
         $segment = $_GET['segment'] ?? 'all';   // all | new | active | dormant
         $sort    = $_GET['sort']    ?? 'visit'; // visit | spender | recent | newest
+        $page    = max(1, (int)($_GET['page'] ?? 1));
+        $perPage = 50;
+        $offset  = ($page - 1) * $perPage;
 
         $params = [$tid];
         $whereExtra = '';
@@ -49,6 +52,23 @@ if ($action) {
         elseif ($sort === 'recent')   $orderBy = "last_order_at DESC, p.nama ASC";
         elseif ($sort === 'newest')   $orderBy = "p.created_at DESC, p.nama ASC";
 
+        // Total count — gunakan subquery shape sama supaya HAVING ke-count
+        try {
+            $countSql = "SELECT COUNT(*) FROM (
+                SELECT p.id,
+                  (SELECT MAX(tanggal) FROM hl_transaksi t
+                    WHERE t.tenant_id=p.tenant_id AND t.pelanggan_id=p.id) AS last_order_at
+                FROM hl_pelanggan p
+                WHERE p.tenant_id = ? $whereExtra
+                $havingExtra
+            ) AS x";
+            $cnt = $db->prepare($countSql);
+            $cnt->execute($params);
+            $total = (int)$cnt->fetchColumn();
+        } catch (Throwable $e) { $total = 0; }
+
+        $pages = max(1, (int)ceil($total / $perPage));
+
         try {
             $stmt = $db->prepare(
                 "SELECT p.id, p.nama, p.telepon, p.alamat, p.tipe, p.is_active,
@@ -65,21 +85,34 @@ if ($action) {
                   WHERE p.tenant_id = ? $whereExtra
                   $havingExtra
                   ORDER BY $orderBy
-                  LIMIT 1000"
+                  LIMIT $perPage OFFSET $offset"
             );
             $stmt->execute($params);
-            echo json_encode($stmt->fetchAll());
+            echo json_encode([
+                'rows'     => $stmt->fetchAll(),
+                'total'    => $total,
+                'page'     => $page,
+                'per_page' => $perPage,
+                'pages'    => $pages,
+            ]);
         } catch (Throwable $e) {
             error_log('[hq pelanggan list] '.$e->getMessage());
+            // Fallback minimal — kalau query subquery error, return simple list
             $stmt = $db->prepare(
                 "SELECT p.id, p.nama, p.telepon, p.alamat, p.tipe, p.is_active,
                         p.total_order, p.created_at
                    FROM hl_pelanggan p
                   WHERE p.tenant_id = ? $whereExtra
-                  ORDER BY p.nama ASC LIMIT 200"
+                  ORDER BY p.nama ASC LIMIT $perPage OFFSET $offset"
             );
             $stmt->execute($params);
-            echo json_encode($stmt->fetchAll());
+            echo json_encode([
+                'rows'     => $stmt->fetchAll(),
+                'total'    => $total,
+                'page'     => $page,
+                'per_page' => $perPage,
+                'pages'    => $pages,
+            ]);
         }
         exit;
     }
@@ -379,8 +412,8 @@ require __DIR__ . '/_layout_open.php';
   </div>
 
   <div class="toolbar">
-    <input type="search" id="searchInput" placeholder="🔍 Cari nama, nomor HP, alamat…" oninput="loadList()">
-    <select id="sortBy" onchange="loadList()">
+    <input type="search" id="searchInput" placeholder="🔍 Cari nama, nomor HP, alamat…" oninput="resetAndLoad()">
+    <select id="sortBy" onchange="resetAndLoad()">
       <option value="visit">🔁 Sortir: Paling Sering Datang</option>
       <option value="spender">💰 Sortir: Top Spender</option>
       <option value="recent">🕐 Sortir: Order Terbaru</option>
@@ -392,6 +425,7 @@ require __DIR__ . '/_layout_open.php';
   <div class="pl-grid" id="pelangganGrid">
     <div class="empty"><div class="ico">⏳</div><p>Memuat…</p></div>
   </div>
+  <div id="paginationNav" style="margin:18px 0;text-align:center"></div>
 
 <!-- Detail Modal -->
 <div class="modal-backdrop" id="detailModal" onclick="if(event.target===this)closeModal('detailModal')">
@@ -443,7 +477,7 @@ let currentSegment = 'all';
 function setSegment(seg){
   currentSegment = seg;
   document.querySelectorAll('.seg-btn').forEach(b => b.classList.toggle('active', b.dataset.seg === seg));
-  loadList();
+  resetAndLoad();
 }
 
 function isDormant(lastOrder){
@@ -482,20 +516,29 @@ async function loadSegmentStats(){
   } catch (e) { /* ignore */ }
 }
 
-async function loadList(){
+let currentPage = 1;
+
+async function loadList(page){
+  if (page) currentPage = page;
   const q     = document.getElementById('searchInput').value;
   const sort  = document.getElementById('sortBy').value;
   const url = '/hq/pelanggan.php?action=list&q=' + encodeURIComponent(q)
     + '&segment=' + encodeURIComponent(currentSegment)
-    + '&sort=' + encodeURIComponent(sort);
+    + '&sort=' + encodeURIComponent(sort)
+    + '&page=' + currentPage;
   const r = await fetch(url);
-  const rows = await r.json();
-  document.getElementById('totalCount').textContent = rows.length + ' pelanggan';
+  const d = await r.json();
+  const rows = d.rows || [];
+  const total = d.total || 0;
+  const pages = d.pages || 1;
+  document.getElementById('totalCount').textContent = total + ' pelanggan'
+    + (pages > 1 ? ` · halaman ${d.page}/${pages}` : '');
 
   const grid = document.getElementById('pelangganGrid');
   if (rows.length === 0) {
     grid.innerHTML = '<div class="empty"><div class="ico">🧑‍🤝‍🧑</div><p>Belum ada pelanggan' +
       (q?' yang cocok':'') + ' di segmen ini</p></div>';
+    renderPagination(0, 1);
     return;
   }
 
@@ -518,6 +561,31 @@ async function loadList(){
       <div class="pl-actions">Detail →</div>
     </div>
   `).join('');
+
+  renderPagination(d.page, pages);
+}
+
+// Reset ke page 1 saat filter/sort/search berubah
+function resetAndLoad(){ currentPage = 1; loadList(1); }
+
+function renderPagination(page, pages){
+  const nav = document.getElementById('paginationNav');
+  if (!nav) return;
+  if (pages <= 1) { nav.innerHTML = ''; return; }
+  const btn = (p, label, active=false, disabled=false) =>
+    `<button onclick="loadList(${p})" ${disabled?'disabled':''}
+       style="padding:6px 12px;margin:0 2px;border:1px solid ${active?'#0F1C3A':'#CBD5E1'};
+              background:${active?'#0F1C3A':'#fff'};color:${active?'#fff':'#0F1C3A'};
+              border-radius:6px;cursor:${disabled?'not-allowed':'pointer'};opacity:${disabled?0.5:1};
+              font-weight:${active?700:500};font-size:13px">${label}</button>`;
+  let html = '';
+  html += btn(Math.max(1, page-1), '‹ Prev', false, page<=1);
+  // Show up to 7 page numbers centered on current
+  const start = Math.max(1, page-3);
+  const end = Math.min(pages, start+6);
+  for (let i = start; i <= end; i++) html += btn(i, i, i===page);
+  html += btn(Math.min(pages, page+1), 'Next ›', false, page>=pages);
+  nav.innerHTML = html;
 }
 
 async function showDetail(id){
