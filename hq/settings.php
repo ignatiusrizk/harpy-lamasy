@@ -306,6 +306,16 @@ $ownerWaFmt = preg_replace('/^628/', '08', $hqTenant['owner_wa'] ?? '');
 // Hitung jumlah outlet aktif
 $outletCnt = (int)$db->query("SELECT COUNT(*) FROM outlets WHERE tenant_id=$tid AND status IN ('trial','grace','active')")->fetchColumn();
 
+// Paket aktif (lookup nama via saas_packages — fall back ke "Trial" kalau belum di-bind)
+$paketNama = 'Trial';
+if (!empty($hqTenant['package_id'])) {
+    try {
+        $pst = $db->prepare("SELECT nama FROM saas_packages WHERE id=?");
+        $pst->execute([(int)$hqTenant['package_id']]);
+        $paketNama = (string)($pst->fetchColumn() ?: 'Trial');
+    } catch (Throwable) {}
+}
+
 // Saldo tenant — effective coin = shared pool + trial coins dari semua outlet trial
 // trial_coin_balance disimpan per-outlet terpisah dari tenants.coin_balance
 $tenantCoin = (int)($hqTenant['coin_balance'] ?? 0);
@@ -601,8 +611,8 @@ require __DIR__ . '/_layout_open.php';
         <div class="info-label">Outlet Aktif</div>
       </div>
       <div class="info-card" style="border-color:rgba(139,92,246,.3);background:linear-gradient(135deg,#F5F3FF,#fff)">
-        <div class="info-num">-</div>
-        <div class="info-label">Paket Aktif (TODO)</div>
+        <div class="info-num" style="font-size:18px"><?= htmlspecialchars($paketNama) ?></div>
+        <div class="info-label">Paket Aktif</div>
       </div>
     </div>
 

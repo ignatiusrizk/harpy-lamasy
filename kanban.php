@@ -39,6 +39,7 @@ if ($action) {
         $statuses = ['masuk','cuci','kering','setrika','siap'];
         try {
             $db = Database::get();
+            $cap = 500; // safety cap — outlet super-busy mungkin > 200 active orders dlm 5 hari
             $sql = "SELECT t.id, t.no_order, t.nama_pelanggan, t.telepon,
                            t.total, t.status_proses, t.created_at,
                            t.estimasi_selesai, t.estimasi_jam,
@@ -49,7 +50,7 @@ if ($action) {
                      WHERE t.tenant_id=? AND t.outlet_id=?
                        AND t.status_proses IN ('masuk','cuci','kering','setrika','siap')
                        AND t.created_at >= DATE_SUB(NOW(), INTERVAL 5 DAY)
-                     ORDER BY t.created_at ASC LIMIT 200";
+                     ORDER BY t.created_at ASC LIMIT $cap";
             $stmt = $db->prepare($sql);
             $stmt->execute([$tid, $oid]);
             $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -60,7 +61,15 @@ if ($action) {
                 $st = $r['status_proses'];
                 if (isset($cols[$st])) $cols[$st][] = $r;
             }
-            echo json_encode(['ok'=>true, 'columns'=>$cols, 'ts'=>date('H:i:s')]);
+            $reachedCap = count($rows) >= $cap;
+            echo json_encode([
+                'ok'           => true,
+                'columns'      => $cols,
+                'ts'           => date('H:i:s'),
+                'reached_cap'  => $reachedCap,
+                'total_loaded' => count($rows),
+                'cap'          => $cap,
+            ]);
         } catch (Throwable $e) {
             echo json_encode(['error'=>$e->getMessage()]);
         }
@@ -244,6 +253,8 @@ if ($action) {
     </div>
     <div style="display:flex;gap:10px;align-items:center">
       <span class="kb-live"><span class="dot"></span>live · <span id="kbTs">—</span></span>
+      <span id="kbCapWarn" style="display:none;background:#FEF3C7;color:#92400E;padding:4px 8px;border-radius:8px;font-size:11px;font-weight:600"
+            title="Sebagian order mungkin tidak tampil. Hubungi support kalau persisten.">⚠️ Cap reached</span>
       <button class="hl-btn hl-btn-outline hl-btn-sm" onclick="loadKanban()">↻ Refresh</button>
       <?php if (hasPermission('pos.view')): ?>
       <a href="/pos" class="hl-btn hl-btn-primary hl-btn-sm">+ Order Baru</a>
@@ -322,6 +333,7 @@ async function loadKanban(){
     const d = await r.json();
     if (d.error){ console.warn('Kanban:', d.error); return; }
     document.getElementById('kbTs').textContent = d.ts;
+    document.getElementById('kbCapWarn').style.display = d.reached_cap ? 'inline-block' : 'none';
     ['masuk','cuci','kering','setrika','siap'].forEach(s => {
       const items = d.columns[s] || [];
       document.getElementById('cnt-'+s).textContent = items.length;
