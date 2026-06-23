@@ -1437,3 +1437,25 @@ html, body { overflow-x: hidden; }
 .hl-sticky-primary { background: #35E8D5; color: #0F1C3A; font-weight: 700; }
 .hl-sticky-wa:hover, .hl-sticky-primary:hover { opacity: .9; }
 @media (min-width: 768px) { .hl-sticky-cta { display: none; } }
+
+/* ── LANDING: Beta Banner ────────────────────────────── */
+.hl-beta-banner {
+  background: linear-gradient(135deg, rgba(53,232,213,.12), rgba(99,102,241,.12));
+  border-bottom: 1px solid rgba(53,232,213,.25);
+  padding: 10px 16px;
+  text-align: center;
+  font-size: 13px;
+  color: rgba(255,255,255,.85);
+  line-height: 1.5;
+}
+.hl-beta-banner strong { color: #35E8D5; }
+.hl-beta-banner span#hlBetaSlots {
+  font-weight: 700;
+  color: #fff;
+  background: rgba(53,232,213,.15);
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+@media (max-width: 480px) {
+  .hl-beta-banner { font-size: 12px; padding: 8px 12px; }
+}
