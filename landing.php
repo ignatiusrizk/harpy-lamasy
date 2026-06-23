@@ -27,6 +27,9 @@ if ($_isDirectLanding) {
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <meta name="description" content="LAMASY — ERP Laundry modern dengan AI terintegrasi. POS, Laporan Keuangan SAK EMKM, manajemen karyawan, integrasi WhatsApp lengkap. Trial 30 hari gratis, bayar sesuai pemakaian via Coin — tanpa langganan bulanan."/>
 <meta name="keywords" content="software laundry, ERP laundry, aplikasi laundry, POS laundry, manajemen laundry, AI laundry, laporan keuangan laundry, SAK EMKM laundry"/>
+<link rel="icon" type="image/png" href="/assets/icon-192.png?v=<?= @filemtime(__DIR__.'/assets/icon-192.png') ?: '3' ?>"/>
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon-180.png?v=<?= @filemtime(__DIR__.'/assets/apple-touch-icon-180.png') ?: '3' ?>"/>
+<meta name="theme-color" content="#0F1C3A"/>
 <title>LAMASY — ERP Laundry Modern dengan AI Terintegrasi</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -850,7 +853,7 @@ img { max-width: 100%; }
 <!-- ── NAVBAR ──────────────────────────────────────── -->
 <nav class="navbar" id="navbar">
   <a href="/landing.php" class="nav-logo">
-    <img src="/assets/logo.png" alt="LAMASY" style="height:36px; vertical-align:middle; margin-right:8px;">
+    <img src="/assets/logo.png?v=<?= @filemtime(__DIR__.'/assets/logo.png') ?: '3' ?>" alt="LAMASY" style="height:36px; vertical-align:middle; margin-right:8px;">
     LAMASY
   </a>
   <ul class="nav-links">
@@ -1729,7 +1732,7 @@ function switchCmpTab(tab, btn) {
   <div class="footer-grid">
     <div>
       <div class="footer-logo">
-        <img src="/assets/logo.png" alt="LAMASY" style="height:40px; vertical-align:middle; margin-right:8px;">
+        <img src="/assets/logo.png?v=<?= @filemtime(__DIR__.'/assets/logo.png') ?: '3' ?>" alt="LAMASY" style="height:40px; vertical-align:middle; margin-right:8px;">
         LAMASY <span style="font-size:13px;font-weight:500;color:rgba(255,255,255,.45);">by Harpy</span>
       </div>
       <div class="footer-tagline">Platform manajemen laundry modern untuk bisnis yang lebih rapi.</div>
