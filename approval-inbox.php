@@ -36,7 +36,7 @@ if ($action) {
                    LEFT JOIN hl_users u_rev ON u_rev.id = r.reviewed_by AND u_rev.tenant_id = r.tenant_id
                   WHERE r.tenant_id = ? AND r.status = ?
                   ORDER BY r.requested_at DESC
-                  LIMIT 200"
+                  LIMIT 500"
             );
             $st->execute([$tid, $status]);
             $rows = $st->fetchAll(PDO::FETCH_ASSOC);
@@ -74,7 +74,7 @@ if ($action) {
                        LEFT JOIN hl_users u_req ON u_req.id = r.requested_by AND u_req.tenant_id = r.tenant_id
                        LEFT JOIN hl_users u_rev ON u_rev.id = r.reviewed_by AND u_rev.tenant_id = r.tenant_id
                       WHERE r.tenant_id = ? AND r.status IN $refundStatus
-                      ORDER BY r.requested_at DESC LIMIT 200"
+                      ORDER BY r.requested_at DESC LIMIT 500"
                 );
                 $st2->execute([$tid]);
                 $refunds = $st2->fetchAll(PDO::FETCH_ASSOC);

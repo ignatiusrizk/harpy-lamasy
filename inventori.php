@@ -74,6 +74,10 @@ if ($action) {
         if ($bahanId) { $where[] = 'm.bahan_id = ?'; $params[] = $bahanId; }
         $whereStr = implode(' AND ', $where);
 
+        // Cap 1000 mutation dalam window (already date-filtered) — outlet super
+        // sibuk yang > 1000 mutasi/bulan tetap menampilkan ribuan terbaru dengan
+        // hint untuk persempit filter.
+        $cap = 1000;
         $rows = TenantQuery::raw(
             "SELECT m.*, b.nama AS bahan_nama, b.satuan, u.nama AS input_by_nama
              FROM hl_bahan_mutasi m
@@ -81,10 +85,10 @@ if ($action) {
              LEFT JOIN hl_users u ON u.id = m.input_by AND u.tenant_id = m.tenant_id
              WHERE $whereStr
              ORDER BY m.created_at DESC, m.id DESC
-             LIMIT 200",
+             LIMIT $cap",
             $params
         );
-        echo json_encode(['data' => $rows]);
+        echo json_encode(['data' => $rows, 'reached_cap' => count($rows) >= $cap, 'cap' => $cap]);
         exit;
     }
 

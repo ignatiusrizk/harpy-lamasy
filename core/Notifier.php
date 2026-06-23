@@ -90,7 +90,9 @@ class Notifier
                     $channels = array_filter($channels, fn($c)=>$c==='inapp');
                     if (!$channels) return ['ok'=>false, 'error'=>'Coin tidak cukup untuk '.$coinFeature];
                 }
-            } catch (Throwable) {}
+            } catch (Throwable $e) {
+                ErrorLogger::logException('coin_check', $e, $tenantId, $outletId);
+            }
         }
 
         // Ambil target email dari tenants (owner email)
@@ -103,7 +105,9 @@ class Notifier
                 $s->execute([$tenantId]);
                 $row = $s->fetch(PDO::FETCH_ASSOC);
                 if ($row) { $targetEmail = $row['email']; $ownerName = $row['owner_name'] ?? 'Owner'; }
-            } catch (Throwable) {}
+            } catch (Throwable $e) {
+                ErrorLogger::logException('db_error', $e, $tenantId);
+            }
         }
 
         $sentChannels = [];
@@ -116,7 +120,10 @@ class Notifier
                 if ($ok) {
                     $sentChannels[] = 'email';
                     self::log($tenantId, $outletId, $type, 'email', $targetEmail, $subject, $bodySummary, 'sent');
-                    if ($coinFeature) { try { CoinLedger::deduct($coinFeature); } catch (Throwable) {} }
+                    if ($coinFeature) {
+                        try { CoinLedger::deduct($coinFeature); }
+                        catch (Throwable $e) { ErrorLogger::logException('coin_deduct', $e, $tenantId, $outletId); }
+                    }
                 } else {
                     $errorMsg = Mailer::getLastError();
                     self::log($tenantId, $outletId, $type, 'email', $targetEmail, $subject, $bodySummary, 'failed', $errorMsg);
