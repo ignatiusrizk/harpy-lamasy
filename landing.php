@@ -1250,6 +1250,59 @@ img { max-width: 100%; }
   </div>
 </div>
 
+<!-- ── USE CASE ──────────────────────────────────────── -->
+<section class="section" id="use-case" style="background:rgba(255,255,255,.018)">
+  <div class="section-head" style="text-align:center;margin-bottom:40px;">
+    <h2 style="font-size:32px;font-weight:800;margin-bottom:12px;">Begini Cara Laundry Pakai LAMASY</h2>
+    <p style="color:rgba(255,255,255,.6);max-width:600px;margin:0 auto;">3 skenario penggunaan platform untuk skala bisnis berbeda</p>
+  </div>
+
+  <div class="hl-usecase-grid">
+    <div class="hl-usecase-card">
+      <div class="hl-usecase-header">
+        <span class="hl-usecase-icon">🏪</span>
+        <div>
+          <div class="hl-usecase-name">Laundry Sari</div>
+          <div class="hl-usecase-tier">1 outlet · Jakarta</div>
+        </div>
+      </div>
+      <div class="hl-usecase-before"><strong>Sebelum:</strong> Rekap order pakai Excel + buku tulis. Sering salah hitung, pelanggan komplain kemana cucian.</div>
+      <div class="hl-usecase-after"><strong>Setelah LAMASY:</strong> POS otomatis, struk WA langsung kirim, laporan SAK EMKM auto-generate setiap bulan.</div>
+      <div class="hl-usecase-outcome">⏱️ Hemat 12 jam/minggu rekap manual</div>
+    </div>
+
+    <div class="hl-usecase-card">
+      <div class="hl-usecase-header">
+        <span class="hl-usecase-icon">🧺</span>
+        <div>
+          <div class="hl-usecase-name">Bersih Express</div>
+          <div class="hl-usecase-tier">3 outlet · Bandung</div>
+        </div>
+      </div>
+      <div class="hl-usecase-before"><strong>Sebelum:</strong> Susah konsolidasi data antar outlet, owner harus telpon 3 kasir tiap pagi tanya laporan.</div>
+      <div class="hl-usecase-after"><strong>Setelah LAMASY:</strong> HQ view real-time semua outlet, laporan konsolidasi otomatis, ranking outlet per hari.</div>
+      <div class="hl-usecase-outcome">📊 Visibility real-time semua outlet</div>
+    </div>
+
+    <div class="hl-usecase-card">
+      <div class="hl-usecase-header">
+        <span class="hl-usecase-icon">🏢</span>
+        <div>
+          <div class="hl-usecase-name">Wash &amp; Go Group</div>
+          <div class="hl-usecase-tier">5+ outlet · Multi-kota</div>
+        </div>
+      </div>
+      <div class="hl-usecase-before"><strong>Sebelum:</strong> Audit komisi karyawan ribet, gak ada role-based access, sering ada kesalahan otorisasi.</div>
+      <div class="hl-usecase-after"><strong>Setelah LAMASY:</strong> RBAC proper, audit log lengkap, AI briefing harian per outlet, founder fokus growth.</div>
+      <div class="hl-usecase-outcome">🚀 Audit lengkap, fokus scale</div>
+    </div>
+  </div>
+
+  <div class="hl-usecase-disclaimer">
+    *Skenario ilustrasi penggunaan platform LAMASY, bukan testimoni dari customer real.
+  </div>
+</section>
+
 <!-- ── FITUR ────────────────────────────────────────── -->
 <section class="section" id="fitur">
   <div class="section-header">

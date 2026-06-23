@@ -1284,3 +1284,55 @@ html, body { overflow-x: hidden; }
 @media (max-width: 480px) {
   .pwa-banner-sub { font-size: 10px; }
 }
+
+/* ── LANDING: Use Case Scenarios ───────────────────── */
+.hl-usecase-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+  max-width: 1080px;
+  margin: 0 auto;
+}
+@media (min-width: 768px) {
+  .hl-usecase-grid { grid-template-columns: repeat(3, 1fr); gap: 24px; }
+}
+.hl-usecase-card {
+  padding: 24px;
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+}
+.hl-usecase-header {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  margin-bottom: 16px;
+}
+.hl-usecase-icon { font-size: 36px; }
+.hl-usecase-name { font-weight: 700; font-size: 16px; color: #fff; }
+.hl-usecase-tier { font-size: 12px; color: rgba(255,255,255,.5); margin-top: 2px; }
+.hl-usecase-before, .hl-usecase-after {
+  font-size: 14px;
+  line-height: 1.6;
+  color: rgba(255,255,255,.75);
+  margin-bottom: 10px;
+}
+.hl-usecase-outcome {
+  margin-top: auto;
+  padding: 10px 14px;
+  background: rgba(53,232,213,.1);
+  border-left: 3px solid #35E8D5;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #35E8D5;
+  font-weight: 600;
+}
+.hl-usecase-disclaimer {
+  text-align: center;
+  font-size: 11px;
+  color: rgba(255,255,255,.4);
+  margin-top: 24px;
+  font-style: italic;
+}
