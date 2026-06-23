@@ -2085,5 +2085,22 @@ document.querySelectorAll('.feature-card, .step-card, .pricing-card, .testi-card
   observer.observe(el);
 });
 </script>
+
+<!-- Sticky Mobile CTA -->
+<div class="hl-sticky-cta" id="hlStickyCta">
+  <a href="https://wa.me/6285121519302?text=Halo%20saya%20mau%20tanya%20tentang%20LAMASY" class="hl-sticky-wa" rel="noopener" target="_blank">💬 Tanya WA</a>
+  <a href="/register.php" class="hl-sticky-primary">🚀 Coba Gratis →</a>
+</div>
+
+<script>
+(function(){
+  var sticky = document.getElementById('hlStickyCta');
+  if (!sticky) return;
+  window.addEventListener('scroll', function() {
+    if (window.scrollY > 600) sticky.classList.add('show');
+    else sticky.classList.remove('show');
+  }, { passive: true });
+})();
+</script>
 </body>
 </html>
