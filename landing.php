@@ -25,8 +25,28 @@ if ($_isDirectLanding) {
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<meta name="description" content="LAMASY — ERP Laundry modern dengan AI terintegrasi. POS, Laporan Keuangan SAK EMKM, manajemen karyawan, integrasi WhatsApp lengkap. Trial 30 hari gratis, bayar sesuai pemakaian via Coin — tanpa langganan bulanan."/>
-<meta name="keywords" content="software laundry, ERP laundry, aplikasi laundry, POS laundry, manajemen laundry, AI laundry, laporan keuangan laundry, SAK EMKM laundry"/>
+<meta name="description" content="LAMASY — ERP Laundry modern dengan AI terintegrasi. POS, Laporan Keuangan SAK EMKM, manajemen karyawan, integrasi WhatsApp lengkap. Trial 7 hari gratis, bayar sesuai pemakaian via Coin — tanpa langganan bulanan."/>
+<meta name="author" content="PT Harpy Sinergi Mandiri"/>
+<meta name="robots" content="index, follow"/>
+<link rel="canonical" href="https://lamasy.harpy.id/"/>
+
+<!-- Open Graph (WhatsApp, Facebook, LinkedIn) -->
+<meta property="og:type" content="website"/>
+<meta property="og:url" content="https://lamasy.harpy.id/"/>
+<meta property="og:title" content="LAMASY — ERP Laundry Modern dengan AI Terintegrasi"/>
+<meta property="og:description" content="POS, laporan SAK EMKM, AI briefing, integrasi WhatsApp — semua dalam 1 platform. Trial 7 hari gratis."/>
+<meta property="og:image" content="https://lamasy.harpy.id/assets/og-image.png"/>
+<meta property="og:image:width" content="1200"/>
+<meta property="og:image:height" content="630"/>
+<meta property="og:locale" content="id_ID"/>
+<meta property="og:site_name" content="LAMASY"/>
+
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:title" content="LAMASY — ERP Laundry Modern dengan AI Terintegrasi"/>
+<meta name="twitter:description" content="POS, laporan SAK EMKM, AI briefing, integrasi WhatsApp — semua dalam 1 platform."/>
+<meta name="twitter:image" content="https://lamasy.harpy.id/assets/og-image.png"/>
+
 <link rel="icon" type="image/png" href="/assets/icon-192.png?v=<?= @filemtime(__DIR__.'/assets/icon-192.png') ?: '3' ?>"/>
 <link rel="apple-touch-icon" href="/assets/apple-touch-icon-180.png?v=<?= @filemtime(__DIR__.'/assets/apple-touch-icon-180.png') ?: '3' ?>"/>
 <meta name="theme-color" content="#0F1C3A"/>
