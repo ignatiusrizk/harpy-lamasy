@@ -335,7 +335,9 @@ if ($action) {
                     $prow = TenantQuery::rawOne("SELECT pelanggan_id,total FROM hl_transaksi WHERE tenant_id=? AND outlet_id=? AND id=?", [$tid,$oid,$id]);
                     if ($prow && $prow['pelanggan_id'])
                         $poinEarned = Loyalty::earnForTransaction($tid, $oid, (int)$id, (int)$prow['pelanggan_id'], (float)$prow['total']);
-                } catch (Throwable) {}
+                } catch (Throwable $e) {
+                    ErrorLogger::logException('loyalty_error', $e, $tid, $oid);
+                }
             }
 
             echo json_encode(['success' => true, 'poin_earned' => $poinEarned]);
@@ -443,7 +445,9 @@ if ($action) {
                 if ($prow && $prow['pelanggan_id']) {
                     Loyalty::touchLastTransaksi($tid, (int)$prow['pelanggan_id']);
                 }
-            } catch (Throwable) {}
+            } catch (Throwable $e) {
+                ErrorLogger::logException('loyalty_error', $e, $tid, $oid);
+            }
 
             echo json_encode([
                 'success'      => true,

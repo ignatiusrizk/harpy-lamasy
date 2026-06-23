@@ -9,6 +9,7 @@ require_once ROOT . '/core/Database.php';
 require_once ROOT . '/core/TenantResolver.php';
 require_once ROOT . '/core/TenantQuery.php';
 require_once ROOT . '/core/CoinLedger.php';
+require_once ROOT . '/core/ErrorLogger.php';
 
 date_default_timezone_set('Asia/Jakarta');
 
@@ -276,7 +277,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         TenantResolver::resolve();
                     }
                     logAuditLogin($user, 'login', 'auth', 'Login berhasil');
-                } catch (Throwable $e) {}
+                } catch (Throwable $e) {
+                    ErrorLogger::logException('auth_audit', $e, $user['tenant_id'] ?? null);
+                }
 
                 // Kurir → mobile page langsung
                 if (($user['role'] ?? '') === 'kurir') {
@@ -310,7 +313,9 @@ function logAuditLogin(array $user, string $aksi, string $modul, string $ket): v
             getClientIp(),
             substr($_SERVER['HTTP_USER_AGENT'] ?? '-', 0, 255),
         ]);
-    } catch (Throwable $e) {}
+    } catch (Throwable $e) {
+        ErrorLogger::logException('auth_audit', $e, $user['tenant_id'] ?? null);
+    }
 }
 ?>
 <!DOCTYPE html>

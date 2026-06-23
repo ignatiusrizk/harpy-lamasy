@@ -43,6 +43,7 @@ require_once ROOT . '/core/Database.php';
 require_once ROOT . '/core/TenantResolver.php';
 require_once ROOT . '/core/TenantQuery.php';
 require_once ROOT . '/core/CoinLedger.php';
+require_once ROOT . '/core/ErrorLogger.php';
 
 // ── Maintenance Mode Check ─────────────────────────────
 // Baca dari file cache (performa — tidak query DB setiap request)

@@ -277,7 +277,9 @@ if ($action) {
                 $st = $db->prepare("SELECT * FROM hl_shift_handover WHERE tenant_id=? AND outlet_id=? AND tanggal=? AND user_id_keluar=? ORDER BY id DESC LIMIT 1");
                 $st->execute([$tid, $oid, $tgl, $_SESSION['user_id'] ?? 0]);
                 $existing = $st->fetch(PDO::FETCH_ASSOC);
-            } catch (Throwable $e) {}
+            } catch (Throwable $e) {
+                ErrorLogger::logException('db_error', $e, $tid, $oid);
+            }
 
             echo json_encode([
                 'ok' => true,

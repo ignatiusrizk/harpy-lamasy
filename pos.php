@@ -46,7 +46,10 @@ if ($action) {
             );
             $st->execute([$tid, $oid]);
             echo json_encode(['parfums' => array_column($st->fetchAll(PDO::FETCH_ASSOC), 'nama')]);
-        } catch (Throwable) { echo json_encode(['parfums'=>[]]); }
+        } catch (Throwable $e) {
+            ErrorLogger::logException('db_error', $e, (int)TenantResolver::id());
+            echo json_encode(['parfums'=>[]]);
+        }
         exit;
     }
 
