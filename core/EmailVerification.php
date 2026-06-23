@@ -160,6 +160,12 @@ class EmailVerification
             );
         }
 
+        // Notify super admin: email verified (best-effort)
+        try {
+            require_once __DIR__ . '/SaNotifier.php';
+            SaNotifier::emailVerified((int)$row['tenant_id']);
+        } catch (Throwable $e) { error_log('[SaNotify emailVerified] ' . $e->getMessage()); }
+
         return [
             'ok'        => true,
             'tenant_id' => (int)$row['tenant_id'],

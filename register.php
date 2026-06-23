@@ -228,6 +228,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['step3_submit'])) {
                 // 7. Kirim email verifikasi
                 EmailVerification::create($tenantId, $d['email'], $d['nama_outlet'], $d['owner_name']);
 
+                // 7b. Notify super admin: tenant baru daftar (best-effort)
+                try {
+                    require_once ROOT . '/core/SaNotifier.php';
+                    SaNotifier::tenantRegistered($tenantId);
+                } catch (Throwable $e) { error_log('[SaNotify tenantRegistered] ' . $e->getMessage()); }
+
                 // 8. Session untuk pending-verify.php
                 session_regenerate_id(true);
                 $_SESSION['tenant_id']         = $tenantId;

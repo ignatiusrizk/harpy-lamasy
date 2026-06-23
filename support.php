@@ -94,6 +94,12 @@ if ($action) {
         )->execute([$tenantId, $outletId ?: null, $userId, $subject, $message, $category]);
         $ticketId = (int)$db->lastInsertId();
 
+        // Notify super admin: ticket baru (best-effort)
+        try {
+            require_once ROOT . '/core/SaNotifier.php';
+            SaNotifier::supportTicketCreated($ticketId);
+        } catch (Throwable $e) { error_log('[SaNotify supportTicket] ' . $e->getMessage()); }
+
         // Build WA link for owner to escalate (semi-automated notify)
         $waNumber  = preg_replace('/[^0-9]/', '', $tenant['owner_wa'] ?? '');
         $ownerName = $tenant['owner_name'] ?? 'Pelanggan';

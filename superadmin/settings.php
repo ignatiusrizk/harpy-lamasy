@@ -259,6 +259,49 @@ if (!empty($_SERVER['HTTP_X_REQUESTED_WITH'])) {
         exit;
     }
 
+    // ── Notifications: list super admins + log ──────
+    if ($action === 'notify_list') {
+        $admins = $db->query(
+            "SELECT id, username, name, email, notify_enabled FROM super_admins WHERE is_active=1 ORDER BY id"
+        )->fetchAll(PDO::FETCH_ASSOC);
+        $logs = $db->query(
+            "SELECT event_type, ref_id, subject, recipients, sent_at FROM saas_sa_notif_log
+             ORDER BY id DESC LIMIT 20"
+        )->fetchAll(PDO::FETCH_ASSOC);
+        $constEmails = defined('SA_NOTIFY_EMAILS') && is_array(SA_NOTIFY_EMAILS) ? SA_NOTIFY_EMAILS : [];
+        echo json_encode(['ok' => true, 'admins' => $admins, 'logs' => $logs, 'const' => $constEmails]);
+        exit;
+    }
+
+    if ($action === 'notify_save') {
+        $id     = (int)($_POST['id'] ?? 0);
+        $email  = trim($_POST['email'] ?? '');
+        $enable = (int)($_POST['enable'] ?? 0);
+        if ($id <= 0) { echo json_encode(['error' => 'ID invalid']); exit; }
+        if ($email !== '' && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            echo json_encode(['error' => 'Email tidak valid']); exit;
+        }
+        $db->prepare("UPDATE super_admins SET email=?, notify_enabled=? WHERE id=?")
+           ->execute([$email ?: null, $enable, $id]);
+        logSuperAdminAction('notify_save', null, "Update notif SA #$id email=$email enable=$enable");
+        echo json_encode(['ok' => true]);
+        exit;
+    }
+
+    if ($action === 'notify_test') {
+        require_once dirname(__DIR__) . '/core/SaNotifier.php';
+        // Bypass throttle via direct invocation with random event_type
+        SaNotifier::notify('test_email_' . time(),
+            '[LAMASY] 🧪 Test notif email',
+            '<p style="font-family:Arial">Halo Super Admin,</p>'
+          . '<p>Ini email test dari /superadmin/settings → tab Notifications.</p>'
+          . '<p>Kalau kamu nerima ini, berarti SMTP + recipient list udah jalan ✓</p>'
+          . '<p style="color:#9CA3AF;font-size:12px;margin-top:24px">— LAMASY Admin System</p>',
+            (string)($admin['id'] ?? 0));
+        echo json_encode(['ok' => true, 'message' => 'Test email dikirim ke recipient list aktif.']);
+        exit;
+    }
+
     http_response_code(400);
     echo json_encode(['error' => 'Action tidak dikenal']);
     exit;
@@ -357,6 +400,7 @@ $pageTitle  = 'Platform Settings';
   <button class="set-tab" onclick="switchTab('demo',this)">🎮 Demo</button>
   <button class="set-tab" onclick="switchTab('tos',this)">📋 ToS Versions</button>
   <button class="set-tab" onclick="switchTab('tips',this)">💡 Splash Tips</button>
+  <button class="set-tab" onclick="switchTab('notify',this);loadNotify()">🔔 Notifications</button>
 </div>
 
 <!-- ══════════════════════════ MAINTENANCE TAB ═══════════════════════════ -->
@@ -501,6 +545,28 @@ $pageTitle  = 'Platform Settings';
     <div id="tipsList" style="display:flex;flex-direction:column;gap:10px"></div>
   </div>
 
+</div>
+
+<!-- ══════════════════════════ NOTIFICATIONS TAB ═════════════════════════ -->
+<div class="set-panel" id="tab-notify">
+  <div class="set-card">
+    <div class="set-card-head">
+      <h3>🔔 SA Activity Notifications</h3>
+      <button class="sa-btn sa-btn-secondary" onclick="testNotify()">📧 Test Email</button>
+    </div>
+    <p style="font-size:13px;color:rgba(255,255,255,.55);margin-bottom:16px">
+      Email otomatis ke super admin saat ada activity tenant: register, verify, outlet aktivasi, support ticket, trial expiring, dan auto-suspend. Throttle 1 menit per event-type.
+    </p>
+
+    <div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.5);margin-bottom:8px">Constant Default (db.php)</div>
+    <div id="notifConst" style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:10px 14px;margin-bottom:20px;font-family:monospace;font-size:12.5px;color:rgba(255,255,255,.7)">Loading…</div>
+
+    <div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.5);margin-bottom:8px">Super Admin Opt-In</div>
+    <div id="notifAdminList" style="display:flex;flex-direction:column;gap:10px;margin-bottom:24px"></div>
+
+    <div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.5);margin-bottom:8px">Recent Log (last 20)</div>
+    <div id="notifLogList" style="display:flex;flex-direction:column;gap:6px"></div>
+  </div>
 </div>
 
 <!-- ══════════════════════════ MODAL: Edit Tip ═══════════════════════════ -->
@@ -762,6 +828,76 @@ async function releaseTos() {
     } else {
         showToast(d.error || 'Gagal', false);
     }
+}
+
+// ════════════════════════════════════════════════════════════════
+// NOTIFICATIONS TAB
+// ════════════════════════════════════════════════════════════════
+async function loadNotify() {
+  const r = await saFetch('?action=notify_list');
+  if (!r.ok) return;
+
+  // Render const recipients
+  document.getElementById('notifConst').textContent =
+    (r.const && r.const.length) ? r.const.join(', ')
+      : 'SA_NOTIFY_EMAILS belum di-define di master/config/db.php (optional — opt-in via tabel super_admins juga jalan)';
+
+  // Render admins
+  const adminWrap = document.getElementById('notifAdminList');
+  adminWrap.innerHTML = (r.admins || []).map(a => `
+    <div style="display:grid;grid-template-columns:1fr 1.5fr auto;gap:10px;align-items:center;padding:12px 14px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:9px">
+      <div>
+        <div style="font-weight:700;color:#fff;font-size:13.5px">${escapeHtml(a.name || a.username)}</div>
+        <div style="font-size:11px;color:rgba(255,255,255,.4);font-family:monospace">@${escapeHtml(a.username)}</div>
+      </div>
+      <input type="email" id="ne_${a.id}" value="${escapeHtml(a.email || '')}" placeholder="email@harpy.id"
+        style="background:rgba(255,255,255,.05);border:1.5px solid rgba(255,255,255,.1);border-radius:7px;padding:7px 10px;color:#fff;font-size:13px;outline:none">
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:rgba(255,255,255,.7)">
+        <input type="checkbox" id="nx_${a.id}" ${a.notify_enabled == 1 ? 'checked' : ''}>
+        <span>Notify</span>
+        <button class="sa-btn sa-btn-secondary" style="padding:5px 12px;font-size:11px;margin-left:6px" onclick="saveNotify(${a.id})">Save</button>
+      </label>
+    </div>
+  `).join('');
+
+  // Render logs
+  const logWrap = document.getElementById('notifLogList');
+  if (!r.logs || !r.logs.length) {
+    logWrap.innerHTML = '<div style="padding:14px;color:rgba(255,255,255,.4);text-align:center;font-size:13px">Belum ada notif terkirim.</div>';
+  } else {
+    logWrap.innerHTML = r.logs.map(l => `
+      <div style="padding:10px 14px;background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.06);border-radius:7px;display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:12.5px">
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:600;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(l.subject || '(no subject)')}</div>
+          <div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:2px">${escapeHtml(l.event_type)} · ${escapeHtml(l.recipients || '-')}</div>
+        </div>
+        <div style="font-size:11px;color:rgba(255,255,255,.45);white-space:nowrap;font-family:monospace">${escapeHtml(l.sent_at)}</div>
+      </div>
+    `).join('');
+  }
+}
+
+async function saveNotify(id) {
+  const email = document.getElementById('ne_' + id).value.trim();
+  const enable = document.getElementById('nx_' + id).checked ? 1 : 0;
+  const fd = new FormData();
+  fd.append('id', id);
+  fd.append('email', email);
+  fd.append('enable', enable);
+  const r = await saFetch('?action=notify_save', { method: 'POST', body: fd });
+  if (r.ok) saToast('Tersimpan ✓', 'ok');
+  else saToast(r.error || 'Gagal simpan', 'err');
+}
+
+async function testNotify() {
+  if (!confirm('Kirim test email ke semua recipient aktif?')) return;
+  const r = await saFetch('?action=notify_test', { method: 'POST' });
+  if (r.ok) saToast(r.message || 'Test email dikirim ✓', 'ok');
+  else saToast(r.error || 'Gagal kirim', 'err');
+}
+
+function escapeHtml(s) {
+  return String(s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 
 // Init

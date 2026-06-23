@@ -174,6 +174,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['step2_submit'])) {
             "UPDATE tenants SET total_outlets = total_outlets + 1 WHERE id=?"
         )->execute([$tid]);
 
+        // Notify super admin: outlet activated (paid = revenue captured, trial = signup)
+        try {
+            require_once ROOT . '/core/SaNotifier.php';
+            SaNotifier::outletActivated($outletId, $isPaid);
+        } catch (Throwable $e) { error_log('[SaNotify outletActivated] ' . $e->getMessage()); }
+
         // Set is_main jika outlet pertama
         if ($isFirstOutlet) {
             $db->prepare("UPDATE outlets SET is_main=1 WHERE id=?")->execute([$outletId]);

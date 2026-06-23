@@ -99,6 +99,12 @@ foreach ($reminders as $r) {
     $ok = Mailer::sendTrialReminder($r['email'], $r['owner_name'] ?? 'Owner', (int)$r['days_left']);
     if ($ok) $sent++;
     clog("reminder ($r[days_left]h): outlet_id=$r[id] email=$r[email] " . ($ok ? 'sent' : 'FAILED'));
+
+    // Notify super admin (best-effort)
+    try {
+        require_once dirname(__DIR__) . '/core/SaNotifier.php';
+        SaNotifier::trialExpiring((int)$r['id'], (int)$r['days_left']);
+    } catch (Throwable $e) { clog('SaNotify trialExpiring fail: ' . $e->getMessage()); }
 }
 clog("$sent trial reminder emails sent");
 
@@ -119,6 +125,12 @@ foreach ($graceRows as $outlet) {
 
     logOutletTransition($db, (int)$outlet['id'], (int)$outlet['tenant_id'], 'grace', 'suspended');
     clog("grace→suspended: outlet_id={$outlet['id']} ({$outlet['nama_outlet']})");
+
+    // Notify super admin: churn awareness (best-effort)
+    try {
+        require_once dirname(__DIR__) . '/core/SaNotifier.php';
+        SaNotifier::outletSuspended((int)$outlet['id']);
+    } catch (Throwable $e) { clog('SaNotify outletSuspended fail: ' . $e->getMessage()); }
 }
 clog(count($graceRows) . ' outlets moved grace→suspended');
 
