@@ -499,12 +499,9 @@ $pwChanged    = isset($_GET['pw_changed']);
 $pwError      = $pwError ?? '';
 ?>
 <style>
-/* ── Onboarding dashboard (dark theme, matching landing) ── */
+/* ── Onboarding dashboard (light theme matching app shell) ── */
 .ob-wrap {
-  background: #0F1C3A;
-  background-image:
-    radial-gradient(circle at 15% 10%, rgba(53,232,213,.05), transparent 40%),
-    radial-gradient(circle at 85% 30%, rgba(99,102,241,.04), transparent 35%);
+  background: #F4F7FB;
   min-height: calc(100vh - 60px);
   padding: 32px 16px 100px;
 }
@@ -514,23 +511,24 @@ $pwError      = $pwError ?? '';
   padding: 12px 16px; border-radius: 10px; font-size: 13.5px;
   border: 1px solid; display: flex; align-items: center; gap: 8px;
 }
-.ob-alert-ok { background: rgba(53,232,213,.08); border-color: rgba(53,232,213,.3); color: #35E8D5; }
-.ob-alert-err { background: rgba(239,68,68,.1); border-color: rgba(239,68,68,.3); color: #FCA5A5; }
+.ob-alert-ok { background: #D1FAE5; border-color: #6EE7B7; color: #065F46; }
+.ob-alert-err { background: #FEE2E2; border-color: #FCA5A5; color: #991B1B; }
 
+/* Hero CTA — dark intentional contrast */
 .ob-hero {
-  background: linear-gradient(135deg, rgba(53,232,213,.06), rgba(99,102,241,.04));
-  border: 1px solid rgba(53,232,213,.18);
+  background: linear-gradient(135deg, #0F1C3A 0%, #1a2d52 100%);
   border-radius: 18px; padding: 40px 32px; text-align: center;
   position: relative; overflow: hidden;
+  box-shadow: 0 6px 24px rgba(15,28,58,.15);
 }
 .ob-hero::before {
   content: ''; position: absolute; top:-100px; right:-80px;
   width: 280px; height: 280px;
-  background: radial-gradient(circle, rgba(53,232,213,.18), transparent 70%);
+  background: radial-gradient(circle, rgba(53,232,213,.2), transparent 70%);
   pointer-events: none;
 }
 .ob-hero-badge {
-  display: inline-block; background: rgba(53,232,213,.12);
+  display: inline-block; background: rgba(53,232,213,.15);
   border: 1px solid rgba(53,232,213,.3);
   color: #35E8D5; font-size: 12px; font-weight: 700;
   padding: 5px 14px; border-radius: 100px;
@@ -541,7 +539,7 @@ $pwError      = $pwError ?? '';
   color: #fff; margin: 0 0 12px; line-height: 1.2; position: relative;
 }
 .ob-hero p {
-  font-size: 15px; color: rgba(255,255,255,.7);
+  font-size: 15px; color: rgba(255,255,255,.75);
   max-width: 520px; margin: 0 auto 28px; line-height: 1.65; position: relative;
 }
 .ob-cta {
@@ -552,42 +550,45 @@ $pwError      = $pwError ?? '';
   transition: all .2s; position: relative;
 }
 .ob-cta:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(53,232,213,.45); }
-.ob-cta-sub { margin-top: 14px; font-size: 12px; color: rgba(255,255,255,.45); position: relative; }
+.ob-cta-sub { margin-top: 14px; font-size: 12px; color: rgba(255,255,255,.5); position: relative; }
 
 .ob-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+
+/* Cards — light/white */
 .ob-card {
-  background: rgba(255,255,255,.03);
-  border: 1px solid rgba(255,255,255,.08);
+  background: #fff;
+  border: 1px solid #E5E7EB;
   border-radius: 14px; padding: 24px;
+  box-shadow: 0 1px 8px rgba(0,0,0,.04);
 }
 .ob-card h3 {
-  font-size: 14px; font-weight: 700; color: #fff;
+  font-size: 15px; font-weight: 700; color: #0F1C3A;
   margin: 0 0 18px; display: flex; align-items: center; gap: 10px;
   letter-spacing: -.01em;
 }
 .ob-card h3 .icon {
-  background: rgba(53,232,213,.1); padding: 5px 9px; border-radius: 8px;
+  background: #F0FDFB; padding: 5px 9px; border-radius: 8px;
   font-size: 14px;
 }
 
 .ob-field { margin-bottom: 14px; }
 .ob-label {
-  font-size: 11.5px; font-weight: 600; color: rgba(255,255,255,.5);
+  font-size: 11.5px; font-weight: 600; color: #6B7280;
   display: block; margin-bottom: 5px; letter-spacing: .04em; text-transform: uppercase;
 }
-.ob-label .hint { font-weight: 400; color: rgba(255,255,255,.35); text-transform: none; letter-spacing: 0; }
+.ob-label .hint { font-weight: 400; color: #9CA3AF; text-transform: none; letter-spacing: 0; }
 .ob-input {
-  width: 100%; padding: 11px 14px;
-  background: rgba(255,255,255,.04);
-  border: 1.5px solid rgba(255,255,255,.08);
+  width: 100%; padding: 10px 12px;
+  background: #fff;
+  border: 1.5px solid #E5E7EB;
   border-radius: 9px;
-  font-size: 14px; color: #fff; font-family: inherit;
+  font-size: 14px; color: #0F1C3A; font-family: inherit;
   box-sizing: border-box; outline: none;
-  transition: border-color .15s, background .15s;
+  transition: border-color .15s;
 }
-.ob-input:focus { border-color: #35E8D5; background: rgba(53,232,213,.04); }
-.ob-input::placeholder { color: rgba(255,255,255,.25); }
-.ob-input:disabled { opacity: .5; cursor: not-allowed; }
+.ob-input:focus { border-color: #35E8D5; }
+.ob-input::placeholder { color: #9CA3AF; }
+.ob-input:disabled { background: #F9FAFB; color: #9CA3AF; cursor: not-allowed; }
 
 .ob-btn-primary {
   width: 100%; background: #35E8D5; color: #0F1C3A;
@@ -597,32 +598,29 @@ $pwError      = $pwError ?? '';
 }
 .ob-btn-primary:hover { opacity: .9; }
 .ob-btn-secondary {
-  width: 100%; background: rgba(255,255,255,.04);
-  border: 1.5px solid rgba(255,255,255,.1); color: rgba(255,255,255,.85);
+  width: 100%; background: #fff;
+  border: 1.5px solid #E5E7EB; color: #374151;
   padding: 9px; border-radius: 9px;
   font-size: 13px; cursor: pointer; font-family: inherit;
 }
-.ob-btn-secondary:hover { background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.2); }
+.ob-btn-secondary:hover { background: #F9FAFB; border-color: #D1D5DB; }
 
-.ob-pw-section { margin-top: 16px; border-top: 1px solid rgba(255,255,255,.06); padding-top: 16px; }
+.ob-pw-section { margin-top: 16px; border-top: 1px solid #F3F4F6; padding-top: 16px; }
 
-.ob-progress {
-  margin-bottom: 16px;
-}
+.ob-progress { margin-bottom: 16px; }
 .ob-progress-head {
   display: flex; justify-content: space-between;
-  font-size: 12px; color: rgba(255,255,255,.55); margin-bottom: 6px;
+  font-size: 12px; color: #6B7280; margin-bottom: 6px;
 }
-.ob-progress-val { color: #35E8D5; font-weight: 700; }
+.ob-progress-val { color: #0891B2; font-weight: 700; }
 .ob-progress-track {
-  background: rgba(255,255,255,.06); border-radius: 100px;
+  background: #F3F4F6; border-radius: 100px;
   height: 8px; overflow: hidden;
 }
 .ob-progress-fill {
-  background: linear-gradient(90deg, #35E8D5, #1BC4B3);
+  background: linear-gradient(90deg, #35E8D5, #0891B2);
   height: 100%; border-radius: 100px;
   transition: width .5s ease;
-  box-shadow: 0 0 12px rgba(53,232,213,.5);
 }
 
 .ob-step {
@@ -631,23 +629,23 @@ $pwError      = $pwError ?? '';
   font-size: 13.5px; border: 1px solid;
 }
 .ob-step-done {
-  background: rgba(53,232,213,.06);
-  border-color: rgba(53,232,213,.2);
-  color: rgba(255,255,255,.7);
+  background: #F0FDF4;
+  border-color: #6EE7B7;
+  color: #065F46;
 }
 .ob-step-active {
-  background: rgba(53,232,213,.08);
-  border-color: rgba(53,232,213,.3);
-  color: #fff;
+  background: #fff;
+  border-color: #E5E7EB;
+  color: #0F1C3A;
 }
 .ob-step-locked {
-  background: rgba(255,255,255,.02);
-  border-color: rgba(255,255,255,.05);
-  color: rgba(255,255,255,.35);
+  background: #F9FAFB;
+  border-color: #E5E7EB;
+  color: #9CA3AF;
 }
 .ob-step .check { font-size: 14px; flex-shrink: 0; }
 .ob-step .body { flex: 1; }
-.ob-step .sub { font-size: 11px; color: rgba(255,255,255,.35); display: block; margin-top: 2px; }
+.ob-step .sub { font-size: 11px; color: #9CA3AF; display: block; margin-top: 2px; }
 .ob-step-btn {
   background: #35E8D5; color: #0F1C3A; font-size: 11px; font-weight: 700;
   padding: 5px 12px; border-radius: 6px; text-decoration: none; white-space: nowrap;
@@ -656,44 +654,45 @@ $pwError      = $pwError ?? '';
 
 .ob-tour-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
 .ob-tour-card {
-  background: rgba(255,255,255,.03);
-  border: 1px solid rgba(255,255,255,.08);
+  background: #F8FAFC;
+  border: 1.5px solid #E5E7EB;
   border-radius: 12px; padding: 18px 14px; text-align: center;
   transition: all .2s;
 }
 .ob-tour-card:hover {
-  background: rgba(53,232,213,.05);
-  border-color: rgba(53,232,213,.2);
+  background: #fff;
+  border-color: #35E8D5;
   transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(53,232,213,.15);
 }
 .ob-tour-icon { font-size: 28px; margin-bottom: 10px; display: block; }
-.ob-tour-title { font-size: 13px; font-weight: 700; color: #fff; margin-bottom: 5px; }
-.ob-tour-desc { font-size: 11.5px; color: rgba(255,255,255,.55); line-height: 1.5; }
+.ob-tour-title { font-size: 13px; font-weight: 700; color: #0F1C3A; margin-bottom: 5px; }
+.ob-tour-desc { font-size: 11.5px; color: #6B7280; line-height: 1.5; }
 .ob-tour-cta { text-align: center; margin-top: 16px; }
-.ob-tour-cta a { font-size: 13px; color: #35E8D5; font-weight: 600; text-decoration: none; }
+.ob-tour-cta a { font-size: 13px; color: #0891B2; font-weight: 600; text-decoration: none; }
 .ob-tour-cta a:hover { text-decoration: underline; }
 
-.ob-faq-item { border-bottom: 1px solid rgba(255,255,255,.06); }
+.ob-faq-item { border-bottom: 1px solid #F3F4F6; }
 .ob-faq-item:last-child { border-bottom: none; }
 .ob-faq-btn {
   width: 100%; text-align: left; background: none; border: none;
-  padding: 14px 0; font-size: 14px; font-weight: 600; color: #fff;
+  padding: 14px 0; font-size: 14px; font-weight: 600; color: #0F1C3A;
   cursor: pointer; font-family: inherit;
   display: flex; justify-content: space-between; align-items: center; gap: 8px;
 }
-.ob-faq-arrow { font-size: 12px; color: #35E8D5; flex-shrink: 0; transition: transform .2s; }
+.ob-faq-arrow { font-size: 12px; color: #9CA3AF; flex-shrink: 0; transition: transform .2s; }
 .ob-faq-ans {
   max-height: 0; overflow: hidden; transition: max-height .3s ease;
-  font-size: 13px; color: rgba(255,255,255,.65); line-height: 1.7;
+  font-size: 13px; color: #4B5563; line-height: 1.7;
 }
 .ob-faq-ans-inner { padding: 0 0 14px; }
-.ob-faq-ans strong { color: #fff; font-weight: 700; }
+.ob-faq-ans strong { color: #0F1C3A; font-weight: 700; }
 
 .ob-footer-wa {
   margin-top: 18px; text-align: center; font-size: 13px;
-  color: rgba(255,255,255,.5);
+  color: #6B7280;
 }
-.ob-footer-wa a { color: #35E8D5; font-weight: 700; text-decoration: none; }
+.ob-footer-wa a { color: #0891B2; font-weight: 700; text-decoration: none; }
 
 .ob-fab {
   position: fixed; bottom: 24px; right: 24px;
