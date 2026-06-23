@@ -59,7 +59,9 @@ if ($tenantId) {
             $tenantId,
             $_SERVER['REMOTE_ADDR'] ?? '-',
         ]);
-    } catch (Throwable) {}
+    } catch (Throwable $e) {
+        if (class_exists('ErrorLogger')) ErrorLogger::logException('sa_audit', $e);
+    }
 }
 
 // Bersihkan SEMUA session vars yang di-set saat impersonasi

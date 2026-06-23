@@ -15,7 +15,9 @@ if (!empty($_SESSION['superadmin_id'])) {
             "INSERT INTO superadmin_logs (superadmin_id, action, description, ip_address)
              VALUES (?, 'logout', 'Super admin logout', ?)"
         )->execute([$_SESSION['superadmin_id'], $_SERVER['REMOTE_ADDR'] ?? '-']);
-    } catch (Throwable) {}
+    } catch (Throwable $e) {
+        if (class_exists('ErrorLogger')) ErrorLogger::logException('sa_audit', $e);
+    }
 }
 
 session_unset();

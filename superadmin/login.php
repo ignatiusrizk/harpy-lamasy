@@ -108,7 +108,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         "INSERT INTO superadmin_logs (superadmin_id, action, description, ip_address)
                          VALUES (?, 'login', 'Super admin login berhasil', ?)"
                     )->execute([$admin['id'], $ip]);
-                } catch (Throwable) {}
+                } catch (Throwable $e) {
+                    if (class_exists('ErrorLogger')) ErrorLogger::logException('sa_audit', $e);
+                }
 
                 session_regenerate_id(true);
                 header('Location: dashboard.php');

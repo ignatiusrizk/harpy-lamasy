@@ -90,7 +90,9 @@ if ($action) {
                      VALUES (?, ?, 'wa', ?, ?, 'info')"
                 )->execute([$t['id'], $_SESSION['superadmin_id'], $subject, $filledMsg]);
                 $logged++;
-            } catch (Throwable) {}
+            } catch (Throwable $e) {
+                if (class_exists('ErrorLogger')) ErrorLogger::logException('sa_broadcast', $e, $t['id']);
+            }
         }
 
         logSuperAdminAction('broadcast', null, "Broadcast ke $logged tenant: $subject");

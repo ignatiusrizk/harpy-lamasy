@@ -93,7 +93,9 @@ function logSuperAdminAction(string $action, ?int $tenantId, string $desc): void
             $desc,
             $_SERVER['REMOTE_ADDR'] ?? '-'
         ]);
-    } catch (Throwable) {}
+    } catch (Throwable $e) {
+        if (class_exists('ErrorLogger')) ErrorLogger::logException('sa_audit', $e);
+    }
 }
 
 function saGetCsrf(): string {
