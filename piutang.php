@@ -224,7 +224,9 @@ if ($action === 'mark_invoiced' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         $db->prepare("UPDATE hl_piutang SET status='sudah_tagih', invoice_sent_at=NOW()
                        WHERE id=? AND tenant_id=?")->execute([$id,$tid]);
 
-        try { CoinLedger::deduct('invoice_b2b', (string)$id); } catch (Throwable) {}
+        try { CoinLedger::deduct('invoice_b2b', (string)$id); } catch (Throwable $e) {
+            ErrorLogger::logException('coin_deduct', $e, $tid, $oid);
+        }
 
         // Log + WA link
         $waUrl = '';
@@ -333,7 +335,9 @@ if ($action === 'reminder' && $_SERVER['REQUEST_METHOD'] === 'POST') {
                  . "Mohon segera diselesaikan ya 🙏";
             $waUrl = "https://wa.me/$p?text=".urlencode($txt);
         }
-        try { CoinLedger::deduct('reminder_piutang', (string)$id); } catch (Throwable) {}
+        try { CoinLedger::deduct('reminder_piutang', (string)$id); } catch (Throwable $e) {
+            ErrorLogger::logException('coin_deduct', $e, $tid, $oid);
+        }
         Notifier::log($tid,$oid,'reminder_piutang','inapp',$row['telepon'] ?? null,
             "Reminder piutang #$id: {$row['nama']}",
             "Reminder ke {$row['nama']} sisa Rp ".number_format((int)$row['sisa_tagihan']));

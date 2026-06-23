@@ -54,7 +54,8 @@ if ($action) {
             $st = $db->prepare($sql);
             $st->execute([$tid, $q, $q]);
             echo json_encode(['rows' => $st->fetchAll(PDO::FETCH_ASSOC)]);
-        } catch (Throwable) {
+        } catch (Throwable $e) {
+            ErrorLogger::logException('db_error', $e, $tid);
             echo json_encode(['rows' => []]);
         }
         exit;

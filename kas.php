@@ -67,7 +67,9 @@ if ($action) {
         try {
             require_once __DIR__ . '/core/AnomalyDetector.php';
             AnomalyDetector::check($tid, $oid);
-        } catch (Throwable) {}
+        } catch (Throwable $e) {
+            ErrorLogger::logException('anomaly_check', $e, $tid, $oid);
+        }
         exit;
     }
 
