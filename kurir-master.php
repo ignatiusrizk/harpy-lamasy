@@ -20,7 +20,7 @@ if ($action) {
         $rows = TenantQuery::raw(
             "SELECT k.*, u.username AS akun_username
                FROM hl_kurir k
-          LEFT JOIN hl_users u ON u.id = k.user_id
+          LEFT JOIN hl_users u ON u.id = k.user_id AND u.tenant_id = k.tenant_id
               WHERE k.tenant_id=? AND k.outlet_id=?
               ORDER BY k.aktif DESC, k.nama ASC",
             [$tid, $oid]

@@ -77,8 +77,8 @@ if ($action) {
         $rows = TenantQuery::raw(
             "SELECT m.*, b.nama AS bahan_nama, b.satuan, u.nama AS input_by_nama
              FROM hl_bahan_mutasi m
-             JOIN hl_bahan b ON b.id = m.bahan_id
-             LEFT JOIN hl_users u ON u.id = m.input_by
+             JOIN hl_bahan b ON b.id = m.bahan_id AND b.tenant_id = m.tenant_id
+             LEFT JOIN hl_users u ON u.id = m.input_by AND u.tenant_id = m.tenant_id
              WHERE $whereStr
              ORDER BY m.created_at DESC, m.id DESC
              LIMIT 200",

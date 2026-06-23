@@ -240,7 +240,7 @@ if ($action) {
                        COALESCE(SUM(ti.subtotal),0) total
                   FROM hl_transaksi t
                   LEFT JOIN hl_transaksi_item ti ON ti.transaksi_id=t.id
-                  LEFT JOIN hl_layanan l ON l.id=ti.layanan_id
+                  LEFT JOIN hl_layanan l ON l.id=ti.layanan_id AND l.tenant_id=ti.tenant_id
                  WHERE t.tenant_id=? AND t.outlet_id=? AND DATE(t.tanggal)=?
                  GROUP BY seg ORDER BY total DESC
             ");
@@ -307,7 +307,7 @@ if ($action) {
                     t.total, t.sisa_bayar, t.status_proses,
                     DATEDIFF(CURDATE(), t.tanggal) as hari_lalu
              FROM hl_transaksi t
-             LEFT JOIN hl_pelanggan p ON p.id = t.pelanggan_id
+             LEFT JOIN hl_pelanggan p ON p.id = t.pelanggan_id AND p.tenant_id = t.tenant_id
                                       AND p.tenant_id = t.tenant_id
                                       AND p.outlet_id = t.outlet_id
              WHERE t.tenant_id = ? AND t.outlet_id = ?
@@ -346,7 +346,7 @@ if ($action) {
                         m.nama AS mesin_nama, m.kode AS mesin_kode, s.estimated_done_at,
                         TIMESTAMPDIFF(MINUTE, s.estimated_done_at, NOW()) AS lewat_menit
                  FROM hl_mesin_sesi s
-                 JOIN hl_mesin m ON m.id = s.mesin_id
+                 JOIN hl_mesin m ON m.id = s.mesin_id AND m.tenant_id = s.tenant_id
                  WHERE s.tenant_id = ? AND s.outlet_id = ?
                    AND s.status = 'running'
                    AND s.estimated_done_at IS NOT NULL
@@ -1043,7 +1043,7 @@ if ($_dashRole === 'kasir'):
     "SELECT t.id, t.no_order, t.nama_pelanggan, t.telepon, t.status_proses,
             p.alamat AS alamat_pelanggan
        FROM hl_transaksi t
-       LEFT JOIN hl_pelanggan p ON p.id = t.pelanggan_id
+       LEFT JOIN hl_pelanggan p ON p.id = t.pelanggan_id AND p.tenant_id = t.tenant_id
       WHERE t.tenant_id=? AND t.outlet_id=? AND t.status_proses='siap'
       ORDER BY t.tanggal ASC LIMIT 10",
     [$tid, $oid]

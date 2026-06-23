@@ -141,7 +141,7 @@ if ($action === 'briefing') {
         // Top layanan hari ini
         $st = $db->prepare("SELECT i.nama_layanan, COUNT(*) qty, COALESCE(SUM(i.subtotal),0) total
                               FROM hl_transaksi_item i
-                              JOIN hl_transaksi t ON t.id=i.transaksi_id
+                              JOIN hl_transaksi t ON t.id=i.transaksi_id AND t.tenant_id=i.tenant_id
                              WHERE t.tenant_id=? AND t.outlet_id=? AND DATE(t.tanggal)=?
                           GROUP BY i.nama_layanan
                           ORDER BY total DESC LIMIT 3");
@@ -368,7 +368,7 @@ if ($action === 'upselling' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         // Top layanan yang pernah dipakai pelanggan ini
         $st = $db->prepare("SELECT i.nama_layanan, COUNT(*) qty, MAX(t.tanggal) terakhir
                               FROM hl_transaksi_item i
-                              JOIN hl_transaksi t ON t.id=i.transaksi_id
+                              JOIN hl_transaksi t ON t.id=i.transaksi_id AND t.tenant_id=i.tenant_id
                              WHERE t.tenant_id=? AND t.pelanggan_id=?
                           GROUP BY i.nama_layanan
                           ORDER BY qty DESC LIMIT 5");

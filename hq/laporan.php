@@ -258,7 +258,7 @@ if ($action === 'data') {
                                       COALESCE(SUM(t.total),0) omset,
                                       COUNT(t.id) order_count
                                  FROM outlets o
-                                 LEFT JOIN hl_transaksi t ON t.outlet_id=o.id
+                                 LEFT JOIN hl_transaksi t ON t.outlet_id=o.id AND t.tenant_id=o.tenant_id
                                       AND DATE(t.tanggal) BETWEEN ? AND ?
                                 WHERE o.tenant_id=? AND o.status IN ('trial','grace','active')
                                 GROUP BY o.id, o.nama_outlet
@@ -295,7 +295,7 @@ if ($action === 'data') {
     try {
         $outletFilterAlias = $oidArg > 0 ? " AND t.outlet_id=?" : "";
         $sql = "SELECT t.pelanggan_id, p.nama, p.telepon, COUNT(*) order_count, COALESCE(SUM(t.total),0) total_spend
-                  FROM hl_transaksi t LEFT JOIN hl_pelanggan p ON p.id=t.pelanggan_id
+                  FROM hl_transaksi t LEFT JOIN hl_pelanggan p ON p.id=t.pelanggan_id AND p.tenant_id=t.tenant_id
                  WHERE t.tenant_id=? AND DATE(t.tanggal) BETWEEN ? AND ? AND t.pelanggan_id IS NOT NULL $outletFilterAlias
                  GROUP BY t.pelanggan_id, p.nama, p.telepon ORDER BY total_spend DESC LIMIT 10";
         $s = $db->prepare($sql);
@@ -336,8 +336,8 @@ if ($action === 'data') {
         $sql = "SELECT COALESCE(l.segmen,'lainnya') segmen,
                        COALESCE(SUM(ti.subtotal),0) total, COUNT(DISTINCT t.id) order_count
                   FROM hl_transaksi_item ti
-                  JOIN hl_transaksi t ON t.id = ti.transaksi_id
-                  LEFT JOIN hl_layanan l ON l.id = ti.layanan_id
+                  JOIN hl_transaksi t ON t.id = ti.transaksi_id AND t.tenant_id = ti.tenant_id
+                  LEFT JOIN hl_layanan l ON l.id = ti.layanan_id AND l.tenant_id = ti.tenant_id
                  WHERE t.tenant_id=? AND DATE(t.tanggal) BETWEEN ? AND ? $segFilter
                  GROUP BY COALESCE(l.segmen,'lainnya') ORDER BY total DESC";
         $s = $db->prepare($sql);
@@ -421,7 +421,7 @@ if ($action === 'ai_insight') {
     try {
         $sql = "SELECT ti.nama_layanan AS nama, COUNT(*) qty, COALESCE(SUM(ti.subtotal),0) total
                   FROM hl_transaksi_item ti
-                  JOIN hl_transaksi t ON t.id = ti.transaksi_id
+                  JOIN hl_transaksi t ON t.id = ti.transaksi_id AND t.tenant_id = ti.tenant_id
                  WHERE t.tenant_id=? AND DATE(t.tanggal) BETWEEN ? AND ?
                  " . ($oidArg > 0 ? " AND t.outlet_id=?" : "") . "
                  GROUP BY ti.nama_layanan ORDER BY total DESC LIMIT 5";
@@ -435,7 +435,7 @@ if ($action === 'ai_insight') {
     try {
         $sql = "SELECT u.nama, COUNT(*) order_count
                   FROM hl_transaksi t
-                  LEFT JOIN hl_users u ON u.id = t.user_id
+                  LEFT JOIN hl_users u ON u.id = t.user_id AND u.tenant_id = t.tenant_id
                  WHERE t.tenant_id=? AND DATE(t.tanggal) BETWEEN ? AND ? AND t.user_id IS NOT NULL
                  " . ($oidArg > 0 ? " AND t.outlet_id=?" : "") . "
                  GROUP BY u.nama ORDER BY order_count DESC LIMIT 3";
@@ -453,7 +453,7 @@ if ($action === 'ai_insight') {
         try {
             $sql = "SELECT o.nama_outlet, COUNT(t.id) order_count, COALESCE(SUM(t.total),0) omset
                       FROM outlets o
-                      LEFT JOIN hl_transaksi t ON t.outlet_id=o.id AND DATE(t.tanggal) BETWEEN ? AND ?
+                      LEFT JOIN hl_transaksi t ON t.outlet_id=o.id AND t.tenant_id=o.tenant_id AND DATE(t.tanggal) BETWEEN ? AND ?
                      WHERE o.tenant_id=? AND o.status IN ('trial','grace','active')
                      GROUP BY o.id, o.nama_outlet ORDER BY omset DESC";
             $s = $db->prepare($sql);

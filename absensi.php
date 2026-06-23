@@ -347,7 +347,7 @@ if ($action) {
             $db = Database::get();
             $stmt = $db->prepare("SELECT h.*, u.nama AS nama_keluar
                                     FROM hl_shift_handover h
-                                    LEFT JOIN hl_users u ON u.id=h.user_id_keluar
+                                    LEFT JOIN hl_users u ON u.id=h.user_id_keluar AND u.tenant_id=h.tenant_id
                                    WHERE h.tenant_id=? AND h.outlet_id=?
                                      AND h.status='submitted'
                                    ORDER BY h.id DESC LIMIT 5");

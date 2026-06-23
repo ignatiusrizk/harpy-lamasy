@@ -136,7 +136,7 @@ if ($action === 'data_karyawan') {
     if ($oid <= 0) { echo json_encode(['error'=>'Input invalid']); exit; }
     try {
         $st = $db->prepare("SELECT g.id, g.user_id, u.name, g.gaji_pokok, g.bonus, g.potongan, g.total, g.status
-                              FROM hl_gaji g JOIN hl_users u ON u.id=g.user_id
+                              FROM hl_gaji g JOIN hl_users u ON u.id=g.user_id AND u.tenant_id=g.tenant_id
                              WHERE g.tenant_id=? AND g.outlet_id=? AND g.bulan=?
                              ORDER BY u.name");
         $st->execute([$tid, $oid, $bulan]);

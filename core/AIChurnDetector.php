@@ -124,7 +124,7 @@ class AIChurnDetector
             $stmt = $db->prepare("
                 SELECT ti.nama_layanan, COUNT(*) cnt
                   FROM hl_transaksi_item ti
-                  JOIN hl_transaksi t ON t.id = ti.transaksi_id
+                  JOIN hl_transaksi t ON t.id = ti.transaksi_id AND t.tenant_id = ti.tenant_id
                  WHERE t.tenant_id = ? AND t.pelanggan_id = ?
                  GROUP BY ti.nama_layanan
                  ORDER BY cnt DESC LIMIT 1

@@ -32,8 +32,8 @@ if ($action) {
                         u_req.nama AS requester_nama,
                         u_rev.nama AS reviewer_nama
                    FROM hl_delete_request r
-                   LEFT JOIN hl_users u_req ON u_req.id = r.requested_by
-                   LEFT JOIN hl_users u_rev ON u_rev.id = r.reviewed_by
+                   LEFT JOIN hl_users u_req ON u_req.id = r.requested_by AND u_req.tenant_id = r.tenant_id
+                   LEFT JOIN hl_users u_rev ON u_rev.id = r.reviewed_by AND u_rev.tenant_id = r.tenant_id
                   WHERE r.tenant_id = ? AND r.status = ?
                   ORDER BY r.requested_at DESC
                   LIMIT 200"
@@ -70,9 +70,9 @@ if ($action) {
                             p.nama AS pelanggan_nama, p.telepon AS pelanggan_telp,
                             u_req.nama AS requester_nama, u_rev.nama AS reviewer_nama
                        FROM hl_deposit_refund r
-                       LEFT JOIN hl_pelanggan p ON p.id = r.pelanggan_id
-                       LEFT JOIN hl_users u_req ON u_req.id = r.requested_by
-                       LEFT JOIN hl_users u_rev ON u_rev.id = r.reviewed_by
+                       LEFT JOIN hl_pelanggan p ON p.id = r.pelanggan_id AND p.tenant_id = r.tenant_id
+                       LEFT JOIN hl_users u_req ON u_req.id = r.requested_by AND u_req.tenant_id = r.tenant_id
+                       LEFT JOIN hl_users u_rev ON u_rev.id = r.reviewed_by AND u_rev.tenant_id = r.tenant_id
                       WHERE r.tenant_id = ? AND r.status IN $refundStatus
                       ORDER BY r.requested_at DESC LIMIT 200"
                 );

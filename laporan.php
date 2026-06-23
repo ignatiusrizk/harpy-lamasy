@@ -246,7 +246,7 @@ if ($action) {
             $rows = TenantQuery::raw(
                 "SELECT ti.nama_layanan AS nama, COUNT(*) qty, COALESCE(SUM(ti.subtotal),0) total
                   FROM hl_transaksi_item ti
-                  JOIN hl_transaksi t ON t.id = ti.transaksi_id
+                  JOIN hl_transaksi t ON t.id = ti.transaksi_id AND t.tenant_id = ti.tenant_id
                  WHERE t.tenant_id=? AND t.outlet_id=? AND DATE(t.tanggal) BETWEEN ? AND ?
                  GROUP BY ti.nama_layanan ORDER BY total DESC LIMIT 5",
                 [$tid, $oid, $dari, $sampai]

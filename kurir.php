@@ -31,7 +31,7 @@ if ($action) {
         $rows = TenantQuery::raw(
             "SELECT aj.*, t.no_order, t.nama_pelanggan AS order_nama
                FROM hl_antar_jemput aj
-          LEFT JOIN hl_transaksi t ON t.id = aj.transaksi_id
+          LEFT JOIN hl_transaksi t ON t.id = aj.transaksi_id AND t.tenant_id = aj.tenant_id
               WHERE aj.tenant_id=? AND aj.outlet_id=? AND aj.kurir_id=?
                 AND aj.status IN ('assigned','menuju','sampai')
                 AND DATE(aj.updated_at) >= ?

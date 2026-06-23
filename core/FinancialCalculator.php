@@ -44,7 +44,7 @@ class FinancialCalculator
             $s = $db->prepare("
                 SELECT COALESCE(SUM(t.total), 0)
                 FROM hl_transaksi t
-                LEFT JOIN hl_pelanggan p ON p.id = t.pelanggan_id
+                LEFT JOIN hl_pelanggan p ON p.id = t.pelanggan_id AND p.tenant_id = t.tenant_id AND p.tenant_id = t.tenant_id
                 WHERE t.tenant_id = ?
                   AND t.status_bayar = 'lunas'
                   AND DATE(t.tanggal) BETWEEN ? AND ?
@@ -62,7 +62,7 @@ class FinancialCalculator
             $s = $db->prepare("
                 SELECT COALESCE(SUM(t.total), 0)
                 FROM hl_transaksi t
-                JOIN hl_pelanggan p ON p.id = t.pelanggan_id
+                JOIN hl_pelanggan p ON p.id = t.pelanggan_id AND p.tenant_id = t.tenant_id
                 WHERE t.tenant_id = ?
                   AND t.status_bayar = 'lunas'
                   AND DATE(t.tanggal) BETWEEN ? AND ?

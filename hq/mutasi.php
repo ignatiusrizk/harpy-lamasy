@@ -37,11 +37,11 @@ if ($action === 'data') {
 
         $sql = "SELECT ko.id, ko.karyawan_id, ko.outlet_id, ko.is_active,
                        ko.assigned_at, ko.unassigned_at, ko.assigned_by, ko.notes,
-                       (SELECT nama FROM hl_users WHERE id=ko.karyawan_id) AS karyawan_nama,
-                       (SELECT username FROM hl_users WHERE id=ko.karyawan_id) AS karyawan_username,
-                       (SELECT role FROM hl_users WHERE id=ko.karyawan_id) AS karyawan_role,
+                       (SELECT nama FROM hl_users WHERE id=ko.karyawan_id AND tenant_id=ko.tenant_id) AS karyawan_nama,
+                       (SELECT username FROM hl_users WHERE id=ko.karyawan_id AND tenant_id=ko.tenant_id) AS karyawan_username,
+                       (SELECT role FROM hl_users WHERE id=ko.karyawan_id AND tenant_id=ko.tenant_id) AS karyawan_role,
                        (SELECT nama_outlet FROM outlets WHERE id=ko.outlet_id AND tenant_id=ko.tenant_id) AS outlet_nama,
-                       (SELECT nama FROM hl_users WHERE id=ko.assigned_by) AS by_nama
+                       (SELECT nama FROM hl_users WHERE id=ko.assigned_by AND tenant_id=ko.tenant_id) AS by_nama
                   FROM hl_karyawan_outlet ko
                  WHERE " . implode(' AND ', $where) . "
                  ORDER BY COALESCE(ko.unassigned_at, ko.assigned_at) DESC LIMIT 300";

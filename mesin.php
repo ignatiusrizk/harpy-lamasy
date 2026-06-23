@@ -110,8 +110,8 @@ if ($action) {
             "SELECT s.*, m.nama AS mesin_nama, m.kode AS mesin_kode, m.tipe AS mesin_tipe,
                     u.nama AS confirmed_by_nama
              FROM hl_mesin_sesi s
-             JOIN hl_mesin m ON m.id = s.mesin_id
-             LEFT JOIN hl_users u ON u.id = s.confirmed_by
+             JOIN hl_mesin m ON m.id = s.mesin_id AND m.tenant_id = s.tenant_id
+             LEFT JOIN hl_users u ON u.id = s.confirmed_by AND u.tenant_id = s.tenant_id
              WHERE $whereStr
              ORDER BY s.id DESC LIMIT 300",
             $params

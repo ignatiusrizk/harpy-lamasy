@@ -259,7 +259,7 @@ if ($action) {
         try {
             $sql = "SELECT v.id, v.kode, v.is_used, v.used_at, v.nama_penerima, v.telepon,
                            v.expired_at, v.created_at, v.promo_id,
-                           (SELECT nama FROM hl_promo WHERE id=v.promo_id) AS promo_nama
+                           (SELECT nama FROM hl_promo WHERE id=v.promo_id AND tenant_id=v.tenant_id) AS promo_nama
                       FROM hl_voucher v
                      WHERE v.tenant_id=?";
             $params = [$tid];

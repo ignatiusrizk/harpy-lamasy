@@ -62,7 +62,7 @@ if ($action) {
             "SELECT r.*, sa.name AS sa_nama, u.nama AS user_nama
              FROM support_ticket_replies r
              LEFT JOIN super_admins sa ON sa.id = r.superadmin_id
-             LEFT JOIN hl_users u ON u.id = r.user_id
+             LEFT JOIN hl_users u ON u.id = r.user_id AND u.tenant_id = r.tenant_id
              WHERE r.ticket_id = ? AND r.is_internal = 0
              ORDER BY r.created_at ASC"
         );

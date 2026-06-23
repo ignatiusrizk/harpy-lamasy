@@ -89,8 +89,9 @@ if ($action === 'data') {
                 $byNama = '-';
                 if ($byUid > 0) {
                     try {
-                        $u = $db->prepare("SELECT nama FROM hl_users WHERE id=? LIMIT 1");
-                        $u->execute([$byUid]);
+                        // Tenant scope — kalau byUid superadmin/user tenant lain, jangan expose nama
+                        $u = $db->prepare("SELECT nama FROM hl_users WHERE id=? AND tenant_id=? LIMIT 1");
+                        $u->execute([$byUid, $tid]);
                         $byNama = (string)($u->fetchColumn() ?: '-');
                     } catch (Throwable) {}
                 }

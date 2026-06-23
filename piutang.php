@@ -31,7 +31,7 @@ if ($action === 'list') {
                    pl.nama AS pelanggan_nama, pl.telepon AS pelanggan_wa,
                    DATEDIFF(p.jatuh_tempo, CURDATE()) AS hari_tempo
               FROM hl_piutang p
-              JOIN hl_pelanggan pl ON pl.id=p.pelanggan_id AND pl.tenant_id=p.tenant_id
+              JOIN hl_pelanggan pl ON pl.id=p.pelanggan_id AND pl.tenant_id=p.tenant_id AND pl.tenant_id=p.tenant_id
              WHERE $where
              ORDER BY p.status!='lunas' DESC, p.jatuh_tempo ASC LIMIT 200
         ");
@@ -142,7 +142,7 @@ if ($action === 'generate_bulk' && $_SERVER['REQUEST_METHOD'] === 'POST') {
                     COALESCE(SUM(t.total), 0) AS total_tagihan,
                     COALESCE(SUM(t.dp),    0) AS total_dibayar
                FROM hl_transaksi t
-               JOIN hl_pelanggan p ON p.id = t.pelanggan_id
+               JOIN hl_pelanggan p ON p.id = t.pelanggan_id AND p.tenant_id = t.tenant_id
               WHERE $where AND t.pelanggan_id IS NOT NULL
               GROUP BY t.pelanggan_id, p.nama
              HAVING cnt > 0"
@@ -199,7 +199,7 @@ if ($action === 'mark_invoiced' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!CoinLedger::canAfford('invoice_b2b')) { echo json_encode(['error'=>'Coin tidak cukup (butuh 200)']); exit; }
 
         $s = $db->prepare("SELECT p.*, pl.nama, pl.telepon FROM hl_piutang p
-                            JOIN hl_pelanggan pl ON pl.id=p.pelanggan_id
+                            JOIN hl_pelanggan pl ON pl.id=p.pelanggan_id AND pl.tenant_id=p.tenant_id
                            WHERE p.id=? AND p.tenant_id=? AND p.outlet_id=?");
         $s->execute([$id,$tid,$oid]); $row = $s->fetch(PDO::FETCH_ASSOC);
         if (!$row) { echo json_encode(['error'=>'Piutang tidak ditemukan']); exit; }
@@ -250,7 +250,7 @@ if ($action === 'bayar' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
         $db->beginTransaction();
         $s = $db->prepare("SELECT p.*, pl.nama FROM hl_piutang p
-                            JOIN hl_pelanggan pl ON pl.id=p.pelanggan_id
+                            JOIN hl_pelanggan pl ON pl.id=p.pelanggan_id AND pl.tenant_id=p.tenant_id
                            WHERE p.id=? AND p.tenant_id=? AND p.outlet_id=? FOR UPDATE");
         $s->execute([$id,$tid,$oid]); $row = $s->fetch(PDO::FETCH_ASSOC);
         if (!$row) { $db->rollBack(); echo json_encode(['error'=>'Piutang tidak ditemukan']); exit; }
@@ -297,7 +297,7 @@ if ($action === 'reminder' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
         if (!CoinLedger::canAfford('reminder_piutang')) { echo json_encode(['error'=>'Coin tidak cukup (butuh 100)']); exit; }
         $s = $db->prepare("SELECT p.*, pl.nama, pl.telepon FROM hl_piutang p
-                            JOIN hl_pelanggan pl ON pl.id=p.pelanggan_id
+                            JOIN hl_pelanggan pl ON pl.id=p.pelanggan_id AND pl.tenant_id=p.tenant_id
                            WHERE p.id=? AND p.tenant_id=? AND p.outlet_id=? AND p.status!='lunas'");
         $s->execute([$id,$tid,$oid]); $row = $s->fetch(PDO::FETCH_ASSOC);
         if (!$row) { echo json_encode(['error'=>'Piutang tidak ditemukan / sudah lunas']); exit; }

@@ -107,7 +107,7 @@ if ($action) {
                         p.nama AS nama_pelanggan, p.telepon,
                         t.nama_tier, t.diskon_persen
                    FROM hl_pelanggan_member m
-                   JOIN hl_pelanggan p ON p.id = m.pelanggan_id
+                   JOIN hl_pelanggan p ON p.id = m.pelanggan_id AND p.tenant_id = m.tenant_id
                    JOIN hl_member_tier t ON t.id = m.member_tier_id
                   WHERE m.tenant_id = ?
                   ORDER BY m.created_at DESC LIMIT 200"
