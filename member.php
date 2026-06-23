@@ -108,9 +108,9 @@ if ($action) {
                         t.nama_tier, t.diskon_persen
                    FROM hl_pelanggan_member m
                    JOIN hl_pelanggan p ON p.id = m.pelanggan_id AND p.tenant_id = m.tenant_id
-                   JOIN hl_member_tier t ON t.id = m.member_tier_id
+                   JOIN hl_member_tier t ON t.id = m.member_tier_id AND t.tenant_id = m.tenant_id
                   WHERE m.tenant_id = ?
-                  ORDER BY m.created_at DESC LIMIT 200"
+                  ORDER BY m.created_at DESC LIMIT 1000"
             );
             $st->execute([$tid]);
             echo json_encode(['rows' => $st->fetchAll(PDO::FETCH_ASSOC)]);
@@ -175,7 +175,7 @@ if ($action) {
 
   <!-- Enrollment list -->
   <div class="hl-card">
-    <div class="hl-card-header"><strong>Pendaftaran Member Terbaru (200 terakhir)</strong></div>
+    <div class="hl-card-header"><strong>Pendaftaran Member Terbaru (1000 terakhir)</strong></div>
     <div class="hl-card-body" style="padding:0">
       <div id="enrollList" style="min-height:80px;overflow-x:auto">⏳ Memuat...</div>
     </div>
