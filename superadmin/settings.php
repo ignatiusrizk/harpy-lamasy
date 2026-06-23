@@ -543,6 +543,7 @@ $pageTitle  = 'Platform Settings';
   <button class="set-tab" onclick="switchTab('tos',this)">📋 ToS Versions</button>
   <button class="set-tab" onclick="switchTab('tips',this)">💡 Splash Tips</button>
   <button class="set-tab" onclick="switchTab('notify',this);loadNotify()">🔔 Notifications</button>
+  <button class="set-tab" onclick="switchTab('team',this);loadTeam()">👥 SA Team</button>
 </div>
 
 <!-- ══════════════════════════ MAINTENANCE TAB ═══════════════════════════ -->
@@ -708,6 +709,129 @@ $pageTitle  = 'Platform Settings';
 
     <div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.5);margin-bottom:8px">Recent Log (last 20)</div>
     <div id="notifLogList" style="display:flex;flex-direction:column;gap:6px"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════ SA TEAM TAB ═══════════════════════════ -->
+<div class="set-panel" id="tab-team">
+
+  <div class="set-card">
+    <div class="set-card-head" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <div>
+        <h3 style="margin:0;font-size:15px;font-weight:700">👥 Super Admin Team</h3>
+        <p style="margin:6px 0 0;font-size:13px;color:rgba(255,255,255,.5)">Kelola akun SA, role, dan akses. Hanya Owner yang bisa akses tab ini.</p>
+      </div>
+      <button class="sa-btn sa-btn-primary" onclick="openTeamCreate()">➕ Tambah Admin</button>
+    </div>
+
+    <div class="sa-table-wrap">
+      <table class="sa-table" id="teamTable">
+        <thead>
+          <tr>
+            <th>Admin</th>
+            <th>Username</th>
+            <th>Email</th>
+            <th>Role</th>
+            <th>Notify</th>
+            <th>Status</th>
+            <th>Last Login</th>
+            <th>Aksi</th>
+          </tr>
+        </thead>
+        <tbody id="teamTableBody">
+          <tr><td colspan="8" style="text-align:center;padding:24px;color:rgba(255,255,255,.4)">Memuat...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══════════ MODAL: Create SA ══════════ -->
+<div id="teamCreateModal" class="sa-modal-overlay">
+  <div class="sa-modal" style="max-width:520px">
+    <h3>➕ Tambah Super Admin</h3>
+    <div class="form-group">
+      <label>Username *</label>
+      <input type="text" id="tc_username" placeholder="a-z, 0-9, underscore, 3-30 char"
+             style="width:100%;padding:10px 14px;background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.1);border-radius:8px;color:#fff;font-size:14px;outline:none">
+    </div>
+    <div class="form-group">
+      <label>Nama Lengkap *</label>
+      <input type="text" id="tc_name" placeholder="Nama tampil di panel"
+             style="width:100%;padding:10px 14px;background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.1);border-radius:8px;color:#fff;font-size:14px;outline:none">
+    </div>
+    <div class="form-group">
+      <label>Email (untuk notif)</label>
+      <input type="email" id="tc_email" placeholder="email@harpy.id"
+             style="width:100%;padding:10px 14px;background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.1);border-radius:8px;color:#fff;font-size:14px;outline:none">
+    </div>
+    <div class="form-group">
+      <label>Password * (min 8 karakter)</label>
+      <input type="password" id="tc_password" placeholder="••••••••"
+             style="width:100%;padding:10px 14px;background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.1);border-radius:8px;color:#fff;font-size:14px;outline:none">
+    </div>
+    <div class="form-group">
+      <label>Role *</label>
+      <select id="tc_role_id" style="width:100%;padding:10px 14px;background:rgba(15,28,58,.9);border:1.5px solid rgba(255,255,255,.1);border-radius:8px;color:#fff;font-size:14px;outline:none">
+        <option value="">Pilih role...</option>
+      </select>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px">
+      <button class="sa-btn sa-btn-outline" onclick="closeTeamModals()">Batal</button>
+      <button class="sa-btn sa-btn-primary" onclick="submitTeamCreate()">Simpan</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ MODAL: Edit SA ══════════ -->
+<div id="teamEditModal" class="sa-modal-overlay">
+  <div class="sa-modal" style="max-width:520px">
+    <h3>✏️ Edit Super Admin</h3>
+    <input type="hidden" id="te_id"/>
+    <div class="form-group">
+      <label>Nama Lengkap *</label>
+      <input type="text" id="te_name"
+             style="width:100%;padding:10px 14px;background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.1);border-radius:8px;color:#fff;font-size:14px;outline:none">
+    </div>
+    <div class="form-group">
+      <label>Email</label>
+      <input type="email" id="te_email"
+             style="width:100%;padding:10px 14px;background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.1);border-radius:8px;color:#fff;font-size:14px;outline:none">
+    </div>
+    <div class="form-group">
+      <label>Role *</label>
+      <select id="te_role_id" style="width:100%;padding:10px 14px;background:rgba(15,28,58,.9);border:1.5px solid rgba(255,255,255,.1);border-radius:8px;color:#fff;font-size:14px;outline:none">
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Status</label>
+      <select id="te_is_active" style="width:100%;padding:10px 14px;background:rgba(15,28,58,.9);border:1.5px solid rgba(255,255,255,.1);border-radius:8px;color:#fff;font-size:14px;outline:none">
+        <option value="1">Aktif</option>
+        <option value="0">Nonaktif</option>
+      </select>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px">
+      <button class="sa-btn sa-btn-outline" onclick="closeTeamModals()">Batal</button>
+      <button class="sa-btn sa-btn-primary" onclick="submitTeamEdit()">Simpan</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ MODAL: Reset Password ══════════ -->
+<div id="teamPwModal" class="sa-modal-overlay">
+  <div class="sa-modal" style="max-width:420px">
+    <h3>🔑 Reset Password</h3>
+    <input type="hidden" id="tp_id"/>
+    <div class="form-group">
+      <label>Password Baru * (min 8 karakter)</label>
+      <input type="password" id="tp_password" placeholder="Password baru"
+             style="width:100%;padding:10px 14px;background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.1);border-radius:8px;color:#fff;font-size:14px;outline:none">
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px">
+      <button class="sa-btn sa-btn-outline" onclick="closeTeamModals()">Batal</button>
+      <button class="sa-btn sa-btn-danger" onclick="submitTeamPw()">Reset Password</button>
+    </div>
   </div>
 </div>
 
@@ -1041,6 +1165,167 @@ async function testNotify() {
 function escapeHtml(s) {
   return String(s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
+
+// ════════════════════════════════════════════════════════════════
+// SA TEAM TAB
+// ════════════════════════════════════════════════════════════════
+let teamRoles = [];
+
+async function loadTeam() {
+  const r = await saFetch('?action=team_list');
+  if (!r || !r.ok) {
+    if (r && r.error) showToast(r.error, false);
+    return;
+  }
+  teamRoles = r.roles || [];
+
+  // Populate role selects
+  const opts = teamRoles.map(role =>
+    `<option value="${role.id}">${escapeHtml(role.name)}</option>`
+  ).join('');
+  document.getElementById('tc_role_id').innerHTML = '<option value="">Pilih role...</option>' + opts;
+  document.getElementById('te_role_id').innerHTML = opts;
+
+  const tbody = document.getElementById('teamTableBody');
+  if (!r.admins || !r.admins.length) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:24px;color:rgba(255,255,255,.4)">Belum ada admin.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = r.admins.map(a => {
+    const roleBadge = a.role_slug === 'owner'   ? 'sa-badge-indigo' :
+                      a.role_slug === 'finance'  ? 'sa-badge-green' :
+                      a.role_slug === 'support'  ? 'sa-badge-blue' :
+                      a.role_slug === 'viewer'   ? 'sa-badge-yellow' : 'sa-badge-indigo';
+    const statusBadge = a.is_active == 1
+      ? '<span class="sa-badge sa-badge-active">Aktif</span>'
+      : '<span class="sa-badge sa-badge-suspended">Nonaktif</span>';
+    const ll = a.last_login
+      ? new Date(a.last_login).toLocaleDateString('id-ID', {day:'2-digit',month:'short',year:'numeric'})
+      : '-';
+    const rowData = JSON.stringify(a).replace(/'/g,"&apos;");
+    return `<tr>
+      <td><strong style="color:#fff">${escapeHtml(a.name)}</strong></td>
+      <td><code style="color:#A5B4FC;font-size:12px">@${escapeHtml(a.username)}</code></td>
+      <td style="font-size:12px;color:rgba(255,255,255,.6)">${escapeHtml(a.email||'—')}</td>
+      <td><span class="sa-badge ${roleBadge}">${escapeHtml(a.role_name||'—')}</span></td>
+      <td style="font-size:12px">${a.notify_enabled==1?'✓':'—'}</td>
+      <td>${statusBadge}</td>
+      <td style="font-size:12px;color:rgba(255,255,255,.5)">${escapeHtml(ll)}</td>
+      <td>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <button class="sa-btn sa-btn-outline sa-btn-sm" onclick='openTeamEdit(${rowData})'>✏️ Edit</button>
+          <button class="sa-btn sa-btn-outline sa-btn-sm" onclick="openTeamPw(${a.id})">🔑</button>
+          ${a.role_slug !== 'owner' ? `<button class="sa-btn sa-btn-danger sa-btn-sm" onclick="deleteTeamAdmin(${a.id},'${escapeHtml(a.name)}')">🗑️</button>` : ''}
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function openTeamCreate() {
+  document.getElementById('tc_username').value = '';
+  document.getElementById('tc_name').value     = '';
+  document.getElementById('tc_email').value    = '';
+  document.getElementById('tc_password').value = '';
+  document.getElementById('tc_role_id').value  = '';
+  document.getElementById('teamCreateModal').classList.add('open');
+}
+
+function openTeamEdit(a) {
+  document.getElementById('te_id').value      = a.id;
+  document.getElementById('te_name').value    = a.name || '';
+  document.getElementById('te_email').value   = a.email || '';
+  document.getElementById('te_role_id').value = a.role_id || '';
+  document.getElementById('te_is_active').value = a.is_active ?? 1;
+  document.getElementById('teamEditModal').classList.add('open');
+}
+
+function openTeamPw(id) {
+  document.getElementById('tp_id').value = id;
+  document.getElementById('tp_password').value = '';
+  document.getElementById('teamPwModal').classList.add('open');
+}
+
+function closeTeamModals() {
+  ['teamCreateModal','teamEditModal','teamPwModal'].forEach(id => {
+    document.getElementById(id).classList.remove('open');
+  });
+}
+
+async function submitTeamCreate() {
+  const fd = new FormData();
+  fd.append('_csrf', CSRF);
+  fd.append('username', document.getElementById('tc_username').value.trim());
+  fd.append('name',     document.getElementById('tc_name').value.trim());
+  fd.append('email',    document.getElementById('tc_email').value.trim());
+  fd.append('password', document.getElementById('tc_password').value);
+  fd.append('role_id',  document.getElementById('tc_role_id').value);
+
+  const r = await saFetch('?action=team_create', { method:'POST', body:fd });
+  if (r && r.ok) {
+    showToast('Admin berhasil ditambahkan');
+    closeTeamModals();
+    loadTeam();
+  } else {
+    showToast(r?.error || 'Gagal menambahkan admin', false);
+  }
+}
+
+async function submitTeamEdit() {
+  const fd = new FormData();
+  fd.append('_csrf',      CSRF);
+  fd.append('id',         document.getElementById('te_id').value);
+  fd.append('name',       document.getElementById('te_name').value.trim());
+  fd.append('email',      document.getElementById('te_email').value.trim());
+  fd.append('role_id',    document.getElementById('te_role_id').value);
+  fd.append('is_active',  document.getElementById('te_is_active').value);
+
+  const r = await saFetch('?action=team_update', { method:'POST', body:fd });
+  if (r && r.ok) {
+    showToast('Admin berhasil diupdate');
+    closeTeamModals();
+    loadTeam();
+  } else {
+    showToast(r?.error || 'Gagal update admin', false);
+  }
+}
+
+async function submitTeamPw() {
+  const fd = new FormData();
+  fd.append('_csrf',        CSRF);
+  fd.append('id',           document.getElementById('tp_id').value);
+  fd.append('new_password', document.getElementById('tp_password').value);
+
+  const r = await saFetch('?action=team_reset_password', { method:'POST', body:fd });
+  if (r && r.ok) {
+    showToast('Password berhasil di-reset');
+    closeTeamModals();
+  } else {
+    showToast(r?.error || 'Gagal reset password', false);
+  }
+}
+
+async function deleteTeamAdmin(id, name) {
+  if (!confirm(`Nonaktifkan akun "${name}"?\nAkun akan di-set is_active=0 (soft delete).`)) return;
+  const fd = new FormData();
+  fd.append('_csrf', CSRF);
+  fd.append('id', id);
+  const r = await saFetch('?action=team_delete', { method:'POST', body:fd });
+  if (r && r.ok) {
+    showToast('Admin dinonaktifkan');
+    loadTeam();
+  } else {
+    showToast(r?.error || 'Gagal menghapus admin', false);
+  }
+}
+
+// Close modals on overlay click
+['teamCreateModal','teamEditModal','teamPwModal'].forEach(id => {
+  document.getElementById(id)?.addEventListener('click', function(e) {
+    if (e.target === this) closeTeamModals();
+  });
+});
 
 // Init
 loadMaintStatus();
