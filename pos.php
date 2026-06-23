@@ -1026,7 +1026,6 @@ textarea{resize:vertical;min-height:64px}
       <div class="card">
         <div class="card-header">
           <div class="card-title">🧺 Layanan yang Digunakan</div>
-          <button class="btn btn-teal-sm" onclick="addEmptyRow()">+ Tambah Baris</button>
         </div>
         <div class="card-body" style="padding-bottom:12px">
 
@@ -1111,7 +1110,7 @@ textarea{resize:vertical;min-height:64px}
             </table>
           </div>
           <div id="emptyItems" style="text-align:center;padding:20px;color:var(--gray);font-size:14px">
-            Pilih layanan di atas atau klik "+ Tambah Baris"
+            Pilih layanan di atas dari daftar
           </div>
 
           <!-- FOTO KONDISI CUCIAN -->
