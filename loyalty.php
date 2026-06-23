@@ -315,7 +315,7 @@ if ($action) {
 
 <script>
 const CAN_EDIT_LOYALTY = <?= hasPermission('pelanggan.edit') ? 'true' : 'false' ?>;
-const USER_ROLE = <?= json_encode($user['role'] ?? '') ?>;
+const CAN_MANAGE_HQ_REWARD = <?= TenantResolver::isOwnerLevel() ? 'true' : 'false' ?>;
 
 async function loadConfig(){
   try{
@@ -379,7 +379,7 @@ async function loadRewards(){
       const badge = r.hq_managed
         ? '<span class="pill" style="background:#DBEAFE;color:#1E40AF">🏢 HQ</span>'
         : '<span class="pill" style="background:#FEF3C7;color:#92400E">🏪 Outlet ini</span>';
-      const canEdit = CAN_EDIT_LOYALTY && (!r.hq_managed || USER_ROLE === 'owner' || USER_ROLE === 'superadmin');
+      const canEdit = CAN_EDIT_LOYALTY && (!r.hq_managed || CAN_MANAGE_HQ_REWARD);
       return `<div class="reward-row ${r.is_active==1?'':'inactive'}">
         <div>
           <div style="font-size:14px;font-weight:700;color:var(--navy)">${esc(r.nama_reward)} ${badge}</div>

@@ -72,19 +72,20 @@ if ($action === 'regen_token' && $_SERVER['REQUEST_METHOD']==='POST') {
 // Load data
 $saldoDeposit = (float)($pel['saldo_deposit'] ?? 0);
 
-// Loyalty (kalau tabel ada)
+// Loyalty (kalau tabel ada) — defensive tenant_id filter (defense-in-depth)
 $poin = 0; $tier = '';
+$pelTid = (int)($pel['tenant_id'] ?? 0);
 try {
-    $st = $db->prepare("SELECT poin_balance FROM hl_pelanggan WHERE id=?");
-    $st->execute([(int)$pel['id']]);
+    $st = $db->prepare("SELECT poin_balance FROM hl_pelanggan WHERE id=? AND tenant_id=?");
+    $st->execute([(int)$pel['id'], $pelTid]);
     $poin = (int)($st->fetchColumn() ?: 0);
 } catch (Throwable) {}
 
 // Cari outlet last order pelanggan untuk scope rewards
 $lastOutletId = 0;
 try {
-    $st = $db->prepare("SELECT outlet_id FROM hl_transaksi WHERE pelanggan_id=? ORDER BY id DESC LIMIT 1");
-    $st->execute([(int)$pel['id']]);
+    $st = $db->prepare("SELECT outlet_id FROM hl_transaksi WHERE pelanggan_id=? AND tenant_id=? ORDER BY id DESC LIMIT 1");
+    $st->execute([(int)$pel['id'], $pelTid]);
     $lastOutletId = (int)($st->fetchColumn() ?: 0);
 } catch (Throwable) {}
 

@@ -261,7 +261,7 @@ input:checked + .toggle-slider::before{transform:translateX(18px)}
       <strong>Layanan khusus outlet ini.</strong>
       Daftar &amp; harga dasar dikelola terpusat di <strong>Master Katalog (HQ)</strong> lalu di-push ke outlet.
       Di sini kamu bisa lihat &amp; sesuaikan harga khusus outlet ini.
-      <?php if (($user['role'] ?? '') === 'owner'): ?>
+      <?php if (TenantResolver::isOwnerLevel()): ?>
         <a href="/hq/layanan" style="color:#1D4ED8;font-weight:700;text-decoration:underline">Buka Master Katalog →</a>
       <?php endif; ?>
     </div>
