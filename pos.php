@@ -1032,11 +1032,63 @@ textarea{resize:vertical;min-height:64px}
 
           <!-- Quick pick layanan -->
           <div style="margin-bottom:12px">
-            <input type="text" class="layanan-search" id="layananSearch"
-              placeholder="🔍 Cari layanan..." oninput="filterLayanan(this.value)"
-              style="margin-bottom:8px"/>
+            <div style="display:flex;gap:8px;margin-bottom:8px">
+              <input type="text" class="layanan-search" id="layananSearch"
+                placeholder="🔍 Cari layanan..." oninput="filterLayanan(this.value)"
+                style="flex:1;margin:0"/>
+              <?php if (hasPermission('layanan.create')): ?>
+              <button type="button" class="btn btn-teal-sm" onclick="openLayananQuick()" style="white-space:nowrap" title="Tambah layanan baru cepat">+ Layanan</button>
+              <?php endif; ?>
+            </div>
             <div class="layanan-grid" id="layananGrid">
               <div style="color:var(--gray);font-size:13px;padding:8px">Memuat layanan...</div>
+            </div>
+          </div>
+
+          <!-- Quick-create layanan modal -->
+          <div id="lynQuickModal" style="display:none;position:fixed;inset:0;background:rgba(15,28,58,.65);z-index:9998;align-items:center;justify-content:center;padding:20px">
+            <div style="background:#fff;border-radius:14px;padding:24px;max-width:440px;width:100%;max-height:90vh;overflow-y:auto">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+                <h3 style="margin:0;font-size:16px;font-weight:800;color:var(--navy)">➕ Tambah Layanan Baru</h3>
+                <button onclick="closeLayananQuick()" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--gray)">×</button>
+              </div>
+              <div class="form-group" style="margin-bottom:10px">
+                <label>Nama Layanan *</label>
+                <input type="text" id="lyn_q_nama" class="input" placeholder="Misal: Cuci Setrika Reguler"/>
+              </div>
+              <div class="form-row" style="margin-bottom:10px">
+                <div class="form-group">
+                  <label>Kategori</label>
+                  <input type="text" id="lyn_q_kategori" class="input" placeholder="Reguler/Express/Premium"/>
+                </div>
+                <div class="form-group">
+                  <label>Satuan</label>
+                  <select id="lyn_q_satuan" class="input">
+                    <option value="kg">kg</option>
+                    <option value="pcs">pcs</option>
+                    <option value="set">set</option>
+                    <option value="m2">m²</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-row" style="margin-bottom:10px">
+                <div class="form-group">
+                  <label>Harga / Satuan (Rp)</label>
+                  <input type="number" id="lyn_q_harga" class="input" placeholder="7000" min="0" step="500"/>
+                </div>
+                <div class="form-group">
+                  <label>Estimasi Jam *</label>
+                  <input type="number" id="lyn_q_jam" class="input" value="24" min="1" max="168" placeholder="24"/>
+                </div>
+              </div>
+              <div class="form-group" style="margin-bottom:14px">
+                <label>Min. Order (opsional)</label>
+                <input type="number" id="lyn_q_min" class="input" value="0" min="0" step="0.5" placeholder="0 = tidak ada minimum"/>
+              </div>
+              <div style="display:flex;gap:10px">
+                <button class="btn btn-secondary" onclick="closeLayananQuick()" style="flex:1">Batal</button>
+                <button class="btn btn-primary" onclick="saveLayananQuick()" style="flex:1.5">💾 Simpan & Pakai</button>
+              </div>
             </div>
           </div>
 
@@ -1420,30 +1472,100 @@ function filterLayanan(q) {
 }
 
 function addLayananItem(id, nama, satuan, harga) {
-  // Lookup layanan utk qty_minimum
+  // Lookup layanan utk qty_minimum + estimasi_jam
   const lyn = (layananAll || []).find(l => l.id == id) || {};
   const qMin = parseFloat(lyn.qty_minimum) || 0;
+  const estJam = parseInt(lyn.estimasi_jam) || 24;
   // Default jumlah = qty_minimum kalau ada, else 1
   const defaultJml = qMin > 0 ? qMin : 1;
 
   const existIdx = items.findIndex(i => i.layanan_id == id && !i.catatan_item);
   if (existIdx >= 0) {
     items[existIdx].jumlah += 1;
-    renderItems(); recalc();
+    renderItems(); recalc(); applyMaxEstimasi();
     showToast('Quantity ' + nama + ' +1', 'success');
     return;
   }
   const existWithNote = items.findIndex(i => i.layanan_id == id && i.catatan_item);
   if (existWithNote >= 0) {
     if (confirm(nama + ' sudah ada di daftar.\n\nOK = Tambah baris baru\nBatal = Tidak jadi')) {
-      items.push({layanan_id:id,nama_layanan:nama,satuan,jumlah:defaultJml,harga_satuan:harga,catatan_item:'',express_tier_nama:null,biaya_express:0,qty_minimum:qMin});
-      renderItems(); recalc();
+      items.push({layanan_id:id,nama_layanan:nama,satuan,jumlah:defaultJml,harga_satuan:harga,catatan_item:'',express_tier_nama:null,biaya_express:0,qty_minimum:qMin,estimasi_jam:estJam});
+      renderItems(); recalc(); applyMaxEstimasi();
     }
     return;
   }
-  items.push({layanan_id:id,nama_layanan:nama,satuan,jumlah:defaultJml,harga_satuan:harga,catatan_item:'',express_tier_nama:null,biaya_express:0,qty_minimum:qMin});
-  renderItems(); recalc();
+  items.push({layanan_id:id,nama_layanan:nama,satuan,jumlah:defaultJml,harga_satuan:harga,catatan_item:'',express_tier_nama:null,biaya_express:0,qty_minimum:qMin,estimasi_jam:estJam});
+  renderItems(); recalc(); applyMaxEstimasi();
   if (qMin > 0) showToast(`Min. order ${nama}: ${qMin} ${satuan}`, 'info');
+}
+
+// ── Auto-update estimasi selesai berdasarkan layanan + tier express ──
+function applyMaxEstimasi(){
+  if (!items.length) return;
+  // Max estimasi_jam dari semua items (kalau ada tier express, pakai tier-nya)
+  let maxJam = 0;
+  items.forEach(it => {
+    let jam = parseInt(it.estimasi_jam) || 24;
+    if (it.express_tier_nama && Array.isArray(availableTiers)) {
+      const tier = availableTiers.find(t => t.nama_tier === it.express_tier_nama);
+      if (tier && tier.estimasi_jam) jam = parseInt(tier.estimasi_jam);
+    }
+    if (jam > maxJam) maxJam = jam;
+  });
+  if (maxJam <= 0) return;
+  // Dari tanggal masuk + maxJam → hitung estimasi selesai
+  const tglMasuk = document.getElementById('f_tanggal').value;
+  if (!tglMasuk) return;
+  const masuk = new Date(tglMasuk + 'T08:00:00');
+  const selesai = new Date(masuk.getTime() + maxJam * 3600 * 1000);
+  const fe = document.getElementById('f_estimasi');
+  if (fe) {
+    fe.value = localDateStr(selesai);
+    const hint = document.getElementById('estHint');
+    if (hint) hint.innerHTML = `⏱ Estimasi: <strong>${maxJam} jam</strong> dari layanan yang dipilih`;
+  }
+}
+
+// ── Quick-create layanan modal ──
+function openLayananQuick(){
+  const m = document.getElementById('lynQuickModal');
+  if (m) { m.style.display = 'flex'; document.getElementById('lyn_q_nama').focus(); }
+}
+function closeLayananQuick(){
+  const m = document.getElementById('lynQuickModal');
+  if (m) m.style.display = 'none';
+  ['lyn_q_nama','lyn_q_kategori','lyn_q_harga','lyn_q_min'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  document.getElementById('lyn_q_jam').value = '24';
+  document.getElementById('lyn_q_satuan').value = 'kg';
+}
+async function saveLayananQuick(){
+  const nama = document.getElementById('lyn_q_nama').value.trim();
+  if (!nama) { alert('Nama layanan wajib diisi'); return; }
+  const payload = {
+    nama,
+    kategori: document.getElementById('lyn_q_kategori').value.trim() || 'Reguler',
+    satuan:   document.getElementById('lyn_q_satuan').value,
+    harga:    parseFloat(document.getElementById('lyn_q_harga').value) || 0,
+    estimasi_jam: parseInt(document.getElementById('lyn_q_jam').value) || 24,
+    qty_minimum:  parseFloat(document.getElementById('lyn_q_min').value) || 0,
+  };
+  try {
+    const r = await fetch('/layanan.php?action=save', {
+      method: 'POST',
+      headers: { 'Content-Type':'application/json', 'X-CSRF-Token': csrfToken() },
+      body: JSON.stringify(payload)
+    });
+    const d = await r.json();
+    if (d.error) { alert('Gagal: ' + d.error); return; }
+    showToast('Layanan ditambahkan ✓', 'success');
+    closeLayananQuick();
+    await loadLayanan();
+    // Auto-add ke order kalau ID returned
+    if (d.id) {
+      const lyn = (layananAll || []).find(l => l.id == d.id);
+      if (lyn) addLayananItem(lyn.id, lyn.nama, lyn.satuan, lyn.harga);
+    }
+  } catch(e){ alert('Gagal koneksi: ' + e.message); }
 }
 
 function addEmptyRow() {
@@ -1451,7 +1573,7 @@ function addEmptyRow() {
   renderItems();
 }
 
-function removeItem(idx) { items.splice(idx,1); renderItems(); recalc(); }
+function removeItem(idx) { items.splice(idx,1); renderItems(); recalc(); applyMaxEstimasi(); }
 
 function renderItems() {
   const tbody = document.getElementById('itemsBody');
@@ -1548,13 +1670,17 @@ function recomputeAllItemFees() {
 
 // Tanggal estimasi nota = tanggal + jam tier terlama dari item-item yg express
 function applyMaxEstimasi() {
+  // Max estimasi_jam dari semua items. Tier express override layanan default.
   let maxJam = 0;
   items.forEach(it => {
-    if (!it.express_tier_nama) return;
-    const tier = availableTiers.find(t => t.nama_tier === it.express_tier_nama);
-    if (tier && tier.estimasi_jam > maxJam) maxJam = parseInt(tier.estimasi_jam);
+    let jam = parseInt(it.estimasi_jam) || 0;  // layanan base
+    if (it.express_tier_nama) {
+      const tier = availableTiers.find(t => t.nama_tier === it.express_tier_nama);
+      if (tier && tier.estimasi_jam) jam = parseInt(tier.estimasi_jam);  // tier override
+    }
+    if (jam > maxJam) maxJam = jam;
   });
-  if (maxJam <= 0) return; // ada item express? kalau tidak, biarkan estimasi default
+  if (maxJam <= 0) return;  // belum ada item → biarkan default suggestion
   const tglEl = document.getElementById('f_tanggal');
   const baseDate = tglEl?.value ? new Date(tglEl.value + 'T08:00:00') : new Date();
   baseDate.setHours(baseDate.getHours() + maxJam);
@@ -1563,6 +1689,11 @@ function applyMaxEstimasi() {
   const dd = String(baseDate.getDate()).padStart(2,'0');
   const estEl = document.getElementById('f_estimasi');
   if (estEl) estEl.value = `${yyyy}-${mm}-${dd}`;
+  const hint = document.getElementById('estHint');
+  if (hint) {
+    const hasTier = items.some(it => it.express_tier_nama);
+    hint.innerHTML = `⏱ Estimasi: <strong>${maxJam} jam</strong> dari ${hasTier ? 'tier express' : 'layanan'} yang dipilih`;
+  }
 }
 
 // Derive tipe_order dominant utk dikirim ke backend

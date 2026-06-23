@@ -69,6 +69,7 @@ if ($action) {
                 }
             } catch (Throwable) {}
         }
+        $estimasiJam = max(1, intval($d['estimasi_jam'] ?? 24));
         if (!empty($d['id'])) {
             TenantQuery::update('hl_layanan', [
                 'nama'     => $nama,
@@ -76,22 +77,24 @@ if ($action) {
                 'satuan'      => $d['satuan'] ?? 'kg',
                 'harga'       => floatval($d['harga'] ?? 0),
                 'qty_minimum' => max(0, floatval($d['qty_minimum'] ?? 0)),
+                'estimasi_jam'=> $estimasiJam,
                 'is_active'=> intval($d['is_active'] ?? 1),
                 'urutan'   => intval($d['urutan'] ?? 0),
             ], 'id = ?', [intval($d['id'])]);
         } else {
-            TenantQuery::insert('hl_layanan', [
+            $newId = TenantQuery::insert('hl_layanan', [
                 'nama'     => $nama,
                 'kategori' => $kategori,
                 'satuan'      => $d['satuan'] ?? 'kg',
                 'harga'       => floatval($d['harga'] ?? 0),
                 'qty_minimum' => max(0, floatval($d['qty_minimum'] ?? 0)),
+                'estimasi_jam'=> $estimasiJam,
                 'urutan'   => intval($d['urutan'] ?? 0),
                 'is_active'=> 1,
             ]);
         }
         logAudit(!empty($d['id'])?'update':'create','layanan',(!empty($d['id'])?'Edit':'Tambah').' layanan: '.$nama);
-        echo json_encode(['success'=>true]); exit;
+        echo json_encode(['success'=>true, 'id'=>$newId ?? intval($d['id'] ?? 0)]); exit;
     }
     if ($action === 'delete' && $_SERVER['REQUEST_METHOD']==='POST') {
         if (!hasPermission('layanan.delete')) { echo json_encode(['error'=>'Akses ditolak']); exit; }
