@@ -200,7 +200,7 @@ $_canSwitch = !empty($hqIsOwner) || !empty($hqIsManager);
       <div class="hq-side-divider"></div>
       <div class="hq-side-label">Bantuan</div>
 
-      <a href="/support"
+      <a href="/hq/support"
          class="hq-side-link <?= $_aPage === 'hq-support' ? 'active' : '' ?>">
         <span class="ico">🎧</span> Support & Tiket
       </a>
