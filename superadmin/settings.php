@@ -444,6 +444,112 @@ if (!empty($_SERVER['HTTP_X_REQUESTED_WITH'])) {
         exit;
     }
 
+    // ══════════════════════════════════════════════════════════
+    // ROLE MANAGEMENT — CRUD roles + edit permissions per role
+    // ══════════════════════════════════════════════════════════
+    if ($action === 'roles_list') {
+        SaPermission::require('super_admins.manage');
+        $roles = $db->query(
+            "SELECT r.id, r.slug, r.name, r.description, r.is_system,
+                    (SELECT COUNT(*) FROM super_admins WHERE role_id=r.id) AS admin_count,
+                    (SELECT COUNT(*) FROM sa_role_permissions WHERE role_id=r.id) AS perm_count
+             FROM sa_roles r ORDER BY r.is_system DESC, r.id"
+        )->fetchAll(PDO::FETCH_ASSOC);
+        $perms = $db->query(
+            "SELECT id, perm_key, module, action, description, notif_events
+             FROM sa_permissions ORDER BY module, action"
+        )->fetchAll(PDO::FETCH_ASSOC);
+        echo json_encode(['ok' => true, 'roles' => $roles, 'permissions' => $perms]);
+        exit;
+    }
+
+    if ($action === 'role_get') {
+        SaPermission::require('super_admins.manage');
+        $id = (int)($_GET['id'] ?? 0);
+        $role = $db->prepare("SELECT id, slug, name, description, is_system FROM sa_roles WHERE id=?");
+        $role->execute([$id]);
+        $row = $role->fetch(PDO::FETCH_ASSOC);
+        if (!$row) { echo json_encode(['error' => 'Role tidak ditemukan']); exit; }
+        $perms = $db->prepare(
+            "SELECT permission_id FROM sa_role_permissions WHERE role_id=?"
+        );
+        $perms->execute([$id]);
+        $row['permission_ids'] = $perms->fetchAll(PDO::FETCH_COLUMN);
+        echo json_encode(['ok' => true, 'role' => $row]);
+        exit;
+    }
+
+    if ($action === 'role_save') {
+        SaPermission::require('super_admins.manage');
+        saVerifyCsrf();
+        $id   = (int)($_POST['id']   ?? 0);
+        $slug = strtolower(trim($_POST['slug'] ?? ''));
+        $name = trim($_POST['name'] ?? '');
+        $desc = trim($_POST['description'] ?? '');
+        $permIds = array_filter(array_map('intval', explode(',', $_POST['permission_ids'] ?? '')));
+
+        if (!$name) { echo json_encode(['error' => 'Nama role wajib diisi']); exit; }
+        if (!preg_match('/^[a-z0-9_]+$/', $slug)) { echo json_encode(['error' => 'Slug hanya boleh huruf kecil, angka, underscore (a-z, 0-9, _)']); exit; }
+
+        try {
+            $db->beginTransaction();
+            if ($id > 0) {
+                $existing = $db->prepare("SELECT is_system, slug FROM sa_roles WHERE id=?");
+                $existing->execute([$id]);
+                $orig = $existing->fetch(PDO::FETCH_ASSOC);
+                if (!$orig) throw new RuntimeException('Role tidak ditemukan');
+                // Tidak boleh ubah slug system role
+                if ($orig['is_system'] && $orig['slug'] !== $slug) {
+                    throw new RuntimeException('Slug system role tidak bisa diubah');
+                }
+                $db->prepare("UPDATE sa_roles SET slug=?, name=?, description=? WHERE id=?")
+                   ->execute([$slug, $name, $desc, $id]);
+            } else {
+                // Slug unique check
+                $chk = $db->prepare("SELECT id FROM sa_roles WHERE slug=?");
+                $chk->execute([$slug]);
+                if ($chk->fetchColumn()) throw new RuntimeException('Slug sudah dipakai role lain');
+                $db->prepare("INSERT INTO sa_roles (slug, name, description, is_system) VALUES (?,?,?,0)")
+                   ->execute([$slug, $name, $desc]);
+                $id = (int)$db->lastInsertId();
+            }
+            // Rewrite permission mappings (bulk replace)
+            $db->prepare("DELETE FROM sa_role_permissions WHERE role_id=?")->execute([$id]);
+            if (!empty($permIds)) {
+                $ins = $db->prepare("INSERT IGNORE INTO sa_role_permissions (role_id, permission_id) VALUES (?,?)");
+                foreach ($permIds as $pid) $ins->execute([$id, $pid]);
+            }
+            $db->commit();
+            logSuperAdminAction('role_save', null, "Save role #$id slug=$slug perms=" . count($permIds));
+            echo json_encode(['ok' => true, 'id' => $id]);
+        } catch (Throwable $e) {
+            if ($db->inTransaction()) $db->rollBack();
+            echo json_encode(['error' => $e->getMessage()]);
+        }
+        exit;
+    }
+
+    if ($action === 'role_delete') {
+        SaPermission::require('super_admins.manage');
+        saVerifyCsrf();
+        $id = (int)($_POST['id'] ?? 0);
+        $r = $db->prepare("SELECT slug, is_system FROM sa_roles WHERE id=?");
+        $r->execute([$id]);
+        $role = $r->fetch(PDO::FETCH_ASSOC);
+        if (!$role) { echo json_encode(['error' => 'Role tidak ditemukan']); exit; }
+        if ($role['is_system']) { echo json_encode(['error' => 'Role system tidak bisa dihapus']); exit; }
+        // Cek apakah ada admin pakai role ini
+        $cnt = $db->prepare("SELECT COUNT(*) FROM super_admins WHERE role_id=?");
+        $cnt->execute([$id]);
+        if ((int)$cnt->fetchColumn() > 0) {
+            echo json_encode(['error' => 'Masih ada SA pakai role ini. Pindahkan dulu ke role lain.']); exit;
+        }
+        $db->prepare("DELETE FROM sa_roles WHERE id=?")->execute([$id]);
+        logSuperAdminAction('role_delete', null, "Delete role #$id slug={$role['slug']}");
+        echo json_encode(['ok' => true]);
+        exit;
+    }
+
     http_response_code(400);
     echo json_encode(['error' => 'Action tidak dikenal']);
     exit;
@@ -544,6 +650,7 @@ $pageTitle  = 'Platform Settings';
   <button class="set-tab" onclick="switchTab('tips',this)">💡 Splash Tips</button>
   <button class="set-tab" onclick="switchTab('notify',this);loadNotify()">🔔 Notifications</button>
   <button class="set-tab" onclick="switchTab('team',this);loadTeam()">👥 SA Team</button>
+  <button class="set-tab" onclick="switchTab('roles',this);loadRoles()">🛡️ Roles &amp; Permissions</button>
 </div>
 
 <!-- ══════════════════════════ MAINTENANCE TAB ═══════════════════════════ -->
@@ -745,6 +852,70 @@ $pageTitle  = 'Platform Settings';
     </div>
   </div>
 
+</div>
+
+<!-- ══════════════════════════ ROLES & PERMISSIONS TAB ════════════════════ -->
+<div class="set-panel" id="tab-roles">
+  <div class="sa-card">
+    <div class="sa-card-head">
+      <h3>🛡️ Roles &amp; Permissions</h3>
+      <button class="sa-btn sa-btn-primary" onclick="openRoleEdit(0)">+ Tambah Role</button>
+    </div>
+    <p style="font-size:13px;color:rgba(255,255,255,.55);margin-bottom:16px">
+      Atur role dan permission per role. System roles (owner/ops/finance/support/viewer) bisa di-edit permissions tapi tidak bisa dihapus.
+    </p>
+    <div class="sa-table-wrap">
+      <table class="sa-table">
+        <thead>
+          <tr>
+            <th>Role</th>
+            <th>Slug</th>
+            <th>SA</th>
+            <th>Perm</th>
+            <th style="width:160px;text-align:right">Aksi</th>
+          </tr>
+        </thead>
+        <tbody id="rolesTableBody">
+          <tr><td colspan="5" style="text-align:center;color:rgba(255,255,255,.4);padding:24px">Loading…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ MODAL: Edit/Create Role ════════════════ -->
+<div id="roleEditModal" class="sa-modal-overlay">
+  <div class="sa-modal" style="max-width:720px;max-height:90vh;overflow-y:auto">
+    <h3 id="roleModalTitle">Edit Role</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+      <div class="form-group">
+        <label>Slug * <span style="font-weight:400;color:rgba(255,255,255,.4);font-size:11px">(a-z, 0-9, _)</span></label>
+        <input type="text" id="re_slug" placeholder="misal: marketing"
+               style="width:100%;padding:10px 14px;background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.1);border-radius:8px;color:#fff;font-size:14px;outline:none">
+      </div>
+      <div class="form-group">
+        <label>Nama Role *</label>
+        <input type="text" id="re_name" placeholder="Marketing"
+               style="width:100%;padding:10px 14px;background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.1);border-radius:8px;color:#fff;font-size:14px;outline:none">
+      </div>
+    </div>
+    <div class="form-group" style="margin-bottom:16px">
+      <label>Deskripsi</label>
+      <input type="text" id="re_desc" placeholder="Untuk siapa role ini, akses apa"
+             style="width:100%;padding:10px 14px;background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.1);border-radius:8px;color:#fff;font-size:14px;outline:none">
+    </div>
+    <div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.5);margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">
+      <span>Permissions</span>
+      <span><a href="#" onclick="rolePermsToggleAll(true);return false" style="color:var(--sa);text-decoration:none">All</a> · <a href="#" onclick="rolePermsToggleAll(false);return false" style="color:rgba(255,255,255,.4);text-decoration:none">None</a></span>
+    </div>
+    <div id="rolePermsList" style="max-height:340px;overflow-y:auto;padding:8px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.06);border-radius:10px">
+      <div style="color:rgba(255,255,255,.4);text-align:center;padding:14px">Loading…</div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:18px;justify-content:flex-end">
+      <button class="sa-btn sa-btn-secondary" onclick="closeRoleEdit()">Batal</button>
+      <button class="sa-btn sa-btn-primary" onclick="saveRoleEdit()">💾 Simpan</button>
+    </div>
+  </div>
 </div>
 
 <!-- ══════════ MODAL: Create SA ══════════ -->
@@ -1326,6 +1497,141 @@ async function deleteTeamAdmin(id, name) {
     if (e.target === this) closeTeamModals();
   });
 });
+
+// ════════════════════════════════════════════════════════════════
+// ROLES & PERMISSIONS TAB
+// ════════════════════════════════════════════════════════════════
+let _allPerms = [];
+
+async function loadRoles() {
+  const r = await saFetch('?action=roles_list');
+  if (!r.ok) { saToast(r.error || 'Gagal load', 'err'); return; }
+  _allPerms = r.permissions || [];
+  const body = document.getElementById('rolesTableBody');
+  if (!r.roles || !r.roles.length) {
+    body.innerHTML = '<tr><td colspan="5" style="text-align:center;color:rgba(255,255,255,.4);padding:24px">Belum ada role</td></tr>';
+    return;
+  }
+  body.innerHTML = r.roles.map(role => {
+    const sys = role.is_system == 1;
+    return `
+      <tr>
+        <td>
+          <div style="font-weight:700;color:#fff">${escapeHtml(role.name)}${sys ? ' <span style="background:rgba(99,102,241,.15);color:var(--sa);font-size:10px;padding:2px 6px;border-radius:4px;font-weight:600;margin-left:6px">SYSTEM</span>' : ''}</div>
+          <div style="font-size:11px;color:rgba(255,255,255,.45);margin-top:2px">${escapeHtml(role.description || '-')}</div>
+        </td>
+        <td><code style="font-family:var(--mono);font-size:12px;color:rgba(255,255,255,.55)">${escapeHtml(role.slug)}</code></td>
+        <td style="color:rgba(255,255,255,.7)">${role.admin_count}</td>
+        <td><span style="background:rgba(53,232,213,.1);color:#35E8D5;font-weight:700;padding:2px 8px;border-radius:4px;font-size:12px">${role.perm_count}</span></td>
+        <td style="text-align:right;white-space:nowrap">
+          <button class="sa-btn sa-btn-secondary" style="padding:5px 12px;font-size:11px" onclick="openRoleEdit(${role.id})">Edit</button>
+          ${sys ? '' : `<button class="sa-btn" style="padding:5px 12px;font-size:11px;background:rgba(239,68,68,.1);color:#FCA5A5;border:1px solid rgba(239,68,68,.25);margin-left:4px" onclick="deleteRole(${role.id},'${escapeHtml(role.name)}')">Hapus</button>`}
+        </td>
+      </tr>`;
+  }).join('');
+}
+
+async function openRoleEdit(id) {
+  document.getElementById('roleModalTitle').textContent = id ? 'Edit Role' : '➕ Tambah Role';
+  document.getElementById('re_slug').value = '';
+  document.getElementById('re_name').value = '';
+  document.getElementById('re_desc').value = '';
+  document.getElementById('re_slug').dataset.id = id;
+  document.getElementById('re_slug').dataset.isSystem = '0';
+
+  let currentPermIds = [];
+  if (id) {
+    const r = await saFetch('?action=role_get&id=' + id);
+    if (!r.ok) { saToast(r.error || 'Gagal load role', 'err'); return; }
+    document.getElementById('re_slug').value = r.role.slug;
+    document.getElementById('re_name').value = r.role.name;
+    document.getElementById('re_desc').value = r.role.description || '';
+    document.getElementById('re_slug').dataset.isSystem = r.role.is_system;
+    if (r.role.is_system) document.getElementById('re_slug').setAttribute('readonly', 'readonly');
+    else document.getElementById('re_slug').removeAttribute('readonly');
+    currentPermIds = r.role.permission_ids.map(Number);
+  } else {
+    document.getElementById('re_slug').removeAttribute('readonly');
+  }
+
+  // Render permissions grouped by module
+  const byModule = {};
+  _allPerms.forEach(p => {
+    if (!byModule[p.module]) byModule[p.module] = [];
+    byModule[p.module].push(p);
+  });
+
+  const wrap = document.getElementById('rolePermsList');
+  wrap.innerHTML = Object.keys(byModule).sort().map(mod => `
+    <div style="margin-bottom:12px;padding:10px;background:rgba(255,255,255,.02);border-radius:8px;border:1px solid rgba(255,255,255,.04)">
+      <div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.5);margin-bottom:8px;display:flex;justify-content:space-between">
+        <span>${escapeHtml(mod)}</span>
+        <a href="#" onclick="rolePermsToggleModule('${escapeHtml(mod)}',true);return false" style="color:var(--sa);text-decoration:none;font-size:10px">all</a>
+      </div>
+      ${byModule[mod].map(p => `
+        <label style="display:flex;align-items:flex-start;gap:8px;padding:6px;cursor:pointer;border-radius:5px" data-mod="${escapeHtml(mod)}">
+          <input type="checkbox" class="re_perm" value="${p.id}" ${currentPermIds.includes(Number(p.id)) ? 'checked' : ''} style="margin-top:3px">
+          <div style="flex:1">
+            <div style="font-size:12.5px;color:#fff;font-weight:600">${escapeHtml(p.perm_key)}</div>
+            <div style="font-size:11px;color:rgba(255,255,255,.5);line-height:1.4">${escapeHtml(p.description || '-')}${p.notif_events ? ` <span style="color:#35E8D5;font-size:10px;margin-left:4px">📬 ${escapeHtml(p.notif_events)}</span>` : ''}</div>
+          </div>
+        </label>
+      `).join('')}
+    </div>
+  `).join('');
+
+  document.getElementById('roleEditModal').classList.add('show');
+}
+
+function closeRoleEdit() {
+  document.getElementById('roleEditModal').classList.remove('show');
+}
+
+function rolePermsToggleAll(check) {
+  document.querySelectorAll('#rolePermsList .re_perm').forEach(cb => cb.checked = check);
+}
+
+function rolePermsToggleModule(mod, check) {
+  document.querySelectorAll(`#rolePermsList label[data-mod="${mod}"] .re_perm`).forEach(cb => cb.checked = check);
+}
+
+async function saveRoleEdit() {
+  const id   = document.getElementById('re_slug').dataset.id || '0';
+  const slug = document.getElementById('re_slug').value.trim();
+  const name = document.getElementById('re_name').value.trim();
+  const desc = document.getElementById('re_desc').value.trim();
+  if (!slug || !name) { saToast('Slug + Nama wajib diisi', 'err'); return; }
+
+  const permIds = [...document.querySelectorAll('#rolePermsList .re_perm:checked')].map(cb => cb.value);
+  const fd = new FormData();
+  fd.append('id', id);
+  fd.append('slug', slug);
+  fd.append('name', name);
+  fd.append('description', desc);
+  fd.append('permission_ids', permIds.join(','));
+
+  const r = await saFetch('?action=role_save', { method: 'POST', body: fd });
+  if (r.ok) {
+    saToast('Role tersimpan ✓', 'ok');
+    closeRoleEdit();
+    loadRoles();
+  } else {
+    saToast(r.error || 'Gagal simpan', 'err');
+  }
+}
+
+async function deleteRole(id, name) {
+  if (!confirm(`Hapus role "${name}"?\n\nRole ini akan dihapus permanen. Pastikan tidak ada SA yang masih pakai role ini.`)) return;
+  const fd = new FormData();
+  fd.append('id', id);
+  const r = await saFetch('?action=role_delete', { method: 'POST', body: fd });
+  if (r.ok) {
+    saToast('Role dihapus', 'ok');
+    loadRoles();
+  } else {
+    saToast(r.error || 'Gagal hapus', 'err');
+  }
+}
 
 // Init
 loadMaintStatus();
