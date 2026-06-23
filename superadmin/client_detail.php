@@ -454,13 +454,13 @@ $billingStat = $bsSt->fetch(PDO::FETCH_ASSOC);
 
 <div class="sa-page-header" style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;">
   <div>
-    <a href="clients.php" style="font-size:12.5px;color:rgba(255,255,255,.4);text-decoration:none;margin-bottom:6px;display:block;">← Kembali ke Clients</a>
+    <a href="clients.php" style="font-size:12.5px;color:var(--ash);text-decoration:none;margin-bottom:6px;display:block;">← Kembali ke Clients</a>
     <h1><?= htmlspecialchars($tenant['nama_perusahaan'] ?: $tenant['slug']) ?></h1>
     <p>
       <span class="sa-badge sa-badge-<?= $tenant['status'] === 'active' ? 'active' : ($tenant['status'] === 'pending_verification' ? 'trial' : 'suspended') ?>">
         <?= ucfirst(str_replace('_',' ',$tenant['status'])) ?>
       </span>
-      <span style="color:rgba(255,255,255,.35);margin-left:10px;font-family:var(--mono);font-size:12px;"><?= htmlspecialchars($tenant['slug']) ?></span>
+      <span style="color:var(--ash-dim);margin-left:10px;font-family:var(--mono);font-size:12px;"><?= htmlspecialchars($tenant['slug']) ?></span>
     </p>
   </div>
   <div style="display:flex;gap:8px;flex-wrap:wrap;">
@@ -478,7 +478,7 @@ $billingStat = $bsSt->fetch(PDO::FETCH_ASSOC);
 <!-- Tabs -->
 <div class="sa-tabs">
   <button class="sa-tab active" onclick="showTab('profil')">👤 Profil</button>
-  <button class="sa-tab" onclick="showTab('outlets')">🏪 Outlets <span style="font-size:10px;background:rgba(255,255,255,.12);padding:1px 6px;border-radius:10px;margin-left:3px;"><?= count($outletList) ?></span></button>
+  <button class="sa-tab" onclick="showTab('outlets')">🏪 Outlets <span style="font-size:10px;background:var(--crease);padding:1px 6px;border-radius:10px;margin-left:3px;"><?= count($outletList) ?></span></button>
   <button class="sa-tab" onclick="showTab('health')">💊 Health</button>
   <button class="sa-tab" onclick="showTab('stats')">📊 Stats</button>
   <button class="sa-tab" onclick="showTab('coins')">🪙 Coin History</button>
@@ -513,7 +513,7 @@ $billingStat = $bsSt->fetch(PDO::FETCH_ASSOC);
           ];
           foreach ($rows as [$k, $v]): ?>
           <tr>
-            <td style="padding:8px 0;color:rgba(255,255,255,.4);width:140px;vertical-align:top;"><?= $k ?></td>
+            <td style="padding:8px 0;color:var(--ash);width:140px;vertical-align:top;"><?= $k ?></td>
             <td style="padding:8px 0;color:var(--white);font-weight:500;"><?= htmlspecialchars((string)$v) ?></td>
           </tr>
           <?php endforeach; ?>
@@ -532,7 +532,7 @@ $billingStat = $bsSt->fetch(PDO::FETCH_ASSOC);
             <td><?= htmlspecialchars($u['name']) ?></td>
             <td style="font-family:var(--mono);font-size:11px;"><?= htmlspecialchars($u['username']) ?></td>
             <td><span class="sa-badge sa-badge-indigo" style="font-size:10px;"><?= htmlspecialchars($u['role']) ?></span></td>
-            <td style="font-size:12px;color:rgba(255,255,255,.4);"><?= $u['last_login'] ? date('d M Y', strtotime($u['last_login'])) : 'Belum pernah' ?></td>
+            <td style="font-size:12px;color:var(--ash);"><?= $u['last_login'] ? date('d M Y', strtotime($u['last_login'])) : 'Belum pernah' ?></td>
           </tr>
           <?php endforeach; ?>
           </tbody>
@@ -594,10 +594,10 @@ $billingStat = $bsSt->fetch(PDO::FETCH_ASSOC);
   <div class="sa-card">
     <div class="sa-card-header">
       <h3>Daftar Outlet</h3>
-      <span style="font-size:12px;color:rgba(255,255,255,.35);">Coin mode: <strong style="color:<?= $coinMode === 'per_outlet' ? '#7DD3FC' : 'rgba(255,255,255,.6)' ?>"><?= $coinMode ?></strong></span>
+      <span style="font-size:12px;color:var(--ash-dim);">Coin mode: <strong style="color:<?= $coinMode === 'per_outlet' ? '#7DD3FC' : 'var(--ink-soft)' ?>"><?= $coinMode ?></strong></span>
     </div>
     <?php if (empty($outletList)): ?>
-    <div class="sa-card-body" style="text-align:center;padding:40px;color:rgba(255,255,255,.3);">
+    <div class="sa-card-body" style="text-align:center;padding:40px;color:var(--ash-dim);">
       Belum ada outlet yang terdaftar.
     </div>
     <?php else: ?>
@@ -630,34 +630,34 @@ $billingStat = $bsSt->fetch(PDO::FETCH_ASSOC);
                 : null; // shared mode — coin di tenants, bukan per outlet
           ?>
           <tr>
-            <td style="font-family:var(--mono);font-size:11px;color:rgba(255,255,255,.3);"><?= $o['id'] ?></td>
+            <td style="font-family:var(--mono);font-size:11px;color:var(--ash-dim);"><?= $o['id'] ?></td>
             <td>
               <span style="font-weight:600;color:var(--white);"><?= htmlspecialchars($o['nama_outlet']) ?></span>
               <?php if ($o['is_main']): ?>
               <span style="font-size:9px;background:rgba(139,92,246,.25);color:#C4B5FD;padding:1px 5px;border-radius:6px;margin-left:5px;vertical-align:middle;">MAIN</span>
               <?php endif; ?>
             </td>
-            <td style="font-family:var(--mono);font-size:11px;color:rgba(255,255,255,.4);"><?= htmlspecialchars($o['slug']) ?></td>
-            <td style="font-size:13px;color:rgba(255,255,255,.6);"><?= htmlspecialchars($o['kota'] ?: '—') ?></td>
-            <td style="font-size:12px;color:rgba(255,255,255,.5);"><?= htmlspecialchars($o['telepon'] ?: '—') ?></td>
+            <td style="font-family:var(--mono);font-size:11px;color:var(--ash);"><?= htmlspecialchars($o['slug']) ?></td>
+            <td style="font-size:13px;color:var(--ink-soft);"><?= htmlspecialchars($o['kota'] ?: '—') ?></td>
+            <td style="font-size:12px;color:var(--ash);"><?= htmlspecialchars($o['telepon'] ?: '—') ?></td>
             <td><span class="sa-badge sa-badge-<?= $statusColor ?>"><?= ucfirst($o['status']) ?></span></td>
             <td style="text-align:center;"><?= $o['is_main'] ? '⭐' : '' ?></td>
-            <td style="text-align:center;"><?= $o['setup_done'] ? '<span style="color:#4ADE80;">✓</span>' : '<span style="color:rgba(255,255,255,.25);">—</span>' ?></td>
+            <td style="text-align:center;"><?= $o['setup_done'] ? '<span style="color:#4ADE80;">✓</span>' : '<span style="color:var(--ash-dim);">—</span>' ?></td>
             <td style="font-family:var(--mono);font-size:12px;">
               <?php if ($coinMode === 'per_outlet'): ?>
                 <?= number_format($coinBal) ?>
               <?php else: ?>
-                <span style="color:rgba(255,255,255,.25);font-size:11px;">shared</span>
+                <span style="color:var(--ash-dim);font-size:11px;">shared</span>
               <?php endif; ?>
             </td>
-            <td style="font-size:11px;color:rgba(255,255,255,.35);font-family:var(--mono);"><?= substr($o['created_at'], 0, 10) ?></td>
+            <td style="font-size:11px;color:var(--ash-dim);font-family:var(--mono);"><?= substr($o['created_at'], 0, 10) ?></td>
           </tr>
           <?php endforeach; ?>
         </tbody>
       </table>
     </div>
     <?php if (!empty($outletList)): ?>
-    <div style="padding:10px 16px 14px;font-size:11.5px;color:rgba(255,255,255,.25);">
+    <div style="padding:10px 16px 14px;font-size:11.5px;color:var(--ash-dim);">
       * Outlet dengan status <em>closed</em> tidak ditampilkan.
       <?php if ($coinMode === 'shared'): ?>
       Coin ditampilkan sebagai "shared" karena tenant menggunakan mode coin bersama.
@@ -741,7 +741,7 @@ $billingStat = $bsSt->fetch(PDO::FETCH_ASSOC);
     <div class="sa-table-wrap">
       <table class="sa-table">
         <thead><tr><th>Tanggal</th><th>Tipe</th><th>Jumlah</th><th>Fitur</th><th>Keterangan</th><th>Balance Setelah</th></tr></thead>
-        <tbody id="coinHistoryBody"><tr><td colspan="6" style="text-align:center;padding:20px;color:rgba(255,255,255,.35);">Memuat...</td></tr></tbody>
+        <tbody id="coinHistoryBody"><tr><td colspan="6" style="text-align:center;padding:20px;color:var(--ash-dim);">Memuat...</td></tr></tbody>
       </table>
     </div>
   </div>
@@ -766,11 +766,11 @@ $billingStat = $bsSt->fetch(PDO::FETCH_ASSOC);
     <div class="sa-card-body">
       <div class="sa-grid-4" style="margin-bottom:0;">
         <div>
-          <div style="font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:rgba(255,255,255,.35);margin-bottom:6px;">Saldo Coin</div>
-          <div style="font-size:22px;font-weight:800;font-family:var(--mono);color:#FCD34D;">
+          <div style="font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--ash-dim);margin-bottom:6px;">Saldo Coin</div>
+          <div style="font-size:22px;font-weight:800;font-family:var(--mono);color:#92400E;">
             <?= number_format($effectiveCoin) ?>
           </div>
-          <div style="font-size:11px;color:rgba(255,255,255,.35);">
+          <div style="font-size:11px;color:var(--ash-dim);">
             coin tersedia
             <?php if ($trialCoinTotal > 0): ?>
               <span style="color:#92400E;background:#FEF3C7;border-radius:3px;padding:1px 5px;margin-left:4px;">
@@ -780,18 +780,18 @@ $billingStat = $bsSt->fetch(PDO::FETCH_ASSOC);
           </div>
         </div>
         <div>
-          <div style="font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:rgba(255,255,255,.35);margin-bottom:6px;">Total Topup</div>
-          <div style="font-size:18px;font-weight:700;font-family:var(--mono);color:#6EE7B7;">
+          <div style="font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--ash-dim);margin-bottom:6px;">Total Topup</div>
+          <div style="font-size:18px;font-weight:700;font-family:var(--mono);color:var(--sage);">
             Rp <?= number_format($billingStat['grand_total'] ?? 0) ?>
           </div>
-          <div style="font-size:11px;color:rgba(255,255,255,.35);"><?= $billingStat['total_txn'] ?? 0 ?> transaksi (lifetime)</div>
+          <div style="font-size:11px;color:var(--ash-dim);"><?= $billingStat['total_txn'] ?? 0 ?> transaksi (lifetime)</div>
         </div>
         <div>
-          <div style="font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:rgba(255,255,255,.35);margin-bottom:6px;">Total Coin Masuk</div>
-          <div style="font-size:18px;font-weight:700;font-family:var(--mono);color:#A5B4FC;">
+          <div style="font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--ash-dim);margin-bottom:6px;">Total Coin Masuk</div>
+          <div style="font-size:18px;font-weight:700;font-family:var(--mono);color:var(--indigo);">
             <?= number_format($billingStat['total_coin_in'] ?? 0) ?>
           </div>
-          <div style="font-size:11px;color:rgba(255,255,255,.35);">coin dikreditkan</div>
+          <div style="font-size:11px;color:var(--ash-dim);">coin dikreditkan</div>
         </div>
       </div>
     </div>
@@ -812,7 +812,7 @@ $billingStat = $bsSt->fetch(PDO::FETCH_ASSOC);
           </tr>
         </thead>
         <tbody id="billingBody">
-          <tr><td colspan="8" style="text-align:center;padding:20px;color:rgba(255,255,255,.35);">Memuat...</td></tr>
+          <tr><td colspan="8" style="text-align:center;padding:20px;color:var(--ash-dim);">Memuat...</td></tr>
         </tbody>
       </table>
     </div>
@@ -863,7 +863,7 @@ $billingStat = $bsSt->fetch(PDO::FETCH_ASSOC);
           </tr>
         </thead>
         <tbody id="ticketsBody">
-          <tr><td colspan="8" style="text-align:center;padding:20px;color:rgba(255,255,255,.35);">Memuat...</td></tr>
+          <tr><td colspan="8" style="text-align:center;padding:20px;color:var(--ash-dim);">Memuat...</td></tr>
         </tbody>
       </table>
     </div>
@@ -875,7 +875,7 @@ $billingStat = $bsSt->fetch(PDO::FETCH_ASSOC);
   <div class="sa-card" style="margin-bottom:16px;">
     <div class="sa-card-body">
       <div style="display:flex;gap:10px;">
-        <textarea id="newNoteText" placeholder="Tulis catatan..." style="flex:1;padding:10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:8px;color:#fff;font-family:var(--font);font-size:13.5px;resize:vertical;min-height:80px;"></textarea>
+        <textarea id="newNoteText" placeholder="Tulis catatan..." style="flex:1;padding:10px;background:var(--crease-soft);border:1px solid var(--crease);border-radius:8px;color:#fff;font-family:var(--font);font-size:13.5px;resize:vertical;min-height:80px;"></textarea>
         <button class="sa-btn sa-btn-primary" onclick="addNote()" style="align-self:flex-end;">Simpan</button>
       </div>
     </div>
@@ -890,8 +890,8 @@ $billingStat = $bsSt->fetch(PDO::FETCH_ASSOC);
     <div class="sa-card-body">
       <div class="sa-grid-2" style="gap:10px;margin-bottom:10px;">
         <div>
-          <label style="font-size:11px;color:rgba(255,255,255,.4);font-weight:600;letter-spacing:.06em;text-transform:uppercase;">Channel</label>
-          <select id="commChannel" style="width:100%;margin-top:6px;padding:8px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:8px;color:#fff;font-family:var(--font);">
+          <label style="font-size:11px;color:var(--ash);font-weight:600;letter-spacing:.06em;text-transform:uppercase;">Channel</label>
+          <select id="commChannel" style="width:100%;margin-top:6px;padding:8px;background:var(--crease-soft);border:1px solid var(--crease);border-radius:8px;color:#fff;font-family:var(--font);">
             <option value="wa">WhatsApp</option>
             <option value="email">Email</option>
             <option value="call">Telepon</option>
@@ -899,8 +899,8 @@ $billingStat = $bsSt->fetch(PDO::FETCH_ASSOC);
           </select>
         </div>
         <div>
-          <label style="font-size:11px;color:rgba(255,255,255,.4);font-weight:600;letter-spacing:.06em;text-transform:uppercase;">Tipe</label>
-          <select id="commType" style="width:100%;margin-top:6px;padding:8px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:8px;color:#fff;font-family:var(--font);">
+          <label style="font-size:11px;color:var(--ash);font-weight:600;letter-spacing:.06em;text-transform:uppercase;">Tipe</label>
+          <select id="commType" style="width:100%;margin-top:6px;padding:8px;background:var(--crease-soft);border:1px solid var(--crease);border-radius:8px;color:#fff;font-family:var(--font);">
             <option value="support">Support</option>
             <option value="onboarding">Onboarding</option>
             <option value="billing">Billing</option>
@@ -909,8 +909,8 @@ $billingStat = $bsSt->fetch(PDO::FETCH_ASSOC);
           </select>
         </div>
       </div>
-      <input type="text" id="commSubject" placeholder="Subjek..." style="width:100%;padding:9px 12px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:8px;color:#fff;font-family:var(--font);font-size:13.5px;margin-bottom:10px;"/>
-      <textarea id="commMessage" placeholder="Pesan / catatan komunikasi..." style="width:100%;padding:10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:8px;color:#fff;font-family:var(--font);font-size:13.5px;resize:vertical;min-height:80px;"></textarea>
+      <input type="text" id="commSubject" placeholder="Subjek..." style="width:100%;padding:9px 12px;background:var(--crease-soft);border:1px solid var(--crease);border-radius:8px;color:#fff;font-family:var(--font);font-size:13.5px;margin-bottom:10px;"/>
+      <textarea id="commMessage" placeholder="Pesan / catatan komunikasi..." style="width:100%;padding:10px;background:var(--crease-soft);border:1px solid var(--crease);border-radius:8px;color:#fff;font-family:var(--font);font-size:13.5px;resize:vertical;min-height:80px;"></textarea>
       <div style="margin-top:10px;text-align:right;">
         <button class="sa-btn sa-btn-primary" onclick="addComm()">Simpan Komunikasi</button>
       </div>
@@ -935,7 +935,7 @@ $billingStat = $bsSt->fetch(PDO::FETCH_ASSOC);
           <tr><th>ID</th><th>Entitas</th><th>File</th><th>Progress</th><th>Tipe</th><th>Status</th><th>Waktu</th><th>Aksi</th></tr>
         </thead>
         <tbody id="migTbody">
-          <tr><td colspan="8" style="text-align:center;color:rgba(255,255,255,.3);padding:24px;">Klik tab untuk memuat...</td></tr>
+          <tr><td colspan="8" style="text-align:center;color:var(--ash-dim);padding:24px;">Klik tab untuk memuat...</td></tr>
         </tbody>
       </table>
     </div>
@@ -954,8 +954,8 @@ $billingStat = $bsSt->fetch(PDO::FETCH_ASSOC);
         </span>
       </div>
       <div class="sa-card-body">
-        <p style="font-size:13px;color:rgba(255,255,255,.5);margin-bottom:14px;">
-          Saldo shared: <strong style="color:#FCD34D;"><?= number_format($tenant['coin_balance']) ?> coin</strong>
+        <p style="font-size:13px;color:var(--ash);margin-bottom:14px;">
+          Saldo shared: <strong style="color:#92400E;"><?= number_format($tenant['coin_balance']) ?> coin</strong>
           <?php if ($trialCoinTotal > 0): ?>
             <span style="font-size:11px;background:#FEF3C7;color:#92400E;border-radius:4px;padding:1px 6px;margin-left:4px;">
               🎁 <?= number_format($trialCoinTotal) ?> trial
@@ -964,8 +964,8 @@ $billingStat = $bsSt->fetch(PDO::FETCH_ASSOC);
         </p>
         <?php if ($coinMode === 'per_outlet'): ?>
         <div class="form-group" style="margin-bottom:12px;">
-          <label style="font-size:11px;color:rgba(255,255,255,.4);font-weight:600;letter-spacing:.06em;text-transform:uppercase;">Outlet Tujuan</label>
-          <select id="topupOutletId" style="width:100%;margin-top:6px;padding:10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:8px;color:#fff;font-family:var(--font);font-size:13px;">
+          <label style="font-size:11px;color:var(--ash);font-weight:600;letter-spacing:.06em;text-transform:uppercase;">Outlet Tujuan</label>
+          <select id="topupOutletId" style="width:100%;margin-top:6px;padding:10px;background:var(--crease-soft);border:1px solid var(--crease);border-radius:8px;color:#fff;font-family:var(--font);font-size:13px;">
             <?php foreach ($outletList as $o): ?>
               <option value="<?= (int)$o['id'] ?>">
                 <?= htmlspecialchars($o['nama_outlet']) ?>
@@ -978,12 +978,12 @@ $billingStat = $bsSt->fetch(PDO::FETCH_ASSOC);
         <input type="hidden" id="topupOutletId" value="0">
         <?php endif; ?>
         <div class="form-group" style="margin-bottom:12px;">
-          <label style="font-size:11px;color:rgba(255,255,255,.4);font-weight:600;letter-spacing:.06em;text-transform:uppercase;">Jumlah Coin</label>
-          <input type="number" id="topupAmt" placeholder="Contoh: 50000" style="width:100%;margin-top:6px;padding:10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:8px;color:#fff;font-family:var(--font);font-size:14px;"/>
+          <label style="font-size:11px;color:var(--ash);font-weight:600;letter-spacing:.06em;text-transform:uppercase;">Jumlah Coin</label>
+          <input type="number" id="topupAmt" placeholder="Contoh: 50000" style="width:100%;margin-top:6px;padding:10px;background:var(--crease-soft);border:1px solid var(--crease);border-radius:8px;color:#fff;font-family:var(--font);font-size:14px;"/>
         </div>
         <div class="form-group" style="margin-bottom:14px;">
-          <label style="font-size:11px;color:rgba(255,255,255,.4);font-weight:600;letter-spacing:.06em;text-transform:uppercase;">Keterangan</label>
-          <input type="text" id="topupNoteAksi" placeholder="Alasan topup..." style="width:100%;margin-top:6px;padding:10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:8px;color:#fff;font-family:var(--font);font-size:14px;"/>
+          <label style="font-size:11px;color:var(--ash);font-weight:600;letter-spacing:.06em;text-transform:uppercase;">Keterangan</label>
+          <input type="text" id="topupNoteAksi" placeholder="Alasan topup..." style="width:100%;margin-top:6px;padding:10px;background:var(--crease-soft);border:1px solid var(--crease);border-radius:8px;color:#fff;font-family:var(--font);font-size:14px;"/>
         </div>
         <button class="sa-btn sa-btn-primary" onclick="doTopup()">Topup Sekarang</button>
       </div>
@@ -993,12 +993,12 @@ $billingStat = $bsSt->fetch(PDO::FETCH_ASSOC);
     <div class="sa-card">
       <div class="sa-card-header"><h3>⚙️ Mode Coin</h3></div>
       <div class="sa-card-body">
-        <p style="font-size:13px;color:rgba(255,255,255,.5);margin-bottom:14px;">
-          Mode aktif saat ini: <strong style="color:#FCD34D;"><?= $coinMode === 'per_outlet' ? 'Per-Outlet' : 'Shared' ?></strong>
+        <p style="font-size:13px;color:var(--ash);margin-bottom:14px;">
+          Mode aktif saat ini: <strong style="color:#92400E;"><?= $coinMode === 'per_outlet' ? 'Per-Outlet' : 'Shared' ?></strong>
         </p>
-        <p style="font-size:12px;color:rgba(255,255,255,.35);margin-bottom:14px;line-height:1.5;">
-          <strong style="color:rgba(255,255,255,.5)">Shared</strong>: semua outlet pakai 1 pool coin bersama (tenants.coin_balance).<br>
-          <strong style="color:rgba(255,255,255,.5)">Per-Outlet</strong>: setiap outlet punya saldo sendiri (outlets.coin_balance). Topup harus per outlet.
+        <p style="font-size:12px;color:var(--ash-dim);margin-bottom:14px;line-height:1.5;">
+          <strong style="color:var(--ash)">Shared</strong>: semua outlet pakai 1 pool coin bersama (tenants.coin_balance).<br>
+          <strong style="color:var(--ash)">Per-Outlet</strong>: setiap outlet punya saldo sendiri (outlets.coin_balance). Topup harus per outlet.
         </p>
         <div style="display:flex;gap:10px;flex-wrap:wrap;">
           <button class="sa-btn <?= $coinMode === 'shared' ? 'sa-btn-primary' : 'sa-btn-outline' ?>"
@@ -1010,7 +1010,7 @@ $billingStat = $bsSt->fetch(PDO::FETCH_ASSOC);
             📍 Per-Outlet
           </button>
         </div>
-        <p style="font-size:11px;color:rgba(255,255,255,.25);margin-top:10px;">
+        <p style="font-size:11px;color:var(--ash-dim);margin-top:10px;">
           ⚠️ Mengubah mode tidak memindahkan saldo secara otomatis. Pastikan saldo outlet sudah benar setelah mengganti mode.
         </p>
       </div>
@@ -1020,7 +1020,7 @@ $billingStat = $bsSt->fetch(PDO::FETCH_ASSOC);
     <div class="sa-card">
       <div class="sa-card-header"><h3>🔒 Status Tenant</h3></div>
       <div class="sa-card-body">
-        <p style="font-size:13px;color:rgba(255,255,255,.5);margin-bottom:14px;">Status saat ini: <span class="sa-badge sa-badge-<?= $tenant['status'] === 'active' ? 'active' : 'suspended' ?>"><?= ucfirst($tenant['status']) ?></span></p>
+        <p style="font-size:13px;color:var(--ash);margin-bottom:14px;">Status saat ini: <span class="sa-badge sa-badge-<?= $tenant['status'] === 'active' ? 'active' : 'suspended' ?>"><?= ucfirst($tenant['status']) ?></span></p>
         <?php if ($tenant['status'] !== 'suspended'): ?>
         <button class="sa-btn sa-btn-danger" onclick="doAction('suspend')" style="margin-right:8px;">🔒 Suspend Tenant</button>
         <?php else: ?>
@@ -1033,10 +1033,10 @@ $billingStat = $bsSt->fetch(PDO::FETCH_ASSOC);
     <div class="sa-card">
       <div class="sa-card-header"><h3>⏰ Perpanjang Trial</h3></div>
       <div class="sa-card-body">
-        <p style="font-size:13px;color:rgba(255,255,255,.5);margin-bottom:14px;">Trial berakhir: <strong><?= $tenant['trial_ends_at'] ? date('d M Y', strtotime($tenant['trial_ends_at'])) : '-' ?></strong></p>
+        <p style="font-size:13px;color:var(--ash);margin-bottom:14px;">Trial berakhir: <strong><?= $tenant['trial_ends_at'] ? date('d M Y', strtotime($tenant['trial_ends_at'])) : '-' ?></strong></p>
         <div style="display:flex;gap:10px;align-items:center;">
-          <input type="number" id="extendDays" value="7" min="1" max="30" style="width:80px;padding:9px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:8px;color:#fff;font-family:var(--font);"/>
-          <span style="color:rgba(255,255,255,.5);font-size:13px;">hari</span>
+          <input type="number" id="extendDays" value="7" min="1" max="30" style="width:80px;padding:9px;background:var(--crease-soft);border:1px solid var(--crease);border-radius:8px;color:#fff;font-family:var(--font);"/>
+          <span style="color:var(--ash);font-size:13px;">hari</span>
           <button class="sa-btn sa-btn-primary" onclick="doExtendTrial()">Perpanjang</button>
         </div>
       </div>
@@ -1047,12 +1047,12 @@ $billingStat = $bsSt->fetch(PDO::FETCH_ASSOC);
       <div class="sa-card-header"><h3>🔑 Reset Password User</h3></div>
       <div class="sa-card-body">
         <div style="display:flex;flex-direction:column;gap:10px;">
-          <select id="resetUserId" style="padding:9px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:8px;color:#fff;font-family:var(--font);">
+          <select id="resetUserId" style="padding:9px;background:var(--crease-soft);border:1px solid var(--crease);border-radius:8px;color:#fff;font-family:var(--font);">
             <?php foreach ($users as $u): ?>
             <option value="<?= $u['id'] ?>"><?= htmlspecialchars($u['name'] . ' (' . $u['username'] . ')') ?></option>
             <?php endforeach; ?>
           </select>
-          <input type="text" id="newPassword" placeholder="Password baru (min 6 karakter)" style="padding:9px 12px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:8px;color:#fff;font-family:var(--font);"/>
+          <input type="text" id="newPassword" placeholder="Password baru (min 6 karakter)" style="padding:9px 12px;background:var(--crease-soft);border:1px solid var(--crease);border-radius:8px;color:#fff;font-family:var(--font);"/>
           <button class="sa-btn sa-btn-outline" onclick="doResetPassword()">Reset Password</button>
         </div>
       </div>
@@ -1064,30 +1064,30 @@ $billingStat = $bsSt->fetch(PDO::FETCH_ASSOC);
 <div class="sa-modal-overlay" id="adjustModal">
   <div class="sa-modal" style="max-width:420px;">
     <h3>⚖️ Adjustment Coin</h3>
-    <p style="font-size:13px;color:rgba(255,255,255,.45);margin-bottom:4px;">
-      Saldo saat ini: <strong style="color:#FCD34D;" id="adjCurrentBal"><?= number_format($tenant['coin_balance']) ?> coin</strong>
+    <p style="font-size:13px;color:var(--ash);margin-bottom:4px;">
+      Saldo saat ini: <strong style="color:#92400E;" id="adjCurrentBal"><?= number_format($tenant['coin_balance']) ?> coin</strong>
       <?php if ($trialCoinTotal > 0): ?>
         <span style="font-size:11px;background:#FEF3C7;color:#92400E;border-radius:4px;padding:1px 6px;margin-left:4px;">+ <?= number_format($trialCoinTotal) ?> trial (tidak terpengaruh)</span>
       <?php endif; ?>
     </p>
-    <p style="font-size:11px;color:rgba(255,255,255,.25);margin-bottom:14px;">Adjustment hanya mengubah saldo shared pool (bukan coin trial).</p>
+    <p style="font-size:11px;color:var(--ash-dim);margin-bottom:14px;">Adjustment hanya mengubah saldo shared pool (bukan coin trial).</p>
 
     <div style="display:flex;flex-direction:column;gap:14px;">
       <div>
-        <label style="font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:rgba(255,255,255,.4);display:block;margin-bottom:6px;">
+        <label style="font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--ash);display:block;margin-bottom:6px;">
           Jumlah Coin *
         </label>
         <input type="number" id="adjCoin" placeholder="Positif = tambah, negatif = kurangi"
-               style="width:100%;padding:10px 12px;background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.1);border-radius:8px;color:#fff;font-family:var(--mono);font-size:14px;outline:none;"
+               style="width:100%;padding:10px 12px;background:var(--crease-soft);border:1.5px solid var(--crease);border-radius:8px;color:#fff;font-family:var(--mono);font-size:14px;outline:none;"
                oninput="previewAdj()"/>
-        <div id="adjPreview" style="font-size:12px;color:rgba(255,255,255,.3);margin-top:5px;"></div>
+        <div id="adjPreview" style="font-size:12px;color:var(--ash-dim);margin-top:5px;"></div>
       </div>
 
       <div>
-        <label style="font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:rgba(255,255,255,.4);display:block;margin-bottom:6px;">
+        <label style="font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--ash);display:block;margin-bottom:6px;">
           Alasan *
         </label>
-        <select id="adjReason" style="width:100%;padding:9px 12px;background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.1);border-radius:8px;color:#fff;font-family:var(--font);font-size:13px;outline:none;">
+        <select id="adjReason" style="width:100%;padding:9px 12px;background:var(--crease-soft);border:1.5px solid var(--crease);border-radius:8px;color:#fff;font-family:var(--font);font-size:13px;outline:none;">
           <option value="kompensasi_downtime">Kompensasi downtime</option>
           <option value="bonus_referral">Bonus referral</option>
           <option value="koreksi_error">Koreksi error</option>
@@ -1097,15 +1097,15 @@ $billingStat = $bsSt->fetch(PDO::FETCH_ASSOC);
       </div>
 
       <div>
-        <label style="font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:rgba(255,255,255,.4);display:block;margin-bottom:6px;">
+        <label style="font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--ash);display:block;margin-bottom:6px;">
           Catatan Internal
         </label>
         <input type="text" id="adjNote" placeholder="Keterangan tambahan (opsional)"
-               style="width:100%;padding:10px 12px;background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.1);border-radius:8px;color:#fff;font-family:var(--font);font-size:13px;outline:none;"/>
+               style="width:100%;padding:10px 12px;background:var(--crease-soft);border:1.5px solid var(--crease);border-radius:8px;color:#fff;font-family:var(--font);font-size:13px;outline:none;"/>
       </div>
     </div>
 
-    <div style="font-size:11px;color:rgba(255,255,255,.25);margin-top:14px;">
+    <div style="font-size:11px;color:var(--ash-dim);margin-top:14px;">
       ⚠️ Adjustment tidak mengirim notifikasi WA ke tenant.
     </div>
 
@@ -1121,7 +1121,7 @@ $billingStat = $bsSt->fetch(PDO::FETCH_ASSOC);
   <div class="sa-card">
     <div class="sa-card-header">
       <h3>📅 Aktivitas Terakhir (30 Hari)</h3>
-      <span style="font-size:12px;color:rgba(255,255,255,.35);">Dari hl_audit_log</span>
+      <span style="font-size:12px;color:var(--ash-dim);">Dari hl_audit_log</span>
     </div>
     <div class="sa-card-body">
       <?php
@@ -1145,19 +1145,19 @@ $billingStat = $bsSt->fetch(PDO::FETCH_ASSOC);
               <tbody>
               <?php foreach ($acts as $a): ?>
               <tr>
-                <td style="font-size:12px;font-family:var(--mono);color:rgba(255,255,255,.45);"><?= htmlspecialchars(substr($a['created_at'],0,16)) ?></td>
+                <td style="font-size:12px;font-family:var(--mono);color:var(--ash);"><?= htmlspecialchars(substr($a['created_at'],0,16)) ?></td>
                 <td style="font-size:13px;"><?= htmlspecialchars($a['action']) ?></td>
-                <td style="font-size:12px;color:rgba(255,255,255,.5);"><?= htmlspecialchars($a['outlet_nama'] ?? '#'.$a['outlet_id']) ?></td>
+                <td style="font-size:12px;color:var(--ash);"><?= htmlspecialchars($a['outlet_nama'] ?? '#'.$a['outlet_id']) ?></td>
               </tr>
               <?php endforeach; ?>
               </tbody>
             </table>
           </div>
           <?php else: ?>
-          <div style="color:rgba(255,255,255,.3);font-size:13px;padding:16px 0;">Belum ada aktivitas yang tercatat.</div>
+          <div style="color:var(--ash-dim);font-size:13px;padding:16px 0;">Belum ada aktivitas yang tercatat.</div>
           <?php endif;
       } catch (Throwable $e) {
-          echo '<div style="color:#FCA5A5;font-size:13px;">Gagal memuat aktivitas: ' . htmlspecialchars($e->getMessage()) . '</div>';
+          echo '<div style="color:#991B1B;font-size:13px;">Gagal memuat aktivitas: ' . htmlspecialchars($e->getMessage()) . '</div>';
       } ?>
     </div>
   </div>
@@ -1190,7 +1190,7 @@ $billingStat = $bsSt->fetch(PDO::FETCH_ASSOC);
           </tr>
         </thead>
         <tbody id="tenantErrTbody">
-          <tr><td colspan="5" style="text-align:center;color:rgba(255,255,255,.3);padding:32px;">Klik tab untuk memuat...</td></tr>
+          <tr><td colspan="5" style="text-align:center;color:var(--ash-dim);padding:32px;">Klik tab untuk memuat...</td></tr>
         </tbody>
       </table>
     </div>
@@ -1202,28 +1202,28 @@ $billingStat = $bsSt->fetch(PDO::FETCH_ASSOC);
 <div class="sa-modal-overlay" id="impersonateModal">
   <div class="sa-modal" style="max-width:460px;">
     <h3>🔍 Observasi Tenant</h3>
-    <p style="font-size:13px;color:rgba(255,255,255,.55);line-height:1.6;margin-bottom:20px;">
+    <p style="font-size:13px;color:var(--ash);line-height:1.6;margin-bottom:20px;">
       Anda akan masuk ke dashboard tenant <strong><?= htmlspecialchars($tenant['nama_perusahaan'] ?: $tenant['slug']) ?></strong>
       dalam <strong>mode read-only</strong>. Semua aksi tulis akan diblokir.<br><br>
       Sesi ini akan dicatat di audit log.
     </p>
-    <div style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:10px;padding:12px 16px;margin-bottom:20px;font-size:12.5px;color:#FCD34D;">
+    <div style="background:#FFFBEB;border:1px solid #FDE68A;border-radius:10px;padding:12px 16px;margin-bottom:20px;font-size:12.5px;color:#92400E;">
       ⚠️ Jangan gunakan fitur ini untuk mengakses data sensitif tenant tanpa keperluan yang jelas.
     </div>
     <form method="POST" action="/superadmin/impersonate.php" onsubmit="return validateImpersonateForm()">
       <input type="hidden" name="_csrf" value="<?= saGetCsrf() ?>">
       <input type="hidden" name="tenant_id" value="<?= $tenantId ?>">
       <div style="margin-bottom:16px;">
-        <label style="display:block;font-size:12px;font-weight:600;color:rgba(255,255,255,.7);margin-bottom:6px;">
-          Alasan Observasi <span style="color:#F87171">*</span>
+        <label style="display:block;font-size:12px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">
+          Alasan Observasi <span style="color:var(--coral)">*</span>
         </label>
         <textarea name="reason" id="impersonateReason" required
           placeholder="Contoh: Investigasi laporan bug kasir tidak bisa input order..."
-          style="width:100%;padding:10px 12px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);
+          style="width:100%;padding:10px 12px;background:var(--crease-soft);border:1px solid var(--crease);
                  border-radius:8px;color:#fff;font-size:13px;resize:vertical;min-height:72px;box-sizing:border-box;
                  font-family:inherit;outline:none;"
           maxlength="200" rows="3"></textarea>
-        <div style="text-align:right;font-size:11px;color:rgba(255,255,255,.3);margin-top:3px;">
+        <div style="text-align:right;font-size:11px;color:var(--ash-dim);margin-top:3px;">
           Maks. 200 karakter
         </div>
       </div>
@@ -1266,14 +1266,14 @@ function loadCoinHistory() {
   fetch(`client_detail.php?action=get_coin_history&id=${TENANT_ID}`, {headers:{'X-Requested-With':'XMLHttpRequest'}})
     .then(r=>r.json()).then(rows => {
       const tbody = document.getElementById('coinHistoryBody');
-      if (!rows.length) { tbody.innerHTML='<tr><td colspan="6" style="text-align:center;padding:20px;color:rgba(255,255,255,.35);">Belum ada riwayat.</td></tr>'; return; }
+      if (!rows.length) { tbody.innerHTML='<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--ash-dim);">Belum ada riwayat.</td></tr>'; return; }
       tbody.innerHTML = rows.map(r => `<tr>
         <td style="font-size:12px;">${fmtDate(r.created_at)}</td>
         <td><span class="sa-badge ${r.type==='topup'?'sa-badge-active':'sa-badge-red'}">${r.type}</span></td>
         <td style="font-family:var(--mono);">${parseInt(r.amount).toLocaleString('id-ID')}</td>
-        <td style="font-size:12px;color:rgba(255,255,255,.5);">${esc(r.feature_used||'-')}</td>
-        <td style="font-size:12px;color:rgba(255,255,255,.5);">${esc(r.description||'-')}</td>
-        <td style="font-family:var(--mono);color:#FCD34D;">${parseInt(r.balance_after).toLocaleString('id-ID')}</td>
+        <td style="font-size:12px;color:var(--ash);">${esc(r.feature_used||'-')}</td>
+        <td style="font-size:12px;color:var(--ash);">${esc(r.description||'-')}</td>
+        <td style="font-family:var(--mono);color:#92400E;">${parseInt(r.balance_after).toLocaleString('id-ID')}</td>
       </tr>`).join('');
     });
 }
@@ -1287,22 +1287,22 @@ function loadBilling() {
     .then(r => r.json()).then(d => {
       const tbody = document.getElementById('billingBody');
       if (!d.rows || !d.rows.length) {
-        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:20px;color:rgba(255,255,255,.35);">Belum ada pembayaran.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:20px;color:var(--ash-dim);">Belum ada pembayaran.</td></tr>';
         return;
       }
       tbody.innerHTML = d.rows.map(p => {
         const pkgBdl = p.package_nama || p.bundle_nama || '—';
         const waHtml = p.notif_wa_sent
-          ? '<span style="color:#6EE7B7;" title="WA terkirim">📲</span>'
-          : '<span style="color:rgba(255,255,255,.2);">—</span>';
+          ? '<span style="color:var(--sage);" title="WA terkirim">📲</span>'
+          : '<span style="color:var(--ash-dim);">—</span>';
         return `<tr>
           <td style="font-size:12px;">${p.tanggal_bayar ? new Date(p.tanggal_bayar).toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'}) : '—'}</td>
           <td><span class="sa-badge ${typeCls[p.type]||'sa-badge-indigo'}" style="font-size:10px;">${typeLabel[p.type]||p.type}</span></td>
-          <td style="font-size:12px;color:rgba(255,255,255,.55);">${esc(pkgBdl)}</td>
+          <td style="font-size:12px;color:var(--ash);">${esc(pkgBdl)}</td>
           <td style="font-family:var(--mono);font-size:13px;font-weight:600;">${p.nominal_dibayar > 0 ? rupiah(p.nominal_dibayar) : '—'}</td>
-          <td style="font-family:var(--mono);color:#FCD34D;">${p.coin_dikreditkan > 0 ? '+' + parseInt(p.coin_dikreditkan).toLocaleString('id-ID') : (p.coin_dikreditkan < 0 ? parseInt(p.coin_dikreditkan).toLocaleString('id-ID') : '—')}</td>
-          <td style="font-family:var(--mono);font-size:11px;color:rgba(255,255,255,.4);">${esc(p.ref_transfer||'—')}</td>
-          <td style="font-size:11px;color:rgba(255,255,255,.35);">${esc(p.superadmin_nama||'—')}</td>
+          <td style="font-family:var(--mono);color:#92400E;">${p.coin_dikreditkan > 0 ? '+' + parseInt(p.coin_dikreditkan).toLocaleString('id-ID') : (p.coin_dikreditkan < 0 ? parseInt(p.coin_dikreditkan).toLocaleString('id-ID') : '—')}</td>
+          <td style="font-family:var(--mono);font-size:11px;color:var(--ash);">${esc(p.ref_transfer||'—')}</td>
+          <td style="font-size:11px;color:var(--ash-dim);">${esc(p.superadmin_nama||'—')}</td>
           <td>${waHtml}</td>
         </tr>`;
       }).join('');
@@ -1332,7 +1332,7 @@ function previewAdj() {
   const el = document.getElementById('adjPreview');
   if (!val) { el.textContent = ''; return; }
   const sign = val > 0 ? '+' : '';
-  el.innerHTML = `${sign}${val.toLocaleString('id-ID')} coin → saldo baru: <strong style="color:#FCD34D;">${newBal.toLocaleString('id-ID')} coin</strong>`;
+  el.innerHTML = `${sign}${val.toLocaleString('id-ID')} coin → saldo baru: <strong style="color:#92400E;">${newBal.toLocaleString('id-ID')} coin</strong>`;
 }
 
 function submitAdjustment() {
@@ -1360,12 +1360,12 @@ function loadNotes() {
   fetch(`client_detail.php?action=get_notes&id=${TENANT_ID}`, {headers:{'X-Requested-With':'XMLHttpRequest'}})
     .then(r=>r.json()).then(notes => {
       const el = document.getElementById('notesContainer');
-      if (!notes.length) { el.innerHTML='<p style="color:rgba(255,255,255,.35);font-size:13px;">Belum ada catatan.</p>'; return; }
+      if (!notes.length) { el.innerHTML='<p style="color:var(--ash-dim);font-size:13px;">Belum ada catatan.</p>'; return; }
       el.innerHTML = notes.map(n => `
-        <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,${n.is_pinned?'.2':'.07'});border-radius:10px;padding:14px 16px;margin-bottom:10px;position:relative;">
-          ${n.is_pinned ? '<span style="color:#FCD34D;font-size:12px;">📌 Pinned</span><br>' : ''}
-          <div style="font-size:14px;color:rgba(255,255,255,.85);white-space:pre-wrap;margin-bottom:8px;">${esc(n.note)}</div>
-          <div style="font-size:11px;color:rgba(255,255,255,.3);">${esc(n.sa_nama||'Admin')} · ${fmtDate(n.created_at)}</div>
+        <div style="background:var(--linen);border:1px solid rgba(255,255,255,${n.is_pinned?'.2':'.07'});border-radius:10px;padding:14px 16px;margin-bottom:10px;position:relative;">
+          ${n.is_pinned ? '<span style="color:#92400E;font-size:12px;">📌 Pinned</span><br>' : ''}
+          <div style="font-size:14px;color:var(--ink);white-space:pre-wrap;margin-bottom:8px;">${esc(n.note)}</div>
+          <div style="font-size:11px;color:var(--ash-dim);">${esc(n.sa_nama||'Admin')} · ${fmtDate(n.created_at)}</div>
           <div style="position:absolute;top:12px;right:12px;display:flex;gap:6px;">
             <button class="sa-btn sa-btn-sm sa-btn-outline" onclick="pinNote(${n.id})">${n.is_pinned?'Unpin':'Pin'}</button>
             <button class="sa-btn sa-btn-sm sa-btn-danger" onclick="deleteNote(${n.id})">Hapus</button>
@@ -1402,19 +1402,19 @@ function loadComms() {
   fetch(`client_detail.php?action=get_comms&id=${TENANT_ID}`, {headers:{'X-Requested-With':'XMLHttpRequest'}})
     .then(r=>r.json()).then(items => {
       const el = document.getElementById('commsTimeline');
-      if (!items.length) { el.innerHTML='<p style="color:rgba(255,255,255,.35);font-size:13px;">Belum ada riwayat komunikasi.</p>'; return; }
+      if (!items.length) { el.innerHTML='<p style="color:var(--ash-dim);font-size:13px;">Belum ada riwayat komunikasi.</p>'; return; }
       const chIcons = { wa:'💬', email:'📧', call:'📞', system:'⚙️' };
       el.innerHTML = items.map(c => `
         <div style="display:flex;gap:12px;margin-bottom:14px;">
-          <div style="width:36px;height:36px;border-radius:50%;background:rgba(99,102,241,.2);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:16px;">${chIcons[c.channel]||'💬'}</div>
+          <div style="width:36px;height:36px;border-radius:50%;background:#C7D2FE;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:16px;">${chIcons[c.channel]||'💬'}</div>
           <div style="flex:1;">
             <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
               <strong style="font-size:13.5px;">${esc(c.subject||'(tanpa subjek)')}</strong>
               <span class="sa-badge sa-badge-indigo" style="font-size:10px;">${esc(c.type)}</span>
               <span class="sa-badge sa-badge-indigo" style="font-size:10px;">${esc(c.channel)}</span>
             </div>
-            <div style="font-size:13px;color:rgba(255,255,255,.6);margin-top:4px;white-space:pre-wrap;">${esc(c.message||'')}</div>
-            <div style="font-size:11px;color:rgba(255,255,255,.3);margin-top:4px;">${esc(c.sa_nama||'Admin')} · ${fmtDate(c.created_at)}</div>
+            <div style="font-size:13px;color:var(--ink-soft);margin-top:4px;white-space:pre-wrap;">${esc(c.message||'')}</div>
+            <div style="font-size:11px;color:var(--ash-dim);margin-top:4px;">${esc(c.sa_nama||'Admin')} · ${fmtDate(c.created_at)}</div>
           </div>
         </div>`).join('');
     });
@@ -1462,24 +1462,24 @@ function loadTickets() {
 
       const tbody = document.getElementById('ticketsBody');
       if (!d.rows || !d.rows.length) {
-        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:20px;color:rgba(255,255,255,.35);">Belum ada tiket.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:20px;color:var(--ash-dim);">Belum ada tiket.</td></tr>';
         return;
       }
       tbody.innerHTML = d.rows.map(t => `<tr>
-        <td style="font-family:var(--mono);font-size:11px;color:rgba(255,255,255,.4);">#${t.id}</td>
+        <td style="font-family:var(--mono);font-size:11px;color:var(--ash);">#${t.id}</td>
         <td style="max-width:220px;">
-          <a href="/superadmin/support.php?ticket_id=${t.id}" target="_blank" style="color:#A5B4FC;text-decoration:none;font-size:13px;">${esc(t.subject||'(tanpa subjek)')}</a>
+          <a href="/superadmin/support.php?ticket_id=${t.id}" target="_blank" style="color:var(--indigo);text-decoration:none;font-size:13px;">${esc(t.subject||'(tanpa subjek)')}</a>
         </td>
         <td><span class="sa-badge sa-badge-indigo" style="font-size:10px;">${esc(t.category||'—')}</span></td>
         <td><span class="sa-badge ${tkPriorCls[t.priority]||'sa-badge-indigo'}" style="font-size:10px;">${esc(t.priority||'—')}</span></td>
         <td><span class="sa-badge ${tkStatusCls[t.status]||'sa-badge-indigo'}" style="font-size:10px;">${tkStatusLabel[t.status]||t.status}</span></td>
-        <td style="font-size:12px;color:rgba(255,255,255,.45);">${esc(t.assigned_nama||'—')}</td>
-        <td style="font-family:var(--mono);font-size:12px;color:rgba(255,255,255,.5);">${t.reply_count||0}</td>
-        <td style="font-size:11px;color:rgba(255,255,255,.35);">${fmtDate(t.updated_at||t.created_at)}</td>
+        <td style="font-size:12px;color:var(--ash);">${esc(t.assigned_nama||'—')}</td>
+        <td style="font-family:var(--mono);font-size:12px;color:var(--ash);">${t.reply_count||0}</td>
+        <td style="font-size:11px;color:var(--ash-dim);">${fmtDate(t.updated_at||t.created_at)}</td>
       </tr>`).join('');
     }).catch(() => {
       document.getElementById('ticketsBody').innerHTML =
-        '<tr><td colspan="8" style="text-align:center;padding:20px;color:rgba(255,255,255,.35);">Gagal memuat tiket.</td></tr>';
+        '<tr><td colspan="8" style="text-align:center;padding:20px;color:var(--ash-dim);">Gagal memuat tiket.</td></tr>';
     });
 }
 
@@ -1550,33 +1550,33 @@ const MIG_STATUS = { completed:'✅', partial:'⚠️', failed:'❌', importing:
 
 async function loadMigrations() {
     const tbody = document.getElementById('migTbody');
-    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:rgba(255,255,255,.3);padding:24px;">Memuat...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--ash-dim);padding:24px;">Memuat...</td></tr>';
     try {
         const resp = await fetch(`client_detail.php?action=get_migrations&id=${TENANT_ID}`);
         const rows = await resp.json();
         if (!rows.length) {
-            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:rgba(255,255,255,.3);padding:24px;">Belum ada migration job.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--ash-dim);padding:24px;">Belum ada migration job.</td></tr>';
             return;
         }
         tbody.innerHTML = rows.map(r => {
             const pct = r.total_rows > 0 ? Math.round(r.success_rows/r.total_rows*100) : 0;
             const c   = pct>=95?'#10B981':pct>=60?'#F59E0B':'#EF4444';
             return `<tr>
-                <td style="font-size:11px;font-family:var(--mono);color:rgba(255,255,255,.4);">#${r.id}</td>
+                <td style="font-size:11px;font-family:var(--mono);color:var(--ash);">#${r.id}</td>
                 <td><span class="sa-badge sa-badge-indigo" style="font-size:10px;">${MIG_ENTITY[r.entity_type]||r.entity_type}</span></td>
                 <td style="font-size:11.5px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${r.file_name}">${r.file_name}</td>
                 <td style="min-width:110px;">
-                    <div style="font-size:11.5px;color:rgba(255,255,255,.6);margin-bottom:3px;">${r.success_rows}/${r.total_rows}</div>
-                    <div style="height:4px;background:rgba(255,255,255,.07);border-radius:2px;overflow:hidden;"><div style="height:100%;background:${c};width:${pct}%;"></div></div>
+                    <div style="font-size:11.5px;color:var(--ink-soft);margin-bottom:3px;">${r.success_rows}/${r.total_rows}</div>
+                    <div style="height:4px;background:var(--crease-soft);border-radius:2px;overflow:hidden;"><div style="height:100%;background:${c};width:${pct}%;"></div></div>
                 </td>
-                <td style="font-size:11.5px;">${r.is_assisted?'<span class="sa-badge sa-badge-yellow" style="font-size:10px;">Assisted</span>':'<span style="font-size:11px;color:rgba(255,255,255,.35);">Self</span>'}</td>
+                <td style="font-size:11.5px;">${r.is_assisted?'<span class="sa-badge sa-badge-yellow" style="font-size:10px;">Assisted</span>':'<span style="font-size:11px;color:var(--ash-dim);">Self</span>'}</td>
                 <td>${MIG_STATUS[r.status]||'?'} <span style="font-size:11.5px;">${r.status}</span></td>
-                <td style="font-size:11px;color:rgba(255,255,255,.3);">${(r.created_at||'').substring(0,16)}</td>
+                <td style="font-size:11px;color:var(--ash-dim);">${(r.created_at||'').substring(0,16)}</td>
                 <td>${r.failed_rows>0?`<a href="/superadmin/migrations.php?action=error_report&job_id=${r.id}" class="sa-btn sa-btn-sm sa-btn-danger">⬇</a>`:''}</td>
             </tr>`;
         }).join('');
     } catch(e) {
-        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:#FCA5A5;padding:24px;">Gagal: ${e.message}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:#991B1B;padding:24px;">Gagal: ${e.message}</td></tr>`;
     }
 }
 
@@ -1611,7 +1611,7 @@ async function loadTenantErrors(page) {
     const tbody  = document.getElementById('tenantErrTbody');
     const type   = document.getElementById('tenantErrType').value;
     const status = document.getElementById('tenantErrStatus').value;
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:rgba(255,255,255,.3);padding:24px;">Memuat...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--ash-dim);padding:24px;">Memuat...</td></tr>';
 
     try {
         const url = `/superadmin/health.php?action=errors&page=${page}&type=${encodeURIComponent(type)}&status=${encodeURIComponent(status)}&tenant_id=${TENANT_ID}`;
@@ -1619,7 +1619,7 @@ async function loadTenantErrors(page) {
         const d    = await resp.json();
 
         if (!d.rows || !d.rows.length) {
-            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:rgba(255,255,255,.3);padding:24px;">Tidak ada error untuk tenant ini.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--ash-dim);padding:24px;">Tidak ada error untuk tenant ini.</td></tr>';
             document.getElementById('tenantErrPagination').innerHTML = '';
             return;
         }
@@ -1632,7 +1632,7 @@ async function loadTenantErrors(page) {
               <td><span class="sa-badge ${badge}">${r.error_type}</span></td>
               <td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${r.error_message}">${r.error_message.substring(0,80)}${r.error_message.length>80?'…':''}</td>
               <td style="text-align:center;font-family:var(--mono);">${r.occurrence_count}</td>
-              <td style="font-size:11.5px;color:rgba(255,255,255,.4);">${(r.last_seen||'').substring(0,16)}</td>
+              <td style="font-size:11.5px;color:var(--ash);">${(r.last_seen||'').substring(0,16)}</td>
               <td>${sta}</td>
             </tr>`;
         }).join('');
@@ -1640,13 +1640,13 @@ async function loadTenantErrors(page) {
         // Pagination
         const pg = document.getElementById('tenantErrPagination');
         if (d.pages <= 1) { pg.innerHTML=''; return; }
-        let html = `<span style="font-size:12px;color:rgba(255,255,255,.35);">Hal ${d.page} / ${d.pages}</span>`;
+        let html = `<span style="font-size:12px;color:var(--ash-dim);">Hal ${d.page} / ${d.pages}</span>`;
         if (d.page > 1)     html += `<button class="sa-btn sa-btn-sm sa-btn-outline" onclick="loadTenantErrors(${d.page-1})">← Prev</button>`;
         if (d.page < d.pages) html += `<button class="sa-btn sa-btn-sm sa-btn-outline" onclick="loadTenantErrors(${d.page+1})">Next →</button>`;
         pg.innerHTML = html;
 
     } catch(e) {
-        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:#FCA5A5;padding:24px;">Gagal: ${e.message}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:#991B1B;padding:24px;">Gagal: ${e.message}</td></tr>`;
     }
 }
 </script>

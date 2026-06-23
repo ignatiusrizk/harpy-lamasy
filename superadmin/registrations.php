@@ -198,20 +198,20 @@ if ($action) {
 <?php saRenderHead('Registrasi'); ?>
 <style>
 .reg-filter-tabs {
-  display: flex; gap: 0; border-bottom: 1px solid rgba(255,255,255,.07);
+  display: flex; gap: 0; border-bottom: 1px solid var(--crease-soft);
   margin-bottom: 0; overflow-x: auto;
 }
 .reg-tab {
   padding: 12px 18px; font-size: 13px; font-weight: 600;
-  color: rgba(255,255,255,.4); background: none; border: none;
+  color: var(--ash); background: none; border: none;
   cursor: pointer; white-space: nowrap;
   border-bottom: 2px solid transparent; margin-bottom: -1px;
   transition: all .15s; display: flex; align-items: center; gap: 6px;
 }
-.reg-tab:hover { color: rgba(255,255,255,.8); }
+.reg-tab:hover { color: var(--ink); }
 .reg-tab.active { color: var(--sa); border-bottom-color: var(--sa); }
 .reg-tab .badge {
-  background: rgba(255,255,255,.1); border-radius: 20px;
+  background: var(--crease); border-radius: 20px;
   padding: 1px 7px; font-size: 10.5px; font-family: var(--mono);
 }
 .reg-tab.active .badge { background: var(--sa-l); color: var(--sa); }
@@ -220,19 +220,19 @@ if ($action) {
   display: inline-flex; align-items: center; gap: 4px;
   padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600;
 }
-.s-pending         { background: rgba(245,158,11,.15); color: #FCD34D; border: 1px solid rgba(245,158,11,.25); }
-.s-payment_pending { background: rgba(99,102,241,.15); color: #A5B4FC; border: 1px solid rgba(99,102,241,.25); }
+.s-pending         { background: #FFFBEB; color: #FCD34D; border: 1px solid #FDE68A; }
+.s-payment_pending { background: #EEF2FF; color: #A5B4FC; border: 1px solid #C7D2FE; }
 .s-provisioning    { background: rgba(59,130,246,.15); color: #93C5FD; border: 1px solid rgba(59,130,246,.25); }
-.s-completed       { background: rgba(16,185,129,.15); color: #6EE7B7; border: 1px solid rgba(16,185,129,.25); }
-.s-failed          { background: rgba(239,68,68,.15);  color: #FCA5A5; border: 1px solid rgba(239,68,68,.25); }
+.s-completed       { background: #ECFDF5; color: #6EE7B7; border: 1px solid #A7F3D0; }
+.s-failed          { background: #FECACA;  color: #FCA5A5; border: 1px solid #FCA5A5; }
 .s-cancelled       { background: rgba(107,114,128,.15); color: #D1D5DB; border: 1px solid rgba(107,114,128,.25); }
 
 .src-badge {
   display: inline-block; padding: 2px 8px; border-radius: 20px;
   font-size: 10px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase;
 }
-.src-assisted    { background: rgba(99,102,241,.15); color: #A5B4FC; }
-.src-self_service { background: rgba(16,185,129,.15); color: #6EE7B7; }
+.src-assisted    { background: #EEF2FF; color: #A5B4FC; }
+.src-self_service { background: #ECFDF5; color: #6EE7B7; }
 
 .wa-link {
   color: #86efac; font-size: 12px; text-decoration: none;
@@ -261,11 +261,11 @@ if ($action) {
 
 <!-- Filter bar -->
 <div class="sa-card" style="margin-bottom:0;">
-  <div style="padding:14px 20px;border-bottom:1px solid rgba(255,255,255,.07);display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+  <div style="padding:14px 20px;border-bottom:1px solid var(--crease-soft);display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
     <input type="text" id="searchInput" placeholder="Cari nama outlet, owner, WA..."
-           style="flex:1;min-width:200px;padding:8px 12px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:var(--r);color:var(--white);font-family:var(--font);font-size:13px;outline:none;"
+           style="flex:1;min-width:200px;padding:8px 12px;background:var(--crease-soft);border:1px solid var(--crease);border-radius:var(--r);color:var(--white);font-family:var(--font);font-size:13px;outline:none;"
            onkeyup="debounceLoad()" />
-    <span id="totalLabel" style="font-size:12px;color:rgba(255,255,255,.35);white-space:nowrap;"></span>
+    <span id="totalLabel" style="font-size:12px;color:var(--ash-dim);white-space:nowrap;"></span>
   </div>
   <div class="reg-filter-tabs">
     <button class="reg-tab active" data-status="" onclick="setTab(this,'')">
@@ -300,7 +300,7 @@ if ($action) {
         </tr>
       </thead>
       <tbody id="tableBody">
-        <tr><td colspan="8" style="text-align:center;padding:40px;color:rgba(255,255,255,.3)">Memuat...</td></tr>
+        <tr><td colspan="8" style="text-align:center;padding:40px;color:var(--ash-dim)">Memuat...</td></tr>
       </tbody>
     </table>
   </div>
@@ -352,7 +352,7 @@ if ($action) {
       </div>
     </div>
 
-    <p style="font-size:12px;color:rgba(255,255,255,.35);margin-bottom:16px;">
+    <p style="font-size:12px;color:var(--ash-dim);margin-bottom:16px;">
       Setelah disimpan, klik "Proses" untuk melanjutkan ke wizard provisioning.
     </p>
 
@@ -367,7 +367,7 @@ if ($action) {
 <div class="sa-modal-overlay" id="confirmOutletModal">
   <div class="sa-modal" style="max-width:460px;">
     <h3>✅ Konfirmasi Pembayaran Outlet</h3>
-    <p style="color:rgba(255,255,255,.55);font-size:13px;margin-bottom:16px;">
+    <p style="color:var(--ash);font-size:13px;margin-bottom:16px;">
       Outlet <strong id="confirmOutletName"></strong> akan segera diaktifkan setelah kamu konfirmasi
       bahwa pembayaran setup fee sudah diterima.
     </p>
@@ -378,7 +378,7 @@ if ($action) {
                   placeholder="cth: Sudah transfer via BCA tgl 28 Mei, ref TXN123..."></textarea>
       </div>
     </div>
-    <p style="font-size:11px;color:rgba(255,255,255,.3);margin-bottom:16px;">
+    <p style="font-size:11px;color:var(--ash-dim);margin-bottom:16px;">
       ⚠️ Pastikan pembayaran sudah benar-benar diterima sebelum mengaktifkan outlet.
     </p>
     <div class="sa-modal-footer">
@@ -431,7 +431,7 @@ async function loadCounts() {
 function renderTable(j) {
   const tb = document.getElementById('tableBody');
   if (!j.data || !j.data.length) {
-    tb.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:40px;color:rgba(255,255,255,.3)">Tidak ada data</td></tr>';
+    tb.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--ash-dim)">Tidak ada data</td></tr>';
     document.getElementById('paginationWrap').innerHTML = '';
     return;
   }
@@ -462,16 +462,16 @@ function renderTable(j) {
     }
 
     const reqTypeBadge = r.request_type === 'add_outlet'
-      ? `<span class="src-badge" style="background:rgba(16,185,129,.15);color:#6EE7B7">+Outlet</span>`
+      ? `<span class="src-badge" style="background:#ECFDF5;color:var(--sage)">+Outlet</span>`
       : '';
 
     return `
     <tr>
-      <td style="font-family:var(--mono);font-size:12px;color:rgba(255,255,255,.35)">#${r.id}</td>
+      <td style="font-family:var(--mono);font-size:12px;color:var(--ash-dim)">#${r.id}</td>
       <td>
         <div style="font-weight:700;color:var(--white)">${esc(r.nama_outlet)}</div>
-        ${r.nama_perusahaan ? `<div style="font-size:11px;color:rgba(255,255,255,.35)">${esc(r.nama_perusahaan)}</div>` : ''}
-        ${r.kota ? `<div style="font-size:11px;color:rgba(255,255,255,.3)">${esc(r.kota)}</div>` : ''}
+        ${r.nama_perusahaan ? `<div style="font-size:11px;color:var(--ash-dim)">${esc(r.nama_perusahaan)}</div>` : ''}
+        ${r.kota ? `<div style="font-size:11px;color:var(--ash-dim)">${esc(r.kota)}</div>` : ''}
         ${reqTypeBadge}
       </td>
       <td>${esc(r.owner_name)}</td>
@@ -482,7 +482,7 @@ function renderTable(j) {
       </td>
       <td><span class="src-badge src-${r.source}">${r.source === 'assisted' ? 'Assisted' : 'Self'}</span></td>
       <td><span class="status-badge s-${r.status}">${statusLabels[r.status] || r.status}</span></td>
-      <td style="font-size:12px;color:rgba(255,255,255,.4)">${fmtDate(r.created_at)}</td>
+      <td style="font-size:12px;color:var(--ash)">${fmtDate(r.created_at)}</td>
       <td>${actions}</td>
     </tr>`;
   }).join('');
@@ -494,7 +494,7 @@ function renderTable(j) {
 function renderPagination(j) {
   const wrap = document.getElementById('paginationWrap');
   if (j.total_pages <= 1) { wrap.innerHTML = ''; return; }
-  let html = `<span style="font-size:12px;color:rgba(255,255,255,.3);margin-right:8px;">
+  let html = `<span style="font-size:12px;color:var(--ash-dim);margin-right:8px;">
     ${j.page} / ${j.total_pages}
   </span>`;
   html += `<button class="sa-btn sa-btn-outline sa-btn-sm ${j.page<=1?'disabled':''}" onclick="goPage(${j.page-1})">&#x2190;</button>`;

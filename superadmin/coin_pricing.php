@@ -237,11 +237,11 @@ $csrf = saGetCsrf();
   .cp-toolbar { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:14px; }
   .cp-tabs { display:flex; gap:6px; flex-wrap:wrap; }
   .cp-tab {
-    background:rgba(255,255,255,.05); color:rgba(255,255,255,.7); border:1px solid rgba(255,255,255,.1);
+    background:var(--crease-soft); color:var(--ink-soft); border:1px solid var(--crease);
     padding:7px 14px; border-radius:8px; cursor:pointer; font-size:13px; font-weight:600;
     transition:all .15s;
   }
-  .cp-tab:hover { background:rgba(255,255,255,.08); color:#fff; }
+  .cp-tab:hover { background:var(--crease-soft); color:#fff; }
   .cp-tab.active { background:var(--sa); color:#0F1C3A; border-color:var(--sa); }
 
   .cat-badge {
@@ -250,13 +250,13 @@ $csrf = saGetCsrf();
   }
   .cat-ai       { background:rgba(168,85,247,.18); color:#C4B5FD; }
   .cat-whatsapp { background:rgba(34,197,94,.18); color:#86EFAC; }
-  .cat-dokumen  { background:rgba(59,130,246,.18); color:#93C5FD; }
-  .cat-export   { background:rgba(245,158,11,.18); color:#FCD34D; }
+  .cat-dokumen  { background:rgba(59,130,246,.18); color:#1E40AF; }
+  .cat-export   { background:rgba(245,158,11,.18); color:#92400E; }
   .cat-lainnya  { background:rgba(156,163,175,.18); color:#D1D5DB; }
 
-  .price-cell { font-weight:700; color:#FCD34D; font-family:var(--mono); }
-  .min-cell   { font-size:11px; color:rgba(255,255,255,.5); font-family:var(--mono); }
-  .feat-key   { font-family:var(--mono); font-size:10px; color:rgba(255,255,255,.4); margin-top:2px; }
+  .price-cell { font-weight:700; color:#92400E; font-family:var(--mono); }
+  .min-cell   { font-size:11px; color:var(--ash); font-family:var(--mono); }
+  .feat-key   { font-family:var(--mono); font-size:10px; color:var(--ash); margin-top:2px; }
 
   .modal-overlay {
     position:fixed; inset:0; background:rgba(0,0,0,.7); z-index:1000;
@@ -264,32 +264,32 @@ $csrf = saGetCsrf();
   }
   .modal-overlay.open { display:flex; }
   .modal-box {
-    background:#1B2D5A; color:#fff; border:1px solid rgba(255,255,255,.1);
+    background:var(--paper); color:#fff; border:1px solid var(--crease);
     border-radius:14px; padding:24px; max-width:520px; width:100%; max-height:90vh; overflow-y:auto;
   }
-  .modal-title { font-size:16px; font-weight:800; margin-bottom:18px; padding-bottom:12px; border-bottom:1px solid rgba(255,255,255,.1); }
+  .modal-title { font-size:16px; font-weight:800; margin-bottom:18px; padding-bottom:12px; border-bottom:1px solid var(--crease); }
   .form-row { margin-bottom:14px; }
-  .form-row label { display:block; font-size:12px; font-weight:600; color:rgba(255,255,255,.7); margin-bottom:6px; }
+  .form-row label { display:block; font-size:12px; font-weight:600; color:var(--ink-soft); margin-bottom:6px; }
   .form-row input, .form-row select, .form-row textarea {
-    width:100%; padding:10px 12px; background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.15);
+    width:100%; padding:10px 12px; background:var(--crease-soft); border:1px solid var(--crease);
     border-radius:8px; color:#fff; font-size:13px; font-family:var(--font);
   }
   .form-row textarea { resize:vertical; min-height:60px; }
-  .form-row small { display:block; font-size:11px; color:rgba(255,255,255,.4); margin-top:4px; }
-  .form-actions { display:flex; gap:10px; justify-content:flex-end; margin-top:20px; padding-top:16px; border-top:1px solid rgba(255,255,255,.1); }
+  .form-row small { display:block; font-size:11px; color:var(--ash); margin-top:4px; }
+  .form-actions { display:flex; gap:10px; justify-content:flex-end; margin-top:20px; padding-top:16px; border-top:1px solid var(--crease); }
 
   .toggle-pill {
     display:inline-flex; align-items:center; gap:6px; cursor:pointer; user-select:none;
     padding:4px 10px; border-radius:20px; font-size:11px; font-weight:700;
   }
   .toggle-pill.on  { background:rgba(34,197,94,.15); color:#86EFAC; }
-  .toggle-pill.off { background:rgba(239,68,68,.15); color:#FCA5A5; }
+  .toggle-pill.off { background:#FECACA; color:#991B1B; }
   .toggle-pill .dot { width:8px; height:8px; border-radius:50%; }
   .toggle-pill.on .dot  { background:#10B981; }
   .toggle-pill.off .dot { background:#EF4444; }
 
   .alert-msg { padding:10px 14px; border-radius:8px; font-size:13px; margin-bottom:14px; }
-  .alert-msg.error   { background:rgba(239,68,68,.15); color:#FCA5A5; border:1px solid rgba(239,68,68,.3); }
+  .alert-msg.error   { background:#FECACA; color:#991B1B; border:1px solid rgba(239,68,68,.3); }
   .alert-msg.success { background:rgba(34,197,94,.15); color:#86EFAC; border:1px solid rgba(34,197,94,.3); }
 
   .tab-pane { display:none; }
@@ -322,7 +322,7 @@ $csrf = saGetCsrf();
     </div>
 
     <div class="cp-toolbar" style="padding:0 16px 12px;">
-      <span style="font-size:12px; color:rgba(255,255,255,.5);">Filter:</span>
+      <span style="font-size:12px; color:var(--ash);">Filter:</span>
       <div class="cp-tabs" id="filterTabs">
         <button class="cp-tab active" data-kat="" onclick="filterKat('')">Semua</button>
         <button class="cp-tab" data-kat="dokumen"  onclick="filterKat('dokumen')">📄 Dokumen</button>
@@ -348,7 +348,7 @@ $csrf = saGetCsrf();
           </tr>
         </thead>
         <tbody id="pricingBody">
-          <tr><td colspan="8" style="text-align:center;padding:32px;color:rgba(255,255,255,.3);">Memuat...</td></tr>
+          <tr><td colspan="8" style="text-align:center;padding:32px;color:var(--ash-dim);">Memuat...</td></tr>
         </tbody>
       </table>
     </div>
@@ -362,7 +362,7 @@ $csrf = saGetCsrf();
   <div class="sa-card">
     <div class="sa-card-header">
       <h3>History Perubahan Harga</h3>
-      <small style="color:rgba(255,255,255,.5);font-size:12px;">100 entry terakhir</small>
+      <small style="color:var(--ash);font-size:12px;">100 entry terakhir</small>
     </div>
     <div class="sa-table-wrap">
       <table class="sa-table">
@@ -378,7 +378,7 @@ $csrf = saGetCsrf();
           </tr>
         </thead>
         <tbody id="historyBody">
-          <tr><td colspan="7" style="text-align:center;padding:32px;color:rgba(255,255,255,.3);">Memuat...</td></tr>
+          <tr><td colspan="7" style="text-align:center;padding:32px;color:var(--ash-dim);">Memuat...</td></tr>
         </tbody>
       </table>
     </div>
@@ -437,7 +437,7 @@ $csrf = saGetCsrf();
       <textarea id="f_catatan" rows="2" placeholder="cth: AI cost $0.01/call, margin 3x"></textarea>
     </div>
     <div class="form-row">
-      <label>Alasan Perubahan <span style="color:#FCA5A5">*</span></label>
+      <label>Alasan Perubahan <span style="color:#991B1B">*</span></label>
       <textarea id="f_alasan" rows="2" placeholder="Wajib diisi kalau ada perubahan harga / status..."></textarea>
       <small>Wajib kalau ubah harga atau toggle status. Tercatat di history.</small>
     </div>
@@ -498,13 +498,13 @@ function fmtDate(s) {
 
 async function loadPricing() {
   const tb = document.getElementById('pricingBody');
-  tb.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:32px;color:rgba(255,255,255,.3);">Memuat...</td></tr>';
+  tb.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--ash-dim);">Memuat...</td></tr>';
   const url = '/superadmin/coin_pricing.php?action=list' + (currentKat ? '&kategori=' + currentKat : '');
   const r = await fetch(url);
   const j = await r.json();
-  if (!j.ok) { tb.innerHTML = `<tr><td colspan="7" style="color:#FCA5A5;padding:24px;text-align:center;">${esc(j.error || 'Gagal load')}</td></tr>`; return; }
+  if (!j.ok) { tb.innerHTML = `<tr><td colspan="7" style="color:#991B1B;padding:24px;text-align:center;">${esc(j.error || 'Gagal load')}</td></tr>`; return; }
   if (j.rows.length === 0) {
-    tb.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:32px;color:rgba(255,255,255,.3);">Belum ada fitur</td></tr>';
+    tb.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--ash-dim);">Belum ada fitur</td></tr>';
     return;
   }
   tb.innerHTML = j.rows.map(r => `
@@ -517,14 +517,14 @@ async function loadPricing() {
       <td class="price-cell" style="text-align:right;">${Number(r.harga_coin).toLocaleString('id-ID')}</td>
       <td class="min-cell" style="text-align:right;">${Number(r.harga_minimum).toLocaleString('id-ID')}</td>
       <td style="text-align:right;font-family:'DM Mono',monospace;font-size:12px">
-        ${(r.daily_limit && r.daily_limit > 0) ? `<span style="background:rgba(255,165,0,.15);color:#FBBF24;padding:2px 8px;border-radius:8px">${r.daily_limit}×</span>` : '<span style="color:rgba(255,255,255,.3)">∞</span>'}
+        ${(r.daily_limit && r.daily_limit > 0) ? `<span style="background:rgba(255,165,0,.15);color:var(--amber);padding:2px 8px;border-radius:8px">${r.daily_limit}×</span>` : '<span style="color:var(--ash-dim)">∞</span>'}
       </td>
       <td>
         <span class="toggle-pill ${r.is_active==1?'on':'off'}" onclick="quickToggle(${r.id}, ${r.is_active==1?0:1})">
           <span class="dot"></span>${r.is_active==1?'Aktif':'Nonaktif'}
         </span>
       </td>
-      <td style="font-size:11px;color:rgba(255,255,255,.5);">
+      <td style="font-size:11px;color:var(--ash);">
         ${fmtDate(r.updated_at)}<br>
         <span style="font-size:10px;">${r.updated_by_name ? 'oleh ' + esc(r.updated_by_name) : ''}</span>
       </td>
@@ -537,35 +537,35 @@ async function loadPricing() {
 
 async function loadHistory() {
   const tb = document.getElementById('historyBody');
-  tb.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:32px;color:rgba(255,255,255,.3);">Memuat...</td></tr>';
+  tb.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--ash-dim);">Memuat...</td></tr>';
   const r = await fetch('/superadmin/coin_pricing.php?action=history');
   const j = await r.json();
-  if (!j.ok) { tb.innerHTML = `<tr><td colspan="7" style="color:#FCA5A5;padding:24px;text-align:center;">${esc(j.error || 'Gagal load')}</td></tr>`; return; }
+  if (!j.ok) { tb.innerHTML = `<tr><td colspan="7" style="color:#991B1B;padding:24px;text-align:center;">${esc(j.error || 'Gagal load')}</td></tr>`; return; }
   if (j.rows.length === 0) {
-    tb.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:32px;color:rgba(255,255,255,.3);">Belum ada history perubahan</td></tr>';
+    tb.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--ash-dim);">Belum ada history perubahan</td></tr>';
     return;
   }
   tb.innerHTML = j.rows.map(r => {
     const priceDiff = Number(r.harga_baru) - Number(r.harga_lama);
-    const diffClass = priceDiff > 0 ? 'color:#FCA5A5' : (priceDiff < 0 ? 'color:#86EFAC' : 'color:rgba(255,255,255,.5)');
+    const diffClass = priceDiff > 0 ? 'color:#991B1B' : (priceDiff < 0 ? 'color:#86EFAC' : 'color:var(--ash)');
     const statusChange = (r.is_active_lama != null && Number(r.is_active_lama) !== Number(r.is_active_baru))
       ? `<span class="toggle-pill ${r.is_active_baru==1?'on':'off'}"><span class="dot"></span>${r.is_active_baru==1?'Aktif':'Nonaktif'}</span>`
-      : '<span style="color:rgba(255,255,255,.3);font-size:11px;">—</span>';
+      : '<span style="color:var(--ash-dim);font-size:11px;">—</span>';
     return `
       <tr>
-        <td style="font-size:11px;color:rgba(255,255,255,.6);">${fmtDate(r.changed_at)}</td>
+        <td style="font-size:11px;color:var(--ink-soft);">${fmtDate(r.changed_at)}</td>
         <td>
           <div style="font-weight:600;font-size:12px;">${esc(r.nama_fitur)}</div>
           <div class="feat-key">${esc(r.feature_key)}</div>
         </td>
-        <td class="price-cell" style="text-align:right;color:rgba(255,255,255,.5);">${Number(r.harga_lama).toLocaleString('id-ID')}</td>
+        <td class="price-cell" style="text-align:right;color:var(--ash);">${Number(r.harga_lama).toLocaleString('id-ID')}</td>
         <td class="price-cell" style="text-align:right;">
           ${Number(r.harga_baru).toLocaleString('id-ID')}
           ${priceDiff !== 0 ? `<div style="font-size:10px;${diffClass};">${priceDiff > 0 ? '+' : ''}${priceDiff}</div>` : ''}
         </td>
         <td>${statusChange}</td>
         <td style="font-size:12px;">${esc(r.changed_by_name || '-')}</td>
-        <td style="font-size:12px;color:rgba(255,255,255,.7);max-width:240px;">${esc(r.alasan || '-')}</td>
+        <td style="font-size:12px;color:var(--ink-soft);max-width:240px;">${esc(r.alasan || '-')}</td>
       </tr>
     `;
   }).join('');

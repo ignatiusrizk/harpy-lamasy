@@ -169,7 +169,7 @@ if ($action) {
         </tr>
       </thead>
       <tbody id="crBody">
-        <tr><td colspan="6" style="text-align:center;padding:32px;color:rgba(255,255,255,.35);">Memuat...</td></tr>
+        <tr><td colspan="6" style="text-align:center;padding:32px;color:var(--ash-dim);">Memuat...</td></tr>
       </tbody>
     </table>
   </div>
@@ -237,7 +237,7 @@ const riskBadges = {
 };
 
 function relTime(ts) {
-  if (!ts) return '<span style="color:rgba(255,255,255,.3);">Belum pernah</span>';
+  if (!ts) return '<span style="color:var(--ash-dim);">Belum pernah</span>';
   const diff = Math.floor((Date.now() - new Date(ts).getTime()) / 1000);
   if (diff < 3600)  return Math.floor(diff/60) + ' mnt lalu';
   if (diff < 86400) return Math.floor(diff/3600) + ' jam lalu';
@@ -249,7 +249,7 @@ function esc(s) { const d=document.createElement('div'); d.textContent=s||''; re
 function renderChurn(rows) {
   const tbody = document.getElementById('crBody');
   if (!rows.length) {
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:24px;color:rgba(255,255,255,.35);">Tidak ada churn risk saat ini.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--ash-dim);">Tidak ada churn risk saat ini.</td></tr>';
     return;
   }
   tbody.innerHTML = rows.map(r => {

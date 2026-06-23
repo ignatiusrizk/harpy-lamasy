@@ -118,62 +118,62 @@ if ($action) {
 .sw input { opacity: 0; width: 0; height: 0; }
 .sw-track {
   position: absolute; inset: 0; border-radius: 20px; cursor: pointer;
-  background: rgba(255,255,255,.12); transition: background .2s;
+  background: var(--crease); transition: background .2s;
 }
 .sw-track::after {
   content: ''; position: absolute; left: 3px; top: 3px;
   width: 14px; height: 14px; border-radius: 50%;
-  background: rgba(255,255,255,.4); transition: transform .2s, background .2s;
+  background: var(--ash); transition: transform .2s, background .2s;
 }
 .sw input:checked + .sw-track { background: rgba(99,102,241,.6); }
 .sw input:checked + .sw-track::after { transform: translateX(16px); background: #fff; }
 
 /* ── Form groups in modal ── */
 .fg { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
-.fg label { font-size: 10px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: rgba(255,255,255,.4); }
+.fg label { font-size: 10px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: var(--ash); }
 .fg input, .fg textarea, .fg select {
-  padding: 9px 12px; background: rgba(255,255,255,.06);
-  border: 1.5px solid rgba(255,255,255,.1); border-radius: 8px;
+  padding: 9px 12px; background: var(--crease-soft);
+  border: 1.5px solid var(--crease); border-radius: 8px;
   color: var(--white); font-family: var(--font); font-size: 13px; outline: none;
   transition: border-color .15s;
 }
 .fg input:focus, .fg textarea:focus, .fg select:focus {
-  border-color: var(--sa); box-shadow: 0 0 0 3px rgba(99,102,241,.12);
+  border-color: var(--sa); box-shadow: 0 0 0 3px #EEF2FF;
 }
 .fg select option { background: var(--navy); }
 .fg-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-.fg-hint { font-size: 11px; color: rgba(255,255,255,.3); margin-top: 3px; }
+.fg-hint { font-size: 11px; color: var(--ash-dim); margin-top: 3px; }
 .fg-check { display: flex; align-items: center; gap: 10px; }
 .fg-check input[type=checkbox] { width: 16px; height: 16px; cursor: pointer; accent-color: var(--sa); }
-.fg-check label { font-size: 13px; color: rgba(255,255,255,.7); text-transform: none; letter-spacing: 0; font-weight: 500; }
+.fg-check label { font-size: 13px; color: var(--ink-soft); text-transform: none; letter-spacing: 0; font-weight: 500; }
 
 .bundle-featured {
-  background: rgba(99,102,241,.15); color: #A5B4FC;
-  border: 1px solid rgba(99,102,241,.25);
+  background: #EEF2FF; color: #A5B4FC;
+  border: 1px solid #C7D2FE;
   font-size: 10px; font-weight: 700; padding: 1px 7px; border-radius: 20px;
 }
 .bonus-pct  { font-size: 11px; font-weight: 700; color: #6EE7B7; margin-left: 4px; }
-.bonus-zero { color: rgba(255,255,255,.3); }
+.bonus-zero { color: var(--ash-dim); }
 .pkg-fee    { font-family: var(--mono); font-size: 13px; color: #6EE7B7; font-weight: 600; }
 .pkg-coin   { font-family: var(--mono); color: #FCD34D; }
 
 /* ── Activation fee card ── */
 .activation-card {
   background: rgba(16,185,129,.04);
-  border: 1px solid rgba(16,185,129,.15);
+  border: 1px solid #ECFDF5;
   border-radius: 14px; padding: 22px 24px;
   margin-bottom: 24px;
   display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;
 }
 .activation-card .ac-label {
   font-size: 11px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase;
-  color: rgba(255,255,255,.4); margin-bottom: 4px;
+  color: var(--ash); margin-bottom: 4px;
 }
 .activation-card .ac-value {
   font-size: 28px; font-weight: 800; font-family: var(--mono); color: #6EE7B7;
 }
 .activation-card .ac-sub {
-  font-size: 12px; color: rgba(255,255,255,.35); margin-top: 4px;
+  font-size: 12px; color: var(--ash-dim); margin-top: 4px;
 }
 </style>
 </head>
@@ -194,7 +194,7 @@ if ($action) {
     <div class="ac-sub">Diinput langsung saat provisioning di wizard registrasi</div>
   </div>
   <div style="text-align:right;">
-    <div style="font-size:12px;color:rgba(255,255,255,.3);margin-bottom:8px;">Nilai default untuk wizard</div>
+    <div style="font-size:12px;color:var(--ash-dim);margin-bottom:8px;">Nilai default untuk wizard</div>
     <button class="sa-btn sa-btn-outline sa-btn-sm" onclick="openDefaultModal()">✏️ Edit Default</button>
   </div>
 </div>
@@ -221,7 +221,7 @@ if ($action) {
         </tr>
       </thead>
       <tbody id="bundlesBody">
-        <tr><td colspan="9" style="text-align:center;padding:32px;color:rgba(255,255,255,.3);">Memuat...</td></tr>
+        <tr><td colspan="9" style="text-align:center;padding:32px;color:var(--ash-dim);">Memuat...</td></tr>
       </tbody>
     </table>
   </div>
@@ -231,7 +231,7 @@ if ($action) {
 <div class="sa-modal-overlay" id="defaultModal">
   <div class="sa-modal" style="max-width:420px;">
     <h3>✏️ Edit Default Aktivasi</h3>
-    <p style="font-size:12.5px;color:rgba(255,255,255,.4);margin-bottom:18px;line-height:1.6;">
+    <p style="font-size:12.5px;color:var(--ash);margin-bottom:18px;line-height:1.6;">
       Nilai ini akan muncul sebagai <em>default</em> di Step 2 wizard registrasi.
       Bisa diubah per-klien saat provisioning.
     </p>
@@ -346,13 +346,13 @@ function refreshActivationCard() {
   const final    = Math.round(fee * (1 - discount / 100));
   let display    = fee > 0 ? 'Rp ' + parseInt(fee).toLocaleString('id-ID') : 'Gratis';
   if (discount > 0 && fee > 0) {
-    display += ` <span style="font-size:14px;color:rgba(255,255,255,.35);text-decoration:line-through">${display}</span>`
-             + ` → <span style="color:#6EE7B7;">Rp ${final.toLocaleString('id-ID')}</span>`
-             + ` <span style="font-size:13px;color:#FCD34D;">(−${discount}%)</span>`;
+    display += ` <span style="font-size:14px;color:var(--ash-dim);text-decoration:line-through">${display}</span>`
+             + ` → <span style="color:var(--sage);">Rp ${final.toLocaleString('id-ID')}</span>`
+             + ` <span style="font-size:13px;color:#92400E;">(−${discount}%)</span>`;
     display = 'Rp ' + parseInt(fee).toLocaleString('id-ID')
-            + ` <span style="font-size:16px;color:rgba(255,255,255,.3);text-decoration:line-through;margin-left:8px;"></span>`;
+            + ` <span style="font-size:16px;color:var(--ash-dim);text-decoration:line-through;margin-left:8px;"></span>`;
     display = `<span style="font-family:var(--mono);">Rp ${final.toLocaleString('id-ID')}</span>`
-            + ` <span style="font-size:13px;color:#FCD34D;margin-left:6px;">−${discount}%</span>`;
+            + ` <span style="font-size:13px;color:#92400E;margin-left:6px;">−${discount}%</span>`;
   }
   document.getElementById('activationFeeDisplay').innerHTML = display;
 }
@@ -405,7 +405,7 @@ function loadBundles() {
 function renderBundles(rows) {
   const tb = document.getElementById('bundlesBody');
   if (!rows.length) {
-    tb.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:32px;color:rgba(255,255,255,.3);">Belum ada bundle. Klik ＋ Tambah Bundle.</td></tr>';
+    tb.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:32px;color:var(--ash-dim);">Belum ada bundle. Klik ＋ Tambah Bundle.</td></tr>';
     return;
   }
   tb.innerHTML = rows.map((b, i) => {
@@ -414,7 +414,7 @@ function renderBundles(rows) {
       : `<span class="bonus-zero">—</span>`;
     return `
     <tr>
-      <td style="color:rgba(255,255,255,.3);font-size:12px;">${i+1}</td>
+      <td style="color:var(--ash-dim);font-size:12px;">${i+1}</td>
       <td>
         <strong>${esc(b.nama)}</strong>
         ${b.is_featured ? ' <span class="bundle-featured">⭐ Featured</span>' : ''}
@@ -422,7 +422,7 @@ function renderBundles(rows) {
       <td><span class="pkg-fee">${rp(b.harga)}</span></td>
       <td><span class="pkg-coin">${coin(b.coin_didapat)}</span></td>
       <td>${bonusHtml}</td>
-      <td style="font-size:12px;color:rgba(255,255,255,.35);">
+      <td style="font-size:12px;color:var(--ash-dim);">
         ${b.used_payments > 0 ? `${b.used_payments} txn` : '—'}
       </td>
       <td>

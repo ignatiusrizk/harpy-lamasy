@@ -134,8 +134,8 @@ if ($action) {
       <div class="sa-card-header"><h3>⚙️ Konfigurasi Broadcast</h3></div>
       <div class="sa-card-body">
         <div class="form-group" style="margin-bottom:14px;">
-          <label style="font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:rgba(255,255,255,.4);">Target Penerima</label>
-          <select id="bcTarget" style="width:100%;margin-top:6px;padding:10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:8px;color:#fff;font-family:var(--font);" onchange="toggleCustomList()">
+          <label style="font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ash);">Target Penerima</label>
+          <select id="bcTarget" style="width:100%;margin-top:6px;padding:10px;background:var(--crease-soft);border:1px solid var(--crease);border-radius:8px;color:#fff;font-family:var(--font);" onchange="toggleCustomList()">
             <option value="semua">Semua Tenant (Aktif + Trial)</option>
             <option value="active">Hanya Aktif</option>
             <option value="trial">Hanya Trial</option>
@@ -146,9 +146,9 @@ if ($action) {
 
         <!-- Custom checkboxes -->
         <div id="customList" style="display:none;margin-bottom:14px;">
-          <label style="font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:rgba(255,255,255,.4);">Pilih Tenant</label>
-          <div style="margin-top:6px;max-height:200px;overflow-y:auto;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:8px;" id="tenantCheckboxes">
-            <div style="color:rgba(255,255,255,.35);font-size:13px;">Memuat...</div>
+          <label style="font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ash);">Pilih Tenant</label>
+          <div style="margin-top:6px;max-height:200px;overflow-y:auto;background:var(--linen);border:1px solid var(--crease);border-radius:8px;padding:8px;" id="tenantCheckboxes">
+            <div style="color:var(--ash-dim);font-size:13px;">Memuat...</div>
           </div>
           <div style="display:flex;gap:8px;margin-top:8px;">
             <button class="sa-btn sa-btn-sm sa-btn-outline" onclick="selectAll(true)">Pilih Semua</button>
@@ -157,18 +157,18 @@ if ($action) {
         </div>
 
         <div class="form-group" style="margin-bottom:14px;">
-          <label style="font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:rgba(255,255,255,.4);">Subjek (untuk log)</label>
-          <input type="text" id="bcSubject" placeholder="Contoh: Promo Coin September" style="width:100%;margin-top:6px;padding:10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:8px;color:#fff;font-family:var(--font);font-size:13.5px;"/>
+          <label style="font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ash);">Subjek (untuk log)</label>
+          <input type="text" id="bcSubject" placeholder="Contoh: Promo Coin September" style="width:100%;margin-top:6px;padding:10px;background:var(--crease-soft);border:1px solid var(--crease);border-radius:8px;color:#fff;font-family:var(--font);font-size:13.5px;"/>
         </div>
 
         <div class="form-group" style="margin-bottom:6px;">
-          <label style="font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:rgba(255,255,255,.4);">Pesan WA</label>
-          <textarea id="bcMessage" placeholder="Halo {nama_outlet}, kami ingin menginfokan..." style="width:100%;margin-top:6px;padding:10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:8px;color:#fff;font-family:var(--font);font-size:13.5px;resize:vertical;min-height:140px;" oninput="updatePreview()"></textarea>
+          <label style="font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ash);">Pesan WA</label>
+          <textarea id="bcMessage" placeholder="Halo {nama_outlet}, kami ingin menginfokan..." style="width:100%;margin-top:6px;padding:10px;background:var(--crease-soft);border:1px solid var(--crease);border-radius:8px;color:#fff;font-family:var(--font);font-size:13.5px;resize:vertical;min-height:140px;" oninput="updatePreview()"></textarea>
         </div>
-        <div style="font-size:11.5px;color:rgba(255,255,255,.35);margin-bottom:16px;">
-          Variabel: <code style="background:rgba(255,255,255,.08);padding:2px 6px;border-radius:4px;">{nama_outlet}</code>
-          <code style="background:rgba(255,255,255,.08);padding:2px 6px;border-radius:4px;">{owner_name}</code>
-          <code style="background:rgba(255,255,255,.08);padding:2px 6px;border-radius:4px;">{coin_balance}</code>
+        <div style="font-size:11.5px;color:var(--ash-dim);margin-bottom:16px;">
+          Variabel: <code style="background:var(--crease-soft);padding:2px 6px;border-radius:4px;">{nama_outlet}</code>
+          <code style="background:var(--crease-soft);padding:2px 6px;border-radius:4px;">{owner_name}</code>
+          <code style="background:var(--crease-soft);padding:2px 6px;border-radius:4px;">{coin_balance}</code>
         </div>
         <div style="display:flex;gap:10px;">
           <button class="sa-btn sa-btn-outline" onclick="previewBroadcast()">👁️ Preview</button>
@@ -183,7 +183,7 @@ if ($action) {
     <div class="sa-card" id="previewCard" style="margin-bottom:16px;display:none;">
       <div class="sa-card-header">
         <h3>👁️ Preview</h3>
-        <span id="previewCount" style="font-size:13px;color:rgba(255,255,255,.5);"></span>
+        <span id="previewCount" style="font-size:13px;color:var(--ash);"></span>
       </div>
       <div class="sa-card-body" id="previewBody"></div>
     </div>
@@ -207,9 +207,9 @@ fetch('broadcast.php?action=all_tenants', { headers: {'X-Requested-With':'XMLHtt
     allTenants = rows;
     const el = document.getElementById('tenantCheckboxes');
     el.innerHTML = rows.map(t => `
-      <label style="display:flex;align-items:center;gap:8px;padding:6px 4px;cursor:pointer;font-size:13px;color:rgba(255,255,255,.8);">
+      <label style="display:flex;align-items:center;gap:8px;padding:6px 4px;cursor:pointer;font-size:13px;color:var(--ink);">
         <input type="checkbox" class="tenant-cb" value="${t.id}" style="accent-color:#6366F1;"/>
-        ${esc(t.nama_outlet)} <small style="color:rgba(255,255,255,.4);">${esc(t.owner_name)}</small>
+        ${esc(t.nama_outlet)} <small style="color:var(--ash);">${esc(t.owner_name)}</small>
       </label>`).join('');
   });
 
@@ -250,19 +250,19 @@ function previewBroadcast() {
       document.getElementById('btnSend').style.display = '';
 
       if (!d.count) {
-        document.getElementById('previewBody').innerHTML = '<p style="color:rgba(255,255,255,.35);font-size:13px;">Tidak ada tenant sesuai filter.</p>';
+        document.getElementById('previewBody').innerHTML = '<p style="color:var(--ash-dim);font-size:13px;">Tidak ada tenant sesuai filter.</p>';
         return;
       }
 
       document.getElementById('previewBody').innerHTML = `
-        <div style="background:rgba(99,102,241,.1);border:1px solid rgba(99,102,241,.2);border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:14px;color:rgba(255,255,255,.8);">
+        <div style="background:#EEF2FF;border:1px solid #C7D2FE;border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:14px;color:var(--ink);">
           <strong style="color:var(--sa);">Akan dikirim ke ${d.count} tenant</strong>
         </div>
-        <div style="font-size:12px;color:rgba(255,255,255,.4);margin-bottom:10px;">Sampel preview (3 pertama):</div>
+        <div style="font-size:12px;color:var(--ash);margin-bottom:10px;">Sampel preview (3 pertama):</div>
         ${d.sample.map(s => `
-          <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:8px;padding:12px;margin-bottom:10px;">
+          <div style="background:var(--linen);border:1px solid var(--crease-soft);border-radius:8px;padding:12px;margin-bottom:10px;">
             <div style="font-size:12px;font-weight:700;color:var(--sa);margin-bottom:6px;">${esc(s.nama_outlet)} — ${esc(s.owner_name)}</div>
-            <div style="font-size:13px;color:rgba(255,255,255,.75);white-space:pre-wrap;">${esc(s.message)}</div>
+            <div style="font-size:13px;color:var(--ink);white-space:pre-wrap;">${esc(s.message)}</div>
           </div>`).join('')}`;
     });
 }
@@ -298,13 +298,13 @@ function sendBroadcast() {
 
       document.getElementById('resultCard').style.display = '';
       document.getElementById('resultBody').innerHTML = `
-        <p style="font-size:13.5px;color:rgba(255,255,255,.7);margin-bottom:16px;">
+        <p style="font-size:13.5px;color:var(--ink-soft);margin-bottom:16px;">
           ✅ Broadcast dicatat untuk <strong>${d.count} tenant</strong>. Klik link WA di bawah untuk kirim manual.
         </p>
         <div style="max-height:400px;overflow-y:auto;">
           ${d.links.map(l => `
-            <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:8px;margin-bottom:6px;">
-              <span style="font-size:13px;color:rgba(255,255,255,.75);">${esc(l.nama)}</span>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--linen);border:1px solid var(--crease-soft);border-radius:8px;margin-bottom:6px;">
+              <span style="font-size:13px;color:var(--ink);">${esc(l.nama)}</span>
               <a href="${esc(l.url)}" target="_blank" class="sa-btn sa-btn-sm sa-btn-wa">💬 Kirim WA</a>
             </div>`).join('')}
         </div>`;

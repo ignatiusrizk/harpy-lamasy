@@ -100,32 +100,32 @@ $csrf = saGetCsrf();
 <style>
   .kpi-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:14px; margin-bottom:20px; }
   .kpi-card {
-    background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08);
+    background:var(--linen); border:1px solid var(--crease);
     border-radius:12px; padding:16px;
   }
-  .kpi-label { font-size:11px; color:rgba(255,255,255,.5); text-transform:uppercase; letter-spacing:.05em; }
+  .kpi-label { font-size:11px; color:var(--ash); text-transform:uppercase; letter-spacing:.05em; }
   .kpi-value { font-size:22px; font-weight:800; margin-top:6px; font-family:var(--mono); color:#fff; }
   .kpi-value.positive { color:#86EFAC; }
-  .kpi-value.negative { color:#FCA5A5; }
-  .kpi-sub { font-size:11px; color:rgba(255,255,255,.4); margin-top:4px; }
+  .kpi-value.negative { color:#991B1B; }
+  .kpi-sub { font-size:11px; color:var(--ash); margin-top:4px; }
 
   .range-bar {
     display:flex; gap:10px; align-items:center; margin-bottom:18px; flex-wrap:wrap;
-    background:rgba(255,255,255,.03); padding:12px 14px; border-radius:10px;
+    background:var(--linen); padding:12px 14px; border-radius:10px;
   }
   .range-bar input[type=date] {
-    background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.15);
+    background:var(--crease-soft); border:1px solid var(--crease);
     border-radius:6px; padding:6px 10px; color:#fff; font-size:13px;
   }
   .quick-pill {
-    background:rgba(255,255,255,.06); color:rgba(255,255,255,.8); border:1px solid rgba(255,255,255,.1);
+    background:var(--crease-soft); color:var(--ink); border:1px solid var(--crease);
     padding:6px 12px; border-radius:6px; cursor:pointer; font-size:12px; font-weight:600;
   }
-  .quick-pill:hover { background:rgba(255,255,255,.1); color:#fff; }
+  .quick-pill:hover { background:var(--crease); color:#fff; }
 
   .margin-cell { font-family:var(--mono); font-weight:700; }
   .margin-cell.positive { color:#86EFAC; }
-  .margin-cell.negative { color:#FCA5A5; }
+  .margin-cell.negative { color:#991B1B; }
 
   .feature-badge {
     background:rgba(168,85,247,.18); color:#C4B5FD;
@@ -133,17 +133,17 @@ $csrf = saGetCsrf();
   }
 
   .budget-input {
-    background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.15);
+    background:var(--crease-soft); border:1px solid var(--crease);
     border-radius:6px; padding:6px 10px; color:#fff; font-size:12px; font-family:var(--mono);
     width:90px;
   }
 
-  .chart-card { background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.06); border-radius:12px; padding:16px; }
+  .chart-card { background:var(--linen); border:1px solid var(--crease-soft); border-radius:12px; padding:16px; }
   .bar-row { display:flex; align-items:center; gap:8px; margin-bottom:6px; }
-  .bar-row .bar-label { width:90px; font-size:11px; color:rgba(255,255,255,.6); font-family:var(--mono); }
-  .bar-row .bar-track { flex:1; background:rgba(255,255,255,.06); border-radius:4px; height:18px; position:relative; overflow:hidden; }
+  .bar-row .bar-label { width:90px; font-size:11px; color:var(--ink-soft); font-family:var(--mono); }
+  .bar-row .bar-track { flex:1; background:var(--crease-soft); border-radius:4px; height:18px; position:relative; overflow:hidden; }
   .bar-row .bar-fill { position:absolute; left:0; top:0; bottom:0; background:linear-gradient(90deg, #35E8D5, #1CC4B2); border-radius:4px; }
-  .bar-row .bar-val { font-size:11px; color:rgba(255,255,255,.7); min-width:80px; text-align:right; font-family:var(--mono); }
+  .bar-row .bar-val { font-size:11px; color:var(--ink-soft); min-width:80px; text-align:right; font-family:var(--mono); }
 </style>
 </head>
 <body>
@@ -157,9 +157,9 @@ $csrf = saGetCsrf();
 
 <!-- Range picker -->
 <div class="range-bar">
-  <strong style="font-size:12px;color:rgba(255,255,255,.6);">Periode:</strong>
+  <strong style="font-size:12px;color:var(--ink-soft);">Periode:</strong>
   <input type="date" id="fStart" value="<?= htmlspecialchars($startDate) ?>">
-  <span style="color:rgba(255,255,255,.4);">—</span>
+  <span style="color:var(--ash);">—</span>
   <input type="date" id="fEnd" value="<?= htmlspecialchars($endDate) ?>">
   <button class="sa-btn sa-btn-primary sa-btn-sm" onclick="reload()">Terapkan</button>
   <span style="flex:1"></span>
@@ -194,7 +194,7 @@ $csrf = saGetCsrf();
         </tr>
       </thead>
       <tbody id="byFeatureBody">
-        <tr><td colspan="7" style="text-align:center;padding:32px;color:rgba(255,255,255,.3);">Memuat...</td></tr>
+        <tr><td colspan="7" style="text-align:center;padding:32px;color:var(--ash-dim);">Memuat...</td></tr>
       </tbody>
     </table>
   </div>
@@ -217,7 +217,7 @@ $csrf = saGetCsrf();
         </tr>
       </thead>
       <tbody id="byTenantBody">
-        <tr><td colspan="7" style="text-align:center;padding:32px;color:rgba(255,255,255,.3);">Memuat...</td></tr>
+        <tr><td colspan="7" style="text-align:center;padding:32px;color:var(--ash-dim);">Memuat...</td></tr>
       </tbody>
     </table>
   </div>
@@ -226,7 +226,7 @@ $csrf = saGetCsrf();
 <!-- Trend Chart -->
 <div class="chart-card">
   <h3 style="font-size:14px;font-weight:700;margin-bottom:14px;color:#fff;">Trend Harian (Cost vs Revenue)</h3>
-  <div id="trendChart"><div style="text-align:center;padding:32px;color:rgba(255,255,255,.3);">Memuat...</div></div>
+  <div id="trendChart"><div style="text-align:center;padding:32px;color:var(--ash-dim);">Memuat...</div></div>
 </div>
 
 <?php saRenderNavClose(); ?>
@@ -274,7 +274,7 @@ function renderKPI(t, coinRate) {
 function renderByFeature(rows, coinRate) {
   const tb = document.getElementById('byFeatureBody');
   if (!rows || rows.length === 0) {
-    tb.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:rgba(255,255,255,.3);">Belum ada data</td></tr>';
+    tb.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--ash-dim);">Belum ada data</td></tr>';
     return;
   }
   tb.innerHTML = rows.map(r => {
@@ -285,8 +285,8 @@ function renderByFeature(rows, coinRate) {
       <tr>
         <td><span class="feature-badge">${esc(r.feature_key)}</span></td>
         <td style="text-align:right;">${fmt(r.total_calls)}</td>
-        <td style="text-align:right;font-size:11px;color:rgba(255,255,255,.6);">${fmt(r.cache_hits)}</td>
-        <td style="text-align:right;font-family:var(--mono);font-size:12px;color:rgba(255,255,255,.7);">
+        <td style="text-align:right;font-size:11px;color:var(--ink-soft);">${fmt(r.cache_hits)}</td>
+        <td style="text-align:right;font-family:var(--mono);font-size:12px;color:var(--ink-soft);">
           ${fmt(r.tokens_in)} / ${fmt(r.tokens_out)}
         </td>
         <td style="text-align:right;font-family:var(--mono);">${fmt(r.cost_idr)}</td>
@@ -300,7 +300,7 @@ function renderByFeature(rows, coinRate) {
 function renderByTenant(rows, coinRate) {
   const tb = document.getElementById('byTenantBody');
   if (!rows || rows.length === 0) {
-    tb.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:rgba(255,255,255,.3);">Belum ada data</td></tr>';
+    tb.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--ash-dim);">Belum ada data</td></tr>';
     return;
   }
   tb.innerHTML = rows.map(r => {
@@ -312,7 +312,7 @@ function renderByTenant(rows, coinRate) {
       <tr>
         <td>
           <div style="font-weight:600;">${esc(r.nama_perusahaan || 'Tenant #' + r.tenant_id)}</div>
-          <div style="font-size:10px;color:rgba(255,255,255,.4);">${esc(r.owner_email || '')}</div>
+          <div style="font-size:10px;color:var(--ash);">${esc(r.owner_email || '')}</div>
         </td>
         <td style="text-align:right;">${fmt(r.total_calls)}</td>
         <td style="text-align:right;font-family:var(--mono);font-size:12px;">${fmt(tokens)}</td>
@@ -331,7 +331,7 @@ function renderByTenant(rows, coinRate) {
 function renderTrend(rows) {
   const c = document.getElementById('trendChart');
   if (!rows || rows.length === 0) {
-    c.innerHTML = '<div style="text-align:center;padding:32px;color:rgba(255,255,255,.3);">Belum ada data</div>';
+    c.innerHTML = '<div style="text-align:center;padding:32px;color:var(--ash-dim);">Belum ada data</div>';
     return;
   }
   // Find max for scaling
@@ -346,8 +346,8 @@ function renderTrend(rows) {
     const costPct = maxVal > 0 ? (cost / maxVal) * 100 : 0;
     const revPct  = maxVal > 0 ? (revenue / maxVal) * 100 : 0;
     return `
-      <div style="margin-bottom:14px;border-bottom:1px solid rgba(255,255,255,.05);padding-bottom:10px;">
-        <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:12px;color:rgba(255,255,255,.7);">
+      <div style="margin-bottom:14px;border-bottom:1px solid var(--crease-soft);padding-bottom:10px;">
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:12px;color:var(--ink-soft);">
           <strong>${r.tanggal}</strong>
           <span>${fmt(r.total_calls)} calls · margin: <span class="${margin >= 0 ? 'positive' : 'negative'}" style="font-family:var(--mono);font-weight:700;color:${margin >= 0 ? '#86EFAC' : '#FCA5A5'};">${margin >= 0 ? '+' : ''}Rp ${fmt(margin)}</span></span>
         </div>

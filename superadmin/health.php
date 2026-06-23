@@ -304,7 +304,7 @@ if ($action) {
 .live-badge {
     display: inline-flex; align-items: center; gap: 5px;
     padding: 3px 10px; border-radius: 20px;
-    background: rgba(16,185,129,.12); border: 1px solid rgba(16,185,129,.25);
+    background: #ECFDF5; border: 1px solid #A7F3D0;
     font-size: 11px; font-weight: 600; color: #6EE7B7;
 }
 .live-dot {
@@ -315,11 +315,11 @@ if ($action) {
 @keyframes livePulse { 0%,100% { opacity:1; transform:scale(1); } 50% { opacity:.4; transform:scale(.7); } }
 
 .stat-huge { font-size: 32px; font-family: var(--mono); font-weight: 800; color: var(--white); }
-.stat-sub  { font-size: 11px; color: rgba(255,255,255,.35); margin-top: 3px; }
+.stat-sub  { font-size: 11px; color: var(--ash-dim); margin-top: 3px; }
 
 .wa-rate-bar {
     height: 6px; border-radius: 3px;
-    background: rgba(255,255,255,.08);
+    background: var(--crease);
     margin-top: 8px; overflow: hidden;
 }
 .wa-rate-fill {
@@ -332,32 +332,32 @@ if ($action) {
 
 .chart-wrap {
     position: relative; height: 200px;
-    background: rgba(255,255,255,.02);
+    background: var(--linen);
     border-radius: 10px; overflow: hidden;
 }
 canvas { width: 100% !important; }
 
 .feature-bar-row {
     display: flex; align-items: center; gap: 10px;
-    padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,.05);
+    padding: 8px 0; border-bottom: 1px solid var(--crease-soft);
 }
 .feature-bar-row:last-child { border-bottom: none; }
-.feature-name { width: 140px; font-size: 12px; color: rgba(255,255,255,.7); flex-shrink: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.feature-bar-bg { flex: 1; height: 8px; background: rgba(255,255,255,.07); border-radius: 4px; overflow: hidden; }
+.feature-name { width: 140px; font-size: 12px; color: var(--ink-soft); flex-shrink: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.feature-bar-bg { flex: 1; height: 8px; background: var(--crease-soft); border-radius: 4px; overflow: hidden; }
 .feature-bar-fg { height: 100%; background: linear-gradient(90deg, var(--sa), #818CF8); border-radius: 4px; transition: width .5s; }
-.feature-coins  { width: 64px; text-align: right; font-size: 12px; font-family: var(--mono); color: rgba(255,255,255,.5); flex-shrink: 0; }
+.feature-coins  { width: 64px; text-align: right; font-size: 12px; font-family: var(--mono); color: var(--ash); flex-shrink: 0; }
 
 /* Error log */
 .err-row-expand { display: none; }
 .err-row-expand.open { display: table-row; }
 .err-expand-cell {
     background: rgba(0,0,0,.2);
-    border-bottom: 1px solid rgba(255,255,255,.05);
+    border-bottom: 1px solid var(--crease-soft);
     padding: 12px 16px;
 }
 .err-trace {
     font-family: var(--mono); font-size: 11px;
-    color: rgba(255,255,255,.45); white-space: pre-wrap;
+    color: var(--ash); white-space: pre-wrap;
     max-height: 200px; overflow-y: auto;
     background: rgba(0,0,0,.25); padding: 10px; border-radius: 8px;
     margin-top: 8px;
@@ -367,7 +367,7 @@ canvas { width: 100% !important; }
 .note-input {
     width: 100%;
     padding: 8px 12px;
-    background: rgba(255,255,255,.06); border: 1.5px solid rgba(255,255,255,.1);
+    background: var(--crease-soft); border: 1.5px solid var(--crease);
     border-radius: 8px; color: var(--white);
     font-family: var(--font); font-size: 13px; outline: none;
     transition: border-color .15s; margin-top: 8px;
@@ -375,7 +375,7 @@ canvas { width: 100% !important; }
 .note-input:focus { border-color: var(--sa); }
 
 .refresh-info {
-    font-size: 11.5px; color: rgba(255,255,255,.3);
+    font-size: 11.5px; color: var(--ash-dim);
     display: flex; align-items: center; gap: 6px;
 }
 </style>
@@ -433,7 +433,7 @@ canvas { width: 100% !important; }
     <div class="sa-card-body" style="padding:14px 20px;">
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
         <div>
-          <div style="font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:4px;">
+          <div style="font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--ash);margin-bottom:4px;">
             WA Delivery Rate (hari ini)
           </div>
           <div style="font-size:22px;font-weight:800;font-family:var(--mono);" id="waRateVal">—</div>
@@ -449,7 +449,7 @@ canvas { width: 100% !important; }
     <div class="sa-card">
       <div class="sa-card-header">
         <h3>📈 Transaksi 30 Hari</h3>
-        <span style="font-size:11px;color:rgba(255,255,255,.3);" id="trendDays">memuat...</span>
+        <span style="font-size:11px;color:var(--ash-dim);" id="trendDays">memuat...</span>
       </div>
       <div class="sa-card-body">
         <div class="chart-wrap"><canvas id="chartTx"></canvas></div>
@@ -480,7 +480,7 @@ canvas { width: 100% !important; }
         </select>
       </div>
       <div class="sa-card-body" id="featureUsageBody">
-        <div style="color:rgba(255,255,255,.3);font-size:13px;">Memuat...</div>
+        <div style="color:var(--ash-dim);font-size:13px;">Memuat...</div>
       </div>
     </div>
 
@@ -511,17 +511,17 @@ canvas { width: 100% !important; }
         </div>
 
         <div id="coinDaysAlert" style="display:none;" class="sa-card" style="border-color:rgba(245,158,11,.3);background:rgba(245,158,11,.05);margin-bottom:12px;">
-          <div class="sa-card-body" style="padding:10px 14px;color:#FCD34D;font-size:13px;">
+          <div class="sa-card-body" style="padding:10px 14px;color:#92400E;font-size:13px;">
             ⚠️ Estimasi platform kehabisan coin dalam <strong id="coinDaysVal">?</strong> hari
           </div>
         </div>
 
         <div>
-          <div style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:10px;">
+          <div style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ash-dim);margin-bottom:10px;">
             Top 5 Tenant — Burn 30 Hari
           </div>
           <div id="topBurnersList">
-            <div style="color:rgba(255,255,255,.3);font-size:13px;">Memuat...</div>
+            <div style="color:var(--ash-dim);font-size:13px;">Memuat...</div>
           </div>
         </div>
       </div>
@@ -579,7 +579,7 @@ canvas { width: 100% !important; }
           </tr>
         </thead>
         <tbody id="errTbody">
-          <tr><td colspan="8" style="text-align:center;color:rgba(255,255,255,.3);padding:32px;">Memuat...</td></tr>
+          <tr><td colspan="8" style="text-align:center;color:var(--ash-dim);padding:32px;">Memuat...</td></tr>
         </tbody>
       </table>
     </div>
@@ -609,22 +609,22 @@ canvas { width: 100% !important; }
 <?php
   $aiToday = getAIUsageStats(date('Y-m-d'));
 ?>
-<div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:24px;margin-top:24px">
+<div style="background:var(--linen);border:1px solid var(--crease);border-radius:14px;padding:24px;margin-top:24px">
   <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:16px;flex-wrap:wrap;gap:12px">
     <div>
       <h3 style="margin:0 0 4px;font-size:16px;font-weight:700;color:#fff">🤖 AI Usage Stats — Hari Ini</h3>
-      <p style="margin:0;font-size:12px;color:rgba(255,255,255,.5)">Per fitur · semua tenant · <?= date('d M Y') ?></p>
+      <p style="margin:0;font-size:12px;color:var(--ash)">Per fitur · semua tenant · <?= date('d M Y') ?></p>
     </div>
     <div style="display:flex;gap:16px;font-size:12px">
-      <div><div style="color:rgba(255,255,255,.5);font-size:10px;text-transform:uppercase">Total API Calls</div><div style="font-family:'DM Mono',monospace;font-weight:800;font-size:18px;color:#35E8D5"><?= number_format($aiToday['total_calls']) ?></div></div>
-      <div><div style="color:rgba(255,255,255,.5);font-size:10px;text-transform:uppercase">Est. API Cost</div><div style="font-family:'DM Mono',monospace;font-weight:800;font-size:18px;color:#FBBF24">Rp <?= number_format($aiToday['est_cost_idr'], 0, ',', '.') ?></div></div>
-      <div><div style="color:rgba(255,255,255,.5);font-size:10px;text-transform:uppercase">Coin Revenue</div><div style="font-family:'DM Mono',monospace;font-weight:800;font-size:18px;color:#10B981">Rp <?= number_format($aiToday['coin_idr'], 0, ',', '.') ?></div></div>
-      <div><div style="color:rgba(255,255,255,.5);font-size:10px;text-transform:uppercase">Margin AI</div><div style="font-family:'DM Mono',monospace;font-weight:800;font-size:18px;color:<?= $aiToday['margin'] >= 0 ? '#35E8D5' : '#E24B4A' ?>">Rp <?= number_format($aiToday['margin'], 0, ',', '.') ?> · <?= $aiToday['margin_pct'] ?>%</div></div>
+      <div><div style="color:var(--ash);font-size:10px;text-transform:uppercase">Total API Calls</div><div style="font-family:'DM Mono',monospace;font-weight:800;font-size:18px;color:#35E8D5"><?= number_format($aiToday['total_calls']) ?></div></div>
+      <div><div style="color:var(--ash);font-size:10px;text-transform:uppercase">Est. API Cost</div><div style="font-family:'DM Mono',monospace;font-weight:800;font-size:18px;color:var(--amber)">Rp <?= number_format($aiToday['est_cost_idr'], 0, ',', '.') ?></div></div>
+      <div><div style="color:var(--ash);font-size:10px;text-transform:uppercase">Coin Revenue</div><div style="font-family:'DM Mono',monospace;font-weight:800;font-size:18px;color:#10B981">Rp <?= number_format($aiToday['coin_idr'], 0, ',', '.') ?></div></div>
+      <div><div style="color:var(--ash);font-size:10px;text-transform:uppercase">Margin AI</div><div style="font-family:'DM Mono',monospace;font-weight:800;font-size:18px;color:<?= $aiToday['margin'] >= 0 ? '#35E8D5' : '#E24B4A' ?>">Rp <?= number_format($aiToday['margin'], 0, ',', '.') ?> · <?= $aiToday['margin_pct'] ?>%</div></div>
     </div>
   </div>
 
   <?php if (empty($aiToday['rows'])): ?>
-    <div style="text-align:center;padding:24px;color:rgba(255,255,255,.4);font-size:13px">Belum ada AI usage hari ini.</div>
+    <div style="text-align:center;padding:24px;color:var(--ash);font-size:13px">Belum ada AI usage hari ini.</div>
   <?php else: ?>
   <table class="sa-table" style="margin-top:8px">
     <thead>
@@ -643,7 +643,7 @@ canvas { width: 100% !important; }
         <td style="font-family:'DM Mono',monospace;font-size:12px"><?= htmlspecialchars($r['feature']) ?></td>
         <td style="text-align:right;font-family:'DM Mono',monospace;font-weight:700"><?= number_format($r['total_calls']) ?></td>
         <td style="text-align:right;font-family:'DM Mono',monospace"><?= number_format($r['unique_tenants']) ?></td>
-        <td style="text-align:right;font-family:'DM Mono',monospace<?= $heavy ? ';color:#FBBF24;font-weight:700' : '' ?>"><?= number_format($r['max_single_tenant']) ?><?= $heavy ? ' ⚠' : '' ?></td>
+        <td style="text-align:right;font-family:'DM Mono',monospace<?= $heavy ? ';color:var(--amber);font-weight:700' : '' ?>"><?= number_format($r['max_single_tenant']) ?><?= $heavy ? ' ⚠' : '' ?></td>
         <td style="text-align:right;font-family:'DM Mono',monospace;color:#10B981">Rp <?= number_format($r['total_coin'], 0, ',', '.') ?></td>
       </tr>
     <?php endforeach; ?>
@@ -728,8 +728,8 @@ const chartDefaults = {
         animation: { duration: 400 },
         plugins: { legend: { display: false }, tooltip: { mode: 'index', intersect: false } },
         scales: {
-            x: { grid: { color: 'rgba(255,255,255,.05)' }, ticks: { color: 'rgba(255,255,255,.35)', maxRotation: 45, font: { size: 10 } } },
-            y: { grid: { color: 'rgba(255,255,255,.05)' }, ticks: { color: 'rgba(255,255,255,.35)', font: { size: 10 } }, beginAtZero: true },
+            x: { grid: { color: 'var(--crease-soft)' }, ticks: { color: 'var(--ash-dim)', maxRotation: 45, font: { size: 10 } } },
+            y: { grid: { color: 'var(--crease-soft)' }, ticks: { color: 'var(--ash-dim)', font: { size: 10 } }, beginAtZero: true },
         }
     }
 };
@@ -762,7 +762,7 @@ async function loadTrend() {
             label: 'Transaksi',
             data: rows.map(r => +r.total_transaksi),
             borderColor: '#6366F1',
-            backgroundColor: 'rgba(99,102,241,.12)',
+            backgroundColor: '#EEF2FF',
             fill: true, tension: .4, pointRadius: 2,
         }]);
 
@@ -794,7 +794,7 @@ async function loadTrend() {
         chartRevLoginInst.options.scales.y1 = {
             position: 'right',
             grid: { drawOnChartArea: false },
-            ticks: { color: 'rgba(255,255,255,.35)', font: { size: 10 } },
+            ticks: { color: 'var(--ash-dim)', font: { size: 10 } },
             beginAtZero: true,
         };
         chartRevLoginInst.update();
@@ -809,10 +809,10 @@ async function loadTrend() {
 // ────────────────────────────────────────────────────
 async function loadFeatureUsage(days) {
     const body = document.getElementById('featureUsageBody');
-    body.innerHTML = '<div style="color:rgba(255,255,255,.3);font-size:13px;">Memuat...</div>';
+    body.innerHTML = '<div style="color:var(--ash-dim);font-size:13px;">Memuat...</div>';
     try {
         const rows = await apiFetch('?action=feature_usage&days=' + days);
-        if (!rows.length) { body.innerHTML = '<div style="color:rgba(255,255,255,.3);font-size:13px;">Belum ada data.</div>'; return; }
+        if (!rows.length) { body.innerHTML = '<div style="color:var(--ash-dim);font-size:13px;">Belum ada data.</div>'; return; }
 
         const maxCoins = Math.max(...rows.map(r => +r.coins));
         body.innerHTML = rows.map(r => `
@@ -825,7 +825,7 @@ async function loadFeatureUsage(days) {
             </div>
         `).join('');
     } catch(e) {
-        body.innerHTML = '<div style="color:#FCA5A5;font-size:13px;">Gagal memuat.</div>';
+        body.innerHTML = '<div style="color:#991B1B;font-size:13px;">Gagal memuat.</div>';
     }
 }
 
@@ -850,14 +850,14 @@ async function loadCoinAnalytics() {
 
         const listEl = document.getElementById('topBurnersList');
         if (!d.top_burners || !d.top_burners.length) {
-            listEl.innerHTML = '<div style="color:rgba(255,255,255,.3);font-size:13px;">Belum ada data.</div>';
+            listEl.innerHTML = '<div style="color:var(--ash-dim);font-size:13px;">Belum ada data.</div>';
             return;
         }
         listEl.innerHTML = d.top_burners.map((r, i) => `
-            <div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.04);">
-              <span style="width:20px;font-size:13px;color:rgba(255,255,255,.3);font-family:var(--mono);">${i+1}</span>
-              <span style="flex:1;font-size:13px;color:rgba(255,255,255,.75);">${esc(r.nama_perusahaan||r.nama_outlet||'Tenant #'+r.tenant_id)}</span>
-              <span style="font-family:var(--mono);font-size:12px;color:#FCD34D;">${fmt(+r.burned)} 🪙</span>
+            <div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--linen);">
+              <span style="width:20px;font-size:13px;color:var(--ash-dim);font-family:var(--mono);">${i+1}</span>
+              <span style="flex:1;font-size:13px;color:var(--ink);">${esc(r.nama_perusahaan||r.nama_outlet||'Tenant #'+r.tenant_id)}</span>
+              <span style="font-family:var(--mono);font-size:12px;color:#92400E;">${fmt(+r.burned)} 🪙</span>
             </div>
         `).join('');
     } catch(e) {
@@ -882,12 +882,12 @@ async function loadErrors(page) {
     const type   = document.getElementById('errType').value;
     const status = document.getElementById('errStatus').value;
 
-    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:rgba(255,255,255,.3);padding:32px;">Memuat...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--ash-dim);padding:32px;">Memuat...</td></tr>';
 
     try {
         const d = await apiFetch(`?action=errors&page=${page}&type=${encodeURIComponent(type)}&status=${encodeURIComponent(status)}`);
         if (!d.rows.length) {
-            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:rgba(255,255,255,.3);padding:32px;">Tidak ada error.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--ash-dim);padding:32px;">Tidak ada error.</td></tr>';
             document.getElementById('errPagination').innerHTML = '';
             return;
         }
@@ -899,13 +899,13 @@ async function loadErrors(page) {
             const expId  = 'exp-' + r.id;
             return `
             <tr class="sa-table-row" onclick="toggleErrExpand('${expId}')" style="cursor:pointer;">
-              <td style="font-size:12px;color:rgba(255,255,255,.3);font-family:var(--mono);">#${r.id}</td>
+              <td style="font-size:12px;color:var(--ash-dim);font-family:var(--mono);">#${r.id}</td>
               <td><span class="sa-badge ${badge}">${esc(r.error_type)}</span></td>
               <td style="max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"
                   title="${esc(r.error_message)}">${esc(r.error_message.substring(0,80))}${r.error_message.length>80?'…':''}</td>
-              <td style="font-size:12px;color:rgba(255,255,255,.5);">${esc(r.nama_outlet||'-')}</td>
+              <td style="font-size:12px;color:var(--ash);">${esc(r.nama_outlet||'-')}</td>
               <td style="font-family:var(--mono);font-size:12px;text-align:center;">${r.occurrence_count}</td>
-              <td style="font-size:11.5px;color:rgba(255,255,255,.4);">${fmtDate(r.last_seen)}</td>
+              <td style="font-size:11.5px;color:var(--ash);">${fmtDate(r.last_seen)}</td>
               <td style="font-size:12px;">${sta}</td>
               <td onclick="event.stopPropagation()">
                 ${r.status === 'new' ? `<button class="sa-btn sa-btn-outline sa-btn-sm" onclick="ackError(${r.id})">👁 Ack</button>` : ''}
@@ -914,11 +914,11 @@ async function loadErrors(page) {
             </tr>
             <tr class="err-row-expand" id="${expId}">
               <td colspan="8" class="err-expand-cell">
-                <div style="font-size:12px;color:rgba(255,255,255,.5);margin-bottom:6px;">
-                  <strong style="color:rgba(255,255,255,.7);">URL:</strong> ${esc(r.url||'—')} &nbsp;|&nbsp;
-                  <strong style="color:rgba(255,255,255,.7);">Kode:</strong> ${esc(r.error_code||'—')} &nbsp;|&nbsp;
-                  <strong style="color:rgba(255,255,255,.7);">Pertama:</strong> ${fmtDate(r.first_seen)}
-                  ${r.resolution_note ? `&nbsp;|&nbsp;<strong style="color:#6EE7B7;">Catatan:</strong> ${esc(r.resolution_note)}` : ''}
+                <div style="font-size:12px;color:var(--ash);margin-bottom:6px;">
+                  <strong style="color:var(--ink-soft);">URL:</strong> ${esc(r.url||'—')} &nbsp;|&nbsp;
+                  <strong style="color:var(--ink-soft);">Kode:</strong> ${esc(r.error_code||'—')} &nbsp;|&nbsp;
+                  <strong style="color:var(--ink-soft);">Pertama:</strong> ${fmtDate(r.first_seen)}
+                  ${r.resolution_note ? `&nbsp;|&nbsp;<strong style="color:var(--sage);">Catatan:</strong> ${esc(r.resolution_note)}` : ''}
                 </div>
                 ${r.stack_trace ? `<div class="err-trace">${esc(r.stack_trace)}</div>` : ''}
               </td>
@@ -929,7 +929,7 @@ async function loadErrors(page) {
         renderPagination(d.page, d.pages, 'loadErrors');
 
     } catch(e) {
-        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:#FCA5A5;padding:32px;">Gagal memuat: ${esc(e.message)}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:#991B1B;padding:32px;">Gagal memuat: ${esc(e.message)}</td></tr>`;
     }
 }
 
@@ -941,7 +941,7 @@ function toggleErrExpand(id) {
 function renderPagination(page, pages, fn) {
     const el = document.getElementById('errPagination');
     if (pages <= 1) { el.innerHTML = ''; return; }
-    let html = `<span style="font-size:12px;color:rgba(255,255,255,.35);">Hal ${page} / ${pages}</span>`;
+    let html = `<span style="font-size:12px;color:var(--ash-dim);">Hal ${page} / ${pages}</span>`;
     if (page > 1)     html += `<button class="sa-btn sa-btn-sm sa-btn-outline" onclick="${fn}(${page-1})">← Prev</button>`;
     if (page < pages) html += `<button class="sa-btn sa-btn-sm sa-btn-outline" onclick="${fn}(${page+1})">Next →</button>`;
     el.innerHTML = html;

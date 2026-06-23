@@ -265,13 +265,13 @@ if ($action) {
 
   <div class="sa-card-body">
     <div id="alertCoin">
-      <div style="color:rgba(255,255,255,.4);font-size:13px;">Memuat...</div>
+      <div style="color:var(--ash);font-size:13px;">Memuat...</div>
     </div>
     <div id="alertTrial" style="display:none">
-      <div style="color:rgba(255,255,255,.4);font-size:13px;">Memuat...</div>
+      <div style="color:var(--ash);font-size:13px;">Memuat...</div>
     </div>
     <div id="alertInactive" style="display:none">
-      <div style="color:rgba(255,255,255,.4);font-size:13px;">Memuat...</div>
+      <div style="color:var(--ash);font-size:13px;">Memuat...</div>
     </div>
   </div>
 </div>
@@ -304,10 +304,10 @@ if ($action) {
           <div class="lbl">Avg Rating</div>
         </div>
       </div>
-      <div style="display:flex;align-items:center;gap:14px;padding:10px 0;border-top:1px solid rgba(255,255,255,.07);flex-wrap:wrap;">
+      <div style="display:flex;align-items:center;gap:14px;padding:10px 0;border-top:1px solid var(--crease-soft);flex-wrap:wrap;">
         <div>
           <span style="font-size:11px;color:var(--text-muted);">Avg First Response</span>
-          <span id="sw-avgResp" style="margin-left:8px;font-family:var(--mono);color:#A5B4FC;font-size:13px;">—</span>
+          <span id="sw-avgResp" style="margin-left:8px;font-family:var(--mono);color:var(--indigo);font-size:13px;">—</span>
         </div>
         <span class="sa-badge sa-badge-red" id="sw-sla-badge" style="display:none;"></span>
       </div>
@@ -323,15 +323,15 @@ if ($action) {
     </div>
     <div class="sa-card-body">
       <div class="sa-grid-2" style="margin-bottom:18px;gap:12px;">
-        <div style="text-align:center;padding:18px 12px;background:rgba(99,102,241,.1);border-radius:12px;border:1px solid rgba(99,102,241,.2);">
+        <div style="text-align:center;padding:18px 12px;background:#EEF2FF;border-radius:12px;border:1px solid #C7D2FE;">
           <div id="aw-published" class="sa-mini-stat indigo" style="margin:0;display:block;">
             <div class="val" style="font-size:36px;">—</div>
             <div class="lbl" style="margin-top:5px;">Published Aktif</div>
           </div>
         </div>
-        <div style="text-align:center;padding:18px 12px;background:rgba(255,255,255,.03);border-radius:12px;border:1px solid rgba(255,255,255,.06);">
+        <div style="text-align:center;padding:18px 12px;background:var(--linen);border-radius:12px;border:1px solid var(--crease-soft);">
           <div id="aw-draft" class="sa-mini-stat" style="margin:0;display:block;">
-            <div class="val" id="aw-draft-val" style="font-size:36px;color:rgba(255,255,255,.4);">—</div>
+            <div class="val" id="aw-draft-val" style="font-size:36px;color:var(--ash);">—</div>
             <div class="lbl" style="margin-top:5px;">Draft</div>
           </div>
         </div>
@@ -369,13 +369,13 @@ if ($action) {
     </div>
 
     <?php if (!empty($_aiAbusers)): ?>
-    <div style="margin-top:14px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.25);border-radius:10px;padding:14px 16px">
+    <div style="margin-top:14px;background:#FEF2F2;border:1px solid #FCA5A5;border-radius:10px;padding:14px 16px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-        <div style="font-size:13px;font-weight:700;color:#FCA5A5">⚠️ <?= count($_aiAbusers) ?> tenant hit rate limit AI hari ini</div>
-        <a href="/superadmin/health.php" style="color:#FCA5A5;font-size:11px;font-weight:700;text-decoration:none">Cek detail →</a>
+        <div style="font-size:13px;font-weight:700;color:#991B1B">⚠️ <?= count($_aiAbusers) ?> tenant hit rate limit AI hari ini</div>
+        <a href="/superadmin/health.php" style="color:#991B1B;font-size:11px;font-weight:700;text-decoration:none">Cek detail →</a>
       </div>
-      <table style="width:100%;font-size:12px;color:rgba(255,255,255,.7)">
-        <thead><tr style="text-align:left;color:rgba(255,255,255,.4);font-size:10px;text-transform:uppercase">
+      <table style="width:100%;font-size:12px;color:var(--ink-soft)">
+        <thead><tr style="text-align:left;color:var(--ash);font-size:10px;text-transform:uppercase">
           <th style="padding:4px 0">Tenant ID</th>
           <th>Fitur</th>
           <th style="text-align:right">Attempts Blocked</th>
@@ -384,7 +384,7 @@ if ($action) {
         <?php foreach ($_aiAbusers as $a): ?>
           <tr><td style="padding:3px 0;font-family:'DM Mono',monospace">#<?= (int)$a['tenant_id'] ?></td>
               <td style="font-family:'DM Mono',monospace;font-size:11px"><?= htmlspecialchars($a['feature']) ?></td>
-              <td style="text-align:right;font-family:'DM Mono',monospace;font-weight:700;color:#FBBF24"><?= (int)$a['attempts'] ?></td></tr>
+              <td style="text-align:right;font-family:'DM Mono',monospace;font-weight:700;color:var(--amber)"><?= (int)$a['attempts'] ?></td></tr>
         <?php endforeach; ?>
         </tbody>
       </table>
@@ -418,8 +418,8 @@ fetch('dashboard.php?action=stats', { headers: { 'X-Requested-With': 'XMLHttpReq
 const chartDefaults = {
   plugins: { legend: { display: false } },
   scales: {
-    x: { grid: { color: 'rgba(255,255,255,.06)' }, ticks: { color: 'rgba(255,255,255,.5)', font: { size: 11 } } },
-    y: { grid: { color: 'rgba(255,255,255,.06)' }, ticks: { color: 'rgba(255,255,255,.5)', font: { size: 11 } }, beginAtZero: true }
+    x: { grid: { color: 'var(--crease-soft)' }, ticks: { color: 'rgba(26,31,46,.55)', font: { size: 11 } } },
+    y: { grid: { color: 'var(--crease-soft)' }, ticks: { color: 'rgba(26,31,46,.55)', font: { size: 11 } }, beginAtZero: true }
   }
 };
 
@@ -444,7 +444,7 @@ fetch('dashboard.php?action=chart_coins', { headers: { 'X-Requested-With': 'XMLH
       data: {
         labels: rows.map(r => r.label),
         datasets: [{ data: rows.map(r => r.total),
-          borderColor: '#6366F1', backgroundColor: 'rgba(99,102,241,.15)',
+          borderColor: '#6366F1', backgroundColor: '#EEF2FF',
           borderWidth: 2, fill: true, tension: .4,
           pointBackgroundColor: '#6366F1', pointRadius: 4 }]
       },
@@ -464,7 +464,7 @@ fetch('dashboard.php?action=alerts', { headers: { 'X-Requested-With': 'XMLHttpRe
 
 function renderAlertCoin(list) {
   const el = document.getElementById('alertCoin');
-  if (!list || !list.length) { el.innerHTML = '<p style="color:rgba(255,255,255,.35);font-size:13px;">Tidak ada alert coin kritis.</p>'; return; }
+  if (!list || !list.length) { el.innerHTML = '<p style="color:var(--ash-dim);font-size:13px;">Tidak ada alert coin kritis.</p>'; return; }
   el.innerHTML = list.map(t => `
     <div class="sa-alert-item">
       <span class="alert-icon">🔴</span>
@@ -481,7 +481,7 @@ function renderAlertCoin(list) {
 
 function renderAlertTrial(list) {
   const el = document.getElementById('alertTrial');
-  if (!list || !list.length) { el.innerHTML = '<p style="color:rgba(255,255,255,.35);font-size:13px;">Tidak ada trial akan habis.</p>'; return; }
+  if (!list || !list.length) { el.innerHTML = '<p style="color:var(--ash-dim);font-size:13px;">Tidak ada trial akan habis.</p>'; return; }
   el.innerHTML = list.map(t => `
     <div class="sa-alert-item">
       <span class="alert-icon">⏰</span>
@@ -498,13 +498,13 @@ function renderAlertTrial(list) {
 
 function renderAlertInactive(list) {
   const el = document.getElementById('alertInactive');
-  if (!list || !list.length) { el.innerHTML = '<p style="color:rgba(255,255,255,.35);font-size:13px;">Tidak ada tenant tidak aktif.</p>'; return; }
+  if (!list || !list.length) { el.innerHTML = '<p style="color:var(--ash-dim);font-size:13px;">Tidak ada tenant tidak aktif.</p>'; return; }
   el.innerHTML = list.map(t => `
     <div class="sa-alert-item">
       <span class="alert-icon">😴</span>
       <div class="alert-text">
         <strong>${esc(t.nama_outlet)}</strong> — ${esc(t.owner_name)}
-        <span style="color:rgba(255,255,255,.4);margin-left:8px;font-size:12px;">${t.days_inactive ? t.days_inactive+' hari tidak login' : 'Belum pernah login'}</span>
+        <span style="color:var(--ash);margin-left:8px;font-size:12px;">${t.days_inactive ? t.days_inactive+' hari tidak login' : 'Belum pernah login'}</span>
       </div>
       <div class="alert-action">
         <a href="client_detail.php?id=${t.id}" class="sa-btn sa-btn-sm sa-btn-outline">Detail</a>
@@ -556,14 +556,14 @@ fetch('dashboard.php?action=support_widget', { headers: { 'X-Requested-With': 'X
     // SLA items list
     const slaList = document.getElementById('sw-sla-list');
     if (d.sla_items && d.sla_items.length) {
-      slaList.innerHTML = `<div style="margin-top:12px;border-top:1px solid rgba(255,255,255,.07);padding-top:12px;">
-        <div style="font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:8px;">Tiket Overdue</div>
+      slaList.innerHTML = `<div style="margin-top:12px;border-top:1px solid var(--crease-soft);padding-top:12px;">
+        <div style="font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--ash-dim);margin-bottom:8px;">Tiket Overdue</div>
         ${d.sla_items.map(tk => {
           const col = tk.age_hours >= 24 ? '#F87171' : tk.age_hours >= 6 ? '#FBBF24' : '#FCD34D';
-          return `<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.04);">
+          return `<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--linen);">
             <div style="flex:1;min-width:0;">
-              <div style="font-size:12.5px;color:rgba(255,255,255,.8);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(tk.subject||'(tanpa subjek)')}</div>
-              <div style="font-size:11px;color:rgba(255,255,255,.35);">${esc(tk.nama_outlet||'')}</div>
+              <div style="font-size:12.5px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(tk.subject||'(tanpa subjek)')}</div>
+              <div style="font-size:11px;color:var(--ash-dim);">${esc(tk.nama_outlet||'')}</div>
             </div>
             <span style="color:${col};font-family:var(--mono);font-size:12px;margin-left:10px;white-space:nowrap;">${tk.age_hours}j</span>
             <a href="/superadmin/support.php?ticket_id=${tk.id}" class="sa-btn sa-btn-sm sa-btn-outline" style="margin-left:8px;flex-shrink:0;">Buka</a>

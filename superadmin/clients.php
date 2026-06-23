@@ -214,39 +214,39 @@ if ($action) {
 <style>
 .cl-tabs {
   display:flex; gap:6px; margin-bottom:20px;
-  background:rgba(255,255,255,.03);
-  border:1px solid rgba(255,255,255,.07);
+  background:var(--linen);
+  border:1px solid var(--crease-soft);
   border-radius:12px; padding:5px; width:fit-content;
 }
 .cl-tab {
   padding:8px 20px; border-radius:9px; font-size:13px; font-weight:600;
   cursor:pointer; border:none;
-  background:transparent; color:rgba(255,255,255,.5);
+  background:transparent; color:var(--ash);
   transition:all .15s;
 }
-.cl-tab:hover  { background:rgba(255,255,255,.06); color:rgba(255,255,255,.85); }
+.cl-tab:hover  { background:var(--crease-soft); color:var(--ink); }
 .cl-tab.active {
   background:rgba(99,102,241,.18); border:1px solid rgba(99,102,241,.3);
   color:var(--white);
-  box-shadow: 0 2px 8px rgba(99,102,241,.2);
+  box-shadow: 0 2px 8px #C7D2FE;
 }
 .cl-panel      { display:none; }
 .cl-panel.show { display:block; }
 
-.outlet-status-active    { color:#6EE7B7; font-weight:600; font-size:12.5px; }
-.outlet-status-pending   { color:#FBBF24; font-weight:600; font-size:12.5px; }
-.outlet-status-suspended { color:#FCA5A5; font-weight:600; font-size:12.5px; }
-.outlet-status-inactive  { color:rgba(255,255,255,.3); font-size:12.5px; }
+.outlet-status-active    { color:var(--sage); font-weight:600; font-size:12.5px; }
+.outlet-status-pending   { color:var(--amber); font-weight:600; font-size:12.5px; }
+.outlet-status-suspended { color:#991B1B; font-weight:600; font-size:12.5px; }
+.outlet-status-inactive  { color:var(--ash-dim); font-size:12.5px; }
 
 .main-badge {
   display:inline-block; font-size:9px; font-weight:700; letter-spacing:.06em;
   text-transform:uppercase; padding:2px 7px; border-radius:10px;
-  background:rgba(99,102,241,.15); color:#A5B4FC;
-  border:1px solid rgba(99,102,241,.25);
+  background:#EEF2FF; color:var(--indigo);
+  border:1px solid #C7D2FE;
   margin-left:5px; vertical-align:middle;
 }
-.setup-done   { color:#6EE7B7; font-size:12px; }
-.setup-notyet { color:rgba(255,255,255,.25); font-size:12px; }
+.setup-done   { color:var(--sage); font-size:12px; }
+.setup-notyet { color:var(--ash-dim); font-size:12px; }
 </style>
 </head>
 <body>
@@ -308,7 +308,7 @@ if ($action) {
           </tr>
         </thead>
         <tbody id="tenantsBody">
-          <tr><td colspan="9" style="text-align:center;color:rgba(255,255,255,.35);padding:32px;">Memuat data...</td></tr>
+          <tr><td colspan="9" style="text-align:center;color:var(--ash-dim);padding:32px;">Memuat data...</td></tr>
         </tbody>
       </table>
     </div>
@@ -351,7 +351,7 @@ if ($action) {
           </tr>
         </thead>
         <tbody id="outletsBody">
-          <tr><td colspan="8" style="text-align:center;color:rgba(255,255,255,.35);padding:32px;">Memuat data...</td></tr>
+          <tr><td colspan="8" style="text-align:center;color:var(--ash-dim);padding:32px;">Memuat data...</td></tr>
         </tbody>
       </table>
     </div>
@@ -414,7 +414,7 @@ function debounceLoad(tab) {
 
 // ── Helpers ───────────────────────────────────────────
 function relTime(ts) {
-  if (!ts) return '<span style="color:rgba(255,255,255,.3);">Belum</span>';
+  if (!ts) return '<span style="color:var(--ash-dim);">Belum</span>';
   const diff = Math.floor((Date.now() - new Date(ts).getTime()) / 1000);
   if (diff < 3600)  return Math.floor(diff/60) + ' mnt lalu';
   if (diff < 86400) return Math.floor(diff/3600) + ' jam lalu';
@@ -447,7 +447,7 @@ function fmtDate(d) { return d ? new Date(d).toLocaleDateString('id-ID', {day:'2
 
 function renderPagination(page, pages, total, onGoto, containerId) {
   const el = document.getElementById(containerId);
-  let html = `<span style="font-size:12px;color:rgba(255,255,255,.35);margin-right:10px;">Total: ${total}</span>`;
+  let html = `<span style="font-size:12px;color:var(--ash-dim);margin-right:10px;">Total: ${total}</span>`;
   html += `<button class="sa-btn sa-btn-sm sa-btn-outline${page<=1?' disabled':''}" onclick="${onGoto}(${page-1})">‹ Prev</button>`;
   for (let i = Math.max(1,page-2); i <= Math.min(pages,page+2); i++) {
     html += `<button class="sa-btn sa-btn-sm ${i===page?'sa-btn-primary':'sa-btn-outline'}" onclick="${onGoto}(${i})">${i}</button>`;
@@ -479,7 +479,7 @@ function loadTenants() {
       renderPagination(data.page, data.pages, data.total, 'gotoTenants', 'tenantsPagination');
     }).catch(() => {
       document.getElementById('tenantsBody').innerHTML =
-        '<tr><td colspan="9" style="text-align:center;color:#FCA5A5;padding:24px;">Gagal memuat data.</td></tr>';
+        '<tr><td colspan="9" style="text-align:center;color:#991B1B;padding:24px;">Gagal memuat data.</td></tr>';
     });
 }
 
@@ -488,7 +488,7 @@ function gotoTenants(p) { tPage = p; loadTenants(); }
 function renderTenants(rows) {
   const tbody = document.getElementById('tenantsBody');
   if (!rows?.length) {
-    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:rgba(255,255,255,.35);padding:32px;">Tidak ada data.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--ash-dim);padding:32px;">Tidak ada data.</td></tr>';
     return;
   }
   tbody.innerHTML = rows.map(t => {
@@ -497,21 +497,21 @@ function renderTenants(rows) {
     const btnCls = t.status === 'suspended' ? 'sa-btn-green' : 'sa-btn-danger';
     const outletInfo = parseInt(t.outlet_count) > 0
       ? `<span style="font-weight:700;color:var(--white);">${t.outlet_count}</span>
-         <span style="font-size:10px;color:rgba(255,255,255,.35);margin-left:3px;">outlet</span>
-         ${parseInt(t.outlet_active) > 0 ? `<span style="font-size:10px;color:#6EE7B7;margin-left:4px;">(${t.outlet_active} aktif)</span>` : ''}`
-      : `<span style="color:rgba(255,255,255,.25);font-size:12px;">—</span>`;
+         <span style="font-size:10px;color:var(--ash-dim);margin-left:3px;">outlet</span>
+         ${parseInt(t.outlet_active) > 0 ? `<span style="font-size:10px;color:var(--sage);margin-left:4px;">(${t.outlet_active} aktif)</span>` : ''}`
+      : `<span style="color:var(--ash-dim);font-size:12px;">—</span>`;
     return `<tr>
       <td>
         <strong>${esc(t.nama_perusahaan)}</strong><br>
-        <small style="color:rgba(255,255,255,.3);font-family:var(--mono);font-size:10px;">${esc(t.slug)}</small>
+        <small style="color:var(--ash-dim);font-family:var(--mono);font-size:10px;">${esc(t.slug)}</small>
       </td>
       <td>${esc(t.owner_name)}</td>
-      <td><a href="https://wa.me/${esc(t.owner_wa)}" target="_blank" style="color:#86efac;text-decoration:none;font-family:var(--mono);font-size:12px;">${esc(t.owner_wa)}</a></td>
+      <td><a href="https://wa.me/${esc(t.owner_wa)}" target="_blank" style="color:#15803D;text-decoration:none;font-family:var(--mono);font-size:12px;">${esc(t.owner_wa)}</a></td>
       <td>${outletInfo}</td>
       <td>${statusBadge(t.status)}</td>
       <td>${coinHtml(t.coin_balance)}</td>
       <td style="font-size:12px;">${relTime(t.last_login)}</td>
-      <td style="font-size:12px;color:rgba(255,255,255,.4);">${fmtDate(t.provisioned_at)}</td>
+      <td style="font-size:12px;color:var(--ash);">${fmtDate(t.provisioned_at)}</td>
       <td>
         <a href="client_detail.php?id=${t.id}" class="sa-btn sa-btn-sm sa-btn-outline">Detail</a>
         <a href="https://wa.me/${esc(t.owner_wa)}" target="_blank" class="sa-btn sa-btn-sm sa-btn-wa" style="margin-left:3px;">WA</a>
@@ -541,7 +541,7 @@ function loadOutlets() {
       renderPagination(data.page, data.pages, data.total, 'gotoOutlets', 'outletsPagination');
     }).catch(() => {
       document.getElementById('outletsBody').innerHTML =
-        '<tr><td colspan="8" style="text-align:center;color:#FCA5A5;padding:24px;">Gagal memuat data.</td></tr>';
+        '<tr><td colspan="8" style="text-align:center;color:#991B1B;padding:24px;">Gagal memuat data.</td></tr>';
     });
 }
 
@@ -550,7 +550,7 @@ function gotoOutlets(p) { oPage = p; loadOutlets(); }
 function renderOutlets(rows) {
   const tbody = document.getElementById('outletsBody');
   if (!rows?.length) {
-    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:rgba(255,255,255,.35);padding:32px;">Tidak ada outlet.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--ash-dim);padding:32px;">Tidak ada outlet.</td></tr>';
     return;
   }
   tbody.innerHTML = rows.map(o => {
@@ -561,17 +561,17 @@ function renderOutlets(rows) {
     return `<tr>
       <td>
         <strong>${esc(o.nama_outlet)}</strong>${mainBadge}<br>
-        <small style="color:rgba(255,255,255,.3);font-family:var(--mono);font-size:10px;">${esc(o.slug)}</small>
+        <small style="color:var(--ash-dim);font-family:var(--mono);font-size:10px;">${esc(o.slug)}</small>
       </td>
       <td>
-        <a href="client_detail.php?id=${o.tenant_id}" style="color:rgba(255,255,255,.8);text-decoration:none;font-weight:600;">${esc(o.nama_perusahaan)}</a><br>
-        <small style="color:rgba(255,255,255,.35);font-size:11px;">${esc(o.owner_name)}</small>
+        <a href="client_detail.php?id=${o.tenant_id}" style="color:var(--ink);text-decoration:none;font-weight:600;">${esc(o.nama_perusahaan)}</a><br>
+        <small style="color:var(--ash-dim);font-size:11px;">${esc(o.owner_name)}</small>
       </td>
-      <td style="font-size:12px;color:rgba(255,255,255,.5);">${esc(o.kota || '—')}</td>
+      <td style="font-size:12px;color:var(--ash);">${esc(o.kota || '—')}</td>
       <td>${outletStatusHtml(o.status)}</td>
       <td>${coinHtml(o.coin_balance)}</td>
       <td>${setupHtml}</td>
-      <td style="font-size:12px;color:rgba(255,255,255,.4);">${fmtDate(o.created_at)}</td>
+      <td style="font-size:12px;color:var(--ash);">${fmtDate(o.created_at)}</td>
       <td>
         <a href="client_detail.php?id=${o.tenant_id}#tab-outlets" class="sa-btn sa-btn-sm sa-btn-outline">Detail</a>
       </td>

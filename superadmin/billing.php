@@ -225,7 +225,7 @@ if ($action) {
   align-items: center; gap: 12px;
   color: #FCD34D;
   font-weight: 600;
-  background: linear-gradient(135deg, rgba(245,158,11,.12), rgba(245,158,11,.04));
+  background: linear-gradient(135deg, #FFFBEB, #FFFBEB);
   border: 1px solid rgba(245,158,11,.4);
 }
 #pendingAlert a { color: #FCD34D; text-decoration: underline; }
@@ -257,20 +257,20 @@ if ($action) {
 /* ── Top tenants ───────────────────────────────── */
 .top-tenant-row {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,.06);
+  padding: 10px 0; border-bottom: 1px solid var(--crease-soft);
   gap: 10px; transition: background .1s;
 }
 .top-tenant-row:last-child { border-bottom: none; }
 .top-tenant-rank {
   font-family: var(--mono); font-size: 18px; font-weight: 700;
-  color: rgba(255,255,255,.2); width: 24px; flex-shrink: 0;
+  color: var(--ash-dim); width: 24px; flex-shrink: 0;
 }
 .top-tenant-info { flex: 1; min-width: 0; }
 .top-tenant-info .name {
   font-size: 13px; font-weight: 600; color: var(--white);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.top-tenant-info .sub { font-size: 11px; color: rgba(255,255,255,.35); margin-top: 2px; }
+.top-tenant-info .sub { font-size: 11px; color: var(--ash-dim); margin-top: 2px; }
 .top-tenant-amount {
   font-family: var(--mono); font-size: 13px; font-weight: 700;
   color: #6EE7B7; text-align: right; white-space: nowrap;
@@ -299,7 +299,7 @@ if ($action) {
   font-family: var(--mono); font-size: 20px; font-weight: 800;
   color: var(--white); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.coin-metric-card .sub { font-size: 11px; color: rgba(255,255,255,.3); margin-top: 4px; }
+.coin-metric-card .sub { font-size: 11px; color: var(--ash-dim); margin-top: 4px; }
 .coin-metric-card .ico { position: absolute; right: 14px; top: 14px; font-size: 22px; opacity: .12; }
 
 /* ── Filter bar (billing variant) ─────────────── */
@@ -309,8 +309,8 @@ if ($action) {
 }
 .b-filter-bar input[type=text],
 .b-filter-bar select {
-  background: rgba(255,255,255,.06);
-  border: 1px solid rgba(255,255,255,.1);
+  background: var(--crease-soft);
+  border: 1px solid var(--crease);
   color: var(--white); border-radius: var(--r);
   padding: 8px 12px; font-size: 13px; font-family: var(--font);
   outline: none; transition: border-color .15s, box-shadow .15s;
@@ -318,9 +318,9 @@ if ($action) {
 .b-filter-bar input[type=text] { min-width: 200px; }
 .b-filter-bar select:focus,
 .b-filter-bar input[type=text]:focus {
-  border-color: var(--sa); box-shadow: 0 0 0 3px rgba(99,102,241,.12);
+  border-color: var(--sa); box-shadow: 0 0 0 3px #EEF2FF;
 }
-.b-filter-bar input::placeholder { color: rgba(255,255,255,.22); }
+.b-filter-bar input::placeholder { color: var(--ash-dim); }
 .b-filter-bar select option { background: var(--navy); color: var(--white); }
 </style>
 </head>
@@ -407,7 +407,7 @@ if ($action) {
   <div class="chart-card">
     <h3>🏆 Top 5 Tenant (All Time)</h3>
     <div id="topTenantsList">
-      <div style="text-align:center;padding:24px;color:rgba(255,255,255,.25);">Memuat…</div>
+      <div style="text-align:center;padding:24px;color:var(--ash-dim);">Memuat…</div>
     </div>
   </div>
 </div>
@@ -419,7 +419,7 @@ if ($action) {
     <a href="payments.php" class="sa-btn sa-btn-sm sa-btn-primary">+ Konfirmasi Pembayaran</a>
   </div>
 
-  <div class="b-filter-bar" style="padding:14px 20px;border-bottom:1px solid rgba(255,255,255,.06);margin-bottom:0;background:rgba(255,255,255,.015);">
+  <div class="b-filter-bar" style="padding:14px 20px;border-bottom:1px solid var(--crease-soft);margin-bottom:0;background:var(--linen);">
     <input type="text" id="bSearch" placeholder="🔍 Cari tenant / referensi…" oninput="debounceLoad()">
     <select id="bMonth" onchange="bPage=1;loadList()">
       <option value="">Semua Bulan</option>
@@ -459,7 +459,7 @@ if ($action) {
         </tr>
       </thead>
       <tbody id="billingBody">
-        <tr><td colspan="10" style="text-align:center;padding:32px;color:rgba(255,255,255,.3);">Memuat…</td></tr>
+        <tr><td colspan="10" style="text-align:center;padding:32px;color:var(--ash-dim);">Memuat…</td></tr>
       </tbody>
     </table>
   </div>
@@ -542,7 +542,7 @@ fetch('billing.php?action=chart', { headers:{'X-Requested-With':'XMLHttpRequest'
         interaction: { mode: 'index', intersect: false },
         plugins: {
           legend: {
-            labels: { color: 'rgba(255,255,255,.55)', font: { size: 11 }, boxWidth: 12 },
+            labels: { color: 'rgba(26,31,46,.6)', font: { size: 11 }, boxWidth: 12 },
           },
           tooltip: {
             callbacks: {
@@ -553,14 +553,14 @@ fetch('billing.php?action=chart', { headers:{'X-Requested-With':'XMLHttpRequest'
         scales: {
           x: {
             stacked: true,
-            grid:  { color: 'rgba(255,255,255,.05)' },
-            ticks: { color: 'rgba(255,255,255,.4)', font: { size: 11 } },
+            grid:  { color: 'var(--crease-soft)' },
+            ticks: { color: 'rgba(26,31,46,.5)', font: { size: 11 } },
           },
           y: {
             stacked: true,
-            grid:  { color: 'rgba(255,255,255,.05)' },
+            grid:  { color: 'var(--crease-soft)' },
             ticks: {
-              color: 'rgba(255,255,255,.4)', font: { size: 11 },
+              color: 'rgba(26,31,46,.5)', font: { size: 11 },
               callback: v => v >= 1000000 ? 'Rp' + (v/1000000).toFixed(1) + 'jt' : 'Rp' + (v/1000).toFixed(0) + 'k',
             },
           },
@@ -574,7 +574,7 @@ fetch('billing.php?action=top_tenants', { headers:{'X-Requested-With':'XMLHttpRe
   .then(r=>r.json()).then(rows => {
     const el = document.getElementById('topTenantsList');
     if (!rows || !rows.length) {
-      el.innerHTML = '<div style="text-align:center;padding:24px;color:rgba(255,255,255,.25);">Belum ada data.</div>';
+      el.innerHTML = '<div style="text-align:center;padding:24px;color:var(--ash-dim);">Belum ada data.</div>';
       return;
     }
     const medals = ['🥇','🥈','🥉','4','5'];
@@ -606,7 +606,7 @@ function loadList() {
   });
 
   document.getElementById('billingBody').innerHTML =
-    '<tr><td colspan="10" style="text-align:center;padding:24px;color:rgba(255,255,255,.25);">Memuat…</td></tr>';
+    '<tr><td colspan="10" style="text-align:center;padding:24px;color:var(--ash-dim);">Memuat…</td></tr>';
 
   fetch('billing.php?' + params, { headers:{'X-Requested-With':'XMLHttpRequest'} })
     .then(r => r.json()).then(data => {
@@ -618,7 +618,7 @@ function loadList() {
 function renderList(rows) {
   const tbody = document.getElementById('billingBody');
   if (!rows || !rows.length) {
-    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:24px;color:rgba(255,255,255,.25);">Tidak ada data.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:24px;color:var(--ash-dim);">Tidak ada data.</td></tr>';
     return;
   }
   tbody.innerHTML = rows.map(r => {
@@ -629,15 +629,15 @@ function renderList(rows) {
       <td style="font-size:12px;">${fmtD(r.tanggal_bayar)}</td>
       <td>
         <a href="client_detail.php?id=${r.tenant_id}" style="color:var(--white);text-decoration:none;font-weight:600;">${esc(r.nama_outlet||'-')}</a>
-        <br><small style="color:rgba(255,255,255,.3);font-size:11px;">${esc(r.owner_name||'')}</small>
+        <br><small style="color:var(--ash-dim);font-size:11px;">${esc(r.owner_name||'')}</small>
       </td>
       <td><span class="sa-badge ${TYPE_BADGE[r.type]||'sa-badge-indigo'}" style="font-size:10.5px;">${TYPE_LABEL[r.type]||r.type}</span></td>
-      <td style="font-size:12px;color:rgba(255,255,255,.55);">${esc(paketNama)}</td>
-      <td style="font-family:var(--mono);color:#6EE7B7;">${rupiah(r.nominal_dibayar)}</td>
+      <td style="font-size:12px;color:var(--ash);">${esc(paketNama)}</td>
+      <td style="font-family:var(--mono);color:var(--sage);">${rupiah(r.nominal_dibayar)}</td>
       <td style="font-family:var(--mono);">${r.coin_dikreditkan > 0 ? '+' + parseInt(r.coin_dikreditkan).toLocaleString('id-ID') : r.coin_dikreditkan < 0 ? parseInt(r.coin_dikreditkan).toLocaleString('id-ID') : '—'}</td>
-      <td style="font-size:12px;color:rgba(255,255,255,.45);">${esc(metodeFmt||'—')}</td>
-      <td style="font-size:11.5px;color:rgba(255,255,255,.35);font-family:var(--mono);">${esc(refInfo)}</td>
-      <td style="font-size:11.5px;color:rgba(255,255,255,.35);">${esc(r.superadmin_nama||'—')}</td>
+      <td style="font-size:12px;color:var(--ash);">${esc(metodeFmt||'—')}</td>
+      <td style="font-size:11.5px;color:var(--ash-dim);font-family:var(--mono);">${esc(refInfo)}</td>
+      <td style="font-size:11.5px;color:var(--ash-dim);">${esc(r.superadmin_nama||'—')}</td>
       <td><span class="sa-badge ${STATUS_BADGE[r.status]||'sa-badge-indigo'}">${esc(r.status)}</span></td>
     </tr>`;
   }).join('');
@@ -646,7 +646,7 @@ function renderList(rows) {
 function renderPagination(page, pages, total) {
   const el = document.getElementById('billingPagination');
   if (pages <= 1 && total === 0) { el.innerHTML = ''; return; }
-  let html = `<span style="font-size:12px;color:rgba(255,255,255,.3);margin-right:10px;">Total: ${total}</span>`;
+  let html = `<span style="font-size:12px;color:var(--ash-dim);margin-right:10px;">Total: ${total}</span>`;
   html += `<button class="sa-btn sa-btn-sm sa-btn-outline${page<=1?' disabled':''}" onclick="bGoto(${page-1})">‹ Prev</button>`;
   for (let i = Math.max(1,page-2); i <= Math.min(pages,page+2); i++) {
     html += `<button class="sa-btn sa-btn-sm ${i===page?'sa-btn-primary':'sa-btn-outline'}" onclick="bGoto(${i})">${i}</button>`;

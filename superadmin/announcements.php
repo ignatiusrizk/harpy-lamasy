@@ -139,7 +139,7 @@ function _notifyTenantsAnnouncement(PDO $db, int $annId, string $target, string 
 <?php saRenderHead('Announcement'); ?>
 <style>
 .ann-card {
-  background:var(--navy-m);border:1px solid rgba(255,255,255,.07);
+  background:var(--navy-m);border:1px solid var(--crease-soft);
   border-radius:var(--r);padding:16px 18px;cursor:pointer;
   transition:border-color .15s;
 }
@@ -148,15 +148,15 @@ function _notifyTenantsAnnouncement(PDO $db, int $annId, string $target, string 
 
 .ann-type { display:inline-block;font-size:10px;font-weight:700;letter-spacing:.08em;
   text-transform:uppercase;padding:2px 7px;border-radius:20px;margin-bottom:8px; }
-.ann-type-fitur_baru  { background:rgba(99,102,241,.15);color:#A5B4FC; }
-.ann-type-maintenance { background:rgba(239,68,68,.12); color:#FCA5A5; }
-.ann-type-penting     { background:rgba(245,158,11,.12);color:#FCD34D; }
-.ann-type-promo       { background:rgba(16,185,129,.12);color:#6EE7B7; }
-.ann-type-umum        { background:rgba(255,255,255,.08);color:rgba(255,255,255,.5); }
+.ann-type-fitur_baru  { background:#EEF2FF;color:var(--indigo); }
+.ann-type-maintenance { background:#FECACA; color:#991B1B; }
+.ann-type-penting     { background:#FFFBEB;color:#92400E; }
+.ann-type-promo       { background:#ECFDF5;color:var(--sage); }
+.ann-type-umum        { background:var(--crease-soft);color:var(--ash); }
 
-.ann-status-published { color:#6EE7B7; }
-.ann-status-draft     { color:rgba(255,255,255,.35); }
-.ann-status-archived  { color:rgba(255,255,255,.2); }
+.ann-status-published { color:var(--sage); }
+.ann-status-draft     { color:var(--ash-dim); }
+.ann-status-archived  { color:var(--ash-dim); }
 
 /* ── Banner preview ─────────────────────────────── */
 .banner-preview {
@@ -171,14 +171,14 @@ function _notifyTenantsAnnouncement(PDO $db, int $annId, string $target, string 
 /* ── Form modal ─────────────────────────────────── */
 .ann-form-group { margin-bottom:14px; }
 .ann-label { font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
-  color:rgba(255,255,255,.4);display:block;margin-bottom:5px; }
+  color:var(--ash);display:block;margin-bottom:5px; }
 .ann-form-row { display:grid;grid-template-columns:1fr 1fr;gap:12px; }
 
 /* Toggle switch */
 .sw2 { position:relative;display:inline-block;width:38px;height:20px; }
 .sw2 input { opacity:0;width:0;height:0; }
 .sw2-slider { position:absolute;inset:0;border-radius:20px;
-  background:rgba(255,255,255,.12);cursor:pointer;transition:.2s; }
+  background:var(--crease);cursor:pointer;transition:.2s; }
 .sw2 input:checked+.sw2-slider { background:var(--sa); }
 .sw2-slider::before { content:'';position:absolute;width:14px;height:14px;
   border-radius:50%;background:#fff;left:3px;top:3px;transition:.2s; }
@@ -233,7 +233,7 @@ function _notifyTenantsAnnouncement(PDO $db, int $annId, string $target, string 
     </div>
   </div>
   <div style="padding:20px;" id="annList">
-    <div style="text-align:center;padding:28px;color:rgba(255,255,255,.3);">Memuat…</div>
+    <div style="text-align:center;padding:28px;color:var(--ash-dim);">Memuat…</div>
   </div>
 </div>
 
@@ -282,28 +282,28 @@ function _notifyTenantsAnnouncement(PDO $db, int $annId, string $target, string 
                   style="resize:vertical;min-height:100px;"
                   placeholder="Detail announcement. Markdown ringan: **tebal**, - list, [link](url)"
                   oninput="updatePreview()"></textarea>
-        <div style="font-size:11px;color:rgba(255,255,255,.3);margin-top:3px;">
+        <div style="font-size:11px;color:var(--ash-dim);margin-top:3px;">
           Tip: **tebal**, *miring*, - list item, https://... untuk link
         </div>
       </div>
 
       <!-- Banner + Pin options -->
-      <div style="background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:14px;margin-bottom:14px;">
+      <div style="background:var(--linen);border:1px solid var(--crease-soft);border-radius:10px;padding:14px;margin-bottom:14px;">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
           <div>
             <div style="font-size:13px;font-weight:600;color:var(--white);">📌 Pin di atas</div>
-            <div style="font-size:11px;color:rgba(255,255,255,.35);">Tampil paling atas di daftar</div>
+            <div style="font-size:11px;color:var(--ash-dim);">Tampil paling atas di daftar</div>
           </div>
           <label class="sw2"><input type="checkbox" id="fPinned" onchange="updatePreview()"/><span class="sw2-slider"></span></label>
         </div>
         <div style="display:flex;align-items:center;justify-content:space-between;">
           <div>
             <div style="font-size:13px;font-weight:600;color:var(--white);">🎨 Tampil sebagai Banner</div>
-            <div style="font-size:11px;color:rgba(255,255,255,.35);">Banner dismissible di dashboard tenant</div>
+            <div style="font-size:11px;color:var(--ash-dim);">Banner dismissible di dashboard tenant</div>
           </div>
           <label class="sw2"><input type="checkbox" id="fBanner" onchange="toggleBannerOpts()"/><span class="sw2-slider"></span></label>
         </div>
-        <div id="bannerOpts" style="display:none;margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,.07);">
+        <div id="bannerOpts" style="display:none;margin-top:12px;padding-top:12px;border-top:1px solid var(--crease-soft);">
           <label class="ann-label">Warna Banner</label>
           <div style="display:flex;gap:8px;flex-wrap:wrap;">
             <?php foreach(['blue'=>'🔵 Blue','green'=>'🟢 Green','amber'=>'🟡 Amber','red'=>'🔴 Red'] as $v=>$l): ?>
@@ -337,7 +337,7 @@ function _notifyTenantsAnnouncement(PDO $db, int $annId, string $target, string 
       <div class="ann-form-group">
         <label class="ann-label">Expire (opsional)</label>
         <input type="datetime-local" id="fExpiresAt" class="sa-input" placeholder="Kosong = tidak expire"/>
-        <div style="font-size:11px;color:rgba(255,255,255,.3);margin-top:3px;">Akan di-archive otomatis setelah tanggal ini</div>
+        <div style="font-size:11px;color:var(--ash-dim);margin-top:3px;">Akan di-archive otomatis setelah tanggal ini</div>
       </div>
 
     </div>
@@ -384,7 +384,7 @@ function loadList() {
     .then(r=>r.json()).then(rows=>{
       const el = document.getElementById('annList');
       if(!rows||!rows.length){
-        el.innerHTML='<div style="text-align:center;padding:28px;color:rgba(255,255,255,.3);">Belum ada announcement.</div>';
+        el.innerHTML='<div style="text-align:center;padding:28px;color:var(--ash-dim);">Belum ada announcement.</div>';
         return;
       }
       el.innerHTML = '<div class="ann-grid">'+rows.map(r=>`
@@ -392,21 +392,21 @@ function loadList() {
           <span class="ann-type ann-type-${r.type}">${typeIcon[r.type]||'🔔'} ${typeLabel[r.type]||r.type}</span>
           ${r.is_pinned ? '<span style="float:right;font-size:14px;" title="Pinned">📌</span>' : ''}
           <div style="font-size:14px;font-weight:700;color:var(--white);margin-bottom:4px;line-height:1.3">${esc(r.title)}</div>
-          <div style="font-size:11.5px;color:rgba(255,255,255,.35);margin-bottom:8px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">${esc(r.content)}</div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;font-size:11px;color:rgba(255,255,255,.4);">
+          <div style="font-size:11.5px;color:var(--ash-dim);margin-bottom:8px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">${esc(r.content)}</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;font-size:11px;color:var(--ash);">
             <span class="ann-status-${r.status}">● ${r.status}</span>
             <span>👥 ${targetLabel[r.target_audience]||r.target_audience}</span>
             ${r.show_as_banner?'<span>🎨 Banner</span>':''}
             <span style="margin-left:auto;">👁 ${r.total_views||0} / 📖 ${r.total_reads||0}</span>
           </div>
-          <div style="font-size:10.5px;color:rgba(255,255,255,.2);margin-top:6px;">
+          <div style="font-size:10.5px;color:var(--ash-dim);margin-top:6px;">
             ${r.published_at ? '📅 ' + fmtDT(r.published_at) : '📝 Draft'} &nbsp;·&nbsp; ${esc(r.author_name||'-')}
           </div>
           <div style="display:flex;gap:6px;margin-top:10px;" onclick="event.stopPropagation()">
             <button class="sa-btn sa-btn-sm sa-btn-outline" onclick="togglePin(${r.id})">
               ${r.is_pinned?'📌 Unpin':'📌 Pin'}
             </button>
-            <button class="sa-btn sa-btn-sm sa-btn-outline" style="color:#FCA5A5;border-color:rgba(239,68,68,.3);"
+            <button class="sa-btn sa-btn-sm sa-btn-outline" style="color:#991B1B;border-color:rgba(239,68,68,.3);"
                     onclick="deleteAnn(${r.id},'${esc(r.title)}')">🗑</button>
           </div>
         </div>`).join('')+'</div>';

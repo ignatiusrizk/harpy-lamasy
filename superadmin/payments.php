@@ -374,75 +374,75 @@ if ($action) {
   display: inline-flex; align-items: center; gap: 4px;
   padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700;
 }
-.pay-type-setup    { background: rgba(99,102,241,.15); color: #A5B4FC; border: 1px solid rgba(99,102,241,.25); }
-.pay-type-topup    { background: rgba(16,185,129,.15);  color: #6EE7B7; border: 1px solid rgba(16,185,129,.25); }
-.pay-type-adj      { background: rgba(245,158,11,.15);  color: #FCD34D; border: 1px solid rgba(245,158,11,.25); }
+.pay-type-setup    { background: #EEF2FF; color: #A5B4FC; border: 1px solid #C7D2FE; }
+.pay-type-topup    { background: #ECFDF5;  color: #6EE7B7; border: 1px solid #A7F3D0; }
+.pay-type-adj      { background: #FFFBEB;  color: #FCD34D; border: 1px solid #FDE68A; }
 .pay-type-custom   { background: rgba(107,114,128,.15); color: #D1D5DB; border: 1px solid rgba(107,114,128,.2); }
 .pay-status-confirmed { color: #6EE7B7; font-size: 12px; }
 .pay-status-pending   { color: #FCD34D; font-size: 12px; }
-.pay-status-cancelled { color: rgba(255,255,255,.3); font-size: 12px; text-decoration: line-through; }
+.pay-status-cancelled { color: var(--ash-dim); font-size: 12px; text-decoration: line-through; }
 .pay-nominal { font-family: var(--mono); font-size: 13px; font-weight: 600; color: #fff; }
 .pay-coin    { font-family: var(--mono); font-size: 12px; color: #FCD34D; }
 
 /* ── Stats mini bar ── */
 .pay-stats { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 20px; }
 .pay-stat  {
-  background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08);
+  background: var(--linen); border: 1px solid var(--crease);
   border-radius: 12px; padding: 14px 20px; flex: 1; min-width: 140px;
 }
 .pay-stat .label { font-size: 10px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase;
-  color: rgba(255,255,255,.35); margin-bottom: 6px; }
+  color: var(--ash-dim); margin-bottom: 6px; }
 .pay-stat .value { font-size: 22px; font-weight: 800; font-family: var(--mono); color: #fff; }
-.pay-stat .sub   { font-size: 11px; color: rgba(255,255,255,.3); margin-top: 3px; }
-.pay-stat.green  { border-color: rgba(16,185,129,.25); background: rgba(16,185,129,.07); }
-.pay-stat.yellow { border-color: rgba(245,158,11,.25); background: rgba(245,158,11,.07); }
-.pay-stat.indigo { border-color: rgba(99,102,241,.25); background: rgba(99,102,241,.07); }
+.pay-stat .sub   { font-size: 11px; color: var(--ash-dim); margin-top: 3px; }
+.pay-stat.green  { border-color: #A7F3D0; background: rgba(16,185,129,.07); }
+.pay-stat.yellow { border-color: #FDE68A; background: rgba(245,158,11,.07); }
+.pay-stat.indigo { border-color: #C7D2FE; background: rgba(99,102,241,.07); }
 
 /* ── Form groups ── */
 .fg  { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
-.fg label { font-size: 10px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: rgba(255,255,255,.4); }
+.fg label { font-size: 10px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: var(--ash); }
 .fg input, .fg textarea, .fg select {
-  padding: 9px 12px; background: rgba(255,255,255,.06);
-  border: 1.5px solid rgba(255,255,255,.1); border-radius: 8px;
+  padding: 9px 12px; background: var(--crease-soft);
+  border: 1.5px solid var(--crease); border-radius: 8px;
   color: var(--white); font-family: var(--font); font-size: 13px; outline: none;
   transition: border-color .15s;
 }
 .fg input:focus, .fg textarea:focus, .fg select:focus {
-  border-color: var(--sa); box-shadow: 0 0 0 3px rgba(99,102,241,.12);
+  border-color: var(--sa); box-shadow: 0 0 0 3px #EEF2FF;
 }
 .fg textarea { resize: vertical; min-height: 64px; }
 .fg select option { background: var(--navy); }
 .fg-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-.fg-hint { font-size: 11px; color: rgba(255,255,255,.3); }
+.fg-hint { font-size: 11px; color: var(--ash-dim); }
 .fg-check { display: flex; align-items: center; gap: 8px; }
 .fg-check input[type=checkbox] { width: 16px; height: 16px; cursor: pointer; accent-color: var(--sa); }
-.fg-check label { font-size: 13px; color: rgba(255,255,255,.7); font-weight: 500; }
+.fg-check label { font-size: 13px; color: var(--ink-soft); font-weight: 500; }
 
 /* ── Tenant autocomplete ── */
 .tenant-search-wrap { position: relative; }
 .tenant-dropdown {
   position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 100;
-  background: #1B2D5A; border: 1px solid rgba(255,255,255,.15); border-radius: 10px;
+  background: #1B2D5A; border: 1px solid var(--crease); border-radius: 10px;
   overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,.4);
   max-height: 260px; overflow-y: auto;
 }
 .tenant-option {
-  padding: 10px 14px; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,.05);
+  padding: 10px 14px; cursor: pointer; border-bottom: 1px solid var(--crease-soft);
   display: flex; align-items: center; justify-content: space-between; gap: 10px;
 }
-.tenant-option:hover { background: rgba(99,102,241,.15); }
+.tenant-option:hover { background: #EEF2FF; }
 .tenant-option:last-child { border-bottom: none; }
 .tenant-option .t-name { font-size: 13px; font-weight: 600; color: #fff; }
-.tenant-option .t-meta { font-size: 11px; color: rgba(255,255,255,.4); }
+.tenant-option .t-meta { font-size: 11px; color: var(--ash); }
 .tenant-selected {
   display: flex; align-items: center; justify-content: space-between;
-  background: rgba(99,102,241,.12); border: 1.5px solid rgba(99,102,241,.3);
+  background: #EEF2FF; border: 1.5px solid rgba(99,102,241,.3);
   border-radius: 8px; padding: 10px 14px;
 }
 .tenant-selected .t-info { flex: 1; }
 .tenant-selected .t-info strong { font-size: 13px; color: #fff; display: block; }
-.tenant-selected .t-info small  { font-size: 11px; color: rgba(255,255,255,.45); }
-.tenant-selected button { background: none; border: none; color: rgba(255,255,255,.4);
+.tenant-selected .t-info small  { font-size: 11px; color: var(--ash); }
+.tenant-selected button { background: none; border: none; color: var(--ash);
   cursor: pointer; font-size: 16px; padding: 0 4px; }
 .tenant-selected button:hover { color: #fff; }
 
@@ -451,21 +451,21 @@ if ($action) {
 .pkg-option {
   display: flex; align-items: center; justify-content: space-between;
   padding: 10px 14px; border-radius: 8px; cursor: pointer;
-  border: 1.5px solid rgba(255,255,255,.08); background: rgba(255,255,255,.03);
+  border: 1.5px solid var(--crease); background: var(--linen);
   transition: border-color .15s, background .15s;
 }
 .pkg-option:hover { border-color: rgba(99,102,241,.4); background: rgba(99,102,241,.07); }
-.pkg-option.selected { border-color: var(--sa); background: rgba(99,102,241,.12); }
+.pkg-option.selected { border-color: var(--sa); background: #EEF2FF; }
 .pkg-option .p-name { font-size: 13px; font-weight: 600; color: #fff; }
-.pkg-option .p-meta { font-size: 11px; color: rgba(255,255,255,.4); }
+.pkg-option .p-meta { font-size: 11px; color: var(--ash); }
 .pkg-option .p-price { font-family: var(--mono); font-size: 13px; font-weight: 700; color: #6EE7B7; text-align: right; }
-.pkg-option .p-price small { display: block; font-size: 10px; color: rgba(255,255,255,.4); font-family: var(--font); }
+.pkg-option .p-price small { display: block; font-size: 10px; color: var(--ash); font-family: var(--font); }
 
 /* ── Separator ── */
 .modal-section-title {
   font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
-  color: rgba(255,255,255,.25); margin: 16px 0 10px; padding-top: 14px;
-  border-top: 1px solid rgba(255,255,255,.06);
+  color: var(--ash-dim); margin: 16px 0 10px; padding-top: 14px;
+  border-top: 1px solid var(--crease-soft);
 }
 </style>
 </head>
@@ -529,7 +529,7 @@ if ($action) {
         </tr>
       </thead>
       <tbody id="paymentsBody">
-        <tr><td colspan="12" style="text-align:center;padding:32px;color:rgba(255,255,255,.3);">Memuat...</td></tr>
+        <tr><td colspan="12" style="text-align:center;padding:32px;color:var(--ash-dim);">Memuat...</td></tr>
       </tbody>
     </table>
   </div>
@@ -571,7 +571,7 @@ if ($action) {
       <div class="fg">
         <label>Pilih Paket</label>
         <div class="pkg-options" id="packageOptions">
-          <div style="color:rgba(255,255,255,.3);font-size:12px;padding:8px;">Memuat paket...</div>
+          <div style="color:var(--ash-dim);font-size:12px;padding:8px;">Memuat paket...</div>
         </div>
         <input type="hidden" id="selectedPackageId"/>
       </div>
@@ -582,7 +582,7 @@ if ($action) {
       <div class="fg">
         <label>Pilih Bundle Coin</label>
         <div class="pkg-options" id="bundleOptions">
-          <div style="color:rgba(255,255,255,.3);font-size:12px;padding:8px;">Memuat bundle...</div>
+          <div style="color:var(--ash-dim);font-size:12px;padding:8px;">Memuat bundle...</div>
         </div>
         <input type="hidden" id="selectedBundleId"/>
       </div>
@@ -675,7 +675,7 @@ if ($action) {
   <div class="sa-modal" style="max-width:420px;text-align:center;">
     <div style="font-size:48px;margin-bottom:12px;">✅</div>
     <h3 style="margin-bottom:8px;" id="waModalTitle">Pembayaran Dikonfirmasi!</h3>
-    <p id="waModalSub" style="font-size:13px;color:rgba(255,255,255,.5);margin-bottom:20px;"></p>
+    <p id="waModalSub" style="font-size:13px;color:var(--ash);margin-bottom:20px;"></p>
     <a id="waModalLink" href="#" target="_blank" class="sa-btn sa-btn-wa"
        style="width:100%;justify-content:center;padding:12px;font-size:14px;margin-bottom:10px;"
        onclick="markWaSent()">
@@ -737,7 +737,7 @@ function renderStats(s){
 function renderRows(rows){
   const tb = document.getElementById('paymentsBody');
   if (!rows.length){
-    tb.innerHTML = '<tr><td colspan="12" style="text-align:center;padding:32px;color:rgba(255,255,255,.3);">Belum ada data.</td></tr>';
+    tb.innerHTML = '<tr><td colspan="12" style="text-align:center;padding:32px;color:var(--ash-dim);">Belum ada data.</td></tr>';
     return;
   }
   tb.innerHTML = rows.map(p => {
@@ -747,27 +747,27 @@ function renderRows(rows){
         ? '<span class="pay-status-pending">⏳ Pending</span>'
         : '<span class="pay-status-cancelled">✗ Cancelled</span>';
     const pkgBdl = p.package_nama || p.bundle_nama || '—';
-    const coinHtml = p.coin_dikreditkan > 0 ? `<span class="pay-coin">+${coin(p.coin_dikreditkan)}</span>` : '<span style="color:rgba(255,255,255,.2)">—</span>';
+    const coinHtml = p.coin_dikreditkan > 0 ? `<span class="pay-coin">+${coin(p.coin_dikreditkan)}</span>` : '<span style="color:var(--ash-dim)">—</span>';
     const waHtml = p.notif_wa_sent
-      ? '<span title="WA terkirim" style="color:#6EE7B7;font-size:14px;">📲</span>'
-      : (p.owner_wa ? `<a href="#" onclick="openWaLink(${p.id}, '${esc(p.owner_wa)}');return false;" title="Kirim WA" style="color:rgba(255,255,255,.3);font-size:14px;">💬</a>` : '—');
+      ? '<span title="WA terkirim" style="color:var(--sage);font-size:14px;">📲</span>'
+      : (p.owner_wa ? `<a href="#" onclick="openWaLink(${p.id}, '${esc(p.owner_wa)}');return false;" title="Kirim WA" style="color:var(--ash-dim);font-size:14px;">💬</a>` : '—');
     return `<tr>
-      <td style="font-family:var(--mono);font-size:11px;color:rgba(255,255,255,.3);">#${p.id}</td>
+      <td style="font-family:var(--mono);font-size:11px;color:var(--ash-dim);">#${p.id}</td>
       <td>
         <strong style="font-size:13px;">${esc(p.nama_outlet)}</strong>
-        <br><small style="color:rgba(255,255,255,.4);">${esc(p.owner_name)}</small>
+        <br><small style="color:var(--ash);">${esc(p.owner_name)}</small>
       </td>
       <td><span class="pay-type-badge ${typeCls[p.type]||'pay-type-custom'}">${typeLabel[p.type]||p.type}</span></td>
-      <td style="font-size:12px;color:rgba(255,255,255,.55);">${esc(pkgBdl)}</td>
+      <td style="font-size:12px;color:var(--ash);">${esc(pkgBdl)}</td>
       <td><span class="pay-nominal">${p.nominal_dibayar > 0 ? rp(p.nominal_dibayar) : '—'}</span></td>
       <td>${coinHtml}</td>
-      <td style="font-size:12px;color:rgba(255,255,255,.5);">${metodeLabel[p.metode]||p.metode}</td>
-      <td style="font-size:11px;font-family:var(--mono);color:rgba(255,255,255,.5);">
+      <td style="font-size:12px;color:var(--ash);">${metodeLabel[p.metode]||p.metode}</td>
+      <td style="font-size:11px;font-family:var(--mono);color:var(--ash);">
         ${p.ref_transfer ? esc(p.ref_transfer) : ''}
-        ${p.nama_pengirim ? `<br><span style="font-family:var(--font);color:rgba(255,255,255,.3);">${esc(p.nama_pengirim)}</span>` : ''}
+        ${p.nama_pengirim ? `<br><span style="font-family:var(--font);color:var(--ash-dim);">${esc(p.nama_pengirim)}</span>` : ''}
         ${(!p.ref_transfer && !p.nama_pengirim) ? '—' : ''}
       </td>
-      <td style="font-size:12px;color:rgba(255,255,255,.5);">${p.tanggal_bayar ? new Date(p.tanggal_bayar).toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'}) : '—'}</td>
+      <td style="font-size:12px;color:var(--ash);">${p.tanggal_bayar ? new Date(p.tanggal_bayar).toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'}) : '—'}</td>
       <td>${statusHtml}</td>
       <td>${waHtml}</td>
       <td>
@@ -781,7 +781,7 @@ function renderRows(rows){
 
 function renderPagination(page, pages, total){
   const el = document.getElementById('paginationWrap');
-  let html = `<span style="font-size:12px;color:rgba(255,255,255,.35);margin-right:10px;">Total: ${total}</span>`;
+  let html = `<span style="font-size:12px;color:var(--ash-dim);margin-right:10px;">Total: ${total}</span>`;
   html += `<button class="sa-btn sa-btn-sm sa-btn-outline ${page<=1?'disabled':''}" onclick="gotoPage(${page-1})">‹ Prev</button>`;
   for(let i=Math.max(1,page-2);i<=Math.min(pages,page+2);i++)
     html += `<button class="sa-btn sa-btn-sm ${i===page?'sa-btn-primary':'sa-btn-outline'}" onclick="gotoPage(${i})">${i}</button>`;
@@ -869,15 +869,15 @@ function onTypeChange(){
 // ── Package options ───────────────────────────────────
 function renderPackageOptions(){
   const el = document.getElementById('packageOptions');
-  if (!_packages.length){ el.innerHTML = '<div style="color:rgba(255,255,255,.3);font-size:12px;padding:8px;">Tidak ada paket aktif.</div>'; return; }
+  if (!_packages.length){ el.innerHTML = '<div style="color:var(--ash-dim);font-size:12px;padding:8px;">Tidak ada paket aktif.</div>'; return; }
   el.innerHTML = _packages.map(p => `
     <div class="pkg-option" data-id="${p.id}" onclick="selectPackage(this, ${JSON.stringify(p).replace(/"/g,'&quot;')})">
       <div>
-        <div class="p-name">${esc(p.nama)} ${p.is_custom ? '<span style="font-size:10px;color:#FCD34D;">(Custom)</span>' : ''}</div>
+        <div class="p-name">${esc(p.nama)} ${p.is_custom ? '<span style="font-size:10px;color:#92400E;">(Custom)</span>' : ''}</div>
         <div class="p-meta">Coin awal: ${coin(p.coin_awal)} · Max outlet: ${p.max_outlets||'∞'} · Trial: ${p.trial_hari} hari</div>
       </div>
       <div class="p-price">
-        ${p.is_custom ? '<span style="color:#FCD34D;">Nego</span>' : rp(p.setup_fee)}
+        ${p.is_custom ? '<span style="color:#92400E;">Nego</span>' : rp(p.setup_fee)}
         <small>${p.is_custom ? '' : 'setup fee'}</small>
       </div>
     </div>`).join('');
@@ -896,7 +896,7 @@ function selectPackage(el, pkg){
 // ── Bundle options ────────────────────────────────────
 function renderBundleOptions(){
   const el = document.getElementById('bundleOptions');
-  if (!_bundles.length){ el.innerHTML = '<div style="color:rgba(255,255,255,.3);font-size:12px;padding:8px;">Tidak ada bundle aktif.</div>'; return; }
+  if (!_bundles.length){ el.innerHTML = '<div style="color:var(--ash-dim);font-size:12px;padding:8px;">Tidak ada bundle aktif.</div>'; return; }
   el.innerHTML = _bundles.map(b => {
     const bonus = parseFloat(b.bonus_pct) > 0 ? ` +${b.bonus_pct}% bonus` : '';
     return `

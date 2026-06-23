@@ -151,7 +151,7 @@ if ($action) {
         </tr>
       </thead>
       <tbody id="obBody">
-        <tr><td colspan="9" style="text-align:center;padding:32px;color:rgba(255,255,255,.35);">Memuat...</td></tr>
+        <tr><td colspan="9" style="text-align:center;padding:32px;color:var(--ash-dim);">Memuat...</td></tr>
       </tbody>
     </table>
   </div>
@@ -196,7 +196,7 @@ function filterTable() {
 function renderTable(rows) {
   const tbody = document.getElementById('obBody');
   if (!rows.length) {
-    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:24px;color:rgba(255,255,255,.35);">Tidak ada data.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:24px;color:var(--ash-dim);">Tidak ada data.</td></tr>';
     return;
   }
 
@@ -208,10 +208,10 @@ function renderTable(rows) {
     const pct = Math.round(n / 5 * 100);
     const color = pct === 100 ? '#10B981' : pct >= 60 ? '#F59E0B' : '#EF4444';
     return `<div style="display:flex;align-items:center;gap:6px;">
-      <div style="flex:1;height:6px;background:rgba(255,255,255,.1);border-radius:3px;overflow:hidden;">
+      <div style="flex:1;height:6px;background:var(--crease);border-radius:3px;overflow:hidden;">
         <div style="width:${pct}%;height:100%;background:${color};border-radius:3px;transition:width .3s;"></div>
       </div>
-      <span style="font-size:11px;color:rgba(255,255,255,.5);font-family:var(--mono);">${n}/5</span>
+      <span style="font-size:11px;color:var(--ash);font-family:var(--mono);">${n}/5</span>
     </div>`;
   }
 
@@ -231,7 +231,7 @@ function renderTable(rows) {
     return `<tr style="${rowBg}">
       <td>
         <a href="client_detail.php?id=${r.id}" style="color:var(--white);text-decoration:none;font-weight:600;">${esc(r.nama_outlet)}</a>
-        ${stuck ? '<br><span style="font-size:10px;color:#FCA5A5;">⚠ Stuck</span>' : ''}
+        ${stuck ? '<br><span style="font-size:10px;color:#991B1B;">⚠ Stuck</span>' : ''}
       </td>
       <td style="font-size:12.5px;">${esc(r.owner_name)}</td>
       <td style="text-align:center;">${stepIcon(r.step1)}</td>

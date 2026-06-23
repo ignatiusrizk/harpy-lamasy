@@ -291,17 +291,17 @@ if ($action) {
 <?php saRenderHead('Support Tickets'); ?>
 <style>
 /* ── Status badges ──────────────────────────────── */
-.t-open           { background:rgba(245,158,11,.15);color:#FCD34D; }
-.t-in_progress    { background:rgba(99,102,241,.15); color:#A5B4FC; }
+.t-open           { background:#FFFBEB;color:#92400E; }
+.t-in_progress    { background:#EEF2FF; color:var(--indigo); }
 .t-waiting_tenant { background:rgba(168,85,247,.15); color:#D8B4FE; }
-.t-resolved       { background:rgba(16,185,129,.15); color:#6EE7B7; }
-.t-closed         { background:rgba(255,255,255,.08);color:rgba(255,255,255,.3); }
+.t-resolved       { background:#ECFDF5; color:var(--sage); }
+.t-closed         { background:var(--crease-soft);color:var(--ash-dim); }
 
 /* ── Priority ───────────────────────────────────── */
-.p-low      { background:rgba(255,255,255,.06);color:rgba(255,255,255,.35); }
-.p-normal   { background:rgba(99,102,241,.12); color:#A5B4FC; }
-.p-high     { background:rgba(245,158,11,.12); color:#FCD34D; }
-.p-critical { background:rgba(239,68,68,.15);  color:#FCA5A5; }
+.p-low      { background:var(--crease-soft);color:var(--ash-dim); }
+.p-normal   { background:#EEF2FF; color:var(--indigo); }
+.p-high     { background:#FFFBEB; color:#92400E; }
+.p-critical { background:#FECACA;  color:#991B1B; }
 
 /* ── SLA indicator ──────────────────────────────── */
 .sla-dot { width:8px;height:8px;border-radius:50%;flex-shrink:0;display:inline-block; }
@@ -312,11 +312,11 @@ if ($action) {
 
 /* ── Stats alert ────────────────────────────────── */
 .sla-alert {
-  background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25);
+  background:#FECACA;border:1px solid #FCA5A5;
   border-radius:var(--r);padding:12px 16px;display:flex;align-items:center;
-  gap:10px;color:#FCA5A5;font-size:13px;font-weight:600;margin-bottom:20px;
+  gap:10px;color:#991B1B;font-size:13px;font-weight:600;margin-bottom:20px;
 }
-.sla-alert a { color:#FCA5A5;text-decoration:underline;margin-left:6px; }
+.sla-alert a { color:#991B1B;text-decoration:underline;margin-left:6px; }
 
 /* ── Thread bubble ──────────────────────────────── */
 .thread-wrap { display:flex;flex-direction:column;gap:10px;padding:4px 0 12px; }
@@ -324,21 +324,21 @@ if ($action) {
 .bubble.tenant { align-self:flex-start; }
 .bubble.admin  { align-self:flex-start; }
 .bubble.internal { align-self:flex-start;opacity:.8; }
-.bubble-head { font-size:11px;font-weight:700;color:rgba(255,255,255,.4); }
+.bubble-head { font-size:11px;font-weight:700;color:var(--ash); }
 .bubble-body {
   padding:10px 14px;border-radius:12px;font-size:13px;
   line-height:1.55;white-space:pre-wrap;word-break:break-word;
 }
-.bubble.tenant  .bubble-body { background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08); border-top-left-radius:4px; }
-.bubble.admin   .bubble-body { background:rgba(99,102,241,.15);border:1px solid rgba(99,102,241,.25); border-top-left-radius:4px; }
-.bubble.internal .bubble-body { background:rgba(245,158,11,.08);border:1px dashed rgba(245,158,11,.3);font-style:italic; }
-.bubble-time { font-size:10.5px;color:rgba(255,255,255,.25); }
+.bubble.tenant  .bubble-body { background:var(--crease-soft);border:1px solid var(--crease); border-top-left-radius:4px; }
+.bubble.admin   .bubble-body { background:#EEF2FF;border:1px solid #C7D2FE; border-top-left-radius:4px; }
+.bubble.internal .bubble-body { background:#FFFBEB;border:1px dashed rgba(245,158,11,.3);font-style:italic; }
+.bubble-time { font-size:10.5px;color:var(--ash-dim); }
 
 /* ── Reply area ─────────────────────────────────── */
 .reply-tabs { display:flex;gap:2px;margin-bottom:10px; }
 .reply-tab {
   padding:6px 14px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;
-  border:1.5px solid rgba(255,255,255,.1);background:transparent;color:rgba(255,255,255,.4);
+  border:1.5px solid var(--crease);background:transparent;color:var(--ash);
   transition:all .15s;
 }
 .reply-tab.active { border-color:var(--sa);background:var(--sa-l);color:var(--white); }
@@ -346,7 +346,7 @@ if ($action) {
 /* ── Action row in modal ────────────────────────── */
 .modal-actions {
   display:flex;flex-wrap:wrap;gap:8px;align-items:center;
-  padding:12px 20px;border-top:1px solid rgba(255,255,255,.07);
+  padding:12px 20px;border-top:1px solid var(--crease-soft);
   background:var(--navy-m);
 }
 
@@ -355,7 +355,7 @@ if ($action) {
   display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:16px;
 }
 .sup-filter select, .sup-filter input {
-  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);
+  background:var(--crease-soft);border:1px solid var(--crease);
   color:var(--white);border-radius:7px;padding:7px 11px;font-size:12.5px;
   font-family:var(--font);outline:none;transition:border-color .15s;
 }
@@ -468,7 +468,7 @@ if ($action) {
         </tr>
       </thead>
       <tbody id="ticketBody">
-        <tr><td colspan="8" style="text-align:center;padding:32px;color:rgba(255,255,255,.3);">Memuat…</td></tr>
+        <tr><td colspan="8" style="text-align:center;padding:32px;color:var(--ash-dim);">Memuat…</td></tr>
       </tbody>
     </table>
   </div>
@@ -485,16 +485,16 @@ if ($action) {
     </div>
 
     <!-- Ticket meta bar -->
-    <div id="detailMeta" style="padding:12px 20px;background:rgba(255,255,255,.02);border-bottom:1px solid rgba(255,255,255,.07);display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:12px;">
+    <div id="detailMeta" style="padding:12px 20px;background:var(--linen);border-bottom:1px solid var(--crease-soft);display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:12px;">
     </div>
 
     <!-- Thread -->
     <div id="detailThread" style="flex:1;overflow-y:auto;padding:16px 20px;">
-      <div style="text-align:center;padding:32px;color:rgba(255,255,255,.3);">Memuat…</div>
+      <div style="text-align:center;padding:32px;color:var(--ash-dim);">Memuat…</div>
     </div>
 
     <!-- Reply area -->
-    <div style="border-top:1px solid rgba(255,255,255,.07);padding:14px 20px;" id="replyArea">
+    <div style="border-top:1px solid var(--crease-soft);padding:14px 20px;" id="replyArea">
       <div class="reply-tabs">
         <button class="reply-tab active" id="tabPublic"   onclick="setReplyTab(0)">💬 Balas ke Tenant</button>
         <button class="reply-tab"        id="tabInternal" onclick="setReplyTab(1)">🔒 Internal Note</button>
@@ -509,7 +509,7 @@ if ($action) {
 
     <!-- Action row -->
     <div class="modal-actions" id="actionRow">
-      <span style="font-size:11px;color:rgba(255,255,255,.35);font-weight:600;">UBAH:</span>
+      <span style="font-size:11px;color:var(--ash-dim);font-weight:600;">UBAH:</span>
       <select id="aStatus" class="sa-input" style="width:auto;padding:5px 10px;font-size:12px;" onchange="updateStatus()">
         <option value="">— Status —</option>
         <option value="open">Open</option>
@@ -538,13 +538,13 @@ if ($action) {
   <div style="flex:1;min-width:0;">
     <div style="font-size:12px;font-weight:700;color:var(--white);margin-bottom:2px;" id="waPopupMsg">Kirim notif WA ke tenant?</div>
     <a id="waPopupLink" href="#" target="_blank"
-       style="font-size:12px;color:#6EE7B7;text-decoration:none;font-weight:600;"
+       style="font-size:12px;color:var(--sage);text-decoration:none;font-weight:600;"
        onclick="document.getElementById('waPopup').classList.remove('show')">
       📲 Buka WhatsApp →
     </a>
   </div>
   <button onclick="document.getElementById('waPopup').classList.remove('show')"
-          style="background:none;border:none;color:rgba(255,255,255,.4);cursor:pointer;font-size:16px;flex-shrink:0;">✕</button>
+          style="background:none;border:none;color:var(--ash);cursor:pointer;font-size:16px;flex-shrink:0;">✕</button>
 </div>
 
 <?php saRenderNavClose(); ?>
@@ -614,7 +614,7 @@ function loadTickets() {
 function renderTickets(rows) {
   const tbody = document.getElementById('ticketBody');
   if (!rows||!rows.length) {
-    tbody.innerHTML='<tr><td colspan="8" style="text-align:center;padding:28px;color:rgba(255,255,255,.25);">Tidak ada tiket.</td></tr>';
+    tbody.innerHTML='<tr><td colspan="8" style="text-align:center;padding:28px;color:var(--ash-dim);">Tidak ada tiket.</td></tr>';
     return;
   }
   tbody.innerHTML = rows.map(r => {
@@ -623,14 +623,14 @@ function renderTickets(rows) {
     const slaTitle = age>24?`${age}j — KRITIS!`:age>6?`${age}j — Perlu perhatian`:`${age}j`;
 
     return `<tr style="cursor:pointer" onclick="openDetail(${r.id})">
-      <td style="font-family:var(--mono);font-size:12px;color:rgba(255,255,255,.4);">#${r.id}</td>
+      <td style="font-family:var(--mono);font-size:12px;color:var(--ash);">#${r.id}</td>
       <td>
         <div style="font-size:13px;font-weight:600;">${esc(r.nama_outlet||'-')}</div>
-        <div style="font-size:11px;color:rgba(255,255,255,.35);">${esc(r.owner_name||'')}</div>
+        <div style="font-size:11px;color:var(--ash-dim);">${esc(r.owner_name||'')}</div>
       </td>
       <td>
         <div style="font-size:13px;font-weight:600;color:var(--white);">${esc(r.subject)}</div>
-        <div style="font-size:11px;color:rgba(255,255,255,.35);">${r.assigned_nama ? '👤 '+esc(r.assigned_nama) : '<span style="color:rgba(255,165,0,.6)">⚠ Unassigned</span>'}</div>
+        <div style="font-size:11px;color:var(--ash-dim);">${r.assigned_nama ? '👤 '+esc(r.assigned_nama) : '<span style="color:rgba(255,165,0,.6)">⚠ Unassigned</span>'}</div>
       </td>
       <td><span class="sa-badge" style="font-size:10.5px;">${catLabel[r.category]||r.category}</span></td>
       <td>${priBadge(r.priority)}</td>
@@ -638,15 +638,15 @@ function renderTickets(rows) {
         ${statusBadge(r.status)}
         ${r.status==='open'?`<span class="sla-dot ${sleCls}" style="margin-left:5px;" title="Usia tiket: ${slaTitle}"></span>`:''}
       </td>
-      <td style="font-size:12px;text-align:center;color:rgba(255,255,255,.4);">${r.reply_count||0} balasan</td>
-      <td style="font-size:12px;color:rgba(255,255,255,.35);">${fmtAgo(r.updated_at||r.created_at)}</td>
+      <td style="font-size:12px;text-align:center;color:var(--ash);">${r.reply_count||0} balasan</td>
+      <td style="font-size:12px;color:var(--ash-dim);">${fmtAgo(r.updated_at||r.created_at)}</td>
     </tr>`;
   }).join('');
 }
 
 function renderPagination(page,pages,total) {
   const el = document.getElementById('ticketPagination');
-  let html = `<span style="font-size:12px;color:rgba(255,255,255,.3);margin-right:10px">Total: ${total}</span>`;
+  let html = `<span style="font-size:12px;color:var(--ash-dim);margin-right:10px">Total: ${total}</span>`;
   html += `<button class="sa-btn sa-btn-sm sa-btn-outline${page<=1?' disabled':''}" onclick="tGoto(${page-1})">‹ Prev</button>`;
   for(let i=Math.max(1,page-2);i<=Math.min(pages,page+2);i++)
     html+=`<button class="sa-btn sa-btn-sm ${i===page?'sa-btn-primary':'sa-btn-outline'}" onclick="tGoto(${i})">${i}</button>`;
@@ -662,7 +662,7 @@ function openDetail(id) {
   _curTicket = id;
   document.getElementById('detailOverlay').classList.add('open');
   document.getElementById('detailThread').innerHTML =
-    '<div style="text-align:center;padding:24px;color:rgba(255,255,255,.3)">Memuat…</div>';
+    '<div style="text-align:center;padding:24px;color:var(--ash-dim)">Memuat…</div>';
   document.getElementById('replyMsg').value = '';
 
   fetch(`support.php?action=get_thread&id=${id}`,{headers:{'X-Requested-With':'XMLHttpRequest'}})
@@ -690,9 +690,9 @@ function renderDetail(ticket, replies, admins) {
     ${statusBadge(ticket.status)}
     ${priBadge(ticket.priority)}
     <span class="sa-badge" style="font-size:10.5px;">${catLabel[ticket.category]||ticket.category}</span>
-    <span style="color:rgba(255,255,255,.35);">📍 ${esc(ticket.nama_outlet||'-')}</span>
-    <span style="color:rgba(255,255,255,.35);">👤 ${esc(ticket.owner_name||'')}</span>
-    <span style="color:rgba(255,255,255,.25);margin-left:auto;font-size:11px;">Dibuat ${fmtDT(ticket.created_at)}</span>`;
+    <span style="color:var(--ash-dim);">📍 ${esc(ticket.nama_outlet||'-')}</span>
+    <span style="color:var(--ash-dim);">👤 ${esc(ticket.owner_name||'')}</span>
+    <span style="color:var(--ash-dim);margin-left:auto;font-size:11px;">Dibuat ${fmtDT(ticket.created_at)}</span>`;
 
   // Thread
   let html = '<div class="thread-wrap">';
@@ -718,7 +718,7 @@ function renderDetail(ticket, replies, admins) {
   html += '</div>';
 
   if (!replies||!replies.length) {
-    html += `<div style="text-align:center;padding:12px;font-size:12px;color:rgba(255,255,255,.25)">Belum ada balasan.</div>`;
+    html += `<div style="text-align:center;padding:12px;font-size:12px;color:var(--ash-dim)">Belum ada balasan.</div>`;
   }
   document.getElementById('detailThread').innerHTML = html;
   // Scroll to bottom

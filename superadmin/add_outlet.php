@@ -194,25 +194,25 @@ $csrf = saGetCsrf();
 <?php saRenderHead('Tambah Outlet'); ?>
 <style>
 .wiz-card {
-  background: rgba(255,255,255,.03);
-  border: 1px solid rgba(255,255,255,.08);
+  background: var(--linen);
+  border: 1px solid var(--crease);
   border-radius: 16px; padding: 28px;
   max-width: 580px;
 }
 .wiz-card h2 { font-size: 18px; font-weight: 800; margin-bottom: 6px; color: var(--white); }
-.wiz-card .sub { font-size: 13px; color: rgba(255,255,255,.35); margin-bottom: 24px; }
+.wiz-card .sub { font-size: 13px; color: var(--ash-dim); margin-bottom: 24px; }
 
 .wiz-field { margin-bottom: 16px; }
-.wiz-label { font-size: 11px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: rgba(255,255,255,.4); display: block; margin-bottom: 6px; }
+.wiz-label { font-size: 11px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: var(--ash); display: block; margin-bottom: 6px; }
 .wiz-label .req { color: var(--red); }
 .wiz-input, .wiz-select, .wiz-textarea {
   width: 100%; padding: 10px 14px;
-  background: rgba(255,255,255,.06); border: 1.5px solid rgba(255,255,255,.1);
+  background: var(--crease-soft); border: 1.5px solid var(--crease);
   border-radius: var(--r); color: var(--white); font-family: var(--font); font-size: 14px; outline: none;
   transition: border-color .15s;
 }
 .wiz-input:focus, .wiz-select:focus, .wiz-textarea:focus {
-  border-color: var(--sa); box-shadow: 0 0 0 3px rgba(99,102,241,.12);
+  border-color: var(--sa); box-shadow: 0 0 0 3px #EEF2FF;
 }
 .wiz-textarea { resize: vertical; min-height: 72px; }
 .wiz-select option { background: var(--navy); }
@@ -224,23 +224,23 @@ $csrf = saGetCsrf();
 .radio-opt {
   display: flex; align-items: flex-start; gap: 10px;
   padding: 12px 14px; border-radius: 10px; cursor: pointer;
-  border: 1.5px solid rgba(255,255,255,.08); background: rgba(255,255,255,.03);
+  border: 1.5px solid var(--crease); background: var(--linen);
   transition: all .15s;
 }
-.radio-opt:hover { border-color: rgba(99,102,241,.3); background: rgba(99,102,241,.05); }
+.radio-opt:hover { border-color: rgba(99,102,241,.3); background: #EEF2FF; }
 .radio-opt input[type=radio] { margin-top: 2px; accent-color: var(--sa); flex-shrink: 0; }
 .radio-opt .opt-label { font-size: 13px; font-weight: 600; color: var(--white); }
-.radio-opt .opt-sub   { font-size: 11px; color: rgba(255,255,255,.35); margin-top: 2px; }
+.radio-opt .opt-sub   { font-size: 11px; color: var(--ash-dim); margin-top: 2px; }
 .radio-opt.selected   { border-color: var(--sa); background: var(--sa-l); }
 
 .review-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 20px; }
-.review-table td { padding: 10px 14px; border-bottom: 1px solid rgba(255,255,255,.05); }
+.review-table td { padding: 10px 14px; border-bottom: 1px solid var(--crease-soft); }
 .review-table tr:last-child td { border-bottom: none; }
-.review-table td:first-child { color: rgba(255,255,255,.4); font-weight: 600; width: 45%; }
+.review-table td:first-child { color: var(--ash); font-weight: 600; width: 45%; }
 .review-table td:last-child { color: var(--white); }
 
 .error-box {
-  background: rgba(239,68,68,.1); border: 1px solid rgba(239,68,68,.3);
+  background: #FECACA; border: 1px solid rgba(239,68,68,.3);
   color: #FCA5A5; padding: 12px 16px; border-radius: 10px; margin-bottom: 20px; font-size: 13px;
 }
 .wiz-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 28px; gap: 12px; }
@@ -252,21 +252,21 @@ $csrf = saGetCsrf();
 .wstep {
   display: flex; align-items: center; gap: 8px;
   padding: 10px 16px; border-radius: 10px;
-  font-size: 13px; font-weight: 600; color: rgba(255,255,255,.3);
+  font-size: 13px; font-weight: 600; color: var(--ash-dim);
   flex-shrink: 0;
 }
 .wstep.done   { color: #6EE7B7; }
-.wstep.active { color: var(--white); background: rgba(99,102,241,.12); border: 1px solid rgba(99,102,241,.25); }
+.wstep.active { color: var(--white); background: #EEF2FF; border: 1px solid #C7D2FE; }
 .wstep-num {
   width: 28px; height: 28px; border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
   font-size: 12px; font-weight: 800;
-  background: rgba(255,255,255,.06); border: 1.5px solid rgba(255,255,255,.12);
+  background: var(--crease-soft); border: 1.5px solid var(--crease);
   flex-shrink: 0;
 }
-.wstep.done .wstep-num   { background: rgba(16,185,129,.2); border-color: rgba(16,185,129,.4); color: #6EE7B7; }
+.wstep.done .wstep-num   { background: #A7F3D0; border-color: rgba(16,185,129,.4); color: #6EE7B7; }
 .wstep.active .wstep-num { background: var(--sa-l); border-color: var(--sa); color: var(--sa); }
-.wstep-connector { width: 24px; height: 2px; background: rgba(255,255,255,.08); flex-shrink: 0; margin: 0 -2px; }
+.wstep-connector { width: 24px; height: 2px; background: var(--crease); flex-shrink: 0; margin: 0 -2px; }
 .wstep-connector.done { background: rgba(16,185,129,.3); }
 </style>
 </head>
@@ -356,14 +356,14 @@ $csrf = saGetCsrf();
       <input type="hidden" name="_csrf" value="<?= htmlspecialchars($csrf) ?>"/>
       <input type="hidden" name="step" value="2"/>
 
-      <div style="background:rgba(99,102,241,.06);border:1px solid rgba(99,102,241,.15);border-radius:10px;padding:14px 16px;font-size:13px;margin-bottom:20px;">
+      <div style="background:#EEF2FF;border:1px solid #EEF2FF;border-radius:10px;padding:14px 16px;font-size:13px;margin-bottom:20px;">
         <strong>Mode Coin Tenant:</strong>
         <?php if ($tenant['coin_mode'] === 'per_outlet'): ?>
-          <span style="color:#A5B4FC">Per Outlet</span> — setiap outlet punya saldo sendiri.
-          <br><span style="color:rgba(255,255,255,.4)">Saldo shared saat ini: <?= number_format((int)$tenant['coin_balance'],0,',','.') ?> coin</span>
+          <span style="color:var(--indigo)">Per Outlet</span> — setiap outlet punya saldo sendiri.
+          <br><span style="color:var(--ash)">Saldo shared saat ini: <?= number_format((int)$tenant['coin_balance'],0,',','.') ?> coin</span>
         <?php else: ?>
-          <span style="color:#6EE7B7">Shared</span> — semua outlet berbagi saldo tenant.
-          <br><span style="color:rgba(255,255,255,.4)">Saldo shared saat ini: <?= number_format((int)$tenant['coin_balance'],0,',','.') ?> coin</span>
+          <span style="color:var(--sage)">Shared</span> — semua outlet berbagi saldo tenant.
+          <br><span style="color:var(--ash)">Saldo shared saat ini: <?= number_format((int)$tenant['coin_balance'],0,',','.') ?> coin</span>
         <?php endif; ?>
       </div>
 
@@ -373,13 +373,13 @@ $csrf = saGetCsrf();
           <input type="number" name="coin_initial_balance" class="wiz-input" min="0"
                  value="<?= (int)($wiz['coin_initial_balance'] ?? 0) ?>"
                  placeholder="0" />
-          <div style="font-size:11px;color:rgba(255,255,255,.3);margin-top:5px">
+          <div style="font-size:11px;color:var(--ash-dim);margin-top:5px">
             Isi 0 jika tidak perlu saldo awal. Transfer manual dari shared balance jika diperlukan.
           </div>
         </div>
       <?php else: ?>
         <input type="hidden" name="coin_initial_balance" value="0"/>
-        <p style="font-size:13px;color:rgba(255,255,255,.45);">
+        <p style="font-size:13px;color:var(--ash);">
           Outlet ini akan otomatis berbagi saldo coin dengan seluruh tenant (<?= number_format((int)$tenant['coin_balance'],0,',','.') ?> coin).
           Tidak perlu setting saldo terpisah.
         </p>
@@ -411,7 +411,7 @@ $csrf = saGetCsrf();
       <?php endif; ?>
     </table>
 
-    <div style="background:rgba(99,102,241,.06);border:1px solid rgba(99,102,241,.15);border-radius:10px;padding:14px 16px;font-size:13px;color:rgba(255,255,255,.6);margin-bottom:20px;">
+    <div style="background:#EEF2FF;border:1px solid #EEF2FF;border-radius:10px;padding:14px 16px;font-size:13px;color:var(--ink-soft);margin-bottom:20px;">
       Sistem akan membuat: <strong style="color:var(--white)">1 outlet &bull; 3 layanan default</strong>
     </div>
 
@@ -432,22 +432,22 @@ $csrf = saGetCsrf();
   <div class="wiz-card" style="text-align:center;">
     <div style="font-size:48px;margin-bottom:16px;">&#x1F3EA;</div>
     <h2>Outlet Berhasil Dibuat!</h2>
-    <p style="color:rgba(255,255,255,.45);margin:12px 0 24px;">
+    <p style="color:var(--ash);margin:12px 0 24px;">
       Outlet <strong><?= htmlspecialchars($wiz['nama_outlet'] ?? '') ?></strong> sudah aktif
       dan dapat diakses oleh user tenant.
     </p>
 
-    <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:16px;text-align:left;font-size:13px;margin-bottom:20px;">
-      <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.05);">
-        <span style="color:rgba(255,255,255,.4)">Outlet ID</span>
+    <div style="background:var(--linen);border:1px solid var(--crease);border-radius:10px;padding:16px;text-align:left;font-size:13px;margin-bottom:20px;">
+      <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--crease-soft);">
+        <span style="color:var(--ash)">Outlet ID</span>
         <span style="font-family:var(--mono)">#<?= $result['outlet_id'] ?></span>
       </div>
-      <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.05);">
-        <span style="color:rgba(255,255,255,.4)">Slug</span>
+      <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--crease-soft);">
+        <span style="color:var(--ash)">Slug</span>
         <span style="font-family:var(--mono)"><?= htmlspecialchars($result['slug']) ?></span>
       </div>
       <?php if ($result['note']): ?>
-      <div style="padding:8px 0;color:#FCD34D;font-size:12px;"><?= htmlspecialchars($result['note']) ?></div>
+      <div style="padding:8px 0;color:#92400E;font-size:12px;"><?= htmlspecialchars($result['note']) ?></div>
       <?php endif; ?>
     </div>
 
