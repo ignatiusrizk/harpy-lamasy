@@ -125,10 +125,12 @@ function saRenderHead(string $title = 'Super Admin'): void {
     /* ── Main content ────────────────────────── */
     .sa-main {
       flex: 1;
+      min-width: 0;            /* CRITICAL: flex item default min-width=auto bikin content overflow parent */
       margin-left: var(--sidebar);
       min-height: 100vh;
       display: flex; flex-direction: column;
     }
+    .sa-content { min-width: 0; }   /* defensive — prevent inner overflow */
     .sa-topbar {
       height: 56px;
       background: rgba(15,28,58,.8);
