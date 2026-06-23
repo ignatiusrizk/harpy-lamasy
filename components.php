@@ -453,7 +453,7 @@ function renderTopbar(string $activePage = '', bool $minimalMode = false): void 
                     onclick="document.getElementById('olShell').classList.toggle('open')">☰</button>
             <?php endif; ?>
             <?php if ($minimalMode): ?>
-              <span class="ol-top-badge" style="background:rgba(53,232,213,.12);color:#1BC4B3;">🏢 AKUN</span>
+              <span class="ol-top-badge" style="background:rgba(53,232,213,.12);color:#1BC4B3;">🏢 HQ</span>
             <?php else: ?>
               <span class="ol-top-badge">📍 OUTLET</span>
             <?php endif; ?>

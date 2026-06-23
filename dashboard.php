@@ -498,135 +498,292 @@ $profileSaved = isset($_GET['profile_saved']);
 $pwChanged    = isset($_GET['pw_changed']);
 $pwError      = $pwError ?? '';
 ?>
-<div style="background:#F4F7FB;min-height:calc(100vh - 60px);padding:28px 16px 80px">
-<div style="max-width:860px;margin:0 auto;display:flex;flex-direction:column;gap:20px">
+<style>
+/* ── Onboarding dashboard (dark theme, matching landing) ── */
+.ob-wrap {
+  background: #0F1C3A;
+  background-image:
+    radial-gradient(circle at 15% 10%, rgba(53,232,213,.05), transparent 40%),
+    radial-gradient(circle at 85% 30%, rgba(99,102,241,.04), transparent 35%);
+  min-height: calc(100vh - 60px);
+  padding: 32px 16px 100px;
+}
+.ob-inner { max-width: 880px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+
+.ob-alert {
+  padding: 12px 16px; border-radius: 10px; font-size: 13.5px;
+  border: 1px solid; display: flex; align-items: center; gap: 8px;
+}
+.ob-alert-ok { background: rgba(53,232,213,.08); border-color: rgba(53,232,213,.3); color: #35E8D5; }
+.ob-alert-err { background: rgba(239,68,68,.1); border-color: rgba(239,68,68,.3); color: #FCA5A5; }
+
+.ob-hero {
+  background: linear-gradient(135deg, rgba(53,232,213,.06), rgba(99,102,241,.04));
+  border: 1px solid rgba(53,232,213,.18);
+  border-radius: 18px; padding: 40px 32px; text-align: center;
+  position: relative; overflow: hidden;
+}
+.ob-hero::before {
+  content: ''; position: absolute; top:-100px; right:-80px;
+  width: 280px; height: 280px;
+  background: radial-gradient(circle, rgba(53,232,213,.18), transparent 70%);
+  pointer-events: none;
+}
+.ob-hero-badge {
+  display: inline-block; background: rgba(53,232,213,.12);
+  border: 1px solid rgba(53,232,213,.3);
+  color: #35E8D5; font-size: 12px; font-weight: 700;
+  padding: 5px 14px; border-radius: 100px;
+  margin-bottom: 16px; letter-spacing: .05em; position: relative;
+}
+.ob-hero h1 {
+  font-size: clamp(1.5rem, 4vw, 2.2rem); font-weight: 800;
+  color: #fff; margin: 0 0 12px; line-height: 1.2; position: relative;
+}
+.ob-hero p {
+  font-size: 15px; color: rgba(255,255,255,.7);
+  max-width: 520px; margin: 0 auto 28px; line-height: 1.65; position: relative;
+}
+.ob-cta {
+  display: inline-block; background: #35E8D5; color: #0F1C3A;
+  font-weight: 800; font-size: 16px; padding: 14px 36px;
+  border-radius: 12px; text-decoration: none;
+  box-shadow: 0 8px 24px rgba(53,232,213,.3);
+  transition: all .2s; position: relative;
+}
+.ob-cta:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(53,232,213,.45); }
+.ob-cta-sub { margin-top: 14px; font-size: 12px; color: rgba(255,255,255,.45); position: relative; }
+
+.ob-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.ob-card {
+  background: rgba(255,255,255,.03);
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 14px; padding: 24px;
+}
+.ob-card h3 {
+  font-size: 14px; font-weight: 700; color: #fff;
+  margin: 0 0 18px; display: flex; align-items: center; gap: 10px;
+  letter-spacing: -.01em;
+}
+.ob-card h3 .icon {
+  background: rgba(53,232,213,.1); padding: 5px 9px; border-radius: 8px;
+  font-size: 14px;
+}
+
+.ob-field { margin-bottom: 14px; }
+.ob-label {
+  font-size: 11.5px; font-weight: 600; color: rgba(255,255,255,.5);
+  display: block; margin-bottom: 5px; letter-spacing: .04em; text-transform: uppercase;
+}
+.ob-label .hint { font-weight: 400; color: rgba(255,255,255,.35); text-transform: none; letter-spacing: 0; }
+.ob-input {
+  width: 100%; padding: 11px 14px;
+  background: rgba(255,255,255,.04);
+  border: 1.5px solid rgba(255,255,255,.08);
+  border-radius: 9px;
+  font-size: 14px; color: #fff; font-family: inherit;
+  box-sizing: border-box; outline: none;
+  transition: border-color .15s, background .15s;
+}
+.ob-input:focus { border-color: #35E8D5; background: rgba(53,232,213,.04); }
+.ob-input::placeholder { color: rgba(255,255,255,.25); }
+.ob-input:disabled { opacity: .5; cursor: not-allowed; }
+
+.ob-btn-primary {
+  width: 100%; background: #35E8D5; color: #0F1C3A;
+  border: none; padding: 11px; border-radius: 9px;
+  font-weight: 700; font-size: 14px; cursor: pointer; font-family: inherit;
+  transition: opacity .15s;
+}
+.ob-btn-primary:hover { opacity: .9; }
+.ob-btn-secondary {
+  width: 100%; background: rgba(255,255,255,.04);
+  border: 1.5px solid rgba(255,255,255,.1); color: rgba(255,255,255,.85);
+  padding: 9px; border-radius: 9px;
+  font-size: 13px; cursor: pointer; font-family: inherit;
+}
+.ob-btn-secondary:hover { background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.2); }
+
+.ob-pw-section { margin-top: 16px; border-top: 1px solid rgba(255,255,255,.06); padding-top: 16px; }
+
+.ob-progress {
+  margin-bottom: 16px;
+}
+.ob-progress-head {
+  display: flex; justify-content: space-between;
+  font-size: 12px; color: rgba(255,255,255,.55); margin-bottom: 6px;
+}
+.ob-progress-val { color: #35E8D5; font-weight: 700; }
+.ob-progress-track {
+  background: rgba(255,255,255,.06); border-radius: 100px;
+  height: 8px; overflow: hidden;
+}
+.ob-progress-fill {
+  background: linear-gradient(90deg, #35E8D5, #1BC4B3);
+  height: 100%; border-radius: 100px;
+  transition: width .5s ease;
+  box-shadow: 0 0 12px rgba(53,232,213,.5);
+}
+
+.ob-step {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px; border-radius: 9px; margin-bottom: 7px;
+  font-size: 13.5px; border: 1px solid;
+}
+.ob-step-done {
+  background: rgba(53,232,213,.06);
+  border-color: rgba(53,232,213,.2);
+  color: rgba(255,255,255,.7);
+}
+.ob-step-active {
+  background: rgba(53,232,213,.08);
+  border-color: rgba(53,232,213,.3);
+  color: #fff;
+}
+.ob-step-locked {
+  background: rgba(255,255,255,.02);
+  border-color: rgba(255,255,255,.05);
+  color: rgba(255,255,255,.35);
+}
+.ob-step .check { font-size: 14px; flex-shrink: 0; }
+.ob-step .body { flex: 1; }
+.ob-step .sub { font-size: 11px; color: rgba(255,255,255,.35); display: block; margin-top: 2px; }
+.ob-step-btn {
+  background: #35E8D5; color: #0F1C3A; font-size: 11px; font-weight: 700;
+  padding: 5px 12px; border-radius: 6px; text-decoration: none; white-space: nowrap;
+}
+.ob-step-btn:hover { opacity: .9; }
+
+.ob-tour-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.ob-tour-card {
+  background: rgba(255,255,255,.03);
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 12px; padding: 18px 14px; text-align: center;
+  transition: all .2s;
+}
+.ob-tour-card:hover {
+  background: rgba(53,232,213,.05);
+  border-color: rgba(53,232,213,.2);
+  transform: translateY(-2px);
+}
+.ob-tour-icon { font-size: 28px; margin-bottom: 10px; display: block; }
+.ob-tour-title { font-size: 13px; font-weight: 700; color: #fff; margin-bottom: 5px; }
+.ob-tour-desc { font-size: 11.5px; color: rgba(255,255,255,.55); line-height: 1.5; }
+.ob-tour-cta { text-align: center; margin-top: 16px; }
+.ob-tour-cta a { font-size: 13px; color: #35E8D5; font-weight: 600; text-decoration: none; }
+.ob-tour-cta a:hover { text-decoration: underline; }
+
+.ob-faq-item { border-bottom: 1px solid rgba(255,255,255,.06); }
+.ob-faq-item:last-child { border-bottom: none; }
+.ob-faq-btn {
+  width: 100%; text-align: left; background: none; border: none;
+  padding: 14px 0; font-size: 14px; font-weight: 600; color: #fff;
+  cursor: pointer; font-family: inherit;
+  display: flex; justify-content: space-between; align-items: center; gap: 8px;
+}
+.ob-faq-arrow { font-size: 12px; color: #35E8D5; flex-shrink: 0; transition: transform .2s; }
+.ob-faq-ans {
+  max-height: 0; overflow: hidden; transition: max-height .3s ease;
+  font-size: 13px; color: rgba(255,255,255,.65); line-height: 1.7;
+}
+.ob-faq-ans-inner { padding: 0 0 14px; }
+.ob-faq-ans strong { color: #fff; font-weight: 700; }
+
+.ob-footer-wa {
+  margin-top: 18px; text-align: center; font-size: 13px;
+  color: rgba(255,255,255,.5);
+}
+.ob-footer-wa a { color: #35E8D5; font-weight: 700; text-decoration: none; }
+
+.ob-fab {
+  position: fixed; bottom: 24px; right: 24px;
+  background: #25D366; color: #fff;
+  border-radius: 100px; padding: 12px 18px 12px 14px;
+  font-size: 14px; font-weight: 700; text-decoration: none;
+  box-shadow: 0 6px 20px rgba(37,211,102,.4);
+  display: flex; align-items: center; gap: 8px;
+  z-index: 999; transition: transform .2s;
+}
+.ob-fab:hover { transform: scale(1.05); }
+
+@media (max-width: 640px) {
+  .ob-grid { grid-template-columns: 1fr; }
+  .ob-tour-grid { grid-template-columns: repeat(2, 1fr); }
+  .ob-hero { padding: 28px 22px; }
+  .ob-card { padding: 20px; }
+}
+</style>
+
+<div class="ob-wrap">
+<div class="ob-inner">
 
 <?php if ($profileSaved): ?>
-<div style="background:#D1FAE5;border:1px solid #6EE7B7;color:#065F46;padding:10px 16px;border-radius:8px;font-size:14px">
-  ✅ Profil berhasil diperbarui.
-</div>
+<div class="ob-alert ob-alert-ok">✅ Profil berhasil diperbarui.</div>
 <?php endif; ?>
 <?php if (!empty($_GET['profile_error'])): ?>
-<div style="background:#FEE2E2;border:1px solid #FCA5A5;color:#991B1B;padding:10px 16px;border-radius:8px;font-size:14px">
-  ❌ Gagal menyimpan profil: <?= htmlspecialchars($_GET['profile_error']) ?>
-</div>
+<div class="ob-alert ob-alert-err">❌ Gagal menyimpan profil: <?= htmlspecialchars($_GET['profile_error']) ?></div>
 <?php endif; ?>
 <?php if ($pwChanged): ?>
-<div style="background:#D1FAE5;border:1px solid #6EE7B7;color:#065F46;padding:10px 16px;border-radius:8px;font-size:14px">
-  ✅ Password berhasil diubah.
-</div>
+<div class="ob-alert ob-alert-ok">✅ Password berhasil diubah.</div>
 <?php endif; ?>
 
 <!-- ① HERO CTA ──────────────────────────────────────── -->
-<div style="background:linear-gradient(135deg,#0F1C3A 0%,#1a2d52 100%);
-            border-radius:16px;padding:36px 32px;color:#fff;text-align:center;
-            position:relative;overflow:hidden">
-  <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 70% 50%,rgba(53,232,213,.15),transparent 70%)"></div>
-  <div style="position:relative">
-    <div style="display:inline-block;background:rgba(53,232,213,.15);border:1px solid rgba(53,232,213,.3);
-                color:#35E8D5;font-size:12px;font-weight:700;padding:4px 14px;border-radius:100px;
-                margin-bottom:16px;letter-spacing:.05em">
-      🎁 TRIAL 7 HARI GRATIS · 1.000 COIN
-    </div>
-    <h1 style="font-size:clamp(1.4rem,4vw,2rem);font-weight:800;margin:0 0 12px;line-height:1.25">
-      Selamat datang, <?= htmlspecialchars($ownerNama) ?>! 👋
-    </h1>
-    <p style="font-size:15px;color:rgba(255,255,255,.75);max-width:500px;margin:0 auto 28px;line-height:1.65">
-      Akun LAMASY kamu sudah aktif. Daftarkan outlet pertama untuk mulai
-      mengelola laundry dengan AI — gratis 7 hari, tanpa kartu kredit.
-    </p>
-    <a href="/add-outlet"
-       style="display:inline-block;background:#35E8D5;color:#0F1C3A;font-weight:800;
-              font-size:16px;padding:15px 40px;border-radius:12px;text-decoration:none;
-              transition:opacity .2s">
-      🏪 Daftarkan Outlet — Gratis 7 Hari
-    </a>
-    <div style="margin-top:12px;font-size:12px;color:rgba(255,255,255,.4)">
-      ⏱ Cuma butuh 3 menit. Tidak perlu kartu kredit.
-    </div>
-  </div>
+<div class="ob-hero">
+  <div class="ob-hero-badge">🎁 TRIAL 7 HARI GRATIS · 1.000 COIN</div>
+  <h1>Selamat datang, <?= htmlspecialchars($ownerNama) ?>! 👋</h1>
+  <p>Akun LAMASY kamu sudah aktif. Daftarkan outlet pertama untuk mulai mengelola laundry dengan AI — gratis 7 hari, tanpa kartu kredit.</p>
+  <a href="/add-outlet" class="ob-cta">🏪 Daftarkan Outlet — Gratis 7 Hari</a>
+  <div class="ob-cta-sub">⏱ Cuma butuh 3 menit · Tidak perlu kartu kredit</div>
 </div>
 
 <!-- ② PROFIL + CHECKLIST ────────────────────────────── -->
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px" class="no-outlet-grid">
+<div class="ob-grid">
 
   <!-- PROFIL AKUN -->
-  <div style="background:#fff;border-radius:14px;padding:24px;box-shadow:0 1px 8px rgba(0,0,0,.06)">
-    <h3 style="font-size:15px;font-weight:700;color:#0F1C3A;margin:0 0 18px;
-               display:flex;align-items:center;gap:8px">
-      <span style="background:#F0FDFB;border-radius:8px;padding:4px 8px">👤</span> Profil Akun
-    </h3>
+  <div class="ob-card">
+    <h3><span class="icon">👤</span> Profil Akun</h3>
     <form method="POST">
       <input type="hidden" name="save_profile" value="1">
-      <div style="margin-bottom:13px">
-        <label style="font-size:12px;font-weight:600;color:#6B7280;display:block;margin-bottom:4px">
-          Nama Perusahaan / Brand <span style="font-weight:400;color:#9CA3AF">(opsional)</span>
-        </label>
-        <input type="text" name="nama_perusahaan" value="<?= htmlspecialchars($tenantPerusahaan) ?>"
-               style="width:100%;padding:9px 12px;border:1.5px solid #E5E7EB;border-radius:8px;
-                      font-size:14px;box-sizing:border-box;outline:none"
-               onfocus="this.style.borderColor='#35E8D5'" onblur="this.style.borderColor='#E5E7EB'"
+      <div class="ob-field">
+        <label class="ob-label">Nama Perusahaan / Brand <span class="hint">(opsional)</span></label>
+        <input type="text" name="nama_perusahaan" class="ob-input"
+               value="<?= htmlspecialchars($tenantPerusahaan) ?>"
                placeholder="cth: PT Bersih Jaya Group">
       </div>
-      <div style="margin-bottom:13px">
-        <label style="font-size:12px;font-weight:600;color:#6B7280;display:block;margin-bottom:4px">
-          Email <span style="font-weight:400;color:#9CA3AF">(tidak bisa diubah)</span>
-        </label>
-        <input type="email" value="<?= htmlspecialchars($tenantEmail) ?>" disabled
-               style="width:100%;padding:9px 12px;border:1.5px solid #E5E7EB;border-radius:8px;
-                      font-size:14px;box-sizing:border-box;background:#F9FAFB;color:#9CA3AF">
+      <div class="ob-field">
+        <label class="ob-label">Email <span class="hint">(tidak bisa diubah)</span></label>
+        <input type="email" class="ob-input" value="<?= htmlspecialchars($tenantEmail) ?>" disabled>
       </div>
-      <div style="margin-bottom:13px">
-        <label style="font-size:12px;font-weight:600;color:#6B7280;display:block;margin-bottom:4px">Nomor WhatsApp</label>
-        <input type="tel" name="owner_wa"
+      <div class="ob-field">
+        <label class="ob-label">Nomor WhatsApp</label>
+        <input type="tel" name="owner_wa" class="ob-input"
                value="<?= htmlspecialchars(preg_replace('/^628/', '08', $tenantWa)) ?>"
-               placeholder="08xxxxxxxxxx"
-               style="width:100%;padding:9px 12px;border:1.5px solid #E5E7EB;border-radius:8px;
-                      font-size:14px;box-sizing:border-box;outline:none"
-               onfocus="this.style.borderColor='#35E8D5'" onblur="this.style.borderColor='#E5E7EB'">
+               placeholder="08xxxxxxxxxx">
       </div>
-      <div style="margin-bottom:16px">
-        <label style="font-size:12px;font-weight:600;color:#6B7280;display:block;margin-bottom:4px">Kota</label>
-        <input type="text" name="kota" value="<?= htmlspecialchars($tenantKota) ?>"
-               placeholder="cth: Surabaya"
-               style="width:100%;padding:9px 12px;border:1.5px solid #E5E7EB;border-radius:8px;
-                      font-size:14px;box-sizing:border-box;outline:none"
-               onfocus="this.style.borderColor='#35E8D5'" onblur="this.style.borderColor='#E5E7EB'">
+      <div class="ob-field" style="margin-bottom:16px">
+        <label class="ob-label">Kota</label>
+        <input type="text" name="kota" class="ob-input"
+               value="<?= htmlspecialchars($tenantKota) ?>" placeholder="cth: Surabaya">
       </div>
-      <button type="submit"
-              style="width:100%;background:#35E8D5;color:#0F1C3A;border:none;padding:10px;
-                     border-radius:8px;font-weight:700;font-size:14px;cursor:pointer">
-        💾 Simpan Profil
-      </button>
+      <button type="submit" class="ob-btn-primary">💾 Simpan Profil</button>
     </form>
 
     <!-- Password change toggle -->
-    <div style="margin-top:16px;border-top:1px solid #F3F4F6;padding-top:16px">
-      <button onclick="document.getElementById('pwForm').style.display=
-                document.getElementById('pwForm').style.display==='none'?'block':'none'"
-              style="background:none;border:1.5px solid #E5E7EB;color:#374151;padding:8px 16px;
-                     border-radius:8px;font-size:13px;cursor:pointer;width:100%">
+    <div class="ob-pw-section">
+      <button type="button" class="ob-btn-secondary"
+              onclick="var f=document.getElementById('pwForm');f.style.display=f.style.display==='none'?'block':'none'">
         🔑 Ubah Password
       </button>
       <div id="pwForm" style="display:<?= $pwError ? 'block' : 'none' ?>;margin-top:12px">
         <?php if ($pwError): ?>
-        <div style="background:#FEE2E2;color:#991B1B;padding:8px 12px;border-radius:6px;
-                    font-size:13px;margin-bottom:10px"><?= htmlspecialchars($pwError) ?></div>
+        <div class="ob-alert ob-alert-err" style="margin-bottom:10px;font-size:12.5px;padding:8px 12px"><?= htmlspecialchars($pwError) ?></div>
         <?php endif; ?>
         <form method="POST">
           <input type="hidden" name="change_password" value="1">
-          <input type="password" name="current_password" placeholder="Password lama"
-                 style="width:100%;padding:8px 12px;border:1.5px solid #E5E7EB;border-radius:8px;
-                        font-size:13px;box-sizing:border-box;margin-bottom:8px;outline:none">
-          <input type="password" name="new_password" placeholder="Password baru (min 8 karakter)"
-                 style="width:100%;padding:8px 12px;border:1.5px solid #E5E7EB;border-radius:8px;
-                        font-size:13px;box-sizing:border-box;margin-bottom:8px;outline:none">
-          <input type="password" name="confirm_password" placeholder="Ulangi password baru"
-                 style="width:100%;padding:8px 12px;border:1.5px solid #E5E7EB;border-radius:8px;
-                        font-size:13px;box-sizing:border-box;margin-bottom:10px;outline:none">
-          <button type="submit"
-                  style="width:100%;background:#0F1C3A;color:#fff;border:none;padding:9px;
-                         border-radius:8px;font-weight:600;font-size:13px;cursor:pointer">
+          <input type="password" name="current_password" class="ob-input" placeholder="Password lama" style="margin-bottom:8px">
+          <input type="password" name="new_password" class="ob-input" placeholder="Password baru (min 8 karakter)" style="margin-bottom:8px">
+          <input type="password" name="confirm_password" class="ob-input" placeholder="Ulangi password baru" style="margin-bottom:10px">
+          <button type="submit" class="ob-btn-primary" style="background:rgba(53,232,213,.2);color:#35E8D5">
             Simpan Password Baru
           </button>
         </form>
@@ -635,11 +792,8 @@ $pwError      = $pwError ?? '';
   </div>
 
   <!-- ONBOARDING CHECKLIST -->
-  <div style="background:#fff;border-radius:14px;padding:24px;box-shadow:0 1px 8px rgba(0,0,0,.06)">
-    <h3 style="font-size:15px;font-weight:700;color:#0F1C3A;margin:0 0 6px;
-               display:flex;align-items:center;gap:8px">
-      <span style="background:#F0FDFB;border-radius:8px;padding:4px 8px">✅</span> Setup Checklist
-    </h3>
+  <div class="ob-card">
+    <h3><span class="icon">✅</span> Setup Checklist</h3>
     <?php
     $steps = [
       ['done'=>true,        'locked'=>false, 'label'=>'Verifikasi email',           'link'=>null,                        'icon'=>'📧'],
@@ -653,81 +807,61 @@ $pwError      = $pwError ?? '';
     $total   = count($steps);
     $pct     = round($doneCnt / $total * 100);
     ?>
-    <!-- Progress bar -->
-    <div style="margin-bottom:16px">
-      <div style="display:flex;justify-content:space-between;font-size:12px;color:#6B7280;margin-bottom:5px">
+    <div class="ob-progress">
+      <div class="ob-progress-head">
         <span><?= $doneCnt ?>/<?= $total ?> selesai</span>
-        <span><?= $pct ?>%</span>
+        <span class="ob-progress-val"><?= $pct ?>%</span>
       </div>
-      <div style="background:#F3F4F6;border-radius:100px;height:8px;overflow:hidden">
-        <div style="background:linear-gradient(90deg,#35E8D5,#0891B2);height:100%;
-                    width:<?= $pct ?>%;border-radius:100px;transition:width .4s"></div>
+      <div class="ob-progress-track">
+        <div class="ob-progress-fill" style="width:<?= $pct ?>%"></div>
       </div>
     </div>
-    <!-- Steps -->
     <?php foreach ($steps as $i => $s):
-      $statusColor = $s['done'] ? '#065F46' : ($s['locked'] ? '#9CA3AF' : '#0F1C3A');
-      $bg = $s['done'] ? '#F0FDF4' : ($s['locked'] ? '#F9FAFB' : '#fff');
-      $border = $s['done'] ? '#6EE7B7' : '#E5E7EB';
+      $cls = $s['done'] ? 'ob-step-done' : ($s['locked'] ? 'ob-step-locked' : 'ob-step-active');
       $check = $s['done'] ? '✅' : ($s['locked'] ? '🔒' : '⭕');
     ?>
-    <div style="display:flex;align-items:center;gap:10px;padding:9px 10px;
-                background:<?= $bg ?>;border:1px solid <?= $border ?>;
-                border-radius:8px;margin-bottom:6px;font-size:13px">
-      <span style="font-size:14px;flex-shrink:0"><?= $check ?></span>
-      <span style="flex:1;color:<?= $statusColor ?>;<?= $s['locked'] ? 'opacity:.5' : '' ?>">
-        <?= $s['icon'] ?> <?= $s['label'] ?>
+    <div class="ob-step <?= $cls ?>">
+      <span class="check"><?= $check ?></span>
+      <span class="body">
+        <?= $s['icon'] ?> <?= htmlspecialchars($s['label']) ?>
         <?php if ($s['locked']): ?>
-          <span style="font-size:11px;color:#9CA3AF;display:block">Tersedia setelah outlet didaftarkan</span>
+          <span class="sub">Tersedia setelah outlet didaftarkan</span>
         <?php endif; ?>
       </span>
       <?php if (!$s['done'] && !$s['locked'] && $s['link']): ?>
-      <a href="<?= $s['link'] ?>"
-         style="background:#35E8D5;color:#0F1C3A;font-size:11px;font-weight:700;
-                padding:4px 10px;border-radius:6px;text-decoration:none;white-space:nowrap">
-        <?= $i === 2 ? 'Mulai →' : 'Buka →' ?>
-      </a>
+      <a href="<?= $s['link'] ?>" class="ob-step-btn"><?= $i === 2 ? 'Mulai →' : 'Buka →' ?></a>
       <?php endif; ?>
     </div>
     <?php endforeach; ?>
   </div>
-</div><!-- /profil+checklist grid -->
+</div><!-- /ob-grid -->
 
-<!-- ③ SCREENSHOT TOUR ──────────────────────────────── -->
-<div style="background:#fff;border-radius:14px;padding:24px;box-shadow:0 1px 8px rgba(0,0,0,.06)">
-  <h3 style="font-size:15px;font-weight:700;color:#0F1C3A;margin:0 0 4px">
-    🖥️ Ini yang bisa kamu lakukan dengan LAMASY
-  </h3>
-  <p style="font-size:13px;color:#6B7280;margin:0 0 18px">Daftar outlet untuk akses penuh ke semua fitur</p>
-  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px" class="tour-grid">
+<!-- ③ FEATURE TOUR ──────────────────────────────────── -->
+<div class="ob-card">
+  <h3 style="margin-bottom:6px">🖥️ Ini yang bisa kamu lakukan dengan LAMASY</h3>
+  <p style="font-size:13px;color:rgba(255,255,255,.5);margin:0 0 18px">Daftar outlet untuk akses penuh ke semua fitur</p>
+  <div class="ob-tour-grid">
     <?php
     $features = [
-      ['icon'=>'🛒','title'=>'POS & Order',       'desc'=>'Input order, cetak nota, kelola status cucian'],
+      ['icon'=>'🛒','title'=>'POS & Order',        'desc'=>'Input order, cetak nota, kelola status cucian'],
       ['icon'=>'📊','title'=>'Dashboard & Laporan','desc'=>'Pantau omset, saldo kas, dan kinerja harian'],
       ['icon'=>'🤖','title'=>'AI Briefing',        'desc'=>'Laporan performa outlet otomatis setiap hari'],
       ['icon'=>'💬','title'=>'WhatsApp Otomatis',  'desc'=>'Notif pelanggan saat cucian siap, otomatis'],
     ];
-    foreach ($features as $f):
-    ?>
-    <div style="background:#F8FAFC;border:1.5px solid #E5E7EB;border-radius:10px;
-                padding:16px 14px;text-align:center">
-      <div style="font-size:28px;margin-bottom:8px"><?= $f['icon'] ?></div>
-      <div style="font-size:13px;font-weight:700;color:#0F1C3A;margin-bottom:4px"><?= $f['title'] ?></div>
-      <div style="font-size:11px;color:#6B7280;line-height:1.5"><?= $f['desc'] ?></div>
+    foreach ($features as $f): ?>
+    <div class="ob-tour-card">
+      <span class="ob-tour-icon"><?= $f['icon'] ?></span>
+      <div class="ob-tour-title"><?= htmlspecialchars($f['title']) ?></div>
+      <div class="ob-tour-desc"><?= htmlspecialchars($f['desc']) ?></div>
     </div>
     <?php endforeach; ?>
   </div>
-  <div style="text-align:center;margin-top:16px">
-    <a href="/add-outlet"
-       style="font-size:13px;color:#0891B2;text-decoration:none;font-weight:600">
-      Daftar outlet untuk akses penuh →
-    </a>
-  </div>
+  <div class="ob-tour-cta"><a href="/add-outlet">Daftar outlet untuk akses penuh →</a></div>
 </div>
 
 <!-- ④ FAQ ──────────────────────────────────────────── -->
-<div style="background:#fff;border-radius:14px;padding:24px;box-shadow:0 1px 8px rgba(0,0,0,.06)">
-  <h3 style="font-size:15px;font-weight:700;color:#0F1C3A;margin:0 0 16px">❓ Pertanyaan Umum</h3>
+<div class="ob-card">
+  <h3>❓ Pertanyaan Umum</h3>
   <?php
   $faqs = [
     ['q'=>'Apa bedanya "akun" dan "outlet" di LAMASY?',
@@ -737,58 +871,38 @@ $pwError      = $pwError ?? '';
     ['q'=>'Saya punya 3 cabang, harus bayar 3x?',
      'a'=>'Ya, setiap outlet bayar setup fee terpisah. Tapi 1 akun bisa kelola semua cabang dari 1 dashboard — hemat waktu dan lebih mudah dipantau.'],
     ['q'=>'Apakah data saya aman?',
-     'a'=>'Data tersimpan di server aman. Setelah trial habis, data tetap ada 7 hari (grace period) + 30 hari recovery. Cukup waktu untuk aktivasi tanpa kehilangan data.'],
+     'a'=>'Data tersimpan di server aman dengan multi-tenant isolated architecture + HTTPS + bcrypt password. Setelah trial habis, data tetap ada 7 hari grace + 30 hari recovery.'],
     ['q'=>'Butuh install aplikasi?',
-     'a'=>'Tidak perlu. LAMASY berjalan di browser — buka di HP atau laptop. Tidak perlu install apapun, langsung pakai.'],
+     'a'=>'Tidak perlu. LAMASY berjalan di browser — buka di HP atau laptop. Bisa juga di-install sebagai PWA via Add to Home Screen.'],
   ];
-  foreach ($faqs as $i => $faq):
-  ?>
-  <div style="border-bottom:1px solid #F3F4F6;<?= $i===count($faqs)-1 ? 'border-bottom:none' : '' ?>">
-    <button onclick="toggleFaqNo(<?= $i ?>)"
-            style="width:100%;text-align:left;background:none;border:none;padding:13px 0;
-                   font-size:14px;font-weight:600;color:#0F1C3A;cursor:pointer;
-                   display:flex;justify-content:space-between;align-items:center;gap:8px">
+  foreach ($faqs as $i => $faq): ?>
+  <div class="ob-faq-item">
+    <button class="ob-faq-btn" onclick="toggleFaqNo(<?= $i ?>)">
       <span><?= htmlspecialchars($faq['q']) ?></span>
-      <span id="faqArrowNo<?= $i ?>" style="font-size:12px;color:#9CA3AF;flex-shrink:0">▼</span>
+      <span class="ob-faq-arrow" id="faqArrowNo<?= $i ?>">▼</span>
     </button>
-    <div id="faqAnsNo<?= $i ?>"
-         style="max-height:0;overflow:hidden;transition:max-height .3s ease">
-      <p style="font-size:13px;color:#4B5563;line-height:1.7;padding:0 0 14px;margin:0">
-        <?= $faq['a'] ?>
-      </p>
+    <div class="ob-faq-ans" id="faqAnsNo<?= $i ?>">
+      <p class="ob-faq-ans-inner"><?= $faq['a'] ?></p>
     </div>
   </div>
   <?php endforeach; ?>
-  <div style="margin-top:16px;text-align:center;font-size:13px;color:#6B7280">
+  <div class="ob-footer-wa">
     Masih ada pertanyaan?
-    <a href="https://wa.me/6285121519302?text=Halo+Tim+LAMASY%2C+saya+baru+daftar+dan+ingin+setup+akun+pertama+saya.+Bisa+minta+bantuan%3F"
-       style="color:#35E8D5;font-weight:700;text-decoration:none">Chat WhatsApp Kami →</a>
+    <a href="https://wa.me/6285121519302?text=Halo+Tim+LAMASY%2C+saya+baru+daftar+dan+ingin+setup+akun+pertama+saya.+Bisa+minta+bantuan%3F" target="_blank" rel="noopener">Chat WhatsApp Kami →</a>
   </div>
 </div>
 
-</div><!-- /max-width wrapper -->
-</div><!-- /no-outlet bg -->
+</div><!-- /ob-inner -->
+</div><!-- /ob-wrap -->
 
 <!-- FLOATING WA BUTTON -->
 <a href="https://wa.me/6285121519302?text=Halo+Tim+LAMASY%2C+saya+baru+daftar+dan+ingin+setup+akun+pertama+saya.+Bisa+minta+bantuan%3F"
-   target="_blank" rel="noopener"
-   style="position:fixed;bottom:24px;right:24px;background:#25D366;color:#fff;
-          border-radius:100px;padding:12px 18px 12px 14px;font-size:14px;font-weight:700;
-          text-decoration:none;box-shadow:0 4px 16px rgba(37,211,102,.4);
-          display:flex;align-items:center;gap:8px;z-index:999;transition:transform .2s"
-   onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+   target="_blank" rel="noopener" class="ob-fab">
   <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
     <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
   </svg>
   Butuh bantuan?
 </a>
-
-<style>
-@media(max-width:640px){
-  .no-outlet-grid{grid-template-columns:1fr!important}
-  .tour-grid{grid-template-columns:repeat(2,1fr)!important}
-}
-</style>
 <script>
 function toggleFaqNo(i){
   var a=document.getElementById('faqAnsNo'+i);
