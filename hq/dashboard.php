@@ -53,7 +53,7 @@ if (($_GET['action'] ?? '') === 'ai_briefing') {
     $tgRow = $tg->fetch() ?: ['omset'=>0,'cnt'=>0];
 
     $aktif = 0; $siap = 0; $selesai = 0;
-    try { $s=$db->prepare("SELECT COUNT(*) FROM hl_transaksi WHERE tenant_id=? AND status_proses NOT IN ('siap','selesai','batal','dibatalkan')"); $s->execute([$tid]); $aktif=(int)$s->fetchColumn(); } catch (Throwable) {}
+    try { $s=$db->prepare("SELECT COUNT(*) FROM hl_transaksi WHERE tenant_id=? AND status_proses NOT IN ('siap','selesai','diambil','batal','dibatalkan')"); $s->execute([$tid]); $aktif=(int)$s->fetchColumn(); } catch (Throwable) {}
     try { $s=$db->prepare("SELECT COUNT(*) FROM hl_transaksi WHERE tenant_id=? AND status_proses='siap'"); $s->execute([$tid]); $siap=(int)$s->fetchColumn(); } catch (Throwable) {}
     try { $s=$db->prepare("SELECT COUNT(*) FROM hl_transaksi WHERE tenant_id=? AND status_proses IN ('diambil','selesai') AND DATE(tanggal)=?"); $s->execute([$tid,$today]); $selesai=(int)$s->fetchColumn(); } catch (Throwable) {}
 
@@ -66,7 +66,7 @@ if (($_GET['action'] ?? '') === 'ai_briefing') {
             $oid = (int)$o['id'];
             $om = $db->prepare("SELECT COALESCE(SUM(total),0) s, COUNT(*) c FROM hl_transaksi WHERE tenant_id=? AND outlet_id=? AND DATE(tanggal)=?");
             $om->execute([$tid,$oid,$today]); $omr = $om->fetch();
-            $oa = $db->prepare("SELECT COUNT(*) FROM hl_transaksi WHERE tenant_id=? AND outlet_id=? AND status_proses NOT IN ('siap','selesai','batal','dibatalkan')");
+            $oa = $db->prepare("SELECT COUNT(*) FROM hl_transaksi WHERE tenant_id=? AND outlet_id=? AND status_proses NOT IN ('siap','selesai','diambil','batal','dibatalkan')");
             $oa->execute([$tid,$oid]);
             $outletsBrief[] = [
                 'nama'        => $o['nama_outlet'],
@@ -202,7 +202,7 @@ if (($_GET['action'] ?? '') === 'live') {
         $tg->execute([$tid, $today]); $tgr = $tg->fetch();
 
         $aktif=0;$siap=0;$selesai=0;
-        $s=$db->prepare("SELECT COUNT(*) FROM hl_transaksi WHERE tenant_id=? AND status_proses NOT IN ('siap','selesai','batal','dibatalkan')");
+        $s=$db->prepare("SELECT COUNT(*) FROM hl_transaksi WHERE tenant_id=? AND status_proses NOT IN ('siap','selesai','diambil','batal','dibatalkan')");
         $s->execute([$tid]); $aktif=(int)$s->fetchColumn();
         $s=$db->prepare("SELECT COUNT(*) FROM hl_transaksi WHERE tenant_id=? AND status_proses='siap'");
         $s->execute([$tid]); $siap=(int)$s->fetchColumn();
@@ -295,7 +295,7 @@ $orderAktif = 0;
 try {
     $stmt = $db->prepare(
         "SELECT COUNT(*) FROM hl_transaksi
-          WHERE tenant_id=? AND status_proses NOT IN ('siap','selesai','batal','dibatalkan')"
+          WHERE tenant_id=? AND status_proses NOT IN ('siap','selesai','diambil','batal','dibatalkan')"
     );
     $stmt->execute([$tid]);
     $orderAktif = (int)$stmt->fetchColumn();
@@ -374,7 +374,7 @@ foreach ($outlets as &$o) {
     try {
         $stmt = $db->prepare("SELECT COUNT(*) FROM hl_transaksi
                                 WHERE tenant_id=? AND outlet_id=?
-                                  AND status_proses NOT IN ('siap','selesai','batal','dibatalkan')");
+                                  AND status_proses NOT IN ('siap','selesai','diambil','batal','dibatalkan')");
         $stmt->execute([$tid, $oid]);
         $o['order_aktif'] = (int)$stmt->fetchColumn();
     } catch (Throwable) {}
