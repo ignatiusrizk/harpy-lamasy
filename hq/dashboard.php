@@ -23,6 +23,23 @@ $today = date('Y-m-d');
 $thisMonth = date('Y-m');
 $startTimeline = date('Y-m-d', strtotime('-6 days'));
 
+// ── AJAX: Tier status (peek tanpa generate — info untuk confirm dialog di FE) ──
+if (($_GET['action'] ?? '') === 'ai_briefing_status') {
+    header('Content-Type: application/json');
+    require_once dirname(__DIR__) . '/core/AIRateLimiter.php';
+    $s = AIRateLimiter::status('ai_briefing_hq', $tid);
+    echo json_encode([
+        'ok'            => true,
+        'used'          => $s['used'],
+        'limit'         => $s['limit'],
+        'tiers'         => $s['tiers'],
+        'next_price'    => $s['next_price'],
+        'current_price' => $s['current_price'],
+        'blocked'       => !$s['ok'],
+    ]);
+    exit;
+}
+
 // ── AJAX: AI Briefing HQ ─────────────────────────────
 if (($_GET['action'] ?? '') === 'ai_briefing') {
     // ── Hardening: jangan biarkan PHP warning/notice/fatal leak HTML ke client ──
@@ -1211,6 +1228,21 @@ function showBriefing(text, generatedAt, fromCache){
 
 async function generateBriefing(){
   const btn = document.getElementById('aiBriefBtn');
+
+  // ── Confirm tier price untuk panggilan ke-2 ke atas ──
+  try {
+    const sr = await fetch('/hq/dashboard.php?action=ai_briefing_status');
+    const ss = await sr.json();
+    if (ss.ok && ss.used > 0 && !ss.blocked && ss.next_price != null) {
+      const remaining = ss.limit - ss.used;
+      const msg = `Briefing ke-${ss.used + 1} dari ${ss.limit} hari ini.\n\n`
+        + `💰 Biaya: ${ss.next_price} coin (sebelumnya: ${ss.current_price} coin)\n`
+        + `📊 Sisa setelah ini: ${remaining - 1}× panggilan\n\n`
+        + `Lanjutkan generate?`;
+      if (!confirm(msg)) return;
+    }
+  } catch(e){ /* silent — kalau status check fail, lanjut aja */ }
+
   btn.disabled = true;
   document.getElementById('aiBriefEmpty').style.display = 'none';
   document.getElementById('aiBriefText').style.display = 'none';

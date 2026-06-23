@@ -1653,6 +1653,24 @@ function toggleBriefing(){
 }
 async function loadBriefing(){
   const btn=document.getElementById('btnBriefingRefresh');
+
+  // ── Confirm tier price untuk panggilan ke-2 ke atas ──
+  try {
+    const sr = await fetch('ai.php?action=briefing_status');
+    const ss = await sr.json();
+    if (ss.ok && ss.used > 0 && !ss.blocked && ss.next_price != null) {
+      const remaining = ss.limit - ss.used;
+      const msg = `Briefing ke-${ss.used + 1} dari ${ss.limit} hari ini.\n\n`
+        + `💰 Biaya: ${ss.next_price} coin (sebelumnya: ${ss.current_price} coin)\n`
+        + `📊 Sisa setelah ini: ${remaining - 1}× panggilan\n\n`
+        + `Lanjutkan generate?`;
+      if (!confirm(msg)) {
+        if (btn) { btn.disabled = false; btn.textContent = '↻'; }
+        return;
+      }
+    }
+  } catch(e){ /* silent — kalau status check fail, lanjut aja */ }
+
   if(btn){btn.disabled=true;btn.textContent='⏳';}
   document.getElementById('aiBriefingContent').innerHTML='<div class="hl-loading">⏳ AI sedang menganalisis data hari ini...</div>';
   try{

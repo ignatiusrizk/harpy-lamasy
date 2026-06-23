@@ -92,6 +92,22 @@ function ai_ok(array $payload): never {
 }
 
 // ══════════════════════════════════════════════════════
+// 0) AI BRIEFING STATUS (peek — tier info untuk confirm dialog FE)
+// ══════════════════════════════════════════════════════
+if ($action === 'briefing_status') {
+    $s = AIRateLimiter::status('ai_briefing_hq');
+    ai_ok([
+        'ok'            => true,
+        'used'          => $s['used'],
+        'limit'         => $s['limit'],
+        'tiers'         => $s['tiers'],
+        'next_price'    => $s['next_price'],
+        'current_price' => $s['current_price'],
+        'blocked'       => !$s['ok'],
+    ]);
+}
+
+// ══════════════════════════════════════════════════════
 // 1) AI BRIEFING HARIAN (dashboard)
 // ══════════════════════════════════════════════════════
 if ($action === 'briefing') {
