@@ -965,8 +965,10 @@ img { max-width: 100%; }
   ]
 }
 </script>
+<?php if (defined('CF_ANALYTICS_TOKEN') && CF_ANALYTICS_TOKEN): ?>
 <!-- Cloudflare Web Analytics -->
-<script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "YOUR_TOKEN_HERE"}'></script>
+<script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "<?= htmlspecialchars(CF_ANALYTICS_TOKEN) ?>"}'></script>
+<?php endif; ?>
 </head>
 <body>
 <div class="hl-beta-banner">
@@ -1805,23 +1807,21 @@ function switchCmpTab(tab, btn) {
 
 </section>
 
-<!-- ── TESTIMONIALS ─────────────────────────────────── -->
+<!-- ── USE CASE / SCENARIO CARDS ─────────────────────── -->
 <div style="background:rgba(255,255,255,.015);position:relative;z-index:1;">
   <section class="section">
     <div class="section-header">
-      <div class="section-tag">Testimoni</div>
-      <h2>Dipercaya Ratusan Pemilik Laundry</h2>
-      <p>Lihat apa kata mereka yang sudah merasakan manfaat LAMASY untuk bisnis mereka.</p>
+      <h2>Bagaimana Owner Pakai LAMASY</h2>
+      <p>3 skenario nyata cara owner laundry memanfaatkan fitur LAMASY untuk bisnis mereka.</p>
     </div>
     <div class="testimonials-grid">
       <div class="testi-card">
         <div class="testi-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
         <div class="testi-text">"Sejak pakai LAMASY, pelaporan keuangan outlet saya jauh lebih rapi. Dulu harus rekap manual di Excel, sekarang tinggal buka dashboard sudah keliatan semua. Hemat banget!"</div>
         <div class="testi-author">
-          <div class="testi-avatar">&#x1F464;</div>
+          <div class="testi-avatar">&#x1F3EA;</div>
           <div>
-            <div class="testi-name">Ibu Ratna Sari</div>
-            <div class="testi-role">Pemilik Fresh Laundry, Semarang</div>
+            <div class="testi-role">Owner Laundry di Semarang</div>
           </div>
         </div>
       </div>
@@ -1829,10 +1829,9 @@ function switchCmpTab(tab, btn) {
         <div class="testi-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
         <div class="testi-text">"Fitur notifikasi WA-nya luar biasa! Pelanggan langsung tahu kalau cuciannya sudah selesai tanpa perlu saya telepon satu-satu. Komplain berkurang drastis."</div>
         <div class="testi-author">
-          <div class="testi-avatar">&#x1F464;</div>
+          <div class="testi-avatar">&#x1F3EA;</div>
           <div>
-            <div class="testi-name">Pak Hendra Wijaya</div>
-            <div class="testi-role">Owner Bersih Laundry, Surabaya</div>
+            <div class="testi-role">Owner Laundry di Surabaya</div>
           </div>
         </div>
       </div>
@@ -1840,10 +1839,9 @@ function switchCmpTab(tab, btn) {
         <div class="testi-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
         <div class="testi-text">"Saya punya 3 outlet dan sebelumnya kesulitan monitor semua dari satu tempat. Dengan LAMASY, semua data terpusat. Setup-nya juga mudah, tim CS sangat responsif."</div>
         <div class="testi-author">
-          <div class="testi-avatar">&#x1F464;</div>
+          <div class="testi-avatar">&#x1F454;</div>
           <div>
-            <div class="testi-name">Budi Prasetiyo</div>
-            <div class="testi-role">Direktur Bersinar Laundry Group, Jakarta</div>
+            <div class="testi-role">Owner Multi-Outlet di Jakarta</div>
           </div>
         </div>
       </div>
@@ -1851,10 +1849,9 @@ function switchCmpTab(tab, btn) {
         <div class="testi-stars" style="color:#C4B5FD;">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
         <div class="testi-text">"Fitur AI Briefing-nya yang paling bikin saya takjub. Setiap pagi ada ringkasan otomatis — berapa order kemarin, mana yang belum dibayar, karyawan siapa yang sering telat. Saya jadi lebih cepat ambil keputusan tanpa harus buka banyak laporan."</div>
         <div class="testi-author">
-          <div class="testi-avatar" style="background:rgba(139,92,246,.2);border-color:rgba(139,92,246,.3);">&#x1F464;</div>
+          <div class="testi-avatar" style="background:rgba(139,92,246,.2);border-color:rgba(139,92,246,.3);">&#x1F3EA;</div>
           <div>
-            <div class="testi-name">Dewi Kusuma</div>
-            <div class="testi-role" style="color:#C4B5FD;">Owner Kilat Bersih Laundry, Bandung — <em>pengguna fitur AI</em></div>
+            <div class="testi-role" style="color:#C4B5FD;">Owner Laundry di Bandung — <em>pengguna fitur AI</em></div>
           </div>
         </div>
       </div>
@@ -1863,10 +1860,9 @@ function switchCmpTab(tab, btn) {
         <div class="testi-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
         <div class="testi-text">"Saya khusus layani hotel dan kost. Sebelumnya invoice harus bikin manual di Word, sekarang tinggal klik dari LAMASY langsung kirim WA ke marketing hotel. Piutang juga ada alert otomatis — sudah 6 bulan nggak ada yang lolos lagi."</div>
         <div class="testi-author">
-          <div class="testi-avatar">&#x1F464;</div>
+          <div class="testi-avatar">&#x1F454;</div>
           <div>
-            <div class="testi-name">Pak Agus Suryanto</div>
-            <div class="testi-role">Owner Prima B2B Laundry, Tangerang</div>
+            <div class="testi-role">Owner Laundry B2B di Tangerang</div>
           </div>
         </div>
       </div>
@@ -1875,10 +1871,9 @@ function switchCmpTab(tab, btn) {
         <div class="testi-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
         <div class="testi-text">"Baru buka outlet pertama 3 bulan lalu. Trial 7 hari cukup bikin saya yakin pakai LAMASY. Tidak ada langganan bulanan yang mencekik — cocok untuk yang baru mulai dan masih hitung-hitungan biaya operasional."</div>
         <div class="testi-author">
-          <div class="testi-avatar">&#x1F464;</div>
+          <div class="testi-avatar">&#x1F3EA;</div>
           <div>
-            <div class="testi-name">Sari Nuraini</div>
-            <div class="testi-role">Owner Wangi Laundry, Yogyakarta</div>
+            <div class="testi-role">Owner Laundry Baru di Yogyakarta</div>
           </div>
         </div>
       </div>
@@ -1887,10 +1882,9 @@ function switchCmpTab(tab, btn) {
         <div class="testi-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
         <div class="testi-text">"Migrasi dari aplikasi lama saya tadinya stress mikirin input ulang data 800 pelanggan. AI Migration Mapper-nya bantu auto-map kolom Excel ekspor saya, semua data masuk rapi. Tim support juga ramah banget waktu setup."</div>
         <div class="testi-author">
-          <div class="testi-avatar">&#x1F464;</div>
+          <div class="testi-avatar">&#x1F3EA;</div>
           <div>
-            <div class="testi-name">Pak Andi Pratama</div>
-            <div class="testi-role">Owner Bersih Express, Bekasi</div>
+            <div class="testi-role">Owner Laundry di Bekasi</div>
           </div>
         </div>
       </div>
@@ -1899,10 +1893,9 @@ function switchCmpTab(tab, btn) {
         <div class="testi-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
         <div class="testi-text">"Fitur laporan keuangan SAK EMKM ini game changer. Dulu saya bayar akuntan freelance Rp 500rb/bulan untuk bikin laporan formal. Sekarang tinggal export PDF, beres. Tahun ini sudah lapor pajak pakai laporan LAMASY langsung."</div>
         <div class="testi-author">
-          <div class="testi-avatar">&#x1F464;</div>
+          <div class="testi-avatar">&#x1F3EA;</div>
           <div>
-            <div class="testi-name">Ibu Lina Setiawati</div>
-            <div class="testi-role">Owner Bersih Wangi Laundry, Malang</div>
+            <div class="testi-role">Owner Laundry di Malang</div>
           </div>
         </div>
       </div>
@@ -1911,13 +1904,15 @@ function switchCmpTab(tab, btn) {
         <div class="testi-stars" style="color:#C4B5FD;">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
         <div class="testi-text">"AI Chat-nya saya pakai tiap mau presentasi ke investor. Tinggal tanya 'omzet 6 bulan terakhir dibandingkan tahun lalu' — langsung dapat angka dan AI ngasih insight. Tidak perlu lagi staf saya bikin chart manual di Excel."</div>
         <div class="testi-author">
-          <div class="testi-avatar" style="background:rgba(139,92,246,.2);border-color:rgba(139,92,246,.3);">&#x1F464;</div>
+          <div class="testi-avatar" style="background:rgba(139,92,246,.2);border-color:rgba(139,92,246,.3);">&#x1F454;</div>
           <div>
-            <div class="testi-name">Hadi Wibowo</div>
-            <div class="testi-role" style="color:#C4B5FD;">Founder Kilau Network (12 outlet) — <em>pengguna fitur AI</em></div>
+            <div class="testi-role" style="color:#C4B5FD;">Owner Multi-Outlet (12 cabang) — <em>pengguna fitur AI</em></div>
           </div>
         </div>
       </div>
+    </div>
+    <div class="hl-usecase-disclaimer">
+      *Skenario ilustrasi cara penggunaan platform LAMASY, bukan kutipan dari customer real.
     </div>
   </section>
 </div>
@@ -2146,7 +2141,7 @@ document.querySelectorAll('.feature-card, .step-card, .pricing-card, .testi-card
 
   // Trigger: mouse leave viewport ke atas
   document.addEventListener('mouseout', function(e) {
-    if (e.clientY <= 0 && !sessionStorage.getItem('hl_exit_shown')) {
+    if (e.clientY <= 0 && !e.relatedTarget && !sessionStorage.getItem('hl_exit_shown')) {
       modal.classList.add('show');
       sessionStorage.setItem('hl_exit_shown', '1');
     }
