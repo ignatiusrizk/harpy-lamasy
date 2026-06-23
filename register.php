@@ -440,7 +440,7 @@ if ($step === 1): ?>
     </div>
     <div class="trial-badge">
       🎁 <strong>Gratis 7 hari trial!</strong>
-      Dapat 1.000 coin untuk coba fitur AI & notifikasi WA.
+      Dapat 10.000 coin untuk coba fitur AI &amp; notifikasi WA.
       Tidak perlu kartu kredit.
     </div>
     <div class="btn-row">
@@ -564,7 +564,7 @@ elseif ($step === 3): ?>
     </div>
     <div class="review-row">
       <span class="rv-label">Trial Coin</span>
-      <span class="rv-val">1.000 coin</span>
+      <span class="rv-val">10.000 coin</span>
     </div>
   </div>
 
