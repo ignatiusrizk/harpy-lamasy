@@ -209,28 +209,38 @@ if ($action) {
 <head>
 <?php saRenderHead('Clients'); ?>
 <style>
-.cl-tabs { display:flex; gap:4px; margin-bottom:20px; }
-.cl-tab  {
-  padding:9px 20px; border-radius:8px; font-size:13px; font-weight:600;
-  cursor:pointer; border:1px solid rgba(255,255,255,.1);
-  background:rgba(255,255,255,.04); color:rgba(255,255,255,.5);
+.cl-tabs {
+  display:flex; gap:6px; margin-bottom:20px;
+  background:rgba(255,255,255,.03);
+  border:1px solid rgba(255,255,255,.07);
+  border-radius:12px; padding:5px; width:fit-content;
+}
+.cl-tab {
+  padding:8px 20px; border-radius:9px; font-size:13px; font-weight:600;
+  cursor:pointer; border:none;
+  background:transparent; color:rgba(255,255,255,.5);
   transition:all .15s;
 }
-.cl-tab:hover  { background:rgba(255,255,255,.07); color:rgba(255,255,255,.8); }
-.cl-tab.active { background:var(--sa-l); border-color:var(--sa); color:var(--white); }
+.cl-tab:hover  { background:rgba(255,255,255,.06); color:rgba(255,255,255,.85); }
+.cl-tab.active {
+  background:rgba(99,102,241,.18); border:1px solid rgba(99,102,241,.3);
+  color:var(--white);
+  box-shadow: 0 2px 8px rgba(99,102,241,.2);
+}
 .cl-panel      { display:none; }
 .cl-panel.show { display:block; }
 
-.outlet-status-active    { color:#6EE7B7; font-weight:600; }
-.outlet-status-pending   { color:#FCD34D; font-weight:600; }
-.outlet-status-suspended { color:#FCA5A5; font-weight:600; }
-.outlet-status-inactive  { color:rgba(255,255,255,.3); }
+.outlet-status-active    { color:#6EE7B7; font-weight:600; font-size:12.5px; }
+.outlet-status-pending   { color:#FBBF24; font-weight:600; font-size:12.5px; }
+.outlet-status-suspended { color:#FCA5A5; font-weight:600; font-size:12.5px; }
+.outlet-status-inactive  { color:rgba(255,255,255,.3); font-size:12.5px; }
 
 .main-badge {
   display:inline-block; font-size:9px; font-weight:700; letter-spacing:.06em;
-  text-transform:uppercase; padding:2px 6px; border-radius:10px;
-  background:rgba(99,102,241,.2); color:var(--sa); margin-left:4px;
-  vertical-align:middle;
+  text-transform:uppercase; padding:2px 7px; border-radius:10px;
+  background:rgba(99,102,241,.15); color:#A5B4FC;
+  border:1px solid rgba(99,102,241,.25);
+  margin-left:5px; vertical-align:middle;
 }
 .setup-done   { color:#6EE7B7; font-size:12px; }
 .setup-notyet { color:rgba(255,255,255,.25); font-size:12px; }

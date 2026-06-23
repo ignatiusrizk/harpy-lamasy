@@ -286,27 +286,27 @@ if ($action) {
       <a href="/superadmin/support.php" class="sa-btn sa-btn-sm sa-btn-outline">Kelola Tiket →</a>
     </div>
     <div class="sa-card-body">
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px;">
-        <div style="text-align:center;">
-          <div id="sw-open" style="font-size:28px;font-weight:800;color:#F87171;font-family:var(--mono);">—</div>
-          <div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:2px;">Open</div>
+      <div class="sa-mini-grid" style="grid-template-columns:repeat(4,1fr);">
+        <div class="sa-mini-stat red">
+          <div class="val" id="sw-open">—</div>
+          <div class="lbl">Open</div>
         </div>
-        <div style="text-align:center;">
-          <div id="sw-inprogress" style="font-size:28px;font-weight:800;color:#818CF8;font-family:var(--mono);">—</div>
-          <div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:2px;">In Progress</div>
+        <div class="sa-mini-stat indigo">
+          <div class="val" id="sw-inprogress">—</div>
+          <div class="lbl">In Progress</div>
         </div>
-        <div style="text-align:center;">
-          <div id="sw-resolved-today" style="font-size:28px;font-weight:800;color:#6EE7B7;font-family:var(--mono);">—</div>
-          <div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:2px;">Resolved Hari Ini</div>
+        <div class="sa-mini-stat green">
+          <div class="val" id="sw-resolved-today">—</div>
+          <div class="lbl">Resolved Hari Ini</div>
         </div>
-        <div style="text-align:center;">
-          <div id="sw-rating" style="font-size:24px;font-weight:800;color:#FCD34D;font-family:var(--mono);">—</div>
-          <div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:2px;">Avg Rating</div>
+        <div class="sa-mini-stat yellow">
+          <div class="val" id="sw-rating">—</div>
+          <div class="lbl">Avg Rating</div>
         </div>
       </div>
       <div style="display:flex;align-items:center;gap:14px;padding:10px 0;border-top:1px solid rgba(255,255,255,.07);flex-wrap:wrap;">
         <div>
-          <span style="font-size:11px;color:rgba(255,255,255,.35);">Avg First Response</span>
+          <span style="font-size:11px;color:var(--text-muted);">Avg First Response</span>
           <span id="sw-avgResp" style="margin-left:8px;font-family:var(--mono);color:#A5B4FC;font-size:13px;">—</span>
         </div>
         <span class="sa-badge sa-badge-red" id="sw-sla-badge" style="display:none;"></span>
@@ -323,16 +323,20 @@ if ($action) {
     </div>
     <div class="sa-card-body">
       <div class="sa-grid-2" style="margin-bottom:18px;gap:12px;">
-        <div style="text-align:center;padding:18px 12px;background:rgba(99,102,241,.12);border-radius:10px;border:1px solid rgba(99,102,241,.25);">
-          <div id="aw-published" style="font-size:36px;font-weight:800;color:#818CF8;font-family:var(--mono);">—</div>
-          <div style="font-size:12px;color:rgba(255,255,255,.45);margin-top:4px;">Published Aktif</div>
+        <div style="text-align:center;padding:18px 12px;background:rgba(99,102,241,.1);border-radius:12px;border:1px solid rgba(99,102,241,.2);">
+          <div id="aw-published" class="sa-mini-stat indigo" style="margin:0;display:block;">
+            <div class="val" style="font-size:36px;">—</div>
+            <div class="lbl" style="margin-top:5px;">Published Aktif</div>
+          </div>
         </div>
-        <div style="text-align:center;padding:18px 12px;background:rgba(255,255,255,.04);border-radius:10px;">
-          <div id="aw-draft" style="font-size:36px;font-weight:800;color:rgba(255,255,255,.45);font-family:var(--mono);">—</div>
-          <div style="font-size:12px;color:rgba(255,255,255,.35);margin-top:4px;">Draft</div>
+        <div style="text-align:center;padding:18px 12px;background:rgba(255,255,255,.03);border-radius:12px;border:1px solid rgba(255,255,255,.06);">
+          <div id="aw-draft" class="sa-mini-stat" style="margin:0;display:block;">
+            <div class="val" id="aw-draft-val" style="font-size:36px;color:rgba(255,255,255,.4);">—</div>
+            <div class="lbl" style="margin-top:5px;">Draft</div>
+          </div>
         </div>
       </div>
-      <a href="/superadmin/announcements.php" class="sa-btn sa-btn-primary" style="width:100%;text-align:center;display:block;box-sizing:border-box;">
+      <a href="/superadmin/announcements.php" class="sa-btn sa-btn-primary" style="width:100%;justify-content:center;">
         ＋ Buat Announcement Baru
       </a>
     </div>
@@ -347,21 +351,21 @@ if ($action) {
     <a href="/superadmin/health.php" class="sa-btn sa-btn-sm sa-btn-outline">Detail →</a>
   </div>
   <div class="sa-card-body">
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;" id="healthWidget">
-      <div style="text-align:center;"><div id="hw-login" style="font-size:24px;font-weight:800;font-family:var(--mono);">—</div><div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:3px;">Login Hari Ini</div></div>
-      <div style="text-align:center;"><div id="hw-tx" style="font-size:24px;font-weight:800;font-family:var(--mono);">—</div><div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:3px;">Transaksi</div></div>
-      <div style="text-align:center;"><div id="hw-wa" style="font-size:24px;font-weight:800;font-family:var(--mono);">—</div><div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:3px;">WA Terkirim</div></div>
-      <div style="text-align:center;"><div id="hw-wa-rate" style="font-size:24px;font-weight:800;font-family:var(--mono);">—</div><div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:3px;">WA Rate</div></div>
-      <div style="text-align:center;"><div id="hw-ai" style="font-size:24px;font-weight:800;font-family:var(--mono);">—</div><div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:3px;">AI Calls</div></div>
-      <div style="text-align:center;"><div id="hw-coin" style="font-size:24px;font-weight:800;font-family:var(--mono);color:#FCD34D;">—</div><div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:3px;">Coin Dipakai</div></div>
-      <div style="text-align:center;"><div id="hw-rev" style="font-size:24px;font-weight:800;font-family:var(--mono);color:#6EE7B7;">—</div><div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:3px;">Revenue</div></div>
-      <div style="text-align:center;"><div id="hw-err" style="font-size:24px;font-weight:800;font-family:var(--mono);">—</div><div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:3px;">Errors</div></div>
+    <div class="sa-mini-grid" style="grid-template-columns:repeat(auto-fill,minmax(130px,1fr));" id="healthWidget">
+      <div class="sa-mini-stat"><div class="val" id="hw-login">—</div><div class="lbl">Login Hari Ini</div></div>
+      <div class="sa-mini-stat"><div class="val" id="hw-tx">—</div><div class="lbl">Transaksi</div></div>
+      <div class="sa-mini-stat"><div class="val" id="hw-wa">—</div><div class="lbl">WA Terkirim</div></div>
+      <div class="sa-mini-stat"><div class="val" id="hw-wa-rate">—</div><div class="lbl">WA Rate</div></div>
+      <div class="sa-mini-stat"><div class="val" id="hw-ai">—</div><div class="lbl">AI Calls</div></div>
+      <div class="sa-mini-stat yellow"><div class="val" id="hw-coin">—</div><div class="lbl">Coin Dipakai</div></div>
+      <div class="sa-mini-stat green"><div class="val" id="hw-rev">—</div><div class="lbl">Revenue</div></div>
+      <div class="sa-mini-stat"><div class="val" id="hw-err">—</div><div class="lbl">Errors</div></div>
     </div>
-    <div id="hw-wa-alert" style="display:none;margin-top:14px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);border-radius:8px;padding:10px 14px;font-size:12.5px;color:#FCA5A5;">
-      ⚠️ WA delivery rate di bawah 95%! <a href="/superadmin/health.php" style="color:#FCA5A5;font-weight:700;">Cek di Health dashboard →</a>
+    <div id="hw-wa-alert" class="sa-alert-banner danger" style="display:none;margin-top:14px;">
+      ⚠️ WA delivery rate di bawah 95%! <a href="/superadmin/health.php">Cek di Health dashboard →</a>
     </div>
-    <div id="hw-err-alert" style="display:none;margin-top:8px;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:8px;padding:10px 14px;font-size:12.5px;color:#FCD34D;">
-      ⚠️ Ada error baru hari ini. <a href="/superadmin/health.php#errors" style="color:#FCD34D;font-weight:700;">Lihat error log →</a>
+    <div id="hw-err-alert" class="sa-alert-banner warn" style="display:none;margin-top:8px;">
+      ⚠️ Ada error baru hari ini. <a href="/superadmin/health.php#errors">Lihat error log →</a>
     </div>
 
     <?php if (!empty($_aiAbusers)): ?>
@@ -546,8 +550,8 @@ fetch('dashboard.php?action=support_widget', { headers: { 'X-Requested-With': 'X
 
     // Announcements
     const ann = d.announcements || {};
-    document.getElementById('aw-published').textContent = parseInt(ann.published ?? 0).toLocaleString('id-ID');
-    document.getElementById('aw-draft').textContent     = parseInt(ann.draft ?? 0).toLocaleString('id-ID');
+    document.getElementById('aw-published').querySelector('.val').textContent = parseInt(ann.published ?? 0).toLocaleString('id-ID');
+    document.getElementById('aw-draft-val').textContent = parseInt(ann.draft ?? 0).toLocaleString('id-ID');
 
     // SLA items list
     const slaList = document.getElementById('sw-sla-list');

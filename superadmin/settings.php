@@ -285,48 +285,71 @@ $pageTitle  = 'Platform Settings';
 <?php saRenderNav('settings', 'Platform Settings'); ?>
 
 <style>
-  .set-tabs{display:flex;gap:4px;margin-bottom:28px;border-bottom:2px solid rgba(255,255,255,.06);padding-bottom:0}
-  .set-tab{padding:10px 20px;font-size:13.5px;font-weight:600;color:rgba(255,255,255,.4);border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;border-radius:8px 8px 0 0}
-  .set-tab.active{color:#35E8D5;border-bottom-color:#35E8D5;background:rgba(53,232,213,.06)}
+  /* ── Settings-specific tabs & panels ── */
+  .set-tabs{display:flex;gap:4px;margin-bottom:28px;border-bottom:1px solid rgba(255,255,255,.07);padding-bottom:0}
+  .set-tab{padding:10px 18px;font-size:13px;font-weight:600;color:rgba(255,255,255,.4);border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;border-radius:6px 6px 0 0;transition:color .15s,border-color .15s}
+  .set-tab:hover{color:rgba(255,255,255,.8)}
+  .set-tab.active{color:var(--sa);border-bottom-color:var(--sa);background:rgba(99,102,241,.05)}
   .set-panel{display:none}.set-panel.active{display:block}
-  .set-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:24px;margin-bottom:20px}
-  .set-card h3{font-size:15px;font-weight:700;margin-bottom:6px}
-  .set-card p{font-size:13px;color:rgba(255,255,255,.5);margin-bottom:16px;line-height:1.5}
+
+  /* ── Content cards ── */
+  .set-card{background:var(--card-bg);border:1px solid var(--card-border);border-radius:14px;padding:24px;margin-bottom:20px}
+  .set-card h3{font-size:15px;font-weight:700;margin-bottom:6px;letter-spacing:-.01em}
+  .set-card p{font-size:13px;color:var(--text-muted);margin-bottom:16px;line-height:1.6}
+
+  /* ── Form fields ── */
   .set-field{margin-bottom:16px}
-  .set-field label{display:block;font-size:12px;font-weight:600;color:rgba(255,255,255,.5);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px}
+  .set-field label{display:block;font-size:11px;font-weight:700;color:var(--text-muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em}
   .set-field input,.set-field textarea,.set-field select{
-    width:100%;padding:10px 12px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);
-    border-radius:8px;color:#fff;font-size:14px;font-family:inherit;
+    width:100%;padding:10px 12px;background:rgba(255,255,255,.06);
+    border:1px solid rgba(255,255,255,.12);border-radius:8px;
+    color:#fff;font-size:14px;font-family:inherit;
+    outline:none;transition:border-color .15s,box-shadow .15s;
   }
   .set-field textarea{resize:vertical;min-height:72px}
-  .set-field input:focus,.set-field textarea:focus{outline:none;border-color:rgba(53,232,213,.4)}
+  .set-field input:focus,.set-field textarea:focus,.set-field select:focus{
+    border-color:var(--sa);box-shadow:0 0 0 3px rgba(99,102,241,.12);
+  }
+  .set-field input[readonly]{opacity:.5;cursor:not-allowed}
+
+  /* ── Toggle switch ── */
   .toggle-row{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
   .toggle-switch{position:relative;display:inline-block;width:52px;height:28px;flex-shrink:0}
   .toggle-switch input{opacity:0;width:0;height:0}
   .toggle-slider{position:absolute;inset:0;background:rgba(255,255,255,.12);border-radius:28px;cursor:pointer;transition:.2s}
-  .toggle-slider:before{content:'';position:absolute;width:20px;height:20px;left:4px;bottom:4px;background:#fff;border-radius:50%;transition:.2s}
-  .toggle-switch input:checked + .toggle-slider{background:#E24B4A}
+  .toggle-slider:before{content:'';position:absolute;width:20px;height:20px;left:4px;bottom:4px;background:#fff;border-radius:50%;transition:.2s;box-shadow:0 1px 4px rgba(0,0,0,.3)}
+  .toggle-switch input:checked + .toggle-slider{background:#EF4444}
   .toggle-switch input:checked + .toggle-slider:before{transform:translateX(24px)}
-  .status-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+
+  /* ── Status dot ── */
+  .status-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;display:inline-block}
+
+  /* ── Demo stat boxes ── */
   .stat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:12px}
-  .stat-box{background:rgba(255,255,255,.05);border-radius:10px;padding:14px;text-align:center}
-  .stat-val{font-size:24px;font-weight:800;color:#35E8D5}
-  .stat-label{font-size:11px;color:rgba(255,255,255,.4);margin-top:4px}
+  .stat-box{background:rgba(99,102,241,.08);border:1px solid rgba(99,102,241,.15);border-radius:12px;padding:16px;text-align:center}
+  .stat-val{font-size:24px;font-weight:800;color:#818CF8;font-family:var(--mono)}
+  .stat-label{font-size:11px;color:var(--text-muted);margin-top:5px}
+
+  /* ── ToS rows ── */
   .tos-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.06)}
-  .tos-badge{font-size:11px;padding:3px 10px;border-radius:20px;font-weight:700}
-  .tos-badge.current{background:rgba(53,232,213,.15);color:#35E8D5}
-  .tos-badge.old{background:rgba(255,255,255,.06);color:rgba(255,255,255,.3)}
-  .sa-btn{padding:9px 18px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:.15s}
-  .sa-btn-primary{background:#35E8D5;color:#0F1C3A}
-  .sa-btn-primary:hover{background:#2dd4c4}
-  .sa-btn-danger{background:#E24B4A;color:#fff}
-  .sa-btn-danger:hover{background:#c43b3a}
-  .sa-btn-outline{background:transparent;border:1px solid rgba(255,255,255,.2);color:rgba(255,255,255,.7)}
-  .sa-btn-outline:hover{background:rgba(255,255,255,.05)}
+  .tos-row:last-child{border-bottom:none}
+  .tos-badge{font-size:11px;padding:3px 10px;border-radius:20px;font-weight:700;white-space:nowrap}
+  .tos-badge.current{background:rgba(99,102,241,.15);color:#A5B4FC;border:1px solid rgba(99,102,241,.25)}
+  .tos-badge.old{background:rgba(255,255,255,.05);color:rgba(255,255,255,.3);border:1px solid rgba(255,255,255,.1)}
+
+  /* ── Alert boxes (inline warning in settings) ── */
   .alert-box{padding:12px 16px;border-radius:10px;font-size:13px;margin-bottom:16px}
-  .alert-warn{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25);color:#FCA5A5}
-  .alert-ok{background:rgba(53,232,213,.08);border:1px solid rgba(53,232,213,.2);color:#35E8D5}
-  #toast-set{position:fixed;bottom:24px;right:24px;background:#1e2d4a;color:#fff;padding:12px 20px;border-radius:10px;font-size:13px;display:none;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,.3)}
+  .alert-warn{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);color:#FCA5A5}
+  .alert-ok{background:rgba(99,102,241,.08);border:1px solid rgba(99,102,241,.2);color:#A5B4FC}
+
+  /* ── Toast (settings page — routes through saShowToast via redirect) ── */
+  #toast-set{
+    position:fixed;bottom:28px;right:24px;
+    background:rgba(22,35,72,.95);backdrop-filter:blur(8px);
+    color:#fff;padding:12px 20px;border-radius:12px;font-size:13px;
+    display:none;z-index:9999;box-shadow:0 8px 24px rgba(0,0,0,.4);
+    border:1px solid rgba(255,255,255,.1);
+  }
 </style>
 
 <div class="set-tabs">

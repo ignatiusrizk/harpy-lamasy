@@ -218,26 +218,31 @@ if ($action) {
 /* ── Pending alert ─────────────────────────────── */
 #pendingAlert {
   display: none;
-  background: linear-gradient(135deg, rgba(245,158,11,.15), rgba(245,158,11,.05));
-  border: 1px solid rgba(245,158,11,.4);
-  border-radius: var(--r);
+  border-radius: 12px;
   padding: 14px 18px;
   margin-bottom: 20px;
-  display: flex; align-items: center; gap: 12px;
+  align-items: center; gap: 12px;
   color: #FCD34D;
   font-weight: 600;
+  background: linear-gradient(135deg, rgba(245,158,11,.12), rgba(245,158,11,.04));
+  border: 1px solid rgba(245,158,11,.4);
 }
 #pendingAlert a { color: #FCD34D; text-decoration: underline; }
 #pendingAlert.hidden { display: none; }
 
-/* ── Chart card ────────────────────────────────── */
+/* ── Chart / content cards ─────────────────────── */
+/* Use .sa-chart-card from the shared CSS. Local alias kept for backward compat */
 .chart-card {
-  background: var(--navy-m);
-  border: 1px solid rgba(255,255,255,.07);
-  border-radius: var(--r);
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 14px;
   padding: 20px 24px;
+  margin-bottom: 24px;
 }
-.chart-card h3 { font-size: 14px; font-weight: 700; color: rgba(255,255,255,.7); margin-bottom: 16px; }
+.chart-card h3 {
+  font-size: 14px; font-weight: 700; color: var(--text-dim);
+  margin-bottom: 16px; letter-spacing: -.01em;
+}
 
 /* ── Two-col grid ──────────────────────────────── */
 .billing-grid {
@@ -252,7 +257,7 @@ if ($action) {
 .top-tenant-row {
   display: flex; align-items: center; justify-content: space-between;
   padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,.06);
-  gap: 10px;
+  gap: 10px; transition: background .1s;
 }
 .top-tenant-row:last-child { border-bottom: none; }
 .top-tenant-rank {
@@ -260,46 +265,62 @@ if ($action) {
   color: rgba(255,255,255,.2); width: 24px; flex-shrink: 0;
 }
 .top-tenant-info { flex: 1; min-width: 0; }
-.top-tenant-info .name { font-size: 13px; font-weight: 600; color: var(--white);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.top-tenant-info .sub  { font-size: 11px; color: rgba(255,255,255,.35); }
-.top-tenant-amount { font-family: var(--mono); font-size: 13px; font-weight: 600; color: #6EE7B7; text-align: right; white-space: nowrap; }
+.top-tenant-info .name {
+  font-size: 13px; font-weight: 600; color: var(--white);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.top-tenant-info .sub { font-size: 11px; color: rgba(255,255,255,.35); margin-top: 2px; }
+.top-tenant-amount {
+  font-family: var(--mono); font-size: 13px; font-weight: 700;
+  color: #6EE7B7; text-align: right; white-space: nowrap;
+}
 
-/* ── Coin metrics ──────────────────────────────── */
+/* ── Coin metrics — use sa-stat-card style ─────── */
 .coin-metrics-grid {
   display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px;
   margin-bottom: 24px;
 }
 @media(max-width:700px){ .coin-metrics-grid { grid-template-columns: repeat(2,1fr); } }
 .coin-metric-card {
-  background: var(--navy-m);
-  border: 1px solid rgba(255,255,255,.07);
-  border-radius: var(--r);
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 12px;
   padding: 16px 18px;
   position: relative; overflow: hidden;
+  transition: transform .18s ease, box-shadow .18s ease;
 }
-.coin-metric-card .label { font-size: 11px; font-weight: 600; text-transform: uppercase;
-  letter-spacing: .06em; color: rgba(255,255,255,.4); margin-bottom: 6px; }
-.coin-metric-card .value { font-family: var(--mono); font-size: 20px; font-weight: 700;
-  color: var(--white); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.coin-metric-card .sub { font-size: 11px; color: rgba(255,255,255,.3); margin-top: 3px; }
-.coin-metric-card .ico { position: absolute; right: 14px; top: 14px; font-size: 22px; opacity: .2; }
+.coin-metric-card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,.2); }
+.coin-metric-card .label {
+  font-size: 10.5px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .07em; color: var(--text-muted); margin-bottom: 8px;
+}
+.coin-metric-card .value {
+  font-family: var(--mono); font-size: 20px; font-weight: 800;
+  color: var(--white); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.coin-metric-card .sub { font-size: 11px; color: rgba(255,255,255,.3); margin-top: 4px; }
+.coin-metric-card .ico { position: absolute; right: 14px; top: 14px; font-size: 22px; opacity: .12; }
 
-/* ── Filter bar ────────────────────────────────── */
+/* ── Filter bar (billing variant) ─────────────── */
 .b-filter-bar {
-  display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; align-items: center;
+  display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 16px;
+  align-items: center; padding: 4px 0;
 }
 .b-filter-bar input[type=text],
 .b-filter-bar select {
   background: rgba(255,255,255,.06);
-  border: 1px solid rgba(255,255,255,.12);
-  color: var(--white); border-radius: 7px;
-  padding: 7px 12px; font-size: 13px; font-family: var(--font);
-  outline: none; transition: border-color .15s;
+  border: 1px solid rgba(255,255,255,.1);
+  color: var(--white); border-radius: var(--r);
+  padding: 8px 12px; font-size: 13px; font-family: var(--font);
+  outline: none; transition: border-color .15s, box-shadow .15s;
 }
 .b-filter-bar input[type=text] { min-width: 200px; }
 .b-filter-bar select:focus,
-.b-filter-bar input[type=text]:focus { border-color: var(--sa); }
+.b-filter-bar input[type=text]:focus {
+  border-color: var(--sa); box-shadow: 0 0 0 3px rgba(99,102,241,.12);
+}
+.b-filter-bar input::placeholder { color: rgba(255,255,255,.22); }
+.b-filter-bar select option { background: var(--navy); color: var(--white); }
 </style>
 </head>
 <body>
@@ -392,12 +413,12 @@ if ($action) {
 
 <!-- Payment History -->
 <div class="sa-card">
-  <div class="sa-card-header" style="display:flex;align-items:center;justify-content:space-between;">
+  <div class="sa-card-header">
     <h3>Riwayat Pembayaran</h3>
     <a href="payments.php" class="sa-btn sa-btn-sm sa-btn-primary">+ Konfirmasi Pembayaran</a>
   </div>
 
-  <div class="b-filter-bar">
+  <div class="b-filter-bar" style="padding:14px 20px;border-bottom:1px solid rgba(255,255,255,.06);margin-bottom:0;background:rgba(255,255,255,.015);">
     <input type="text" id="bSearch" placeholder="🔍 Cari tenant / referensi…" oninput="debounceLoad()">
     <select id="bMonth" onchange="bPage=1;loadList()">
       <option value="">Semua Bulan</option>
