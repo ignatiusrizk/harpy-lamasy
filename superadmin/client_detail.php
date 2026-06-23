@@ -875,7 +875,7 @@ $billingStat = $bsSt->fetch(PDO::FETCH_ASSOC);
   <div class="sa-card" style="margin-bottom:16px;">
     <div class="sa-card-body">
       <div style="display:flex;gap:10px;">
-        <textarea id="newNoteText" placeholder="Tulis catatan..." style="flex:1;padding:10px;background:var(--crease-soft);border:1px solid var(--crease);border-radius:8px;color:#fff;font-family:var(--font);font-size:13.5px;resize:vertical;min-height:80px;"></textarea>
+        <textarea id="newNoteText" placeholder="Tulis catatan..." style="flex:1;padding:10px;background:var(--crease-soft);border:1px solid var(--crease);border-radius:8px;color:var(--ink);font-family:var(--font);font-size:13.5px;resize:vertical;min-height:80px;"></textarea>
         <button class="sa-btn sa-btn-primary" onclick="addNote()" style="align-self:flex-end;">Simpan</button>
       </div>
     </div>
@@ -891,7 +891,7 @@ $billingStat = $bsSt->fetch(PDO::FETCH_ASSOC);
       <div class="sa-grid-2" style="gap:10px;margin-bottom:10px;">
         <div>
           <label style="font-size:11px;color:var(--ash);font-weight:600;letter-spacing:.06em;text-transform:uppercase;">Channel</label>
-          <select id="commChannel" style="width:100%;margin-top:6px;padding:8px;background:var(--crease-soft);border:1px solid var(--crease);border-radius:8px;color:#fff;font-family:var(--font);">
+          <select id="commChannel" style="width:100%;margin-top:6px;padding:8px;background:var(--crease-soft);border:1px solid var(--crease);border-radius:8px;color:var(--ink);font-family:var(--font);">
             <option value="wa">WhatsApp</option>
             <option value="email">Email</option>
             <option value="call">Telepon</option>
@@ -900,7 +900,7 @@ $billingStat = $bsSt->fetch(PDO::FETCH_ASSOC);
         </div>
         <div>
           <label style="font-size:11px;color:var(--ash);font-weight:600;letter-spacing:.06em;text-transform:uppercase;">Tipe</label>
-          <select id="commType" style="width:100%;margin-top:6px;padding:8px;background:var(--crease-soft);border:1px solid var(--crease);border-radius:8px;color:#fff;font-family:var(--font);">
+          <select id="commType" style="width:100%;margin-top:6px;padding:8px;background:var(--crease-soft);border:1px solid var(--crease);border-radius:8px;color:var(--ink);font-family:var(--font);">
             <option value="support">Support</option>
             <option value="onboarding">Onboarding</option>
             <option value="billing">Billing</option>
@@ -909,8 +909,8 @@ $billingStat = $bsSt->fetch(PDO::FETCH_ASSOC);
           </select>
         </div>
       </div>
-      <input type="text" id="commSubject" placeholder="Subjek..." style="width:100%;padding:9px 12px;background:var(--crease-soft);border:1px solid var(--crease);border-radius:8px;color:#fff;font-family:var(--font);font-size:13.5px;margin-bottom:10px;"/>
-      <textarea id="commMessage" placeholder="Pesan / catatan komunikasi..." style="width:100%;padding:10px;background:var(--crease-soft);border:1px solid var(--crease);border-radius:8px;color:#fff;font-family:var(--font);font-size:13.5px;resize:vertical;min-height:80px;"></textarea>
+      <input type="text" id="commSubject" placeholder="Subjek..." style="width:100%;padding:9px 12px;background:var(--crease-soft);border:1px solid var(--crease);border-radius:8px;color:var(--ink);font-family:var(--font);font-size:13.5px;margin-bottom:10px;"/>
+      <textarea id="commMessage" placeholder="Pesan / catatan komunikasi..." style="width:100%;padding:10px;background:var(--crease-soft);border:1px solid var(--crease);border-radius:8px;color:var(--ink);font-family:var(--font);font-size:13.5px;resize:vertical;min-height:80px;"></textarea>
       <div style="margin-top:10px;text-align:right;">
         <button class="sa-btn sa-btn-primary" onclick="addComm()">Simpan Komunikasi</button>
       </div>
@@ -949,7 +949,7 @@ $billingStat = $bsSt->fetch(PDO::FETCH_ASSOC);
     <div class="sa-card" id="topupSection">
       <div class="sa-card-header">
         <h3>🪙 Topup Coin</h3>
-        <span style="font-size:11px;background:<?= $coinMode === 'per_outlet' ? '#7C3AED' : '#0369A1' ?>;color:#fff;padding:3px 10px;border-radius:100px;font-weight:700;letter-spacing:.04em;">
+        <span style="font-size:11px;background:<?= $coinMode === 'per_outlet' ? '#7C3AED' : '#0369A1' ?>;color:var(--ink);padding:3px 10px;border-radius:100px;font-weight:700;letter-spacing:.04em;">
           <?= $coinMode === 'per_outlet' ? 'PER-OUTLET' : 'SHARED' ?>
         </span>
       </div>
@@ -965,7 +965,7 @@ $billingStat = $bsSt->fetch(PDO::FETCH_ASSOC);
         <?php if ($coinMode === 'per_outlet'): ?>
         <div class="form-group" style="margin-bottom:12px;">
           <label style="font-size:11px;color:var(--ash);font-weight:600;letter-spacing:.06em;text-transform:uppercase;">Outlet Tujuan</label>
-          <select id="topupOutletId" style="width:100%;margin-top:6px;padding:10px;background:var(--crease-soft);border:1px solid var(--crease);border-radius:8px;color:#fff;font-family:var(--font);font-size:13px;">
+          <select id="topupOutletId" style="width:100%;margin-top:6px;padding:10px;background:var(--crease-soft);border:1px solid var(--crease);border-radius:8px;color:var(--ink);font-family:var(--font);font-size:13px;">
             <?php foreach ($outletList as $o): ?>
               <option value="<?= (int)$o['id'] ?>">
                 <?= htmlspecialchars($o['nama_outlet']) ?>
@@ -979,11 +979,11 @@ $billingStat = $bsSt->fetch(PDO::FETCH_ASSOC);
         <?php endif; ?>
         <div class="form-group" style="margin-bottom:12px;">
           <label style="font-size:11px;color:var(--ash);font-weight:600;letter-spacing:.06em;text-transform:uppercase;">Jumlah Coin</label>
-          <input type="number" id="topupAmt" placeholder="Contoh: 50000" style="width:100%;margin-top:6px;padding:10px;background:var(--crease-soft);border:1px solid var(--crease);border-radius:8px;color:#fff;font-family:var(--font);font-size:14px;"/>
+          <input type="number" id="topupAmt" placeholder="Contoh: 50000" style="width:100%;margin-top:6px;padding:10px;background:var(--crease-soft);border:1px solid var(--crease);border-radius:8px;color:var(--ink);font-family:var(--font);font-size:14px;"/>
         </div>
         <div class="form-group" style="margin-bottom:14px;">
           <label style="font-size:11px;color:var(--ash);font-weight:600;letter-spacing:.06em;text-transform:uppercase;">Keterangan</label>
-          <input type="text" id="topupNoteAksi" placeholder="Alasan topup..." style="width:100%;margin-top:6px;padding:10px;background:var(--crease-soft);border:1px solid var(--crease);border-radius:8px;color:#fff;font-family:var(--font);font-size:14px;"/>
+          <input type="text" id="topupNoteAksi" placeholder="Alasan topup..." style="width:100%;margin-top:6px;padding:10px;background:var(--crease-soft);border:1px solid var(--crease);border-radius:8px;color:var(--ink);font-family:var(--font);font-size:14px;"/>
         </div>
         <button class="sa-btn sa-btn-primary" onclick="doTopup()">Topup Sekarang</button>
       </div>
@@ -1035,7 +1035,7 @@ $billingStat = $bsSt->fetch(PDO::FETCH_ASSOC);
       <div class="sa-card-body">
         <p style="font-size:13px;color:var(--ash);margin-bottom:14px;">Trial berakhir: <strong><?= $tenant['trial_ends_at'] ? date('d M Y', strtotime($tenant['trial_ends_at'])) : '-' ?></strong></p>
         <div style="display:flex;gap:10px;align-items:center;">
-          <input type="number" id="extendDays" value="7" min="1" max="30" style="width:80px;padding:9px;background:var(--crease-soft);border:1px solid var(--crease);border-radius:8px;color:#fff;font-family:var(--font);"/>
+          <input type="number" id="extendDays" value="7" min="1" max="30" style="width:80px;padding:9px;background:var(--crease-soft);border:1px solid var(--crease);border-radius:8px;color:var(--ink);font-family:var(--font);"/>
           <span style="color:var(--ash);font-size:13px;">hari</span>
           <button class="sa-btn sa-btn-primary" onclick="doExtendTrial()">Perpanjang</button>
         </div>
@@ -1047,12 +1047,12 @@ $billingStat = $bsSt->fetch(PDO::FETCH_ASSOC);
       <div class="sa-card-header"><h3>🔑 Reset Password User</h3></div>
       <div class="sa-card-body">
         <div style="display:flex;flex-direction:column;gap:10px;">
-          <select id="resetUserId" style="padding:9px;background:var(--crease-soft);border:1px solid var(--crease);border-radius:8px;color:#fff;font-family:var(--font);">
+          <select id="resetUserId" style="padding:9px;background:var(--crease-soft);border:1px solid var(--crease);border-radius:8px;color:var(--ink);font-family:var(--font);">
             <?php foreach ($users as $u): ?>
             <option value="<?= $u['id'] ?>"><?= htmlspecialchars($u['name'] . ' (' . $u['username'] . ')') ?></option>
             <?php endforeach; ?>
           </select>
-          <input type="text" id="newPassword" placeholder="Password baru (min 6 karakter)" style="padding:9px 12px;background:var(--crease-soft);border:1px solid var(--crease);border-radius:8px;color:#fff;font-family:var(--font);"/>
+          <input type="text" id="newPassword" placeholder="Password baru (min 6 karakter)" style="padding:9px 12px;background:var(--crease-soft);border:1px solid var(--crease);border-radius:8px;color:var(--ink);font-family:var(--font);"/>
           <button class="sa-btn sa-btn-outline" onclick="doResetPassword()">Reset Password</button>
         </div>
       </div>
@@ -1078,7 +1078,7 @@ $billingStat = $bsSt->fetch(PDO::FETCH_ASSOC);
           Jumlah Coin *
         </label>
         <input type="number" id="adjCoin" placeholder="Positif = tambah, negatif = kurangi"
-               style="width:100%;padding:10px 12px;background:var(--crease-soft);border:1.5px solid var(--crease);border-radius:8px;color:#fff;font-family:var(--mono);font-size:14px;outline:none;"
+               style="width:100%;padding:10px 12px;background:var(--crease-soft);border:1.5px solid var(--crease);border-radius:8px;color:var(--ink);font-family:var(--mono);font-size:14px;outline:none;"
                oninput="previewAdj()"/>
         <div id="adjPreview" style="font-size:12px;color:var(--ash-dim);margin-top:5px;"></div>
       </div>
@@ -1087,7 +1087,7 @@ $billingStat = $bsSt->fetch(PDO::FETCH_ASSOC);
         <label style="font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--ash);display:block;margin-bottom:6px;">
           Alasan *
         </label>
-        <select id="adjReason" style="width:100%;padding:9px 12px;background:var(--crease-soft);border:1.5px solid var(--crease);border-radius:8px;color:#fff;font-family:var(--font);font-size:13px;outline:none;">
+        <select id="adjReason" style="width:100%;padding:9px 12px;background:var(--crease-soft);border:1.5px solid var(--crease);border-radius:8px;color:var(--ink);font-family:var(--font);font-size:13px;outline:none;">
           <option value="kompensasi_downtime">Kompensasi downtime</option>
           <option value="bonus_referral">Bonus referral</option>
           <option value="koreksi_error">Koreksi error</option>
@@ -1101,7 +1101,7 @@ $billingStat = $bsSt->fetch(PDO::FETCH_ASSOC);
           Catatan Internal
         </label>
         <input type="text" id="adjNote" placeholder="Keterangan tambahan (opsional)"
-               style="width:100%;padding:10px 12px;background:var(--crease-soft);border:1.5px solid var(--crease);border-radius:8px;color:#fff;font-family:var(--font);font-size:13px;outline:none;"/>
+               style="width:100%;padding:10px 12px;background:var(--crease-soft);border:1.5px solid var(--crease);border-radius:8px;color:var(--ink);font-family:var(--font);font-size:13px;outline:none;"/>
       </div>
     </div>
 
@@ -1220,7 +1220,7 @@ $billingStat = $bsSt->fetch(PDO::FETCH_ASSOC);
         <textarea name="reason" id="impersonateReason" required
           placeholder="Contoh: Investigasi laporan bug kasir tidak bisa input order..."
           style="width:100%;padding:10px 12px;background:var(--crease-soft);border:1px solid var(--crease);
-                 border-radius:8px;color:#fff;font-size:13px;resize:vertical;min-height:72px;box-sizing:border-box;
+                 border-radius:8px;color:var(--ink);font-size:13px;resize:vertical;min-height:72px;box-sizing:border-box;
                  font-family:inherit;outline:none;"
           maxlength="200" rows="3"></textarea>
         <div style="text-align:right;font-size:11px;color:var(--ash-dim);margin-top:3px;">

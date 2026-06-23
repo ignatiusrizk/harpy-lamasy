@@ -238,7 +238,7 @@ if ($action) {
   color: #86efac; font-size: 12px; text-decoration: none;
   display: inline-flex; align-items: center; gap: 4px;
 }
-.wa-link:hover { color: #fff; }
+.wa-link:hover { color: var(--ink); }
 
 /* CREATE MODAL form rows */
 .form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }

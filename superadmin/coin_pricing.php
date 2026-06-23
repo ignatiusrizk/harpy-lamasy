@@ -241,7 +241,7 @@ $csrf = saGetCsrf();
     padding:7px 14px; border-radius:8px; cursor:pointer; font-size:13px; font-weight:600;
     transition:all .15s;
   }
-  .cp-tab:hover { background:var(--crease-soft); color:#fff; }
+  .cp-tab:hover { background:var(--crease-soft); color:var(--ink); }
   .cp-tab.active { background:var(--sa); color:#0F1C3A; border-color:var(--sa); }
 
   .cat-badge {
@@ -264,7 +264,7 @@ $csrf = saGetCsrf();
   }
   .modal-overlay.open { display:flex; }
   .modal-box {
-    background:var(--paper); color:#fff; border:1px solid var(--crease);
+    background:var(--paper); color:var(--ink); border:1px solid var(--crease);
     border-radius:14px; padding:24px; max-width:520px; width:100%; max-height:90vh; overflow-y:auto;
   }
   .modal-title { font-size:16px; font-weight:800; margin-bottom:18px; padding-bottom:12px; border-bottom:1px solid var(--crease); }
@@ -272,7 +272,7 @@ $csrf = saGetCsrf();
   .form-row label { display:block; font-size:12px; font-weight:600; color:var(--ink-soft); margin-bottom:6px; }
   .form-row input, .form-row select, .form-row textarea {
     width:100%; padding:10px 12px; background:var(--crease-soft); border:1px solid var(--crease);
-    border-radius:8px; color:#fff; font-size:13px; font-family:var(--font);
+    border-radius:8px; color:var(--ink); font-size:13px; font-family:var(--font);
   }
   .form-row textarea { resize:vertical; min-height:60px; }
   .form-row small { display:block; font-size:11px; color:var(--ash); margin-top:4px; }

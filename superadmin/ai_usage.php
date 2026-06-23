@@ -104,7 +104,7 @@ $csrf = saGetCsrf();
     border-radius:12px; padding:16px;
   }
   .kpi-label { font-size:11px; color:var(--ash); text-transform:uppercase; letter-spacing:.05em; }
-  .kpi-value { font-size:22px; font-weight:800; margin-top:6px; font-family:var(--mono); color:#fff; }
+  .kpi-value { font-size:22px; font-weight:800; margin-top:6px; font-family:var(--mono); color:var(--ink); }
   .kpi-value.positive { color:#86EFAC; }
   .kpi-value.negative { color:#991B1B; }
   .kpi-sub { font-size:11px; color:var(--ash); margin-top:4px; }
@@ -115,13 +115,13 @@ $csrf = saGetCsrf();
   }
   .range-bar input[type=date] {
     background:var(--crease-soft); border:1px solid var(--crease);
-    border-radius:6px; padding:6px 10px; color:#fff; font-size:13px;
+    border-radius:6px; padding:6px 10px; color:var(--ink); font-size:13px;
   }
   .quick-pill {
     background:var(--crease-soft); color:var(--ink); border:1px solid var(--crease);
     padding:6px 12px; border-radius:6px; cursor:pointer; font-size:12px; font-weight:600;
   }
-  .quick-pill:hover { background:var(--crease); color:#fff; }
+  .quick-pill:hover { background:var(--crease); color:var(--ink); }
 
   .margin-cell { font-family:var(--mono); font-weight:700; }
   .margin-cell.positive { color:#86EFAC; }
@@ -134,7 +134,7 @@ $csrf = saGetCsrf();
 
   .budget-input {
     background:var(--crease-soft); border:1px solid var(--crease);
-    border-radius:6px; padding:6px 10px; color:#fff; font-size:12px; font-family:var(--mono);
+    border-radius:6px; padding:6px 10px; color:var(--ink); font-size:12px; font-family:var(--mono);
     width:90px;
   }
 
@@ -225,7 +225,7 @@ $csrf = saGetCsrf();
 
 <!-- Trend Chart -->
 <div class="chart-card">
-  <h3 style="font-size:14px;font-weight:700;margin-bottom:14px;color:#fff;">Trend Harian (Cost vs Revenue)</h3>
+  <h3 style="font-size:14px;font-weight:700;margin-bottom:14px;color:var(--ink);">Trend Harian (Cost vs Revenue)</h3>
   <div id="trendChart"><div style="text-align:center;padding:32px;color:var(--ash-dim);">Memuat...</div></div>
 </div>
 

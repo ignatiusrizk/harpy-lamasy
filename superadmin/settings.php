@@ -594,7 +594,7 @@ $pageTitle  = 'Platform Settings';
   .set-field input,.set-field textarea,.set-field select{
     width:100%;padding:10px 12px;background:var(--crease-soft);
     border:1px solid var(--crease);border-radius:8px;
-    color:#fff;font-size:14px;font-family:inherit;
+    color:var(--ink);font-size:14px;font-family:inherit;
     outline:none;transition:border-color .15s,box-shadow .15s;
   }
   .set-field textarea{resize:vertical;min-height:72px}
@@ -637,7 +637,7 @@ $pageTitle  = 'Platform Settings';
   #toast-set{
     position:fixed;bottom:28px;right:24px;
     background:rgba(22,35,72,.95);backdrop-filter:blur(8px);
-    color:#fff;padding:12px 20px;border-radius:12px;font-size:13px;
+    color:var(--ink);padding:12px 20px;border-radius:12px;font-size:13px;
     display:none;z-index:9999;box-shadow:0 8px 24px rgba(0,0,0,.4);
     border:1px solid var(--crease);
   }
@@ -891,18 +891,18 @@ $pageTitle  = 'Platform Settings';
       <div class="form-group">
         <label>Slug * <span style="font-weight:400;color:var(--ash);font-size:11px">(a-z, 0-9, _)</span></label>
         <input type="text" id="re_slug" placeholder="misal: marketing"
-               style="width:100%;padding:10px 14px;background:var(--crease-soft);border:1.5px solid var(--crease);border-radius:8px;color:#fff;font-size:14px;outline:none">
+               style="width:100%;padding:10px 14px;background:var(--crease-soft);border:1.5px solid var(--crease);border-radius:8px;color:var(--ink);font-size:14px;outline:none">
       </div>
       <div class="form-group">
         <label>Nama Role *</label>
         <input type="text" id="re_name" placeholder="Marketing"
-               style="width:100%;padding:10px 14px;background:var(--crease-soft);border:1.5px solid var(--crease);border-radius:8px;color:#fff;font-size:14px;outline:none">
+               style="width:100%;padding:10px 14px;background:var(--crease-soft);border:1.5px solid var(--crease);border-radius:8px;color:var(--ink);font-size:14px;outline:none">
       </div>
     </div>
     <div class="form-group" style="margin-bottom:16px">
       <label>Deskripsi</label>
       <input type="text" id="re_desc" placeholder="Untuk siapa role ini, akses apa"
-             style="width:100%;padding:10px 14px;background:var(--crease-soft);border:1.5px solid var(--crease);border-radius:8px;color:#fff;font-size:14px;outline:none">
+             style="width:100%;padding:10px 14px;background:var(--crease-soft);border:1.5px solid var(--crease);border-radius:8px;color:var(--ink);font-size:14px;outline:none">
     </div>
     <div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ash);margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">
       <span>Permissions</span>
@@ -925,26 +925,26 @@ $pageTitle  = 'Platform Settings';
     <div class="form-group">
       <label>Username *</label>
       <input type="text" id="tc_username" placeholder="a-z, 0-9, underscore, 3-30 char"
-             style="width:100%;padding:10px 14px;background:var(--crease-soft);border:1.5px solid var(--crease);border-radius:8px;color:#fff;font-size:14px;outline:none">
+             style="width:100%;padding:10px 14px;background:var(--crease-soft);border:1.5px solid var(--crease);border-radius:8px;color:var(--ink);font-size:14px;outline:none">
     </div>
     <div class="form-group">
       <label>Nama Lengkap *</label>
       <input type="text" id="tc_name" placeholder="Nama tampil di panel"
-             style="width:100%;padding:10px 14px;background:var(--crease-soft);border:1.5px solid var(--crease);border-radius:8px;color:#fff;font-size:14px;outline:none">
+             style="width:100%;padding:10px 14px;background:var(--crease-soft);border:1.5px solid var(--crease);border-radius:8px;color:var(--ink);font-size:14px;outline:none">
     </div>
     <div class="form-group">
       <label>Email (untuk notif)</label>
       <input type="email" id="tc_email" placeholder="email@harpy.id"
-             style="width:100%;padding:10px 14px;background:var(--crease-soft);border:1.5px solid var(--crease);border-radius:8px;color:#fff;font-size:14px;outline:none">
+             style="width:100%;padding:10px 14px;background:var(--crease-soft);border:1.5px solid var(--crease);border-radius:8px;color:var(--ink);font-size:14px;outline:none">
     </div>
     <div class="form-group">
       <label>Password * (min 8 karakter)</label>
       <input type="password" id="tc_password" placeholder="••••••••"
-             style="width:100%;padding:10px 14px;background:var(--crease-soft);border:1.5px solid var(--crease);border-radius:8px;color:#fff;font-size:14px;outline:none">
+             style="width:100%;padding:10px 14px;background:var(--crease-soft);border:1.5px solid var(--crease);border-radius:8px;color:var(--ink);font-size:14px;outline:none">
     </div>
     <div class="form-group">
       <label>Role *</label>
-      <select id="tc_role_id" style="width:100%;padding:10px 14px;background:rgba(15,28,58,.9);border:1.5px solid var(--crease);border-radius:8px;color:#fff;font-size:14px;outline:none">
+      <select id="tc_role_id" style="width:100%;padding:10px 14px;background:rgba(15,28,58,.9);border:1.5px solid var(--crease);border-radius:8px;color:var(--ink);font-size:14px;outline:none">
         <option value="">Pilih role...</option>
       </select>
     </div>
@@ -963,21 +963,21 @@ $pageTitle  = 'Platform Settings';
     <div class="form-group">
       <label>Nama Lengkap *</label>
       <input type="text" id="te_name"
-             style="width:100%;padding:10px 14px;background:var(--crease-soft);border:1.5px solid var(--crease);border-radius:8px;color:#fff;font-size:14px;outline:none">
+             style="width:100%;padding:10px 14px;background:var(--crease-soft);border:1.5px solid var(--crease);border-radius:8px;color:var(--ink);font-size:14px;outline:none">
     </div>
     <div class="form-group">
       <label>Email</label>
       <input type="email" id="te_email"
-             style="width:100%;padding:10px 14px;background:var(--crease-soft);border:1.5px solid var(--crease);border-radius:8px;color:#fff;font-size:14px;outline:none">
+             style="width:100%;padding:10px 14px;background:var(--crease-soft);border:1.5px solid var(--crease);border-radius:8px;color:var(--ink);font-size:14px;outline:none">
     </div>
     <div class="form-group">
       <label>Role *</label>
-      <select id="te_role_id" style="width:100%;padding:10px 14px;background:rgba(15,28,58,.9);border:1.5px solid var(--crease);border-radius:8px;color:#fff;font-size:14px;outline:none">
+      <select id="te_role_id" style="width:100%;padding:10px 14px;background:rgba(15,28,58,.9);border:1.5px solid var(--crease);border-radius:8px;color:var(--ink);font-size:14px;outline:none">
       </select>
     </div>
     <div class="form-group">
       <label>Status</label>
-      <select id="te_is_active" style="width:100%;padding:10px 14px;background:rgba(15,28,58,.9);border:1.5px solid var(--crease);border-radius:8px;color:#fff;font-size:14px;outline:none">
+      <select id="te_is_active" style="width:100%;padding:10px 14px;background:rgba(15,28,58,.9);border:1.5px solid var(--crease);border-radius:8px;color:var(--ink);font-size:14px;outline:none">
         <option value="1">Aktif</option>
         <option value="0">Nonaktif</option>
       </select>
@@ -997,7 +997,7 @@ $pageTitle  = 'Platform Settings';
     <div class="form-group">
       <label>Password Baru * (min 8 karakter)</label>
       <input type="password" id="tp_password" placeholder="Password baru"
-             style="width:100%;padding:10px 14px;background:var(--crease-soft);border:1.5px solid var(--crease);border-radius:8px;color:#fff;font-size:14px;outline:none">
+             style="width:100%;padding:10px 14px;background:var(--crease-soft);border:1.5px solid var(--crease);border-radius:8px;color:var(--ink);font-size:14px;outline:none">
     </div>
     <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px">
       <button class="sa-btn sa-btn-outline" onclick="closeTeamModals()">Batal</button>
@@ -1010,7 +1010,7 @@ $pageTitle  = 'Platform Settings';
 <div id="tipsEditModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9998;align-items:center;justify-content:center;padding:20px">
   <div style="background:#1a2540;border-radius:14px;padding:24px;max-width:540px;width:100%;max-height:90vh;overflow-y:auto;border:1px solid var(--crease)">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-      <h3 id="tipsModalTitle" style="margin:0;color:#fff;font-size:16px;font-weight:700">➕ Tambah Tip</h3>
+      <h3 id="tipsModalTitle" style="margin:0;color:var(--ink);font-size:16px;font-weight:700">➕ Tambah Tip</h3>
       <button onclick="closeTipsEdit()" style="background:none;border:none;color:var(--ash);font-size:22px;cursor:pointer">×</button>
     </div>
     <input type="hidden" id="tip_id"/>
@@ -1086,7 +1086,7 @@ async function loadTipsList() {
             <div style="flex:1;min-width:0">
               <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
                 <span style="font-size:20px">${esc(t.icon||'💡')}</span>
-                <strong style="color:#fff;font-size:14px">${esc(t.judul)}</strong>
+                <strong style="color:var(--ink);font-size:14px">${esc(t.judul)}</strong>
                 ${cta}
               </div>
               <div style="font-size:12px;color:var(--ash);line-height:1.5">${esc(t.konten)}</div>
@@ -1284,11 +1284,11 @@ async function loadNotify() {
   adminWrap.innerHTML = (r.admins || []).map(a => `
     <div style="display:grid;grid-template-columns:1fr 1.5fr auto;gap:10px;align-items:center;padding:12px 14px;background:var(--linen);border:1px solid var(--crease);border-radius:9px">
       <div>
-        <div style="font-weight:700;color:#fff;font-size:13.5px">${escapeHtml(a.name || a.username)}</div>
+        <div style="font-weight:700;color:var(--ink);font-size:13.5px">${escapeHtml(a.name || a.username)}</div>
         <div style="font-size:11px;color:var(--ash);font-family:monospace">@${escapeHtml(a.username)}</div>
       </div>
       <input type="email" id="ne_${a.id}" value="${escapeHtml(a.email || '')}" placeholder="email@harpy.id"
-        style="background:var(--crease-soft);border:1.5px solid var(--crease);border-radius:7px;padding:7px 10px;color:#fff;font-size:13px;outline:none">
+        style="background:var(--crease-soft);border:1.5px solid var(--crease);border-radius:7px;padding:7px 10px;color:var(--ink);font-size:13px;outline:none">
       <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:var(--ink-soft)">
         <input type="checkbox" id="nx_${a.id}" ${a.notify_enabled == 1 ? 'checked' : ''}>
         <span>Notify</span>
@@ -1305,7 +1305,7 @@ async function loadNotify() {
     logWrap.innerHTML = r.logs.map(l => `
       <div style="padding:10px 14px;background:var(--linen);border:1px solid var(--crease-soft);border-radius:7px;display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:12.5px">
         <div style="flex:1;min-width:0">
-          <div style="font-weight:600;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(l.subject || '(no subject)')}</div>
+          <div style="font-weight:600;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(l.subject || '(no subject)')}</div>
           <div style="font-size:11px;color:var(--ash);margin-top:2px">${escapeHtml(l.event_type)} · ${escapeHtml(l.recipients || '-')}</div>
         </div>
         <div style="font-size:11px;color:var(--ash);white-space:nowrap;font-family:monospace">${escapeHtml(l.sent_at)}</div>
@@ -1376,7 +1376,7 @@ async function loadTeam() {
       : '-';
     const rowData = JSON.stringify(a).replace(/'/g,"&apos;");
     return `<tr>
-      <td><strong style="color:#fff">${escapeHtml(a.name)}</strong></td>
+      <td><strong style="color:var(--ink)">${escapeHtml(a.name)}</strong></td>
       <td><code style="color:var(--indigo);font-size:12px">@${escapeHtml(a.username)}</code></td>
       <td style="font-size:12px;color:var(--ink-soft)">${escapeHtml(a.email||'—')}</td>
       <td><span class="sa-badge ${roleBadge}">${escapeHtml(a.role_name||'—')}</span></td>
@@ -1517,7 +1517,7 @@ async function loadRoles() {
     return `
       <tr>
         <td>
-          <div style="font-weight:700;color:#fff">${escapeHtml(role.name)}${sys ? ' <span style="background:#EEF2FF;color:var(--sa);font-size:10px;padding:2px 6px;border-radius:4px;font-weight:600;margin-left:6px">SYSTEM</span>' : ''}</div>
+          <div style="font-weight:700;color:var(--ink)">${escapeHtml(role.name)}${sys ? ' <span style="background:#EEF2FF;color:var(--sa);font-size:10px;padding:2px 6px;border-radius:4px;font-weight:600;margin-left:6px">SYSTEM</span>' : ''}</div>
           <div style="font-size:11px;color:var(--ash);margin-top:2px">${escapeHtml(role.description || '-')}</div>
         </td>
         <td><code style="font-family:var(--mono);font-size:12px;color:var(--ash)">${escapeHtml(role.slug)}</code></td>
@@ -1572,7 +1572,7 @@ async function openRoleEdit(id) {
         <label style="display:flex;align-items:flex-start;gap:8px;padding:6px;cursor:pointer;border-radius:5px" data-mod="${escapeHtml(mod)}">
           <input type="checkbox" class="re_perm" value="${p.id}" ${currentPermIds.includes(Number(p.id)) ? 'checked' : ''} style="margin-top:3px">
           <div style="flex:1">
-            <div style="font-size:12.5px;color:#fff;font-weight:600">${escapeHtml(p.perm_key)}</div>
+            <div style="font-size:12.5px;color:var(--ink);font-weight:600">${escapeHtml(p.perm_key)}</div>
             <div style="font-size:11px;color:var(--ash);line-height:1.4">${escapeHtml(p.description || '-')}${p.notif_events ? ` <span style="color:#35E8D5;font-size:10px;margin-left:4px">📬 ${escapeHtml(p.notif_events)}</span>` : ''}</div>
           </div>
         </label>

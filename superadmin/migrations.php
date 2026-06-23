@@ -361,13 +361,13 @@ $allTenants = $db->query("SELECT id, nama_perusahaan, nama_perusahaan AS nama_ou
       </div>
       <div class="form-group" style="margin-bottom:12px;">
         <label>Outlet</label>
-        <select id="asOutletId" style="width:100%;padding:10px;background:var(--crease-soft);border:1.5px solid var(--crease);border-radius:8px;color:#fff;font-family:var(--font);font-size:13px;outline:none;">
+        <select id="asOutletId" style="width:100%;padding:10px;background:var(--crease-soft);border:1.5px solid var(--crease);border-radius:8px;color:var(--ink);font-family:var(--font);font-size:13px;outline:none;">
           <option value="">— Pilih outlet —</option>
         </select>
       </div>
       <div class="form-group" style="margin-bottom:12px;">
         <label>Jenis Data</label>
-        <select id="asEntity" style="width:100%;padding:10px;background:var(--crease-soft);border:1.5px solid var(--crease);border-radius:8px;color:#fff;font-family:var(--font);font-size:13px;outline:none;">
+        <select id="asEntity" style="width:100%;padding:10px;background:var(--crease-soft);border:1.5px solid var(--crease);border-radius:8px;color:var(--ink);font-family:var(--font);font-size:13px;outline:none;">
           <option value="pelanggan">Pelanggan</option>
           <option value="layanan">Layanan</option>
           <option value="karyawan">Karyawan</option>
@@ -378,7 +378,7 @@ $allTenants = $db->query("SELECT id, nama_perusahaan, nama_perusahaan AS nama_ou
       <div class="form-group" style="margin-bottom:16px;">
         <label>File (CSV / Excel)</label>
         <input type="file" id="asFile" accept=".csv,.xlsx,.xls"
-               style="width:100%;padding:10px;background:var(--crease-soft);border:1.5px solid var(--crease);border-radius:8px;color:#fff;font-size:13px;">
+               style="width:100%;padding:10px;background:var(--crease-soft);border:1.5px solid var(--crease);border-radius:8px;color:var(--ink);font-size:13px;">
       </div>
       <div class="sa-modal-footer">
         <button class="sa-btn sa-btn-outline" onclick="closeModal('assistedModal')">Batal</button>
@@ -580,7 +580,7 @@ function renderAssistedMapping(d) {
         const opts = ['', ...targetFields].map(f => `<option value="${f}" ${f===(info.target_field||'')?'selected':''}>${f||'(skip)'}</option>`).join('');
         return `<tr>
             <td style="font-family:var(--mono);font-size:11px;">${esc(src)}</td>
-            <td><select style="background:var(--crease-soft);border:1px solid var(--crease);border-radius:6px;color:#fff;padding:4px 8px;font-size:11.5px;" data-src="${esc(src)}">${opts}</select></td>
+            <td><select style="background:var(--crease-soft);border:1px solid var(--crease);border-radius:6px;color:var(--ink);padding:4px 8px;font-size:11.5px;" data-src="${esc(src)}">${opts}</select></td>
             <td style="font-size:11px;color:var(--ash-dim);">${cf}%</td>
         </tr>`;
     }).join('');

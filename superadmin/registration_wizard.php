@@ -617,7 +617,7 @@ $csrf = saGetCsrf();
   background: rgba(37,211,102,.12); border: 1px solid rgba(37,211,102,.25);
   color: #86efac; cursor: pointer; transition: all .15s;
 }
-.copy-btn:hover { background: rgba(37,211,102,.25); color: #fff; }
+.copy-btn:hover { background: rgba(37,211,102,.25); color: var(--ink); }
 .error-box {
   background: #FECACA; border: 1px solid rgba(239,68,68,.3);
   color: #FCA5A5; padding: 12px 16px; border-radius: 10px; margin-bottom: 20px; font-size: 13px;

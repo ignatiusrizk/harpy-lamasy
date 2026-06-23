@@ -135,7 +135,7 @@ if ($action) {
       <div class="sa-card-body">
         <div class="form-group" style="margin-bottom:14px;">
           <label style="font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ash);">Target Penerima</label>
-          <select id="bcTarget" style="width:100%;margin-top:6px;padding:10px;background:var(--crease-soft);border:1px solid var(--crease);border-radius:8px;color:#fff;font-family:var(--font);" onchange="toggleCustomList()">
+          <select id="bcTarget" style="width:100%;margin-top:6px;padding:10px;background:var(--crease-soft);border:1px solid var(--crease);border-radius:8px;color:var(--ink);font-family:var(--font);" onchange="toggleCustomList()">
             <option value="semua">Semua Tenant (Aktif + Trial)</option>
             <option value="active">Hanya Aktif</option>
             <option value="trial">Hanya Trial</option>
@@ -158,12 +158,12 @@ if ($action) {
 
         <div class="form-group" style="margin-bottom:14px;">
           <label style="font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ash);">Subjek (untuk log)</label>
-          <input type="text" id="bcSubject" placeholder="Contoh: Promo Coin September" style="width:100%;margin-top:6px;padding:10px;background:var(--crease-soft);border:1px solid var(--crease);border-radius:8px;color:#fff;font-family:var(--font);font-size:13.5px;"/>
+          <input type="text" id="bcSubject" placeholder="Contoh: Promo Coin September" style="width:100%;margin-top:6px;padding:10px;background:var(--crease-soft);border:1px solid var(--crease);border-radius:8px;color:var(--ink);font-family:var(--font);font-size:13.5px;"/>
         </div>
 
         <div class="form-group" style="margin-bottom:6px;">
           <label style="font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ash);">Pesan WA</label>
-          <textarea id="bcMessage" placeholder="Halo {nama_outlet}, kami ingin menginfokan..." style="width:100%;margin-top:6px;padding:10px;background:var(--crease-soft);border:1px solid var(--crease);border-radius:8px;color:#fff;font-family:var(--font);font-size:13.5px;resize:vertical;min-height:140px;" oninput="updatePreview()"></textarea>
+          <textarea id="bcMessage" placeholder="Halo {nama_outlet}, kami ingin menginfokan..." style="width:100%;margin-top:6px;padding:10px;background:var(--crease-soft);border:1px solid var(--crease);border-radius:8px;color:var(--ink);font-family:var(--font);font-size:13.5px;resize:vertical;min-height:140px;" oninput="updatePreview()"></textarea>
         </div>
         <div style="font-size:11.5px;color:var(--ash-dim);margin-bottom:16px;">
           Variabel: <code style="background:var(--crease-soft);padding:2px 6px;border-radius:4px;">{nama_outlet}</code>

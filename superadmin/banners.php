@@ -171,7 +171,7 @@ renderSaHeader('🎨 Dashboard Banners');
     <!-- Preview -->
     <div style="margin-top:14px">
       <label style="font-size:12px;color:#6B7280;font-weight:600">Preview:</label>
-      <div id="banPreview" style="border-radius:12px;padding:18px 24px;margin-top:6px;display:flex;align-items:center;gap:18px;background:linear-gradient(135deg,#0F7B6C,#10B981);color:#fff">
+      <div id="banPreview" style="border-radius:12px;padding:18px 24px;margin-top:6px;display:flex;align-items:center;gap:18px;background:linear-gradient(135deg,#0F7B6C,#10B981);color:var(--ink)">
         <span style="font-size:32px" id="prevIcon">⭐</span>
         <div style="flex:1">
           <div style="font-weight:800;font-size:16px" id="prevJudul">Judul Banner</div>

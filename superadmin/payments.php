@@ -381,7 +381,7 @@ if ($action) {
 .pay-status-confirmed { color: #6EE7B7; font-size: 12px; }
 .pay-status-pending   { color: #FCD34D; font-size: 12px; }
 .pay-status-cancelled { color: var(--ash-dim); font-size: 12px; text-decoration: line-through; }
-.pay-nominal { font-family: var(--mono); font-size: 13px; font-weight: 600; color: #fff; }
+.pay-nominal { font-family: var(--mono); font-size: 13px; font-weight: 600; color: var(--ink); }
 .pay-coin    { font-family: var(--mono); font-size: 12px; color: #FCD34D; }
 
 /* ── Stats mini bar ── */
@@ -392,7 +392,7 @@ if ($action) {
 }
 .pay-stat .label { font-size: 10px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase;
   color: var(--ash-dim); margin-bottom: 6px; }
-.pay-stat .value { font-size: 22px; font-weight: 800; font-family: var(--mono); color: #fff; }
+.pay-stat .value { font-size: 22px; font-weight: 800; font-family: var(--mono); color: var(--ink); }
 .pay-stat .sub   { font-size: 11px; color: var(--ash-dim); margin-top: 3px; }
 .pay-stat.green  { border-color: #A7F3D0; background: rgba(16,185,129,.07); }
 .pay-stat.yellow { border-color: #FDE68A; background: rgba(245,158,11,.07); }
@@ -432,7 +432,7 @@ if ($action) {
 }
 .tenant-option:hover { background: #EEF2FF; }
 .tenant-option:last-child { border-bottom: none; }
-.tenant-option .t-name { font-size: 13px; font-weight: 600; color: #fff; }
+.tenant-option .t-name { font-size: 13px; font-weight: 600; color: var(--ink); }
 .tenant-option .t-meta { font-size: 11px; color: var(--ash); }
 .tenant-selected {
   display: flex; align-items: center; justify-content: space-between;
@@ -440,11 +440,11 @@ if ($action) {
   border-radius: 8px; padding: 10px 14px;
 }
 .tenant-selected .t-info { flex: 1; }
-.tenant-selected .t-info strong { font-size: 13px; color: #fff; display: block; }
+.tenant-selected .t-info strong { font-size: 13px; color: var(--ink); display: block; }
 .tenant-selected .t-info small  { font-size: 11px; color: var(--ash); }
 .tenant-selected button { background: none; border: none; color: var(--ash);
   cursor: pointer; font-size: 16px; padding: 0 4px; }
-.tenant-selected button:hover { color: #fff; }
+.tenant-selected button:hover { color: var(--ink); }
 
 /* ── Package/bundle selector ── */
 .pkg-options { display: flex; flex-direction: column; gap: 6px; }
@@ -456,7 +456,7 @@ if ($action) {
 }
 .pkg-option:hover { border-color: rgba(99,102,241,.4); background: rgba(99,102,241,.07); }
 .pkg-option.selected { border-color: var(--sa); background: #EEF2FF; }
-.pkg-option .p-name { font-size: 13px; font-weight: 600; color: #fff; }
+.pkg-option .p-name { font-size: 13px; font-weight: 600; color: var(--ink); }
 .pkg-option .p-meta { font-size: 11px; color: var(--ash); }
 .pkg-option .p-price { font-family: var(--mono); font-size: 13px; font-weight: 700; color: #6EE7B7; text-align: right; }
 .pkg-option .p-price small { display: block; font-size: 10px; color: var(--ash); font-family: var(--font); }
