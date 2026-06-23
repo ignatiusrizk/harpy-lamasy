@@ -965,6 +965,8 @@ img { max-width: 100%; }
   ]
 }
 </script>
+<!-- Cloudflare Web Analytics -->
+<script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "YOUR_TOKEN_HERE"}'></script>
 </head>
 <body>
 <div class="hl-beta-banner">
