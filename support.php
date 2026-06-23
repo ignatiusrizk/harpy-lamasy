@@ -434,10 +434,21 @@ function toggleSubmitForm() {
 // ── Load tickets ─────────────────────────────────────
 function loadTickets() {
   const filterStatus = document.getElementById('filterStatus').value;
+  const tbody = document.getElementById('ticketBody');
+  // Skeleton loading state
+  tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:28px;color:var(--gray)">
+    ⏳ Memuat tiket…
+  </td></tr>`;
   fetch('support.php?action=list_tickets', { headers:{'X-Requested-With':'XMLHttpRequest'} })
     .then(r => r.json()).then(rows => {
       const filtered = filterStatus ? rows.filter(r => r.status === filterStatus) : rows;
       renderTickets(filtered);
+    })
+    .catch(err => {
+      tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:28px;color:#EF4444">
+        ⚠️ Gagal load tiket. <button onclick="loadTickets()" style="color:#3B82F6;background:none;border:none;text-decoration:underline;cursor:pointer">Coba lagi</button>
+      </td></tr>`;
+      console.warn('loadTickets:', err);
     });
 }
 
@@ -557,7 +568,7 @@ function renderThread(ticket, replies) {
         <textarea id="replyMsg" class="hl-textarea" rows="3"
                   placeholder="Tulis pesan untuk tim support…" style="margin-bottom:8px;"></textarea>
         <div style="display:flex;gap:8px;justify-content:flex-end;">
-          <button class="hl-btn hl-btn-primary hl-btn-sm" onclick="sendReply()">Kirim Balasan →</button>
+          <button id="replyBtn" class="hl-btn hl-btn-primary hl-btn-sm" onclick="sendReply()">Kirim Balasan →</button>
         </div>
       </div>`;
   }
@@ -581,8 +592,8 @@ function renderThread(ticket, replies) {
         <textarea id="ratingComment" class="hl-textarea" rows="2"
                   placeholder="Komentar (opsional)…" style="margin-bottom:10px;"></textarea>
         <div style="display:flex;gap:8px;">
-          <button class="hl-btn hl-btn-green hl-btn-sm" onclick="closeTicket()">✅ Tandai Selesai & Kirim Rating</button>
-          <button class="hl-btn hl-btn-outline hl-btn-sm" onclick="closeTicketNoRating()">Tutup Tanpa Rating</button>
+          <button data-close-btn class="hl-btn hl-btn-green hl-btn-sm" onclick="closeTicket()">✅ Tandai Selesai & Kirim Rating</button>
+          <button data-close-btn class="hl-btn hl-btn-outline hl-btn-sm" onclick="closeTicketNoRating()">Tutup Tanpa Rating</button>
         </div>
       </div>`;
   }
@@ -639,6 +650,8 @@ function submitTicket(e) {
 function sendReply() {
   const msg = document.getElementById('replyMsg')?.value?.trim();
   if (!msg) { showToast('Pesan tidak boleh kosong.','error'); return; }
+  const btn = document.getElementById('replyBtn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Mengirim…'; }
 
   const body = new FormData();
   body.append('action','reply');
@@ -650,7 +663,9 @@ function sendReply() {
     .then(r => r.json()).then(d => {
       if (d.error) showToast(d.error,'error');
       else openThread(_currentTicketId); // reload thread
-    });
+    })
+    .catch(err => showToast('Gagal kirim balasan. Cek koneksi.','error'))
+    .finally(() => { if (btn) { btn.disabled=false; btn.textContent='Kirim Balasan'; } });
 }
 
 // ── Close ticket with rating ─────────────────────────
@@ -662,6 +677,9 @@ function closeTicket() {
 function closeTicketNoRating() { _doCloseTicket('', ''); }
 
 function _doCloseTicket(rating, comment) {
+  // Disable all close buttons to prevent double-submit
+  document.querySelectorAll('[data-close-btn]').forEach(b => { b.disabled = true; });
+
   const body = new FormData();
   body.append('action','close_ticket');
   body.append('_csrf', CSRF);
@@ -677,6 +695,10 @@ function _doCloseTicket(rating, comment) {
         document.getElementById('threadOverlay').classList.remove('open');
         loadTickets();
       }
+    })
+    .catch(err => showToast('Gagal tutup tiket. Cek koneksi.','error'))
+    .finally(() => {
+      document.querySelectorAll('[data-close-btn]').forEach(b => { b.disabled = false; });
     });
 }
 
