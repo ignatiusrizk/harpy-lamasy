@@ -1786,6 +1786,21 @@ function switchCmpTab(tab, btn) {
     </a>
   </div>
 
+  <div class="hl-mini-faq">
+    <details>
+      <summary>Apa yang terjadi setelah klik "Coba Gratis"?</summary>
+      <p>Kamu register dengan nama outlet + email + password (5 menit). Setup outlet langsung selesai, bisa input order pertama dalam menit yang sama. Trial 7 hari otomatis aktif — no kartu kredit.</p>
+    </details>
+    <details>
+      <summary>Apakah saya wajib bayar setelah trial 7 hari?</summary>
+      <p>Tidak wajib. Kalau tidak topup coin setelah trial, akses dibatasi (view-only) tapi data tetap tersimpan. Anytime mau lanjut, topup coin → akses penuh lagi.</p>
+    </details>
+    <details>
+      <summary>Bagaimana cara cancel atau export data?</summary>
+      <p>Tidak ada cancel — kamu bayar sesuai pakai. Stop topup = stop biaya. Untuk export data: HQ → Export Data → download semua dalam CSV/SQL. No lock-in.</p>
+    </details>
+  </div>
+
 </section>
 
 <!-- ── TESTIMONIALS ─────────────────────────────────── -->

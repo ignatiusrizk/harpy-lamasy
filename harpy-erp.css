@@ -1544,3 +1544,40 @@ html, body { overflow-x: hidden; }
   text-align: center;
   padding: 20px 0;
 }
+
+/* ── LANDING: Mini FAQ ─────────────────────────────── */
+.hl-mini-faq {
+  max-width: 720px;
+  margin: 32px auto 0;
+}
+.hl-mini-faq details {
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 10px;
+  padding: 14px 18px;
+  margin-bottom: 10px;
+}
+.hl-mini-faq summary {
+  font-weight: 600;
+  font-size: 14px;
+  color: #fff;
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.hl-mini-faq summary::after {
+  content: '+';
+  color: #35E8D5;
+  font-size: 20px;
+  font-weight: 400;
+}
+.hl-mini-faq details[open] summary::after { content: '−'; }
+.hl-mini-faq summary::-webkit-details-marker { display: none; }
+.hl-mini-faq details p {
+  margin: 12px 0 0;
+  font-size: 13px;
+  color: rgba(255,255,255,.7);
+  line-height: 1.6;
+}
