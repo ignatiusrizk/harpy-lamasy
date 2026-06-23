@@ -142,7 +142,7 @@ $_canSwitch = !empty($hqIsOwner) || !empty($hqIsManager);
              class="hq-side-link <?= $_aPage === 'hq-promo' ? 'active' : '' ?>">Promo & Voucher</a>
           <?php if ($hqIsOwner): ?>
           <a href="/hq/loyalty"
-             class="hq-side-link <?= $_aPage === 'hq-loyalty' ? 'active' : '' ?>">⭐ Sistem Poin</a>
+             class="hq-side-link <?= $_aPage === 'hq-loyalty' ? 'active' : '' ?>">Sistem Poin</a>
           <?php endif; ?>
         </div>
       </div>
