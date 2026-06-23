@@ -121,7 +121,9 @@ if ($action === 'book' && $_SERVER['REQUEST_METHOD']==='POST') {
             (int)$cycle['durasi_menit'], (int)$cycle['tarif'], $cycle['label']
         ]);
         $sesiId = (int)$db->lastInsertId();
-        $db->prepare("UPDATE hl_mesin SET status='booked' WHERE id=?")->execute([(int)$mesin['id']]);
+        // Defense-in-depth: scope ke tenant+outlet meski kode sudah unique
+        $db->prepare("UPDATE hl_mesin SET status='booked' WHERE id=? AND tenant_id=? AND outlet_id=?")
+           ->execute([(int)$mesin['id'], (int)$mesin['tenant_id'], (int)$mesin['outlet_id']]);
 
         $db->commit();
 

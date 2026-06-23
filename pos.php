@@ -584,7 +584,7 @@ if ($action) {
                             'outlet_id'    => $oid,
                         ]);
                     } catch (Throwable $e) {
-                        error_log('[pos antar auto-create] ' . $e->getMessage());
+                        ErrorLogger::logException('antar_auto_create', $e, $tid, $oid);
                     }
                 }
             }

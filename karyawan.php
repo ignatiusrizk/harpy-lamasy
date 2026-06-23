@@ -107,7 +107,7 @@ if ($action) {
                      VALUES (?,?,?,?,1)"
                 )->execute([$tid, $newUserId, $oid, currentUser()['id'] ?? null]);
             } catch (Throwable $e) {
-                error_log('[karyawan create assign] ' . $e->getMessage());
+                ErrorLogger::logException('karyawan_assign', $e, $tid, $oid);
             }
         }
         logAudit(!empty($d['id'])?'update':'create','karyawan',(!empty($d['id'])?'Edit':'Tambah').' karyawan: '.$nama);

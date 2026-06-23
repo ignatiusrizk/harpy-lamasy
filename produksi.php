@@ -215,7 +215,7 @@ if ($action) {
                         }
                     }
                 } catch (Throwable $e) {
-                    error_log('[produksi auto-create antar] ' . $e->getMessage());
+                    ErrorLogger::logException('produksi_auto_antar', $e, $tid, $oid);
                     // Silent — stage save already committed, primary action done
                 }
             }
@@ -227,7 +227,7 @@ if ($action) {
             if (!empty($signaturePath) && file_exists(ROOT . '/' . $signaturePath)) {
                 @unlink(ROOT . '/' . $signaturePath);
             }
-            error_log('[produksi save_stage] ' . $e->getMessage());
+            ErrorLogger::logException('produksi_save_stage', $e, $tid, $oid);
             // Allow specific known error messages, generic for unknown
             $msg = $e->getMessage();
             $knownErrors = ['Order tidak ditemukan', 'Order sudah diupdate worker lain. Refresh halaman.', 'Input tidak valid'];

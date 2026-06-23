@@ -579,7 +579,7 @@ if ($action) {
             echo json_encode(['ok'=>true, 'affected'=>$count, 'total_in'=>$totalIn]);
         } catch (Throwable $e) {
             $db->rollBack();
-            error_log('[bulk_pay] '.$e->getMessage());
+            ErrorLogger::logException('bulk_pay', $e, $tid, $oid);
             echo json_encode(['error'=>'Gagal proses bulk bayar']);
         }
         exit;
@@ -621,7 +621,7 @@ if ($action) {
             $skipped = count($rows) - count($links);
             echo json_encode(['ok'=>true, 'links'=>$links, 'skipped_no_phone'=>$skipped]);
         } catch (Throwable $e) {
-            error_log('[bulk_wa] '.$e->getMessage());
+            ErrorLogger::logException('bulk_wa', $e, $tid, $oid);
             echo json_encode(['error'=>'Gagal generate']);
         }
         exit;
