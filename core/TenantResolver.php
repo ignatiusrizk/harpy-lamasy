@@ -380,6 +380,31 @@ class TenantResolver
         return in_array(self::getRole(), ['owner', 'manager', 'superadmin'], true);
     }
 
+    // ══ F1 RBAC v2 helpers — konsultasi hl_role_permissions table, fallback role string ══
+
+    /** Effective owner-level access — wildcard session perms ATAU owner/superadmin role */
+    public static function isOwnerLevel(): bool
+    {
+        $perms = $_SESSION['hl_permissions'] ?? [];
+        if (isset($perms['*'])) return true;
+        return self::isOwnerOrAdmin();
+    }
+
+    /** Akses /hq/* — via permission hq.access ATAU role string fallback (owner/manager/superadmin) */
+    public static function canAccessHqV2(): bool
+    {
+        if (self::can('hq.access')) return true;
+        return self::canAccessHq();
+    }
+
+    /** Setara admin-level — owner ATAU punya permission operasional (karyawan.gaji) ATAU role 'admin' */
+    public static function isAdminLevel(): bool
+    {
+        if (self::isOwnerLevel()) return true;
+        if (self::can('karyawan.gaji')) return true;
+        return self::getRole() === 'admin';
+    }
+
     /**
      * Mapping permission key brief (Section 6.8 snake_case) ke key existing
      * codebase (module.action dot-notation). Owner punya bypass jadi check
