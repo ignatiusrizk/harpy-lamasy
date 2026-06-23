@@ -1581,3 +1581,154 @@ html, body { overflow-x: hidden; }
   color: rgba(255,255,255,.7);
   line-height: 1.6;
 }
+
+/* ══════════════════════════════════════════════════════
+   Product Tour — spotlight + tooltip card
+   ══════════════════════════════════════════════════════ */
+.hl-tour-overlay {
+  position: fixed; inset: 0;
+  z-index: 998;
+  background: rgba(15,28,58,.6);
+  backdrop-filter: blur(2px);
+  animation: hlTourFade .25s ease;
+  pointer-events: auto;
+}
+@keyframes hlTourFade { from {opacity:0} to {opacity:1} }
+
+.hl-tour-spotlight {
+  position: absolute;
+  background: transparent;
+  border-radius: 10px;
+  box-shadow: 0 0 0 9999px rgba(15,28,58,.6), 0 0 0 4px rgba(53,232,213,.4);
+  pointer-events: none;
+  transition: all .3s cubic-bezier(.4,0,.2,1);
+}
+
+.hl-tour-card {
+  position: absolute;
+  max-width: 320px;
+  width: calc(100vw - 280px);
+  background: #fff;
+  border-radius: 14px;
+  padding: 20px;
+  box-shadow: 0 16px 48px rgba(0,0,0,.35), 0 0 0 1px rgba(53,232,213,.2);
+  z-index: 1000;
+  animation: hlTourSlide .3s cubic-bezier(.4,0,.2,1);
+}
+@keyframes hlTourSlide {
+  from {opacity:0; transform: translateX(-12px); }
+  to   {opacity:1; transform: translateX(0); }
+}
+
+.hl-tour-arrow {
+  position: absolute;
+  left: -7px;
+  top: 22px;
+  width: 14px; height: 14px;
+  background: #fff;
+  transform: rotate(45deg);
+  box-shadow: -1px 1px 0 rgba(53,232,213,.2);
+}
+
+.hl-tour-title {
+  font-size: 15px;
+  font-weight: 800;
+  color: #0F1C3A;
+  margin-bottom: 8px;
+  letter-spacing: -.01em;
+}
+
+.hl-tour-body {
+  font-size: 13.5px;
+  color: #4B5563;
+  line-height: 1.6;
+  margin-bottom: 18px;
+}
+
+.hl-tour-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.hl-tour-skip {
+  background: none;
+  border: none;
+  color: #9CA3AF;
+  font-size: 12px;
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 4px;
+  font-family: inherit;
+}
+.hl-tour-skip:hover { color: #6B7280; }
+
+.hl-tour-dots {
+  display: flex;
+  gap: 5px;
+  flex: 1;
+  justify-content: center;
+}
+.hl-tour-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: #E5E7EB;
+  transition: all .2s;
+}
+.hl-tour-dot.active {
+  background: #35E8D5;
+  width: 20px;
+  border-radius: 100px;
+  box-shadow: 0 0 8px rgba(53,232,213,.5);
+}
+
+.hl-tour-next {
+  background: #35E8D5;
+  color: #0F1C3A;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all .15s;
+}
+.hl-tour-next:hover {
+  background: #1BC4B3;
+  transform: translateY(-1px);
+}
+
+/* Replay tour button (sidebar) */
+.hl-tour-replay-btn {
+  display: flex; align-items: center; gap: 8px;
+  margin: 8px 12px 4px;
+  padding: 8px 12px;
+  background: rgba(53,232,213,.08);
+  border: 1px dashed rgba(53,232,213,.3);
+  border-radius: 8px;
+  color: var(--teal-d, #1BC4B3);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  width: calc(100% - 24px);
+  transition: all .15s;
+}
+.hl-tour-replay-btn:hover {
+  background: rgba(53,232,213,.15);
+  border-style: solid;
+}
+
+/* Mobile fallback — bottom sheet */
+@media (max-width: 768px) {
+  .hl-tour-card {
+    left: 16px !important;
+    right: 16px !important;
+    top: auto !important;
+    bottom: 16px;
+    max-width: none;
+    width: auto;
+  }
+  .hl-tour-arrow { display: none; }
+}

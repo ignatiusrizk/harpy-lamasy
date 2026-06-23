@@ -142,6 +142,116 @@ function renderGlobalJsHelpers(): void { ?>
     window.capitalize = s => s ? s.charAt(0).toUpperCase() + s.slice(1) : '';
     window.katLabelInventori = k => ({deterjen:'🧴 Deterjen', parfum:'🌸 Parfum', pewangi:'💧 Pewangi', plastik_kemasan:'📦 Plastik', peralatan:'🔧 Peralatan', lainnya:'📋 Lainnya'}[k] || k);
 
+    // ══════════════════════════════════════════════════════
+    // PRODUCT TOUR — sidebar walkthrough untuk first-time user
+    // Activates after outlet ready. Targets data-tour="<key>" elements.
+    // ══════════════════════════════════════════════════════
+    window.HarpyTour = {
+      storageKey: 'harpy_tour_main_v1',
+      steps: [
+        { tour: 'dashboard', title: '📊 Dashboard',       body: 'Ringkasan omset, order aktif, pipeline produksi hari ini. Cek pagi-pagi sebelum mulai operasional.' },
+        { tour: 'pos',       title: '🛒 POS (Kasir)',      body: 'Input order baru dari pelanggan: pilih layanan, foto cucian, atur DP, cetak struk. Shortcut F3 untuk simpan.' },
+        { tour: 'orders',    title: '📋 Daftar Order',     body: 'Track semua order: status proses, pembayaran, riwayat. Bisa bulk-bayar lunas + bulk-kirim WA.' },
+        { tour: 'karyawan',  title: '👥 Karyawan',         body: 'Data karyawan, role akses, absensi, dan penggajian. Cocok untuk outlet dengan 2+ staff.' },
+        { tour: 'kas',       title: '💰 Kas',              body: 'Catat kas masuk/keluar harian. Auto-sync dengan order POS. Dasar laporan SAK EMKM.' },
+        { tour: 'laporan',   title: '📈 Laporan',          body: 'Laporan omset, kas, dan keuangan SAK EMKM bulanan. Export PDF/Excel untuk akuntan.' },
+      ],
+      visibleSteps: [],
+      current: 0,
+      active: false,
+
+      shouldAutoStart() {
+        if (localStorage.getItem(this.storageKey)) return false;
+        if (window.innerWidth < 900) return false; // skip mobile (sidebar collapsed)
+        return !!document.querySelector('[data-tour]');
+      },
+
+      start() {
+        if (this.active) return;
+        this.visibleSteps = this.steps.filter(s => document.querySelector(`[data-tour="${s.tour}"]`));
+        if (!this.visibleSteps.length) return;
+        this.current = 0;
+        this.active = true;
+        this.render();
+      },
+
+      render() {
+        this.destroy();
+        const step = this.visibleSteps[this.current];
+        const target = document.querySelector(`[data-tour="${step.tour}"]`);
+        if (!target) { this.next(); return; }
+
+        // Auto-expand parent collapsible group jika ada
+        const groupItems = target.closest('[data-group-items]');
+        if (groupItems) {
+          const gKey = groupItems.dataset.groupItems;
+          const toggle = document.querySelector(`.ol-side-group-toggle[data-group="${gKey}"]`);
+          if (toggle) {
+            const items = document.querySelector(`[data-group-items="${gKey}"]`);
+            if (items && items.style.maxHeight === '0px') {
+              items.style.maxHeight = items.scrollHeight + 'px';
+            }
+          }
+        }
+
+        target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        // Tunggu scroll selesai, baru position card
+        setTimeout(() => {
+          const rect = target.getBoundingClientRect();
+          const overlay = document.createElement('div');
+          overlay.className = 'hl-tour-overlay';
+          overlay.id = 'hlTourOverlay';
+          overlay.innerHTML = `
+            <div class="hl-tour-spotlight" style="top:${rect.top-6}px;left:${rect.left-6}px;width:${rect.width+12}px;height:${rect.height+12}px"></div>
+            <div class="hl-tour-card" style="top:${rect.top}px;left:${rect.right+20}px">
+              <div class="hl-tour-arrow"></div>
+              <div class="hl-tour-title">${step.title}</div>
+              <div class="hl-tour-body">${step.body}</div>
+              <div class="hl-tour-actions">
+                <button class="hl-tour-skip" onclick="HarpyTour.skip()">Skip</button>
+                <div class="hl-tour-dots">
+                  ${this.visibleSteps.map((_,i) => `<span class="hl-tour-dot${i===this.current?' active':''}"></span>`).join('')}
+                </div>
+                ${this.current < this.visibleSteps.length-1
+                  ? `<button class="hl-tour-next" onclick="HarpyTour.next()">Next →</button>`
+                  : `<button class="hl-tour-next" onclick="HarpyTour.finish()">Selesai ✓</button>`}
+              </div>
+            </div>`;
+          document.body.appendChild(overlay);
+        }, 250);
+      },
+
+      next() { if (this.current < this.visibleSteps.length-1) { this.current++; this.render(); } else { this.finish(); } },
+
+      skip() {
+        localStorage.setItem(this.storageKey, '1');
+        this.destroy();
+        this.active = false;
+      },
+
+      finish() {
+        localStorage.setItem(this.storageKey, '1');
+        this.destroy();
+        this.active = false;
+        // Toast konfirmasi
+        if (typeof showToast === 'function') showToast('Tour selesai ✓ Replay kapan saja via tombol "Tour Sistem"', 'success');
+      },
+
+      replay() {
+        localStorage.removeItem(this.storageKey);
+        this.start();
+      },
+
+      destroy() { const o = document.getElementById('hlTourOverlay'); if (o) o.remove(); }
+    };
+
+    // Auto-start setelah load + delay (kasih waktu sidebar render)
+    document.addEventListener('DOMContentLoaded', () => {
+      if (HarpyTour.shouldAutoStart()) {
+        setTimeout(() => HarpyTour.start(), 1000);
+      }
+    });
+
     // ── PWA install prompt (Android Chrome) ──
     window._deferredInstallPrompt = null;
     window.addEventListener('beforeinstallprompt', (e) => {
@@ -394,6 +504,7 @@ function renderTopbar(string $activePage = '', bool $minimalMode = false): void 
             $isActive = $activePage === $key;
           ?>
           <a href="<?= $item['url'] ?>"
+             data-tour="<?= htmlspecialchars($key) ?>"
              class="ol-side-link <?= $isEmph ? 'emphasis' : '' ?> <?= $isActive ? 'active' : '' ?>">
             <span class="ico"><?= $iconMap[$key] ?? '•' ?></span> <?= htmlspecialchars($item['label']) ?>
           </a>
@@ -401,6 +512,13 @@ function renderTopbar(string $activePage = '', bool $minimalMode = false): void 
           </div>
           <?php endforeach; ?>
         </nav>
+
+        <?php if (!$minimalMode): ?>
+        <button type="button" class="hl-tour-replay-btn" onclick="HarpyTour.replay()" title="Walkthrough fitur sidebar">
+          <span>💡</span> Tour Sistem
+        </button>
+        <?php endif; ?>
+
         <script>
         // ── Side menu collapsible groups (persist in localStorage) ──
         (function() {
