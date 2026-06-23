@@ -1,0 +1,25 @@
+User-agent: *
+Allow: /
+Disallow: /superadmin/
+Disallow: /api/
+Disallow: /hq/
+Disallow: /dashboard
+Disallow: /pos
+Disallow: /orders
+Disallow: /kanban
+Disallow: /produksi
+Disallow: /antar-jemput
+Disallow: /kurir
+Disallow: /kurir-master
+Disallow: /piutang
+Disallow: /loyalty
+Disallow: /customer
+Disallow: /karyawan
+Disallow: /absensi
+Disallow: /import
+Disallow: /support
+Disallow: /pelanggan
+Disallow: /pelanggan-order
+Disallow: /self
+
+Sitemap: https://lamasy.harpy.id/sitemap.xml
