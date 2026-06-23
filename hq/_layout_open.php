@@ -166,6 +166,12 @@ $_canSwitch = !empty($hqIsOwner) || !empty($hqIsManager);
          class="hq-side-link <?= $_aPage === 'hq-audit' ? 'active' : '' ?>">
         <span class="ico">📋</span> Audit
       </a>
+      <?php if (!empty($hqIsOwner) || (function_exists('hasPermission') && hasPermission('export.data'))): ?>
+      <a href="/hq/export"
+         class="hq-side-link <?= $_aPage === 'hq-export' ? 'active' : '' ?>">
+        <span class="ico">⬇️</span> Export Data
+      </a>
+      <?php endif; ?>
 
       <div class="hq-side-divider"></div>
       <div class="hq-side-label">AI Tools</div>

@@ -202,6 +202,7 @@ class TenantProvisioner
             ['audit.view',           'audit',     'view',          'Lihat audit log'],
             ['keuangan.view',        'keuangan',  'view',          'Lihat data keuangan formal (aset, pinjaman, kas bank, jurnal)'],
             ['keuangan.edit',        'keuangan',  'edit',          'Kelola data keuangan formal (HQ)'],
+            ['export.data',          'export',    'data',          'Download data tenant (orders, customers, gaji, dll) ke ZIP CSV'],
             // Bantuan & Support
             ['bantuan.view',         'bantuan',   'view',          'Akses halaman Support & Tiket'],
             ['bantuan.submit',       'bantuan',   'submit',        'Kirim tiket support baru'],
@@ -228,6 +229,7 @@ class TenantProvisioner
             'inventori.manage', 'mesin.manage',
             'bonus_rule.manage',
             'keuangan.edit',
+            'export.data', // sensitif: data exfiltration risk
         ];
         $kasirInclude   = ['pos.view','pos.create','orders.view_all','orders.create',
                            'orders.update_status','orders.bayar','pelanggan.view',
