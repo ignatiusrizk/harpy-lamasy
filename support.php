@@ -226,6 +226,7 @@ if ($action) {
 /* ── Submit form card ───────────────────────────── */
 .submit-toggle {
   display:flex;align-items:center;justify-content:space-between;
+  width:100%;gap:12px;
   cursor:pointer;user-select:none;
 }
 .submit-toggle h2 { font-size:15px;font-weight:700;color:var(--navy);margin:0; }
