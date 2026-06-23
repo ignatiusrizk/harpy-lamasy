@@ -240,6 +240,61 @@ img { max-width: 100%; }
   0%,100% { opacity: 1; transform: scale(1); }
   50%      { opacity: .5; transform: scale(1.3); }
 }
+
+/* Hero microtrust + feature chips */
+.hero-microtrust {
+  margin-top: 20px;
+  font-size: 13px;
+  color: rgba(255,255,255,.5);
+  text-align: center;
+}
+.hero-chips {
+  display: flex; flex-wrap: wrap; justify-content: center; gap: 10px;
+  max-width: 760px; margin: 40px auto 50px;
+}
+.hero-chip {
+  padding: 8px 16px;
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 100px;
+  font-size: 13px;
+  color: rgba(255,255,255,.7);
+  font-weight: 500;
+  transition: all .2s;
+  white-space: nowrap;
+}
+.hero-chip:hover {
+  background: rgba(53,232,213,.08);
+  border-color: rgba(53,232,213,.22);
+  color: var(--teal);
+}
+
+/* Hero mockup floating badge + subtle hover lift */
+.hero-mockup-wrap {
+  position: relative;
+  max-width: 880px;
+  margin: 0 auto;
+}
+.hero-mockup-float-badge {
+  position: absolute;
+  top: -14px; right: 24px;
+  z-index: 5;
+  padding: 8px 14px;
+  background: linear-gradient(135deg, var(--teal), var(--teal-d));
+  color: var(--navy-d);
+  font-size: 12px; font-weight: 700;
+  border-radius: 100px;
+  box-shadow: 0 6px 20px rgba(53,232,213,.4);
+  display: inline-flex; align-items: center; gap: 6px;
+  animation: float-badge 3s ease-in-out infinite;
+}
+@keyframes float-badge {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-5px); }
+}
+@media (max-width: 640px) {
+  .hero-mockup-float-badge { right: 12px; font-size: 11px; padding: 6px 12px; }
+}
 .hero h1 {
   font-size: clamp(32px, 5.5vw, 62px);
   font-weight: 800;
@@ -1097,7 +1152,7 @@ img { max-width: 100%; }
 
   <div class="hero-badge">
     <span class="dot"></span>
-    Platform Laundry #1 di Indonesia
+    ✨ Platform ERP untuk Laundry Modern
   </div>
 
   <h1>ERP Laundry Modern dengan <span class="accent">Kecerdasan AI</span> Terintegrasi</h1>
@@ -1107,11 +1162,25 @@ img { max-width: 100%; }
     <a href="/register.php" class="btn-primary">&#128640; Coba Gratis 7 Hari</a>
     <a href="#fitur" class="btn-secondary">&#9654; Lihat Fitur</a>
   </div>
-  <div style="margin-top:20px;font-size:13px;color:rgba(255,255,255,.5);text-align:center;">
+  <div class="hero-microtrust">
     ✓ Tanpa kartu kredit · ✓ Setup 5 menit · ✓ Cancel anytime
   </div>
 
-  <!-- Dashboard Mockup -->
+  <!-- Feature chips manifest -->
+  <div class="hero-chips">
+    <div class="hero-chip">🛍️ POS Lengkap</div>
+    <div class="hero-chip">📊 Laporan SAK EMKM</div>
+    <div class="hero-chip">💬 WhatsApp Auto</div>
+    <div class="hero-chip">🤖 AI Briefing</div>
+    <div class="hero-chip">🏪 Multi-Outlet</div>
+    <div class="hero-chip">⭐ Loyalty Poin</div>
+    <div class="hero-chip">🛵 Antar Jemput</div>
+    <div class="hero-chip">🪙 Mesin Self-Service</div>
+  </div>
+
+  <!-- Dashboard Mockup with floating badge -->
+  <div class="hero-mockup-wrap">
+    <div class="hero-mockup-float-badge">⚡ Real-time data</div>
   <div class="hero-mockup">
     <div class="mockup-topbar">
       <div class="mockup-dot"></div>
@@ -1174,6 +1243,7 @@ img { max-width: 100%; }
       </div>
     </div>
   </div>
+  </div><!-- /.hero-mockup-wrap -->
 </section>
 
 <!-- ── STATS BAR ────────────────────────────────────── -->
