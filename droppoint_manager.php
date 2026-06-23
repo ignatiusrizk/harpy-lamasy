@@ -17,9 +17,9 @@ $user = currentUser();
 $tid  = TenantResolver::id();
 $oid  = TenantResolver::outletId();
 
-// Hanya owner/admin/manager outlet
+// Hanya admin-level operasional (F1 RBAC v2)
 $role = $user['role'] ?? 'staff';
-if (!in_array($role, ['owner','superadmin','admin','manager'], true)) {
+if (!TenantResolver::isAdminLevel()) {
     http_response_code(403);
     die('Akses ditolak. Hanya owner/manager outlet.');
 }

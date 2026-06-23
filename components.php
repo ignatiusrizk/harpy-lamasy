@@ -401,7 +401,7 @@ function renderTopbar(string $activePage = '', bool $minimalMode = false): void 
               }
               // Unread owner_report (hanya untuk role owner/manager/admin)
               $unreadOwnerReport = 0;
-              if (in_array($user['role'] ?? '', ['owner','superadmin','admin','manager'], true)) {
+              if (TenantResolver::isAdminLevel()) {
                 try {
                   require_once ROOT . '/core/Notifier.php';
                   $unreadOwnerReport = (int)Notifier::unreadCount((int)TenantResolver::id(), (int)TenantResolver::outletId());
@@ -591,7 +591,7 @@ function renderTopbar(string $activePage = '', bool $minimalMode = false): void 
             <?php endif; ?>
 
             <span class="ol-top-user"><?= htmlspecialchars($user['nama']) ?></span>
-            <?php if (!$minimalMode && in_array($user['role'] ?? '', ['owner','manager','superadmin','admin'], true)): ?>
+            <?php if (!$minimalMode && TenantResolver::canAccessHqV2()): ?>
               <a href="/dashboard?to=hq" class="ol-top-switch"
                  title="Pindah ke HQ konsolidasi">HQ →</a>
             <?php endif; ?>

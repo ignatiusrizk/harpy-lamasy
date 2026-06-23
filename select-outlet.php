@@ -24,7 +24,7 @@ if (empty($_SESSION['user_id']) || empty($_SESSION['tenant_id'])) {
 $tid  = (int)$_SESSION['tenant_id'];
 $uid  = (int)$_SESSION['user_id'];
 $role = $_SESSION['hl_user']['role'] ?? '';
-$isOwnerOrManager = in_array($role, ['owner','manager','superadmin','admin'], true);
+$isOwnerOrManager = TenantResolver::isAdminLevel();
 
 // ── Ambil outlet sesuai role ──────────────────────────
 // getAssignedOutlets() handle owner vs non-owner automatically

@@ -9,10 +9,9 @@ if (isset($_GET['to'])) {
     exit;
 }
 
-// Kalau hq_mode aktif & role boleh akses HQ → render HQ view
-$_dashRole = $_SESSION['hl_user']['role'] ?? '';
-if (!empty($_SESSION['hq_mode'])
-    && in_array($_dashRole, ['owner','manager','superadmin'], true)) {
+// Kalau hq_mode aktif & user boleh akses HQ → render HQ view (F1 RBAC v2)
+require_once __DIR__ . '/core/TenantResolver.php';
+if (!empty($_SESSION['hq_mode']) && TenantResolver::canAccessHqV2()) {
     require __DIR__ . '/hq/dashboard.php';
     exit;
 }

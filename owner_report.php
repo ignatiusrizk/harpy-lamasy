@@ -13,7 +13,7 @@ require_once __DIR__ . '/components.php';
 
 $user = currentUser();
 $role = $user['role'] ?? 'staff';
-if (!in_array($role, ['owner','superadmin','admin','manager'], true)) {
+if (!TenantResolver::isAdminLevel()) {
     http_response_code(403);
     die('Akses ditolak — hanya owner/manager.');
 }
@@ -70,7 +70,7 @@ if ($action === 'mark_read' && $_SERVER['REQUEST_METHOD'] === 'POST') {
 // ── API: force kirim daily report sekarang (tombol "kirim sekarang") ──
 if ($action === 'send_now' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     header('Content-Type: application/json');
-    if (!in_array($role, ['owner','superadmin','manager'], true)) { echo json_encode(['error'=>'Akses ditolak']); exit; }
+    if (!TenantResolver::isAdminLevel()) { echo json_encode(['error'=>'Akses ditolak']); exit; }
     try {
         // Bypass jam check dengan trick: clear sent_today filter via deleting today's daily_report log
         // Lebih aman: build laporan & kirim langsung tanpa Notifier dedup

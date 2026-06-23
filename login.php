@@ -189,7 +189,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 // ── Login flow per role (brief Akses Karyawan Section 6.2) ──
                 $userRole = $user['role'] ?? 'staff';
-                $isOwnerOrAdmin = in_array($userRole, ['owner','superadmin','admin','manager'], true);
+                // F1 RBAC v2: HQ landing decision = bisa akses HQ?
+                // Konsultasi permission hq.access + fallback role string.
+                $isOwnerOrAdmin = TenantResolver::canAccessHqV2();
 
                 $db = Database::get();
 
