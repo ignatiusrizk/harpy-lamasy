@@ -516,6 +516,113 @@ if ($action) {
         exit;
     }
 
+    // ── BULK MARK PAID (set status_bayar='lunas' untuk order yg belum lunas) ──
+    if ($action === 'bulk_pay' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+        if (!hasPermission('orders.bayar')) { echo json_encode(['error'=>'Akses ditolak']); exit; }
+        verifyCsrf();
+        $data = json_decode(file_get_contents('php://input'), true);
+        $ids = $data['ids'] ?? [];
+        $metode = in_array($data['metode'] ?? 'cash', ['cash','transfer','qris','ewallet'], true) ? $data['metode'] : 'cash';
+        $ids = array_values(array_unique(array_map('intval', $ids)));
+        $ids = array_filter($ids, fn($x) => $x > 0);
+        if (!$ids) { echo json_encode(['error'=>'Tidak ada order dipilih']); exit; }
+        if (count($ids) > 100) { echo json_encode(['error'=>'Maksimal 100 order per bulk']); exit; }
+
+        $db = Database::get();
+        $db->beginTransaction();
+        try {
+            $ph = implode(',', array_fill(0, count($ids), '?'));
+            // Cari order yang belum lunas + collect kas masuk insertion
+            $sel = $db->prepare(
+                "SELECT id, no_order, total, dp, sisa_bayar, status_bayar
+                   FROM hl_transaksi
+                  WHERE tenant_id=? AND outlet_id=? AND id IN ($ph)
+                    AND status_bayar != 'lunas'"
+            );
+            $sel->execute([$tid, $oid, ...$ids]);
+            $rows = $sel->fetchAll(PDO::FETCH_ASSOC);
+
+            if (empty($rows)) {
+                $db->rollBack();
+                echo json_encode(['ok'=>true, 'affected'=>0, 'msg'=>'Semua order yang dipilih sudah lunas']);
+                exit;
+            }
+
+            // Update status_bayar + zero sisa
+            $upd = $db->prepare(
+                "UPDATE hl_transaksi
+                    SET status_bayar='lunas', sisa_bayar=0, dp=total, metode_bayar=?, updated_at=NOW()
+                  WHERE tenant_id=? AND outlet_id=? AND id=?"
+            );
+            // Insert kas masuk per order untuk sisa_bayar yang baru dibayar
+            $kas = $db->prepare(
+                "INSERT INTO hl_kas (tenant_id, outlet_id, tanggal, tipe, kategori, keterangan, jumlah, ref_order, created_by, created_at)
+                 VALUES (?, ?, CURDATE(), 'masuk', 'pelunasan', ?, ?, ?, ?, NOW())"
+            );
+
+            $count = 0; $totalIn = 0;
+            foreach ($rows as $r) {
+                $upd->execute([$metode, $tid, $oid, (int)$r['id']]);
+                $remain = max(0, (float)$r['sisa_bayar']);
+                if ($remain > 0) {
+                    $kas->execute([$tid, $oid, 'Pelunasan order #'.$r['no_order'].' ('.$metode.')', $remain, $r['no_order'], $user['id']]);
+                    $totalIn += $remain;
+                }
+                $count++;
+            }
+            $db->commit();
+            logAudit('bulk_pay', 'orders', $count.' order → lunas ('.$metode.') total Rp '.number_format($totalIn,0,',','.'));
+            echo json_encode(['ok'=>true, 'affected'=>$count, 'total_in'=>$totalIn]);
+        } catch (Throwable $e) {
+            $db->rollBack();
+            error_log('[bulk_pay] '.$e->getMessage());
+            echo json_encode(['error'=>'Gagal proses bulk bayar']);
+        }
+        exit;
+    }
+
+    // ── BULK WA: return list WA links untuk klik manual (no auto-send) ─────
+    if ($action === 'bulk_wa') {
+        if (!hasPermission('orders.view_all')) { echo json_encode(['error'=>'Akses ditolak']); exit; }
+        $idsRaw = $_GET['ids'] ?? '';
+        $ids = array_filter(array_map('intval', explode(',', $idsRaw)), fn($x) => $x > 0);
+        if (!$ids) { echo json_encode(['error'=>'Tidak ada order']); exit; }
+        if (count($ids) > 50) { echo json_encode(['error'=>'Max 50 order per batch WA']); exit; }
+        $ph = implode(',', array_fill(0, count($ids), '?'));
+        try {
+            $st = Database::get()->prepare(
+                "SELECT id, no_order, nama_pelanggan, telepon, status_proses, total, sisa_bayar
+                   FROM hl_transaksi
+                  WHERE tenant_id=? AND outlet_id=? AND id IN ($ph)"
+            );
+            $st->execute([$tid, $oid, ...$ids]);
+            $rows = $st->fetchAll(PDO::FETCH_ASSOC);
+            $base = (defined('APP_URL') ? APP_URL : 'https://lamasy.harpy.id');
+            $links = [];
+            foreach ($rows as $r) {
+                $tel = preg_replace('/[^0-9]/', '', $r['telepon'] ?? '');
+                if (!$tel) continue;
+                if ($tel[0] === '0') $tel = '62' . substr($tel, 1);
+                $statusLabel = ['siap'=>'sudah siap diambil','diambil'=>'sudah diambil'][$r['status_proses']] ?? 'sedang diproses';
+                $msg = "Halo {$r['nama_pelanggan']}, laundry kamu (No. {$r['no_order']}) $statusLabel. Cek detail: {$base}/track?order={$r['no_order']}";
+                if ((float)$r['sisa_bayar'] > 0) {
+                    $msg .= "\n\nTotal: Rp " . number_format($r['total'], 0, ',', '.') . " · Sisa: Rp " . number_format($r['sisa_bayar'], 0, ',', '.');
+                }
+                $links[] = [
+                    'no_order' => $r['no_order'],
+                    'nama'     => $r['nama_pelanggan'],
+                    'url'      => 'https://wa.me/' . $tel . '?text=' . rawurlencode($msg),
+                ];
+            }
+            $skipped = count($rows) - count($links);
+            echo json_encode(['ok'=>true, 'links'=>$links, 'skipped_no_phone'=>$skipped]);
+        } catch (Throwable $e) {
+            error_log('[bulk_wa] '.$e->getMessage());
+            echo json_encode(['error'=>'Gagal generate']);
+        }
+        exit;
+    }
+
     // LIST CATATAN INTERNAL (multi-row, hl_order_notes)
     if ($action === 'notes_list') {
         $oidv = intval($_GET['order_id'] ?? 0);
@@ -973,6 +1080,13 @@ textarea{resize:vertical;min-height:64px}
         <option value="diambil">📦 Diambil/Diantar</option>
       </select>
       <button class="btn btn-teal-sm btn-sm" onclick="applyBulkStatus()">✓ Terapkan</button>
+      <span style="opacity:.5;font-size:11px">·</span>
+      <?php if (hasPermission('orders.bayar')): ?>
+      <button class="btn btn-sm" style="background:#10B981;color:#fff" onclick="applyBulkPay()" title="Tandai lunas (cash) untuk yang belum bayar / DP">💰 Bayar Lunas</button>
+      <?php endif; ?>
+      <button class="btn btn-sm" style="background:#3B82F6;color:#fff" onclick="applyBulkPrint()" title="Print struk untuk semua yang dipilih (popup berurutan)">🖨️ Print Struk</button>
+      <button class="btn btn-sm" style="background:#22C55E;color:#fff" onclick="applyBulkWA()" title="Generate link WA untuk semua yang dipilih (status=siap, ada nomor)">💬 Kirim WA</button>
+      <span style="flex:1"></span>
       <button class="btn btn-outline btn-sm" style="background:rgba(255,255,255,.1);color:#fff;border-color:rgba(255,255,255,.2)" onclick="clearBulkSelection()">✕ Batal</button>
     </div>
     <div class="table-wrap">
@@ -1221,7 +1335,7 @@ function clearBulkSelection() {
 async function applyBulkStatus() {
   const status = document.getElementById('bulkStatus').value;
   if (!status) { showToast('Pilih status dulu','error'); return; }
-  const ids = Array.from(document.querySelectorAll('.bulkCb:checked')).map(x => parseInt(x.value));
+  const ids = getBulkIds();
   if (!ids.length) { showToast('Tidak ada order dipilih','error'); return; }
   if (!confirm('Update status ' + ids.length + ' order menjadi "' + status + '"?')) return;
   try {
@@ -1235,6 +1349,85 @@ async function applyBulkStatus() {
     showToast('✓ ' + (d.affected||ids.length) + ' order diupdate');
     clearBulkSelection();
     loadOrders(ordersCurrentPage);
+  } catch (e) { showToast('Network error','error'); }
+}
+
+function getBulkIds() {
+  return Array.from(document.querySelectorAll('.bulkCb:checked')).map(x => parseInt(x.value));
+}
+
+async function applyBulkPay() {
+  const ids = getBulkIds();
+  if (!ids.length) { showToast('Tidak ada order dipilih','error'); return; }
+  const metode = prompt('Metode bayar (cash/transfer/qris/ewallet):', 'cash');
+  if (!metode) return;
+  if (!confirm('Tandai LUNAS ' + ids.length + ' order dengan metode "' + metode + '"?\n(Sudah lunas akan di-skip.)')) return;
+  try {
+    const r = await fetch('orders.php?action=bulk_pay', {
+      method:'POST',
+      headers:{'Content-Type':'application/json','X-CSRF-Token':csrfToken()},
+      body: JSON.stringify({ids, metode})
+    });
+    const d = await r.json();
+    if (d.error) { showToast(d.error,'error'); return; }
+    const msg = (d.affected||0) + ' order dilunasi';
+    const totalMsg = d.total_in ? ' · kas masuk Rp ' + Number(d.total_in).toLocaleString('id-ID') : '';
+    showToast('✓ ' + msg + totalMsg);
+    if ((d.affected||0) === 0 && d.msg) showToast(d.msg, 'info');
+    clearBulkSelection();
+    loadOrders(ordersCurrentPage);
+  } catch (e) { showToast('Network error','error'); }
+}
+
+function applyBulkPrint() {
+  const ids = getBulkIds();
+  if (!ids.length) { showToast('Tidak ada order dipilih','error'); return; }
+  if (ids.length > 20 && !confirm('Print struk untuk ' + ids.length + ' order? Akan buka tab baru per order, browser bisa block popup.')) return;
+  let opened = 0, blocked = 0;
+  ids.forEach((id, i) => {
+    setTimeout(() => {
+      const w = window.open('/api/struk.php?action=generate&id=' + id + '&tipe=retail&auto_print=1', '_blank');
+      if (w) opened++; else blocked++;
+      if (i === ids.length - 1) {
+        showToast(opened + ' struk dibuka' + (blocked > 0 ? ' · ' + blocked + ' di-block popup' : ''));
+      }
+    }, i * 200); // stagger 200ms untuk hindari browser popup block
+  });
+}
+
+async function applyBulkWA() {
+  const ids = getBulkIds();
+  if (!ids.length) { showToast('Tidak ada order dipilih','error'); return; }
+  try {
+    const r = await fetch('orders.php?action=bulk_wa&ids=' + ids.join(','));
+    const d = await r.json();
+    if (d.error) { showToast(d.error,'error'); return; }
+    if (!d.links?.length) {
+      showToast('Tidak ada order dengan nomor HP valid','error');
+      return;
+    }
+    // Tampilkan modal list link WA — klik per order biar gak ke-block popup
+    const html = '<div style="padding:12px">'
+      + '<h3 style="margin:0 0 10px">💬 Kirim WA — ' + d.links.length + ' order</h3>'
+      + (d.skipped_no_phone > 0 ? '<p style="color:#92400E;font-size:12px;background:#FEF3C7;padding:6px 10px;border-radius:6px;margin:0 0 10px">⚠️ ' + d.skipped_no_phone + ' order di-skip karena tidak ada nomor HP</p>' : '')
+      + '<p style="font-size:12px;color:#6B7280;margin:0 0 10px">Klik tombol untuk buka chat WA. Auto-fill pesan template.</p>'
+      + '<div style="max-height:60vh;overflow-y:auto;display:grid;gap:6px">'
+      + d.links.map((l, i) =>
+          '<a href="' + l.url + '" target="_blank" rel="noopener" '
+          + 'style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:#F0FDF4;border:1px solid #BBF7D0;border-radius:8px;text-decoration:none;color:#0F1C3A">'
+          + '<span><strong>' + l.nama + '</strong> <small style="color:#6B7280">' + l.no_order + '</small></span>'
+          + '<span style="background:#22C55E;color:#fff;padding:4px 10px;border-radius:6px;font-size:12px;font-weight:600">💬 Buka WA</span>'
+          + '</a>'
+        ).join('')
+      + '</div>'
+      + '<button onclick="document.getElementById(\'bulkWaModal\').remove()" class="hl-btn hl-btn-outline" style="margin-top:14px;width:100%">Tutup</button>'
+      + '</div>';
+    const modal = document.createElement('div');
+    modal.id = 'bulkWaModal';
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(15,28,58,.6);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
+    modal.innerHTML = '<div style="background:#fff;border-radius:12px;max-width:480px;width:100%;max-height:90vh;overflow:auto">' + html + '</div>';
+    modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+    document.body.appendChild(modal);
   } catch (e) { showToast('Network error','error'); }
 }
 
