@@ -105,7 +105,9 @@ class AIInsight
                     (int)$result['tokens_in'], (int)$result['tokens_out'],
                     class_exists('CoinLedger') ? CoinLedger::getHarga('ai_insight_laporan') : 0,
                     $result['model'] ?? null, false);
-            } catch (Throwable) {}
+            } catch (Throwable $e) {
+                if (class_exists('ErrorLogger')) ErrorLogger::logException('ai_log_usage', $e);
+            }
         }
 
         return $output;

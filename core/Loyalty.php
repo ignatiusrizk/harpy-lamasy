@@ -27,7 +27,9 @@ class Loyalty
                     'poin_value'      => max(1, (int)($row['loyalty_poin_value'] ?? 100)),
                 ];
             }
-        } catch (Throwable) {}
+        } catch (Throwable $e) {
+            if (class_exists('ErrorLogger')) ErrorLogger::logException('loyalty_config', $e, $tenantId);
+        }
         self::$cfgCache[$tenantId] = $cfg;
         return $cfg;
     }
@@ -178,7 +180,9 @@ class Loyalty
                 $sst = $db->prepare("SELECT loyalty_expiry_months FROM tenants WHERE id=?");
                 $sst->execute([$tenantId]);
                 $months = max(1, (int)($sst->fetchColumn() ?: 12));
-            } catch (Throwable) {}
+            } catch (Throwable $e) {
+                if (class_exists('ErrorLogger')) ErrorLogger::logException('loyalty_expiry', $e, $tenantId);
+            }
             $expDate = date('Y-m-d', strtotime("+{$months} months"));
 
             $db->prepare("INSERT INTO hl_loyalty_log

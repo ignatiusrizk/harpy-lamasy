@@ -135,7 +135,9 @@ class MemberTier
             try {
                 $db->prepare("UPDATE hl_pelanggan SET tipe='member' WHERE id=? AND tenant_id=?")
                    ->execute([$pelangganId, $tenantId]);
-            } catch (Throwable) {}
+            } catch (Throwable $e) {
+                if (class_exists('ErrorLogger')) ErrorLogger::logException('member_tier_update', $e, $tenantId);
+            }
 
             return [$newId, null];
         } catch (Throwable $e) {
