@@ -170,13 +170,13 @@ if ($action) {
                    FROM hl_voucher v
               LEFT JOIN outlets o ON o.id = v.outlet_id
                   WHERE v.tenant_id=? AND v.promo_id=?
-                  ORDER BY v.created_at DESC LIMIT 200",
+                  ORDER BY v.created_at DESC LIMIT 500",
                 [$tid, $promo_id]
             );
         } catch (Throwable) {
             // Fallback kalau kolom outlet_id belum ada
             $rows = TenantQuery::raw(
-                "SELECT * FROM hl_voucher WHERE tenant_id=? AND promo_id=? ORDER BY created_at DESC LIMIT 200",
+                "SELECT * FROM hl_voucher WHERE tenant_id=? AND promo_id=? ORDER BY created_at DESC LIMIT 500",
                 [$tid, $promo_id]
             );
         }

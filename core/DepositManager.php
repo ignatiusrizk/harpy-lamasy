@@ -126,7 +126,9 @@ class DepositManager
             $db->commit();
             return [$topupId, null];
         } catch (Throwable $e) {
-            try { $db->rollBack(); } catch (Throwable) {}
+            try { $db->rollBack(); } catch (Throwable $rbErr) {
+                if (class_exists('ErrorLogger')) ErrorLogger::logException('db_rollback', $rbErr);
+            }
             return [0, 'Gagal topup: ' . $e->getMessage()];
         }
     }
@@ -173,7 +175,9 @@ class DepositManager
             $db->commit();
             return [$usageId, null];
         } catch (Throwable $e) {
-            try { $db->rollBack(); } catch (Throwable) {}
+            try { $db->rollBack(); } catch (Throwable $rbErr) {
+                if (class_exists('ErrorLogger')) ErrorLogger::logException('db_rollback', $rbErr);
+            }
             return [0, 'Gagal deduct: ' . $e->getMessage()];
         }
     }
@@ -299,7 +303,9 @@ class DepositManager
             $db->commit();
             return null;
         } catch (Throwable $e) {
-            try { $db->rollBack(); } catch (Throwable) {}
+            try { $db->rollBack(); } catch (Throwable $rbErr) {
+                if (class_exists('ErrorLogger')) ErrorLogger::logException('db_rollback', $rbErr);
+            }
             return 'Gagal approve: '.$e->getMessage();
         }
     }

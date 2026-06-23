@@ -57,7 +57,7 @@ if ($action) {
               WHERE aj.tenant_id=? AND aj.outlet_id=? AND aj.tipe=?
                 AND (aj.status != 'done' OR DATE(aj.done_at) = ?)
               ORDER BY FIELD(aj.status,'pending','assigned','menuju','sampai','done','cancel'), aj.created_at DESC
-              LIMIT 200",
+              LIMIT 500",
             [$tid, $oid, $tipe, $today]
         );
 

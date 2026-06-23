@@ -264,7 +264,7 @@ if ($action) {
                      WHERE v.tenant_id=?";
             $params = [$tid];
             if ($promoId > 0) { $sql .= " AND v.promo_id=?"; $params[] = $promoId; }
-            $sql .= " ORDER BY v.created_at DESC LIMIT 200";
+            $sql .= " ORDER BY v.created_at DESC LIMIT 500";
             $stmt = $db->prepare($sql);
             $stmt->execute($params);
             echo json_encode($stmt->fetchAll());

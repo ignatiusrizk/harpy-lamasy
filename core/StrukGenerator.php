@@ -133,7 +133,8 @@ class StrukGenerator
         // (kalau render gagal/exception, baris ini tidak tercapai → tidak potong)
         if ($deductCoin) {
             $feature = ($tipe === 'b2b') ? self::COIN_B2B : self::COIN_RETAIL;
-            try { CoinLedger::deduct($feature, (string)$transaksiId); } catch (Throwable) {}
+            try { CoinLedger::deduct($feature, (string)$transaksiId); }
+            catch (Throwable $e) { if (class_exists('ErrorLogger')) ErrorLogger::logException('coin_deduct', $e); }
         }
         return $html;
     }
@@ -278,7 +279,8 @@ class StrukGenerator
         // Render dulu — deduct hanya kalau invoice berhasil dibuat
         $html = self::render($trx, $items, $tmpl, $pelanggan, null, $outlet, $tmpl['format'] ?? 'a4');
         if ($deductCoin) {
-            try { CoinLedger::deduct(self::COIN_B2B, (string)$piutangId); } catch (Throwable) {}
+            try { CoinLedger::deduct(self::COIN_B2B, (string)$piutangId); }
+            catch (Throwable $e) { if (class_exists('ErrorLogger')) ErrorLogger::logException('coin_deduct', $e); }
         }
         return $html;
     }
