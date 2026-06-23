@@ -16,6 +16,9 @@
 //   hasPermission('orders.edit')  // cek permission
 // ══════════════════════════════════════════════════════
 
+// ── Timezone: WIB Jakarta (semua date()/strftime() jadi konsisten) ──
+date_default_timezone_set('Asia/Jakarta');
+
 // ── Session security (sebelum session_start) ──────────
 ini_set('session.cookie_httponly', 1);
 ini_set('session.cookie_secure',   1);
