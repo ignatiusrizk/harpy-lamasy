@@ -359,7 +359,7 @@ function renderTopbar(string $activePage = '', bool $minimalMode = false): void 
       <!-- ── SIDEBAR ── -->
       <aside class="ol-side">
         <div class="ol-side-brand">
-          <div class="ol-side-logo"><img src="/assets/logo.png" alt="LAMASY" style="height:22px;max-width:24px;object-fit:contain;vertical-align:middle;margin-right:6px;flex-shrink:0">LAMASY</div>
+          <div class="ol-side-logo"><img src="/assets/logo.png?v=<?= @filemtime(__DIR__.'/assets/logo.png') ?: '3' ?>" alt="LAMASY" style="height:22px;max-width:24px;object-fit:contain;vertical-align:middle;margin-right:6px;flex-shrink:0">LAMASY</div>
           <div class="ol-side-sub" title="<?= htmlspecialchars($brandNama) ?>">
             <?= htmlspecialchars($brandNama) ?>
           </div>
@@ -452,7 +452,11 @@ function renderTopbar(string $activePage = '', bool $minimalMode = false): void 
             <button class="ol-side-toggle" type="button"
                     onclick="document.getElementById('olShell').classList.toggle('open')">☰</button>
             <?php endif; ?>
-            <span class="ol-top-badge">📍 OUTLET</span>
+            <?php if ($minimalMode): ?>
+              <span class="ol-top-badge" style="background:rgba(53,232,213,.12);color:#1BC4B3;">🏢 AKUN</span>
+            <?php else: ?>
+              <span class="ol-top-badge">📍 OUTLET</span>
+            <?php endif; ?>
             <span class="ol-top-title"><?= htmlspecialchars($activeOutletNama) ?></span>
           </div>
           <div class="ol-top-right">
