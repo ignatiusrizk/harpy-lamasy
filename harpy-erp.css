@@ -1459,3 +1459,88 @@ html, body { overflow-x: hidden; }
 @media (max-width: 480px) {
   .hl-beta-banner { font-size: 12px; padding: 8px 12px; }
 }
+
+/* ── LANDING: Exit-Intent Modal ──────────────────────── */
+.hl-exit-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.7);
+  z-index: 200;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  backdrop-filter: blur(4px);
+}
+.hl-exit-modal.show { display: flex; }
+.hl-exit-content {
+  max-width: 460px;
+  width: 100%;
+  background: #0F1C3A;
+  border: 1px solid rgba(53,232,213,.25);
+  border-radius: 16px;
+  padding: 32px;
+  position: relative;
+}
+.hl-exit-close {
+  position: absolute;
+  top: 12px; right: 16px;
+  background: none;
+  border: none;
+  color: rgba(255,255,255,.5);
+  font-size: 28px;
+  cursor: pointer;
+  line-height: 1;
+}
+.hl-exit-content h3 {
+  margin: 0 0 12px;
+  font-size: 22px;
+  font-weight: 800;
+  color: #fff;
+}
+.hl-exit-content p {
+  margin: 0 0 20px;
+  color: rgba(255,255,255,.7);
+  font-size: 14px;
+  line-height: 1.5;
+}
+.hl-exit-content input[type="email"] {
+  width: 100%;
+  padding: 12px 14px;
+  background: rgba(255,255,255,.06);
+  border: 1.5px solid rgba(255,255,255,.1);
+  border-radius: 8px;
+  color: #fff;
+  font-size: 14px;
+  margin-bottom: 12px;
+  box-sizing: border-box;
+}
+.hl-exit-content input[type="email"]:focus {
+  outline: none;
+  border-color: #35E8D5;
+}
+.hl-exit-content button[type="submit"] {
+  width: 100%;
+  padding: 12px;
+  background: #35E8D5;
+  color: #0F1C3A;
+  border: none;
+  border-radius: 8px;
+  font-weight: 700;
+  cursor: pointer;
+  font-size: 14px;
+}
+.hl-exit-skip {
+  display: block;
+  margin-top: 12px;
+  text-align: center;
+  color: rgba(255,255,255,.5);
+  font-size: 13px;
+  text-decoration: none;
+}
+.hl-exit-success {
+  color: #35E8D5;
+  font-weight: 600;
+  text-align: center;
+  padding: 20px 0;
+}

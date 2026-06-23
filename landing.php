@@ -2102,6 +2102,64 @@ document.querySelectorAll('.feature-card, .step-card, .pricing-card, .testi-card
 });
 </script>
 
+<!-- Exit-Intent Modal (desktop only) -->
+<div class="hl-exit-modal" id="hlExitModal">
+  <div class="hl-exit-content">
+    <button class="hl-exit-close" type="button" onclick="document.getElementById('hlExitModal').classList.remove('show')">&times;</button>
+    <h3>Tunggu, mau saya kirim panduan gratis?</h3>
+    <p>Checklist 7 step setup laundry digital — PDF + link demo video, langsung ke email kamu.</p>
+    <form id="hlExitForm">
+      <input type="email" name="email" placeholder="email@kamu.com" required>
+      <button type="submit">Kirim ke email saya</button>
+    </form>
+    <a href="#" class="hl-exit-skip" onclick="document.getElementById('hlExitModal').classList.remove('show');return false;">Lain kali</a>
+  </div>
+</div>
+
+<script>
+(function(){
+  // Skip mobile
+  if (window.innerWidth < 1024) return;
+  // Skip kalau udah tampil di session ini
+  if (sessionStorage.getItem('hl_exit_shown')) return;
+
+  var modal = document.getElementById('hlExitModal');
+  var form = document.getElementById('hlExitForm');
+  if (!modal || !form) return;
+
+  // Trigger: mouse leave viewport ke atas
+  document.addEventListener('mouseout', function(e) {
+    if (e.clientY <= 0 && !sessionStorage.getItem('hl_exit_shown')) {
+      modal.classList.add('show');
+      sessionStorage.setItem('hl_exit_shown', '1');
+    }
+  });
+
+  // Form submit
+  form.addEventListener('submit', function(e) {
+    e.preventDefault();
+    var email = form.email.value.trim();
+    if (!email) return;
+    fetch('/api/lead.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email, source: 'exit_intent' })
+    })
+    .then(function(r){ return r.json(); })
+    .then(function(d) {
+      var content = modal.querySelector('.hl-exit-content');
+      if (d.ok) {
+        content.innerHTML = '<div class="hl-exit-success">✓ Terima kasih! Cek email kamu sebentar lagi.</div>';
+        setTimeout(function(){ modal.classList.remove('show'); }, 2500);
+      } else {
+        alert(d.error || 'Gagal kirim. Coba lagi.');
+      }
+    })
+    .catch(function(){ alert('Gagal kirim. Cek koneksi internet.'); });
+  });
+})();
+</script>
+
 <!-- Sticky Mobile CTA -->
 <div class="hl-sticky-cta" id="hlStickyCta">
   <a href="https://wa.me/6285121519302?text=Halo%20saya%20mau%20tanya%20tentang%20LAMASY" class="hl-sticky-wa" rel="noopener" target="_blank">💬 Tanya WA</a>
