@@ -131,6 +131,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<link rel="icon" type="image/png" href="/assets/icon-192.png"/>
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon-180.png"/>
+<meta name="theme-color" content="#0F1C3A"/>
 <title>Super Admin — LAMASY</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -281,7 +284,7 @@ input::placeholder { color: rgba(255,255,255,.25); }
 
 <div class="login-card">
   <div class="login-logo">
-    <div style="margin-bottom:14px;"><img src="/assets/logo.png" alt="LAMASY" style="height:48px;"></div>
+    <div style="margin-bottom:14px;"><img src="/assets/logo.png?v=<?= @filemtime(dirname(__DIR__).'/assets/logo.png') ?: '2' ?>" alt="LAMASY" style="height:48px;"></div>
     <h1>LAMASY <span>Admin</span></h1>
     <p>Super Admin Panel</p>
   </div>

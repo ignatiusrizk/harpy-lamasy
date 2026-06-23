@@ -9,7 +9,8 @@ function saRenderHead(string $title = 'Super Admin'): void {
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <meta name="csrf-token" content="<?= htmlspecialchars($csrf) ?>"/>
-    <link rel="icon" type="image/png" href="/assets/logo.png"/>
+    <link rel="icon" type="image/png" href="/assets/icon-192.png"/>
+    <link rel="apple-touch-icon" href="/assets/apple-touch-icon-180.png"/>
     <meta name="theme-color" content="#0F1C3A"/>
     <title><?= htmlspecialchars($title) ?> — LAMASY Admin</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -370,7 +371,7 @@ function saRenderNav(string $activePage = '', string $pageTitle = ''): void {
 
     <aside class="sa-sidebar" id="saSidebar">
       <div class="sa-sidebar-brand">
-        <img src="/assets/logo.png" alt="LAMASY" style="height:28px; flex-shrink:0;">
+        <img src="/assets/logo.png?v=<?= @filemtime(dirname(__DIR__).'/assets/logo.png') ?: '2' ?>" alt="LAMASY" style="height:28px; flex-shrink:0;">
         <div class="brand-text">
           LAMASY <span style="color:var(--sa)">Admin</span>
           <small>Super Admin Panel</small>
