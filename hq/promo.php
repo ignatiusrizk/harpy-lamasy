@@ -45,7 +45,7 @@ if ($action) {
                         p.berlaku_dari, p.berlaku_sampai, p.is_active,
                         p.scope, $tmCol p.outlet_id AS source_outlet_id,
                         p.created_at,
-                        (SELECT nama_outlet FROM outlets WHERE id=p.outlet_id) AS source_outlet_name
+                        (SELECT nama_outlet FROM outlets WHERE id=p.outlet_id AND tenant_id=p.tenant_id) AS source_outlet_name
                    FROM hl_promo p
                   WHERE p.tenant_id=? $whereExtra
                   ORDER BY p.is_active DESC, p.created_at DESC"

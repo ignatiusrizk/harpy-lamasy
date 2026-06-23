@@ -296,7 +296,7 @@ class Loyalty
     {
         try {
             $db = Database::get();
-            $stmt = $db->prepare("SELECT l.*, (SELECT nama_outlet FROM outlets WHERE id=l.outlet_id) nama_outlet
+            $stmt = $db->prepare("SELECT l.*, (SELECT nama_outlet FROM outlets WHERE id=l.outlet_id AND tenant_id=l.tenant_id) nama_outlet
                                     FROM hl_loyalty_log l
                                    WHERE l.tenant_id=? AND l.pelanggan_id=?
                                    ORDER BY l.id DESC LIMIT ?");

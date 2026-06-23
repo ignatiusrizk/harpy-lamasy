@@ -44,7 +44,7 @@ if ($action === 'data') {
                                  $like = "%$q%"; $params[] = $like; $params[] = $like; $params[] = $like; }
             $sql = "SELECT id, outlet_id, user_id, user_nama, aksi, modul, keterangan,
                            ip_address, created_at,
-                           (SELECT nama_outlet FROM outlets WHERE id=hl_audit_log.outlet_id) AS nama_outlet
+                           (SELECT nama_outlet FROM outlets WHERE id=hl_audit_log.outlet_id AND tenant_id=hl_audit_log.tenant_id) AS nama_outlet
                       FROM hl_audit_log WHERE " . implode(' AND ', $where) .
                    " ORDER BY created_at DESC LIMIT 300";
             $stmt = $db->prepare($sql);

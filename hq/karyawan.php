@@ -170,7 +170,7 @@ if ($action) {
                         SUM(a.status='izin')  AS izin,
                         SUM(a.status='sakit') AS sakit,
                         SUM(a.status='alpha') AS alpha,
-                        (SELECT nama_outlet FROM outlets WHERE id=a.outlet_id) AS nama_outlet
+                        (SELECT nama_outlet FROM outlets WHERE id=a.outlet_id AND tenant_id=a.tenant_id) AS nama_outlet
                    FROM hl_absensi a
                   WHERE a.tenant_id=? AND a.user_id=? AND a.tanggal BETWEEN ? AND ?
                   GROUP BY a.outlet_id"
@@ -184,7 +184,7 @@ if ($action) {
             $o = $db->prepare(
                 "SELECT t.outlet_id, COUNT(*) AS total_order,
                         COALESCE(SUM(t.total),0) AS total_omset,
-                        (SELECT nama_outlet FROM outlets WHERE id=t.outlet_id) AS nama_outlet
+                        (SELECT nama_outlet FROM outlets WHERE id=t.outlet_id AND tenant_id=t.tenant_id) AS nama_outlet
                    FROM hl_transaksi t
                   WHERE t.tenant_id=? AND t.created_by=? AND DATE(t.tanggal) BETWEEN ? AND ?
                   GROUP BY t.outlet_id"

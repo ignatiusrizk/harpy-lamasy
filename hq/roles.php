@@ -95,7 +95,7 @@ if ($action) {
             // Users assigned to this role (lintas outlet)
             $u = $db->prepare(
                 "SELECT u.id, u.nama, u.username, u.role, u.outlet_id, u.is_active,
-                        (SELECT nama_outlet FROM outlets WHERE id=u.outlet_id) AS nama_outlet
+                        (SELECT nama_outlet FROM outlets WHERE id=u.outlet_id AND tenant_id=u.tenant_id) AS nama_outlet
                    FROM hl_users u
                   WHERE u.tenant_id=? AND u.role_id=?
                   ORDER BY u.is_active DESC, u.nama ASC"

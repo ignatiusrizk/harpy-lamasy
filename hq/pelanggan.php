@@ -54,7 +54,7 @@ if ($action) {
                 "SELECT p.id, p.nama, p.telepon, p.alamat, p.tipe, p.is_active,
                         p.total_order, p.total_visit_count, p.registered_outlet_id,
                         p.created_at,
-                        (SELECT nama_outlet FROM outlets WHERE id=p.registered_outlet_id) AS registered_outlet_name,
+                        (SELECT nama_outlet FROM outlets WHERE id=p.registered_outlet_id AND tenant_id=p.tenant_id) AS registered_outlet_name,
                         (SELECT MAX(tanggal) FROM hl_transaksi t
                           WHERE t.tenant_id=p.tenant_id AND t.pelanggan_id=p.id) AS last_order_at,
                         (SELECT COALESCE(SUM(total),0) FROM hl_transaksi t
@@ -137,8 +137,8 @@ if ($action) {
 
         // Outlet registrasi
         if (!empty($p['registered_outlet_id'])) {
-            $rOut = $db->prepare("SELECT nama_outlet FROM outlets WHERE id=?");
-            $rOut->execute([$p['registered_outlet_id']]);
+            $rOut = $db->prepare("SELECT nama_outlet FROM outlets WHERE id=? AND tenant_id=?");
+            $rOut->execute([$p['registered_outlet_id'], $tid]);
             $p['registered_outlet_name'] = $rOut->fetchColumn();
         }
 
@@ -148,7 +148,7 @@ if ($action) {
             $oStmt = $db->prepare(
                 "SELECT t.id, t.no_order, t.tanggal, t.total, t.status_bayar, t.status_proses,
                         t.outlet_id,
-                        (SELECT nama_outlet FROM outlets WHERE id=t.outlet_id) AS nama_outlet
+                        (SELECT nama_outlet FROM outlets WHERE id=t.outlet_id AND tenant_id=t.tenant_id) AS nama_outlet
                    FROM hl_transaksi t
                   WHERE t.tenant_id=? AND t.pelanggan_id=?
                   ORDER BY t.tanggal DESC LIMIT 50"
@@ -162,7 +162,7 @@ if ($action) {
         try {
             $bStmt = $db->prepare(
                 "SELECT t.outlet_id,
-                        (SELECT nama_outlet FROM outlets WHERE id=t.outlet_id) AS nama_outlet,
+                        (SELECT nama_outlet FROM outlets WHERE id=t.outlet_id AND tenant_id=t.tenant_id) AS nama_outlet,
                         COUNT(*) AS order_count,
                         COALESCE(SUM(t.total),0) AS total_spend
                    FROM hl_transaksi t

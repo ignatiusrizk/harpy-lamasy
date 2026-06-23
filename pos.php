@@ -101,7 +101,7 @@ if ($action) {
         $q = '%' . trim($_GET['q'] ?? '') . '%';
         $rows = TenantQuery::raw(
             "SELECT p.*,
-                    (SELECT nama_outlet FROM outlets WHERE id=p.registered_outlet_id) AS registered_at_outlet
+                    (SELECT nama_outlet FROM outlets WHERE id=p.registered_outlet_id AND tenant_id=p.tenant_id) AS registered_at_outlet
              FROM hl_pelanggan p
              WHERE p.tenant_id=? AND (p.nama LIKE ? OR p.telepon LIKE ?) AND p.is_active=1
              ORDER BY (p.registered_outlet_id = ?) DESC, p.total_visit_count DESC

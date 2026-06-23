@@ -40,7 +40,7 @@ if ($action === 'data') {
                        (SELECT nama FROM hl_users WHERE id=ko.karyawan_id) AS karyawan_nama,
                        (SELECT username FROM hl_users WHERE id=ko.karyawan_id) AS karyawan_username,
                        (SELECT role FROM hl_users WHERE id=ko.karyawan_id) AS karyawan_role,
-                       (SELECT nama_outlet FROM outlets WHERE id=ko.outlet_id) AS outlet_nama,
+                       (SELECT nama_outlet FROM outlets WHERE id=ko.outlet_id AND tenant_id=ko.tenant_id) AS outlet_nama,
                        (SELECT nama FROM hl_users WHERE id=ko.assigned_by) AS by_nama
                   FROM hl_karyawan_outlet ko
                  WHERE " . implode(' AND ', $where) . "

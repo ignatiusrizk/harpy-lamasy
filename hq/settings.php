@@ -254,7 +254,7 @@ if ($action === 'coin_usage') {
         $stmt = $db->prepare(
             "SELECT cl.id, cl.outlet_id, cl.amount, cl.feature_used, cl.description,
                     cl.balance_after, cl.created_at,
-                    (SELECT nama_outlet FROM outlets WHERE id=cl.outlet_id) AS nama_outlet
+                    (SELECT nama_outlet FROM outlets WHERE id=cl.outlet_id AND tenant_id=cl.tenant_id) AS nama_outlet
                FROM coin_ledger cl
               WHERE cl.tenant_id=? AND cl.type='debit'
               ORDER BY cl.created_at DESC LIMIT 50"
