@@ -16,6 +16,8 @@
 
 if (!defined('SA_ROOT')) define('SA_ROOT', __DIR__);
 require_once SA_ROOT . '/middleware/superadmin_guard.php';
+require_once SA_ROOT . '/../core/SaPermission.php';
+SaPermission::require('clients.impersonate');
 
 // POST only
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {

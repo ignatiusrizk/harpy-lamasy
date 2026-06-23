@@ -7,6 +7,7 @@ if (!defined('SA_ROOT')) define('SA_ROOT', __DIR__);
 require_once SA_ROOT . '/middleware/superadmin_guard.php';
 require_once SA_ROOT . '/superadmin_components.php';
 require_once dirname(__DIR__) . '/core/CoinLedger.php';
+require_once SA_ROOT . '/../core/SaPermission.php';
 
 date_default_timezone_set('Asia/Jakarta');
 
@@ -84,6 +85,7 @@ if ($action) {
 
     // ── SAVE harga (update / create) ─────────────────────────
     if ($action === 'save') {
+        SaPermission::require('coin_pricing.edit');
         $d            = json_decode(file_get_contents('php://input'), true) ?: [];
         $id           = (int)($d['id'] ?? 0);
         $featureKey   = preg_replace('/[^a-z0-9_]/i', '', substr(trim($d['feature_key'] ?? ''), 0, 50));

@@ -6,6 +6,7 @@
 if (!defined('SA_ROOT')) define('SA_ROOT', __DIR__);
 require_once SA_ROOT . '/middleware/superadmin_guard.php';
 require_once SA_ROOT . '/superadmin_components.php';
+require_once SA_ROOT . '/../core/SaPermission.php';
 
 date_default_timezone_set('Asia/Jakarta');
 
@@ -155,6 +156,7 @@ if ($action) {
 
     // ── TOPUP ─────────────────────────────────────────
     if ($action === 'topup') {
+        SaPermission::require('billing.topup');
         saVerifyCsrf();
         $tenantId = (int)($_POST['tenant_id'] ?? 0);
         $amount   = (int)($_POST['amount'] ?? 0);
@@ -188,6 +190,7 @@ if ($action) {
 
     // ── TOGGLE STATUS ─────────────────────────────────
     if ($action === 'toggle_status') {
+        SaPermission::require('clients.suspend');
         saVerifyCsrf();
         $tenantId  = (int)($_POST['tenant_id'] ?? 0);
         $newStatus = $_POST['new_status'] ?? '';

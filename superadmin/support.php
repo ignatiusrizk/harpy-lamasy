@@ -5,6 +5,7 @@
 if (!defined('SA_ROOT')) define('SA_ROOT', __DIR__);
 require_once SA_ROOT . '/middleware/superadmin_guard.php';
 require_once SA_ROOT . '/superadmin_components.php';
+require_once SA_ROOT . '/../core/SaPermission.php';
 
 date_default_timezone_set('Asia/Jakarta');
 
@@ -149,6 +150,7 @@ if ($action) {
 
         // ── reply ─────────────────────────────────────
         if ($action === 'reply') {
+            SaPermission::require('support.reply');
             $tid        = (int)($_POST['ticket_id'] ?? 0);
             $message    = trim($_POST['message'] ?? '');
             $isInternal = (int)($_POST['is_internal'] ?? 0);
@@ -211,6 +213,7 @@ if ($action) {
 
         // ── update_status ─────────────────────────────
         if ($action === 'update_status') {
+            SaPermission::require('support.close');
             $tid    = (int)($_POST['ticket_id'] ?? 0);
             $status = $_POST['status'] ?? '';
             $valid  = ['open','in_progress','waiting_tenant','resolved','closed'];

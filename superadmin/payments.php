@@ -8,6 +8,7 @@ if (!defined('SA_ROOT')) define('SA_ROOT', __DIR__);
 require_once SA_ROOT . '/middleware/superadmin_guard.php';
 require_once SA_ROOT . '/superadmin_components.php';
 require_once SA_ROOT . '/../core/CoinLedger.php';
+require_once SA_ROOT . '/../core/SaPermission.php';
 
 date_default_timezone_set('Asia/Jakarta');
 
@@ -131,6 +132,7 @@ if ($action) {
 
     // ── CONFIRM PAYMENT ───────────────────────────────
     if ($action === 'confirm') {
+        SaPermission::require('payments.approve');
         $d = json_decode(file_get_contents('php://input'), true) ?: [];
 
         $tenantId      = (int)($d['tenant_id'] ?? 0);
