@@ -106,8 +106,18 @@ if (($_GET['action'] ?? '') === 'ai_briefing') {
         exit;
     }
 
-    // HQ adalah tenant-level → cek effective coin (shared pool + trial coins dari outlet trial)
-    $costBriefing = CoinLedger::getHarga('ai_briefing_hq');
+    // ── Progressive pricing: hitung biaya untuk panggilan berikutnya
+    require_once dirname(__DIR__) . '/core/AIRateLimiter.php';
+    $rlStatus = AIRateLimiter::status('ai_briefing_hq', $tid);
+
+    // Block kalau sudah mencapai limit (5×)
+    if (!$rlStatus['ok']) {
+        echo json_encode(AIRateLimiter::errorResponse('ai_briefing_hq'));
+        exit;
+    }
+
+    // Harga sesuai tier (next_price kalau ada tiers, fallback flat)
+    $costBriefing = $rlStatus['next_price'] ?? CoinLedger::getHarga('ai_briefing_hq');
     $tenantCoin   = (int)($hqTenant['coin_balance'] ?? 0);
 
     // Hitung trial coin pool dari semua outlet yang masih trial
@@ -1232,11 +1242,22 @@ async function generateBriefing(){
       emptyEl.style.display = 'block';
       // Friendly handler khusus rate_limited
       if (d.error === 'rate_limited') {
+        var tiersHtml = '';
+        if (Array.isArray(d.tiers)) {
+          tiersHtml = '<div style="margin-top:10px;padding-top:10px;border-top:1px dashed #FDE68A;font-size:11px;color:#78350F">'
+            + '<div style="margin-bottom:4px;font-weight:600">Skema biaya progresif:</div>'
+            + d.tiers.map(function(p,i){
+                var done = i < (d.used||0);
+                return '<span style="display:inline-block;margin-right:8px;'+(done?'opacity:.4;text-decoration:line-through':'')+'">Ke-'+(i+1)+': '+p+' coin</span>';
+              }).join('')
+            + '</div>';
+        }
         emptyEl.innerHTML = `
           <div style="background:#FEF3C7;border:1px solid #FDE68A;border-left:4px solid #F59E0B;padding:14px 16px;border-radius:10px;font-size:13px;color:#78350F;text-align:left">
-            <div style="font-weight:700;margin-bottom:6px">⏰ Briefing harian sudah dipakai</div>
+            <div style="font-weight:700;margin-bottom:6px">⏰ Briefing harian sudah maksimum</div>
             <div style="line-height:1.6;margin-bottom:10px">${(d.message || 'Jatah AI Briefing harian sudah habis.').replace(/[<>]/g,'')}</div>
-            <div style="font-size:12px;color:#92400E">💡 Tetap mau coba? Topup coin untuk extra request, atau tunggu reset besok pagi.</div>
+            <div style="font-size:12px;color:#92400E">💡 Reset otomatis besok pagi (00:00 WIB).</div>
+            ${tiersHtml}
           </div>`;
       } else {
         emptyEl.innerHTML = `

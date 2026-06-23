@@ -105,14 +105,16 @@ if ($action === 'briefing') {
         exit;
     }
 
-    // Cek rate limit harian
-    if (!AIRateLimiter::canCall('ai_briefing_hq')) {
+    // Cek rate limit harian — block kalau sudah pakai 5×
+    $rlStatus = AIRateLimiter::status('ai_briefing_hq');
+    if (!$rlStatus['ok']) {
         echo json_encode(AIRateLimiter::errorResponse('ai_briefing_hq'));
         exit;
     }
-    // Cek coin
-    if (!CoinLedger::canAfford('ai_briefing_hq')) {
-        ai_err('Coin tidak cukup untuk AI Briefing (butuh '.CoinLedger::getHarga('ai_briefing_hq').' coin)');
+    // Cek coin — pakai tier price (next_price) kalau ada
+    $tierCost = $rlStatus['next_price'] ?? CoinLedger::getHarga('ai_briefing_hq');
+    if (TenantResolver::coinBalance() < $tierCost) {
+        ai_err("Coin tidak cukup untuk AI Briefing (butuh {$tierCost} coin, panggilan ke-".($rlStatus['used']+1)." dari {$rlStatus['limit']} hari ini)");
     }
     // Cek daily AI budget per tenant
     try { AIBudget::checkOrThrow($tid, 'ai_briefing_hq'); }
@@ -238,11 +240,12 @@ if ($action === 'briefing') {
         'from_cache'   => false,
     ];
 
-    // Deduct coin & cache
-    CoinLedger::deduct('ai_briefing_hq', 'briefing_'.$today);
+    // Deduct coin tier-based & cache (refId include count untuk audit trail)
+    $callNum = ($rlStatus['used'] ?? 0) + 1;
+    CoinLedger::deduct('ai_briefing_hq', 'briefing_'.$today.'_call'.$callNum, $tierCost);
     AIBudget::record($tid, $oid, 'ai_briefing_hq',
         $result['tokens_in'], $result['tokens_out'],
-        CoinLedger::getHarga('ai_briefing_hq'),
+        $tierCost,
         $result['model'] ?? null, false);
     ai_cache_put($tid, $oid, $key, $output, $result['tokens_in'], $result['tokens_out'], 24);
     if (function_exists('logAudit')) logAudit('ai_briefing', 'dashboard', 'Outlet briefing '.$today);

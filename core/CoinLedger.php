@@ -51,13 +51,31 @@ class CoinLedger
         if (self::$pricing !== null && $now < self::$cacheExpiry) return;
 
         try {
-            $rows = Database::get()
-                ->query("SELECT feature_key, harga_coin, is_active FROM saas_coin_pricing")
-                ->fetchAll();
+            // Try with pricing_tiers column (new schema)
+            try {
+                $rows = Database::get()
+                    ->query("SELECT feature_key, harga_coin, pricing_tiers, is_active FROM saas_coin_pricing")
+                    ->fetchAll();
+                $hasTiers = true;
+            } catch (Throwable) {
+                // Old schema without pricing_tiers column
+                $rows = Database::get()
+                    ->query("SELECT feature_key, harga_coin, is_active FROM saas_coin_pricing")
+                    ->fetchAll();
+                $hasTiers = false;
+            }
             self::$pricing = [];
             foreach ($rows as $row) {
+                $tiers = null;
+                if ($hasTiers && !empty($row['pricing_tiers'])) {
+                    $decoded = json_decode($row['pricing_tiers'], true);
+                    if (is_array($decoded) && !empty($decoded)) {
+                        $tiers = array_map('intval', $decoded);
+                    }
+                }
                 self::$pricing[$row['feature_key']] = [
                     'harga'     => (int)$row['harga_coin'],
+                    'tiers'     => $tiers,  // array of progressive prices or null
                     'is_active' => (bool)$row['is_active'],
                 ];
             }
@@ -66,13 +84,13 @@ class CoinLedger
             // Tabel belum ada / DB error → pakai fallback COSTS
             self::$pricing = [];
             foreach (self::COSTS as $k => $v) {
-                self::$pricing[$k] = ['harga' => $v, 'is_active' => true];
+                self::$pricing[$k] = ['harga' => $v, 'tiers' => null, 'is_active' => true];
             }
             self::$cacheExpiry = $now + 60; // cache pendek supaya cepat retry
         }
     }
 
-    // Ambil harga fitur (live dari DB / fallback)
+    // Ambil harga fitur flat (live dari DB / fallback)
     public static function getHarga(string $feature): int
     {
         self::loadPricing();
@@ -80,6 +98,31 @@ class CoinLedger
             return self::$pricing[$feature]['harga'];
         }
         return self::COSTS[$feature] ?? 0;
+    }
+
+    /**
+     * Ambil harga untuk panggilan ke-N hari ini (0-indexed).
+     * Kalau feature punya pricing_tiers, return tier[N] (clamp ke last).
+     * Kalau gak ada tiers, return flat harga.
+     */
+    public static function getHargaForCall(string $feature, int $nthCall): int
+    {
+        self::loadPricing();
+        if (!isset(self::$pricing[$feature])) return self::COSTS[$feature] ?? 0;
+        $p = self::$pricing[$feature];
+        if (!empty($p['tiers']) && is_array($p['tiers'])) {
+            $idx = max(0, min($nthCall, count($p['tiers']) - 1));
+            return (int)$p['tiers'][$idx];
+        }
+        return (int)$p['harga'];
+    }
+
+    /** Return pricing tiers array kalau ada, kalau gak: null. */
+    public static function getTiers(string $feature): ?array
+    {
+        self::loadPricing();
+        if (!isset(self::$pricing[$feature])) return null;
+        return self::$pricing[$feature]['tiers'] ?? null;
     }
 
     // Cek apakah fitur aktif platform-wide
@@ -122,12 +165,13 @@ class CoinLedger
     // Return true jika berhasil, false jika saldo tidak cukup
     public static function deduct(
         string  $feature,
-        ?string $refId = null
+        ?string $refId = null,
+        ?int    $overrideCost = null  // optional — kalau ada (mis. tier price), pakai ini bukan flat harga
     ): bool {
         // Fitur dinonaktifkan platform-wide → tolak
         if (!self::isFeatureActive($feature)) return false;
 
-        $cost = self::getHarga($feature);
+        $cost = $overrideCost !== null ? max(0, $overrideCost) : self::getHarga($feature);
         if ($cost === 0) return true;
 
         $tenantId  = TenantResolver::id();

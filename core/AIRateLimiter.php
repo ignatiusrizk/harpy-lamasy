@@ -13,21 +13,40 @@ class AIRateLimiter
         'ai_migration_mapping' => 10, 'ai_review' => 10, 'ai_insight_laporan' => 30,
     ];
 
-    /** Single source of truth. Returns label/limit/used/remaining/ok/unlimited. */
+    /** Single source of truth. Returns label/limit/used/remaining/ok/unlimited + tier info. */
     public static function status(string $feature, ?int $tenantId = null): array
     {
         $tid = $tenantId ?? (int) TenantResolver::id();
         [$limit, $label] = self::lookup($feature);
         $used = self::countToday($feature, $tid);
         $unlimited = $limit <= 0;
+
+        // Tier-aware pricing (kalau feature punya pricing_tiers)
+        $tiers = null;
+        $nextPrice = null;
+        $currentPrice = null;
+        if (class_exists('CoinLedger')) {
+            $tiers = CoinLedger::getTiers($feature);
+            if ($tiers && is_array($tiers)) {
+                // Price untuk panggilan berikutnya (used = sudah dipakai N kali → next adalah ke-(N+1) → index N)
+                $nextPrice = CoinLedger::getHargaForCall($feature, $used);
+                if ($used > 0) {
+                    $currentPrice = CoinLedger::getHargaForCall($feature, $used - 1);
+                }
+            }
+        }
+
         return [
-            'feature'   => $feature,
-            'label'     => $label,
-            'limit'     => $limit,
-            'used'      => $used,
-            'remaining' => $unlimited ? PHP_INT_MAX : max(0, $limit - $used),
-            'unlimited' => $unlimited,
-            'ok'        => $unlimited || $used < $limit,
+            'feature'       => $feature,
+            'label'         => $label,
+            'limit'         => $limit,
+            'used'          => $used,
+            'remaining'     => $unlimited ? PHP_INT_MAX : max(0, $limit - $used),
+            'unlimited'     => $unlimited,
+            'ok'            => $unlimited || $used < $limit,
+            'tiers'         => $tiers,           // array of progressive prices atau null
+            'next_price'    => $nextPrice,        // price untuk call berikutnya
+            'current_price' => $currentPrice,     // price untuk last call (kalau ada)
         ];
     }
 
@@ -53,12 +72,17 @@ class AIRateLimiter
         self::logBlock($feature);
         $secs    = strtotime('tomorrow midnight') - time();
         $resetIn = sprintf('%dj %dm', $secs / 3600, ($secs % 3600) / 60);
+        $msg = $s['tiers']
+            ? "{$s['label']} sudah dipakai {$s['used']} dari {$s['limit']}× hari ini (maksimum tercapai). Reset dalam {$resetIn}."
+            : "Limit harian {$s['label']} tercapai ({$s['limit']}×/hari). Reset dalam {$resetIn}.";
         return [
             'success' => false,
             'error'   => 'rate_limited',
             'feature' => $feature,
-            'message' => "Limit harian {$s['label']} tercapai ({$s['limit']}×/hari). Reset dalam {$resetIn}.",
+            'message' => $msg,
             'limit'   => $s['limit'],
+            'used'    => $s['used'],
+            'tiers'   => $s['tiers'],
             'reset'   => "00:00 WIB ({$resetIn})",
         ];
     }
