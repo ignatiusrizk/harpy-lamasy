@@ -102,6 +102,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'name'     => $admin['name'],
                 ];
 
+                // Load RBAC perms into session
+                require_once SA_ROOT . '/../core/SaPermission.php';
+                SaPermission::loadIntoSession((int)$admin['id']);
+
                 // Log login
                 try {
                     Database::get()->prepare(

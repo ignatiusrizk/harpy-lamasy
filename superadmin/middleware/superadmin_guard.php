@@ -10,6 +10,7 @@ require_once SA_ROOT . '/../core/Database.php';
 require_once SA_ROOT . '/../core/ErrorLogger.php';
 require_once SA_ROOT . '/../core/WaLogger.php';
 require_once SA_ROOT . '/../core/PlatformHealthRecorder.php';
+require_once SA_ROOT . '/../core/SaPermission.php';
 
 // ══════════════════════════════════════════════════════
 // LAYER 0 — HTTP Basic Auth (second factor sebelum login PHP)
@@ -75,6 +76,11 @@ if (!isset($_SESSION['superadmin_id'])) {
         header('Location: /superadmin/login.php');
     }
     exit;
+}
+
+// ── Load perm cache into session (once per request) ──
+if (isset($_SESSION['superadmin_id']) && !array_key_exists('sa_perms', $_SESSION)) {
+    SaPermission::loadIntoSession((int)$_SESSION['superadmin_id']);
 }
 
 function saCurrentAdmin(): array {
