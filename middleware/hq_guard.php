@@ -114,10 +114,12 @@ if (!TenantResolver::canAccessHqV2()) {
 $_SESSION['hq_mode'] = true;
 
 // ── Permission helpers untuk HQ (brief 3.2 & 6.8) ─────
-// Manager: bisa akses HQ tapi terbatas — tidak boleh billing,
-// tidak boleh manage outlets, tidak boleh ubah account settings sensitif.
+// Manager scope: bisa akses HQ tapi bukan owner — terbatas (tidak boleh
+// billing, manage outlets, role settings sensitif). Post-F1: $hqIsManager
+// = siapapun yang punya hq.access permission tapi role string-nya bukan
+// owner/superadmin. Ini mencakup role custom yang dibuat owner via /hq/roles.
 $hqIsOwner   = in_array($hqRole, ['owner','superadmin'], true);
-$hqIsManager = $hqRole === 'manager';
+$hqIsManager = !$hqIsOwner && TenantResolver::canAccessHqV2();
 $hqCanBilling      = $hqIsOwner;   // topup, coin mode, paket, settings password
 $hqCanManageOutlet = $hqIsOwner;   // tambah outlet, edit outlet, set main
 $hqCanManageRole   = $hqIsOwner;   // create/edit/delete role

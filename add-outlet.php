@@ -269,8 +269,8 @@ if ($isHqMode) {
     $tenantSt->execute([$tid]);
     $hqTenant    = $tenantSt->fetch(PDO::FETCH_ASSOC) ?: [];
     $hqUser      = $user;
-    $hqIsOwner   = ($user['role'] ?? '') === 'owner';
-    $hqIsManager = ($user['role'] ?? '') === 'manager';
+    $hqIsOwner   = in_array($user['role'] ?? '', ['owner','superadmin'], true);
+    $hqIsManager = !$hqIsOwner && TenantResolver::canAccessHqV2();
     $pageTitle   = 'Tambah Outlet';
     $activePage  = 'hq-outlet';
     require __DIR__ . '/hq/_layout_open.php';
