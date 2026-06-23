@@ -1,5 +1,10 @@
 <?php
-// kurir-master.php — Master kurir untuk Antar Jemput
+// kurir-master.php — DEPRECATED 2026-06-24
+// Kurir sekarang dikelola via /karyawan (assign role "Kurir" ke karyawan).
+// Page ini di-redirect untuk legacy bookmark/link.
+header('Location: /karyawan');
+exit;
+
 $activePage = 'kurir-master';
 define('ROOT', __DIR__);
 require_once ROOT . '/middleware/tenant_guard.php';

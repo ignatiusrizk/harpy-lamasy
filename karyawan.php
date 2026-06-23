@@ -88,6 +88,7 @@ if ($action) {
                 $data['password'] = password_hash($d['password'], PASSWORD_DEFAULT);
             }
             TenantQuery::update('hl_users', $data, 'id = ?', [intval($d['id'])]);
+            $savedUserId = (int)$d['id'];
         } else {
             if (empty($d['password'])) { echo json_encode(['error'=>'Password wajib diisi untuk karyawan baru']); exit; }
             // Cek duplikat username per tenant
@@ -98,6 +99,7 @@ if ($action) {
             $data['outlet_id'] = $oid; // outlet default saat login
             TenantQuery::insert('hl_users', $data);
             $newUserId = (int)Database::get()->lastInsertId();
+            $savedUserId = $newUserId;
 
             // Auto-assign ke outlet ini (sesuai brief HQ-Outlet Fase 3)
             try {
@@ -110,6 +112,34 @@ if ($action) {
                 ErrorLogger::logException('karyawan_assign', $e, $tid, $oid);
             }
         }
+
+        // Auto-sync ke hl_kurir kalau role = Kurir (untuk dropdown antar-jemput)
+        try {
+            $isKurir = false;
+            if ($roleId) {
+                $rChk = TenantQuery::rawOne("SELECT nama FROM hl_roles WHERE id=? AND tenant_id=?", [$roleId, $tid]);
+                if ($rChk && stripos($rChk['nama'], 'kurir') !== false) $isKurir = true;
+            }
+            $db = Database::get();
+            $existing = $db->prepare("SELECT id FROM hl_kurir WHERE user_id=? AND tenant_id=? AND outlet_id=? LIMIT 1");
+            $existing->execute([$savedUserId, $tid, $oid]);
+            $existId = $existing->fetchColumn();
+            if ($isKurir) {
+                if ($existId) {
+                    $db->prepare("UPDATE hl_kurir SET nama=?, no_hp=?, aktif=1 WHERE id=?")
+                       ->execute([$nama, $data['telepon'], $existId]);
+                } else {
+                    $db->prepare("INSERT INTO hl_kurir (tenant_id, outlet_id, user_id, nama, no_hp, aktif) VALUES (?,?,?,?,?,1)")
+                       ->execute([$tid, $oid, $savedUserId, $nama, $data['telepon']]);
+                }
+            } elseif ($existId) {
+                // Role berubah dari Kurir → non-Kurir: nonaktifkan entry hl_kurir
+                $db->prepare("UPDATE hl_kurir SET aktif=0 WHERE id=?")->execute([$existId]);
+            }
+        } catch (Throwable $e) {
+            ErrorLogger::logException('karyawan_sync_kurir', $e, $tid, $oid);
+        }
+
         logAudit(!empty($d['id'])?'update':'create','karyawan',(!empty($d['id'])?'Edit':'Tambah').' karyawan: '.$nama);
         echo json_encode(['success'=>true]); exit;
     }

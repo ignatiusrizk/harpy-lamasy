@@ -374,7 +374,6 @@ function renderTopbar(string $activePage = '', bool $minimalMode = false): void 
                 'layanan'  => ['label'=>'Layanan',        'url'=>'/layanan',   'perm'=>'layanan.view'],
                 'promo'    => ['label'=>'Promo',          'url'=>'/promo',     'perm'=>'promo.view'],
                 'customer'     => ['label'=>'Customer',       'url'=>'/customer',     'perm'=>'pelanggan.view'],
-                'kurir-master' => ['label'=>'Kurir',         'url'=>'/kurir-master', 'perm'=>'antar.manage'],
                 'member'   => ['label'=>'Member Tier',    'url'=>'/member',    'perm'=>'pelanggan.view'],
                 'deposit'  => ['label'=>'Deposit Wallet', 'url'=>'/deposit',   'perm'=>'pelanggan.view'],
                 'approval-inbox' => ['label'=>'⏳ Approval Inbox', 'url'=>'/approval-inbox', 'perm'=>'owner'],
