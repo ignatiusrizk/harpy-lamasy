@@ -939,6 +939,14 @@ require __DIR__ . '/_layout_open.php';
     <p>Belum ada outlet aktif. <a href="/add-outlet" style="color:#0891B2;font-weight:700">Daftarkan outlet pertama →</a></p>
   </div>
   <?php else: ?>
+  <?php
+    // ── Switch-outlet token helper (must match switch-outlet.php signature) ──
+    $_swUid    = (int)($hqUser['id'] ?? $_SESSION['user_id'] ?? 0);
+    $_swSecret = hash('sha256', session_id() . $_swUid . 'switch_outlet_v1');
+    $_swToken  = fn(int $oid): string => substr(
+        hash_hmac('sha256', 'so:' . $_swUid . ':' . $oid, $_swSecret), 0, 16
+    );
+  ?>
   <div class="outlet-grid">
     <?php foreach ($outlets as $o):
       $isBest = $bestOutlet && (int)$o['id'] === (int)$bestOutlet['id'];
@@ -992,7 +1000,7 @@ require __DIR__ . '/_layout_open.php';
         <div class="ocard-coin<?= $coinClass ?>" <?= $coinClass ? 'title="Coin tipis — segera topup"' : '' ?>>
           <?= $coinClass === ' crit' ? '⚠️' : '🪙' ?> <strong><?= $coinShow ?></strong> coin<?= $coinClass === ' crit' ? ' · KRITIS' : ($coinClass === ' low' ? ' · TIPIS' : '') ?>
         </div>
-        <a href="/switch-outlet?id=<?= (int)$o['id'] ?>" class="btn btn-primary btn-sm">Masuk →</a>
+        <a href="/switch-outlet?id=<?= (int)$o['id'] ?>&amp;t=<?= $_swToken((int)$o['id']) ?>" class="btn btn-primary btn-sm">Masuk →</a>
       </div>
     </div>
     <?php endforeach; ?>
