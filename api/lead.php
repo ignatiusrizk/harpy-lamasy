@@ -25,14 +25,23 @@ if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
     exit;
 }
 
-if (strlen($email) > 255) {
-    http_response_code(400);
-    echo json_encode(['error' => 'Email terlalu panjang']);
-    exit;
-}
+// Prefer CF real IP, truncate to 45 chars (IPv6 max)
+$ip = substr($_SERVER['HTTP_CF_CONNECTING_IP'] ?? $_SERVER['REMOTE_ADDR'] ?? '', 0, 45);
 
 try {
     $db = Database::get();
+
+    // Rate limit: max 3 submissions per IP per minute
+    $rl = $db->prepare(
+        "SELECT COUNT(*) FROM hl_leads WHERE ip_address = ? AND created_at > DATE_SUB(NOW(), INTERVAL 1 MINUTE)"
+    );
+    $rl->execute([$ip]);
+    if ((int)$rl->fetchColumn() >= 3) {
+        http_response_code(429);
+        echo json_encode(['error' => 'Terlalu cepat, coba lagi nanti.']);
+        exit;
+    }
+
     $stmt = $db->prepare(
         "INSERT INTO hl_leads (email, source, user_agent, ip_address, referrer)
          VALUES (?, ?, ?, ?, ?)"
@@ -41,10 +50,19 @@ try {
         $email,
         $source,
         substr($_SERVER['HTTP_USER_AGENT'] ?? '', 0, 500),
-        $_SERVER['REMOTE_ADDR'] ?? null,
+        $ip,
         substr($_SERVER['HTTP_REFERER'] ?? '', 0, 500),
     ]);
     echo json_encode(['ok' => true, 'message' => 'Terima kasih! Cek email kamu untuk panduan.']);
+} catch (PDOException $e) {
+    // UNIQUE constraint violation — email already registered
+    if ($e->getCode() === '23000') {
+        echo json_encode(['ok' => true, 'message' => 'Email sudah terdaftar, terima kasih!']);
+        exit;
+    }
+    error_log('[api/lead.php] ' . $e->getMessage());
+    http_response_code(500);
+    echo json_encode(['error' => 'Gagal simpan. Coba lagi sebentar.']);
 } catch (Throwable $e) {
     error_log('[api/lead.php] ' . $e->getMessage());
     http_response_code(500);
