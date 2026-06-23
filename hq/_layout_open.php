@@ -16,7 +16,7 @@ $_ownerNama  = $hqUser['nama'] ?? ($ownerNama ?? 'Owner');
 $_tenantNama = $hqTenant['nama_perusahaan'] ?? 'Kantor Pusat';
 
 // Group active state
-$_inTim = in_array($_aPage, ['hq-karyawan','hq-mutasi','hq-sdm','hq-penggajian','hq-roles'], true);
+$_inTim = in_array($_aPage, ['hq-karyawan','hq-mutasi','hq-sdm','hq-penggajian','hq-bonus-rule','hq-roles'], true);
 $_inCrm = in_array($_aPage, ['hq-pelanggan','hq-promo','hq-loyalty'], true);
 $_inKeu = in_array($_aPage, ['hq-keuangan','hq-laporan'], true);
 
@@ -121,9 +121,7 @@ $_canSwitch = !empty($hqIsOwner) || !empty($hqIsManager);
              class="hq-side-link <?= $_aPage === 'hq-penggajian' ? 'active' : '' ?>">Penggajian</a>
           <?php if ($hqIsOwner): ?>
           <a href="/hq/bonus-rule"
-             class="hq-side-link <?= $_aPage === 'hq-bonus-rule' ? 'active' : '' ?>">
-            <span class="ico">🎯</span> Bonus Rule
-          </a>
+             class="hq-side-link <?= $_aPage === 'hq-bonus-rule' ? 'active' : '' ?>">Bonus Rule</a>
           <?php endif; ?>
           <a href="/hq/roles"
              class="hq-side-link <?= $_aPage === 'hq-roles' ? 'active' : '' ?>">Role & Akses</a>
