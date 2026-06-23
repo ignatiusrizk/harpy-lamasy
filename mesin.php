@@ -395,8 +395,7 @@ $baseUrl = $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'lamasy.harpy.id');
 
   <!-- ═════ TAB: MASTER ═════ -->
   <div id="ms-tab-master" class="ms-tab-content" style="display:none">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-      <p style="margin:0;color:var(--gray);font-size:13px">QR base URL: <code style="background:#F3F4F6;padding:2px 6px;border-radius:4px"><?= htmlspecialchars($baseUrl) ?>/self?m=KODE</code></p>
+    <div style="display:flex;justify-content:flex-end;align-items:center;margin-bottom:14px">
       <?php if ($canManage): ?>
       <button class="hl-btn hl-btn-primary" onclick="openMesinModal()">➕ Tambah Mesin</button>
       <?php endif; ?>
