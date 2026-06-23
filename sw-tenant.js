@@ -40,6 +40,9 @@ self.addEventListener('activate', (e) => {
 self.addEventListener('fetch', (e) => {
   const url = new URL(e.request.url);
 
+  // Skip landing page — selalu fresh dari server
+  if (url.pathname === '/' || url.pathname === '/landing.php') return;
+
   // Skip pelanggan portal (handled by /sw.js)
   if (url.pathname.startsWith('/pelanggan')) return;
   // Skip kurir mobile + droppoint (different auth flow)
