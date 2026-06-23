@@ -43,7 +43,7 @@ class SaNotifier
             }
 
             // ── Resolve recipients ──
-            $recipients = self::resolveRecipients();
+            $recipients = self::resolveRecipients($eventType);
             if (empty($recipients)) return;
 
             // ── Send email ──
@@ -65,27 +65,47 @@ class SaNotifier
         }
     }
 
-    /** Resolve recipient list — hybrid constant + super_admins.email opt-in */
-    private static function resolveRecipients(): array
+    /**
+     * Resolve recipient list for a given event type.
+     * Recipients = constant SA_NOTIFY_EMAILS + SA accounts whose role
+     * has a permission with notif_events containing $eventType.
+     */
+    private static function resolveRecipients(string $eventType): array
     {
         $out = [];
 
-        // 1) Constant default
+        // 1) Constant default (always included)
         if (defined('SA_NOTIFY_EMAILS') && is_array(SA_NOTIFY_EMAILS)) {
             foreach (SA_NOTIFY_EMAILS as $e) {
                 if (filter_var($e, FILTER_VALIDATE_EMAIL)) $out[] = $e;
             }
         }
 
-        // 2) super_admins yang opt-in
+        // 2) SA accounts whose role permission covers this event_type
         try {
-            $rows = Database::get()->query(
-                "SELECT email FROM super_admins WHERE notify_enabled = 1 AND email IS NOT NULL AND is_active = 1"
-            )->fetchAll(PDO::FETCH_COLUMN);
+            $s = Database::get()->prepare(
+                "SELECT DISTINCT sa.email FROM super_admins sa
+                 JOIN sa_role_permissions rp ON rp.role_id = sa.role_id
+                 JOIN sa_permissions p ON p.id = rp.permission_id
+                 WHERE sa.notify_enabled = 1 AND sa.is_active = 1 AND sa.email IS NOT NULL
+                   AND FIND_IN_SET(?, p.notif_events) > 0"
+            );
+            $s->execute([$eventType]);
+            $rows = $s->fetchAll(PDO::FETCH_COLUMN);
             foreach ($rows as $e) {
                 if (filter_var($e, FILTER_VALIDATE_EMAIL)) $out[] = $e;
             }
-        } catch (Throwable) { /* table mungkin belum migrate */ }
+        } catch (Throwable $ex) {
+            // Tables not yet migrated — fall back to opt-in list
+            try {
+                $rows = Database::get()->query(
+                    "SELECT email FROM super_admins WHERE notify_enabled=1 AND email IS NOT NULL AND is_active=1"
+                )->fetchAll(PDO::FETCH_COLUMN);
+                foreach ($rows as $e) {
+                    if (filter_var($e, FILTER_VALIDATE_EMAIL)) $out[] = $e;
+                }
+            } catch (Throwable) {}
+        }
 
         return array_values(array_unique($out));
     }
