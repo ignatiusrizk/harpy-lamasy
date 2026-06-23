@@ -9,5 +9,11 @@
   </div><!-- /.hq-main -->
 </div><!-- /.hq-shell -->
 
+<?php
+if (function_exists('renderPwaInstallBanners')) {
+    renderPwaInstallBanners();
+}
+?>
+
 </body>
 </html>

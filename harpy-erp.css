@@ -1247,3 +1247,40 @@ html, body { overflow-x: hidden; }
   .splash-card h2 { font-size: 18px; }
   .splash-card p { font-size: 13px; }
 }
+
+/* ── PWA Install Banner — bottom fixed, Android + iOS ── */
+.pwa-banner {
+  position: fixed;
+  bottom: 16px;
+  left: 16px;
+  right: 16px;
+  max-width: 480px;
+  margin: 0 auto;
+  z-index: 9000;
+  background: #0F1C3A;
+  color: #fff;
+  border-radius: 12px;
+  padding: 12px;
+  gap: 10px;
+  align-items: center;
+  box-shadow: 0 8px 24px rgba(0,0,0,.3);
+  animation: pwaSlideUp .3s ease;
+}
+@keyframes pwaSlideUp {
+  from { transform: translateY(120%); opacity: 0; }
+  to   { transform: translateY(0); opacity: 1; }
+}
+.pwa-banner-icon { border-radius: 8px; flex-shrink: 0; }
+.pwa-banner-text { flex: 1; min-width: 0; }
+.pwa-banner-title { font-weight: 700; font-size: 14px; line-height: 1.2; }
+.pwa-banner-sub { font-size: 11px; color: rgba(255,255,255,.7); line-height: 1.4; margin-top: 2px; }
+.pwa-banner-dismiss-btn {
+  background: rgba(255,255,255,.1); color: #fff; border: 0;
+  padding: 8px 12px; border-radius: 8px; font-size: 13px;
+  cursor: pointer; flex-shrink: 0; line-height: 1;
+}
+.pwa-banner-dismiss-btn:hover { background: rgba(255,255,255,.2); }
+
+@media (max-width: 480px) {
+  .pwa-banner-sub { font-size: 10px; }
+}

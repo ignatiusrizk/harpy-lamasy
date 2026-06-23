@@ -28,8 +28,22 @@ $_canSwitch = !empty($hqIsOwner) || !empty($hqIsManager);
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <link rel="icon" type="image/png" href="/assets/logo.png">
+  <link rel="icon" type="image/png" href="/assets/icon-192.png">
+  <link rel="apple-touch-icon" href="/assets/apple-touch-icon-180.png">
   <meta name="theme-color" content="#0F1C3A">
+  <!-- PWA tenant -->
+  <link rel="manifest" href="/assets/manifest-tenant.json">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="LAMASY">
+  <script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw-tenant.js', { scope: '/' })
+        .catch(err => console.warn('SW tenant register failed:', err));
+    });
+  }
+  </script>
   <title><?= htmlspecialchars($_pageTitle) ?> · LaMaSy HQ</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

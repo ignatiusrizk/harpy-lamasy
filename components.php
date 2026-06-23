@@ -91,13 +91,32 @@ function renderDemoBanner(): void {
 }
 
 function renderHead(string $title = 'LAMASY'): void {
-    $csrf = getCsrfToken(); ?>
+    $csrf = getCsrfToken();
+    // Skip PWA tenant register di portal pelanggan (punya SW + manifest sendiri)
+    $_uri = $_SERVER['REQUEST_URI'] ?? '';
+    $isPortalPelanggan = strpos($_uri, '/pelanggan') === 0 || strpos($_uri, '/p?') === 0 || strpos($_uri, '/p/') === 0;
+    ?>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <meta name="csrf-token" content="<?= htmlspecialchars($csrf) ?>"/>
-    <link rel="icon" type="image/png" href="/assets/logo.png"/>
-    <link rel="apple-touch-icon" href="/assets/logo.png"/>
+    <link rel="icon" type="image/png" href="/assets/icon-192.png"/>
+    <link rel="apple-touch-icon" href="/assets/apple-touch-icon-180.png"/>
     <meta name="theme-color" content="#0F1C3A"/>
+    <?php if (!$isPortalPelanggan): ?>
+    <!-- PWA tenant -->
+    <link rel="manifest" href="/assets/manifest-tenant.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="LAMASY">
+    <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw-tenant.js', { scope: '/' })
+          .catch(err => console.warn('SW tenant register failed:', err));
+      });
+    }
+    </script>
+    <?php endif; ?>
     <title><?= htmlspecialchars($title) ?> — LAMASY</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -122,7 +141,80 @@ function renderGlobalJsHelpers(): void { ?>
     window.fmtTanggal = s => { if (!s) return '-'; return new Date(s.replace(' ','T')).toLocaleDateString('id-ID', {day:'2-digit',month:'short',year:'numeric'}); };
     window.capitalize = s => s ? s.charAt(0).toUpperCase() + s.slice(1) : '';
     window.katLabelInventori = k => ({deterjen:'🧴 Deterjen', parfum:'🌸 Parfum', pewangi:'💧 Pewangi', plastik_kemasan:'📦 Plastik', peralatan:'🔧 Peralatan', lainnya:'📋 Lainnya'}[k] || k);
+
+    // ── PWA install prompt (Android Chrome) ──
+    window._deferredInstallPrompt = null;
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      window._deferredInstallPrompt = e;
+      if (localStorage.getItem('pwa_install_dismissed')) return;
+      if (window.matchMedia('(display-mode: standalone)').matches) return;
+      setTimeout(() => {
+        const el = document.getElementById('pwaInstallBanner');
+        if (el) el.style.display = 'flex';
+      }, 3000);
+    });
+    window.installPWA = function() {
+      const p = window._deferredInstallPrompt;
+      if (!p) return;
+      p.prompt();
+      p.userChoice.then(choice => {
+        document.getElementById('pwaInstallBanner').style.display = 'none';
+        if (choice.outcome === 'accepted') {
+          localStorage.setItem('pwa_install_dismissed', 'installed');
+        }
+        window._deferredInstallPrompt = null;
+      });
+    };
+    window.dismissInstallBanner = function() {
+      localStorage.setItem('pwa_install_dismissed', String(Date.now()));
+      ['pwaInstallBanner','pwaIosBanner'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = 'none';
+      });
+    };
+    // iOS Safari (no beforeinstallprompt event)
+    window.addEventListener('load', () => {
+      const ua = navigator.userAgent;
+      const isIOS = /iPad|iPhone|iPod/.test(ua) && !window.MSStream;
+      const isSafari = /Safari/.test(ua) && !/CriOS|FxiOS|EdgiOS/.test(ua);
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+      if (isIOS && isSafari && !isStandalone && !localStorage.getItem('pwa_install_dismissed')) {
+        setTimeout(() => {
+          const el = document.getElementById('pwaIosBanner');
+          if (el) el.style.display = 'flex';
+        }, 5000);
+      }
+    });
     </script>
+    <?php
+}
+
+/**
+ * PWA install banner — Android (auto-prompt) + iOS Safari (manual instruksi).
+ * Render di body bawah. Display di-control via JS dari renderGlobalJsHelpers.
+ */
+function renderPwaInstallBanners(): void {
+    $_uri = $_SERVER['REQUEST_URI'] ?? '';
+    if (strpos($_uri, '/pelanggan') === 0 || strpos($_uri, '/p?') === 0) return;
+    ?>
+    <div id="pwaInstallBanner" class="pwa-banner" style="display:none">
+      <img src="/assets/icon-192.png" width="40" height="40" class="pwa-banner-icon" alt="LAMASY">
+      <div class="pwa-banner-text">
+        <div class="pwa-banner-title">Install LAMASY</div>
+        <div class="pwa-banner-sub">Akses cepat dari home screen, tanpa buka browser.</div>
+      </div>
+      <button onclick="installPWA()" class="hl-btn hl-btn-primary hl-btn-sm">Install</button>
+      <button onclick="dismissInstallBanner()" class="pwa-banner-dismiss-btn" aria-label="Tutup">✕</button>
+    </div>
+    <div id="pwaIosBanner" class="pwa-banner" style="display:none">
+      <img src="/assets/icon-192.png" width="40" height="40" class="pwa-banner-icon" alt="LAMASY">
+      <div class="pwa-banner-text">
+        <div class="pwa-banner-title">Pasang ke Home Screen</div>
+        <div class="pwa-banner-sub">Tap <strong>⎘</strong> Safari → <strong>"Tambah ke Layar Utama"</strong></div>
+      </div>
+      <button onclick="dismissInstallBanner()" class="pwa-banner-dismiss-btn" aria-label="Tutup">✕</button>
+    </div>
     <?php
 }
 
@@ -613,6 +705,8 @@ function renderToast(): void { ?>
       </div><!-- /.ol-main -->
     </div><!-- /.ol-shell -->
     <div class="hl-toast" id="toast"></div>
+
+    <?php renderPwaInstallBanners(); ?>
 
     <?php
     // ── Splash Screen Edukatif (jika ada pending) ─────────

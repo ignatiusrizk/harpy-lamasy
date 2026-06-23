@@ -1,0 +1,63 @@
+{
+  "name": "LAMASY",
+  "short_name": "LAMASY",
+  "description": "POS & manajemen laundry untuk kasir & owner",
+  "start_url": "/dashboard",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "theme_color": "#0F1C3A",
+  "background_color": "#0F1C3A",
+  "lang": "id",
+  "dir": "ltr",
+  "icons": [
+    {
+      "src": "/assets/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/icon-maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/assets/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Order Baru",
+      "short_name": "POS",
+      "description": "Buat order laundry baru",
+      "url": "/pos",
+      "icons": [{"src": "/assets/icon-192.png", "sizes": "192x192"}]
+    },
+    {
+      "name": "Daftar Order",
+      "short_name": "Orders",
+      "description": "Lihat semua order",
+      "url": "/orders",
+      "icons": [{"src": "/assets/icon-192.png", "sizes": "192x192"}]
+    },
+    {
+      "name": "Kanban",
+      "short_name": "Kanban",
+      "description": "Board status produksi",
+      "url": "/kanban",
+      "icons": [{"src": "/assets/icon-192.png", "sizes": "192x192"}]
+    }
+  ],
+  "categories": ["business", "productivity"]
+}
