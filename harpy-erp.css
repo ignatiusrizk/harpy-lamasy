@@ -1336,3 +1336,40 @@ html, body { overflow-x: hidden; }
   margin-top: 24px;
   font-style: italic;
 }
+
+/* ── LANDING: Founder Story ────────────────────────── */
+.hl-founder-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 32px;
+  max-width: 960px;
+  margin: 0 auto;
+  align-items: center;
+}
+@media (min-width: 768px) {
+  .hl-founder-grid { grid-template-columns: 1fr 2fr; gap: 48px; }
+}
+.hl-founder-photo {
+  width: 100%;
+  max-width: 280px;
+  margin: 0 auto;
+}
+.hl-founder-photo img {
+  width: 100%;
+  border-radius: 50%;
+  aspect-ratio: 1/1;
+  object-fit: cover;
+  border: 3px solid #35E8D5;
+}
+.hl-founder-text p {
+  font-size: 16px;
+  line-height: 1.7;
+  color: rgba(255,255,255,.85);
+  margin-bottom: 16px;
+}
+.hl-founder-signature {
+  font-style: italic;
+  color: #35E8D5;
+  font-weight: 600;
+  margin-top: 24px !important;
+}

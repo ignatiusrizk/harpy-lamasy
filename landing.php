@@ -1623,6 +1623,27 @@ function switchCmpTab(tab, btn) {
   </div>
 </section>
 
+<!-- ── FOUNDER ───────────────────────────────────────── -->
+<section class="section" id="founder">
+  <div class="section-head" style="text-align:center;margin-bottom:40px;">
+    <h2 style="font-size:32px;font-weight:800;">Kenapa LAMASY</h2>
+  </div>
+
+  <div class="hl-founder-grid">
+    <div class="hl-founder-photo">
+      <img src="/assets/founder.jpg?v=<?= @filemtime(__DIR__.'/assets/founder.jpg') ?: '1' ?>" alt="Founder LAMASY" loading="lazy" width="280" height="280">
+    </div>
+    <div class="hl-founder-text">
+      <p>Halo, saya Rizky.</p>
+      <p>Saya bikin LAMASY karena melihat banyak owner laundry yang masih ribet ngurus order pakai Excel atau buku tulis — sering salah hitung, susah lacak status, kasir cape rekap manual setiap malam.</p>
+      <p>Padahal, teknologi untuk bikin laundry jadi efisien udah ada. Tapi kebanyakan software laundry sekarang either terlalu mahal untuk UMKM, atau terlalu ribet buat dipelajari.</p>
+      <p>Saya membangun LAMASY untuk owner laundry kecil-menengah yang mau modernize tanpa beban biaya bulanan tetap. Bayar sesuai pakai via Coin — kalau slow business, biaya tetap rendah.</p>
+      <p>Sekarang LAMASY masih early adopter program. Saya respon WA langsung untuk feedback dan support.</p>
+      <p class="hl-founder-signature">— Ignatius Rizky, Founder</p>
+    </div>
+  </div>
+</section>
+
 <!-- ── HARGA ────────────────────────────────────────── -->
 <section class="section" id="harga">
   <div class="section-header">
