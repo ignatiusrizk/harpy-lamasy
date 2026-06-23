@@ -1644,6 +1644,47 @@ function switchCmpTab(tab, btn) {
   </div>
 </section>
 
+<!-- ── TRUST ────────────────────────────────────────── -->
+<section class="section" id="trust" style="background:rgba(255,255,255,.018)">
+  <div class="section-head" style="text-align:center;margin-bottom:40px;">
+    <h2 style="font-size:32px;font-weight:800;margin-bottom:12px;">Kenapa Percaya LAMASY</h2>
+    <p style="color:rgba(255,255,255,.6);max-width:600px;margin:0 auto;">Built untuk reliability dan transparency — bukan janji marketing.</p>
+  </div>
+
+  <div class="hl-trust-grid">
+    <div class="hl-trust-item">
+      <span class="hl-trust-icon">🔐</span>
+      <div class="hl-trust-title">Multi-Tenant Isolated</div>
+      <div class="hl-trust-desc">Data outlet kamu, hanya kamu yang akses. Tenant scope di setiap query.</div>
+    </div>
+    <div class="hl-trust-item">
+      <span class="hl-trust-icon">📊</span>
+      <div class="hl-trust-title">Audit Log Lengkap</div>
+      <div class="hl-trust-desc">Semua aksi tercatat dengan timestamp. Transparan untuk owner + accountant.</div>
+    </div>
+    <div class="hl-trust-item">
+      <span class="hl-trust-icon">🛡️</span>
+      <div class="hl-trust-title">HTTPS + Encrypted</div>
+      <div class="hl-trust-desc">Koneksi aman dengan TLS 1.3. Password hashed dengan bcrypt.</div>
+    </div>
+    <div class="hl-trust-item">
+      <span class="hl-trust-icon">🇮🇩</span>
+      <div class="hl-trust-title">Server di Indonesia</div>
+      <div class="hl-trust-desc">Hostinger SG/ID region. Low latency, support lokal jam kerja.</div>
+    </div>
+    <div class="hl-trust-item">
+      <span class="hl-trust-icon">🤝</span>
+      <div class="hl-trust-title">Bayar Sesuai Pakai</div>
+      <div class="hl-trust-desc">Coin-based — no monthly lock-in. Stop topup, stop biaya.</div>
+    </div>
+    <div class="hl-trust-item">
+      <span class="hl-trust-icon">💬</span>
+      <div class="hl-trust-title">Support WA Langsung</div>
+      <div class="hl-trust-desc">Founder responsif, balas pribadi. Bukan chatbot atau ticket system.</div>
+    </div>
+  </div>
+</section>
+
 <!-- ── HARGA ────────────────────────────────────────── -->
 <section class="section" id="harga">
   <div class="section-header">

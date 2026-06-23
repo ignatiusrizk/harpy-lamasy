@@ -1373,3 +1373,37 @@ html, body { overflow-x: hidden; }
   font-weight: 600;
   margin-top: 24px !important;
 }
+
+/* ── LANDING: Trust Signals ────────────────────────── */
+.hl-trust-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  max-width: 1080px;
+  margin: 0 auto;
+}
+@media (min-width: 1024px) {
+  .hl-trust-grid { grid-template-columns: repeat(3, 1fr); gap: 20px; }
+}
+.hl-trust-item {
+  padding: 24px 20px;
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 14px;
+}
+.hl-trust-icon {
+  font-size: 36px;
+  display: block;
+  margin-bottom: 14px;
+}
+.hl-trust-title {
+  font-weight: 700;
+  font-size: 15px;
+  color: #fff;
+  margin-bottom: 6px;
+}
+.hl-trust-desc {
+  font-size: 13px;
+  line-height: 1.5;
+  color: rgba(255,255,255,.6);
+}
