@@ -1014,6 +1014,9 @@ img { max-width: 100%; }
     <a href="/register.php" class="btn-primary">&#128640; Coba Gratis 7 Hari</a>
     <a href="#fitur" class="btn-secondary">&#9654; Lihat Fitur</a>
   </div>
+  <div style="margin-top:20px;font-size:13px;color:rgba(255,255,255,.5);text-align:center;">
+    ✓ Tanpa kartu kredit · ✓ Setup 5 menit · ✓ Cancel anytime
+  </div>
 
   <!-- Dashboard Mockup -->
   <div class="hero-mockup">
@@ -1691,6 +1694,12 @@ function switchCmpTab(tab, btn) {
     <div class="section-tag">Harga</div>
     <h2>Bayar Sesuai Pemakaian — Bukan Langganan Mengikat</h2>
     <p>Tidak ada paket bertingkat. Tidak ada biaya bulanan wajib. Cuma <strong>1× setup fee per outlet</strong>, sisanya kamu yang kontrol via Coin sesuai pemakaian fitur.</p>
+    <p style="text-align:center;color:rgba(53,232,213,.9);font-weight:600;margin-bottom:8px;font-size:15px;">
+      Trial 7 hari gratis · Lanjut bayar sesuai pakai via Coin
+    </p>
+    <p style="text-align:center;color:rgba(255,255,255,.5);max-width:600px;margin:0 auto 32px;font-size:13px;">
+      vs langganan bulanan kompetitor Rp 500K+/bulan — LAMASY bayar sesuai pakai, bisnis slow biaya tetap rendah.
+    </p>
   </div>
 
   <!-- Main Pricing Card -->
@@ -1920,6 +1929,15 @@ function switchCmpTab(tab, btn) {
 
       ['Bagaimana support kalau ada masalah?',
        'Support via WhatsApp untuk semua tenant aktif (jam kerja 9-21 WIB, response &lt;2 jam). Tenant dengan multi-outlet dapat dedicated WA group. Trial dan tenant baru dapat onboarding 1-on-1 (30 menit) untuk setup outlet, layanan, dan training kasir.'],
+
+      ['Apa beda LAMASY dengan kompetitor seperti Smartlink?',
+       'LAMASY focus AI-first (briefing harian, smart notif, churn analysis) + bayar coin (no monthly lock-in) + multi-tenant SaaS proper (data isolated per outlet). Cocok untuk owner yang mau pakai teknologi modern tanpa commitment langganan.'],
+
+      ['Apakah data saya aman di LAMASY?',
+       'Multi-tenant isolated (data outlet kamu hanya bisa diakses akun kamu), HTTPS + TLS 1.3 encrypted, password hashed bcrypt, audit log lengkap untuk setiap aksi, backup harian otomatis di Hostinger.'],
+
+      ['Bagaimana kalau saya berhenti pakai LAMASY?',
+       'Tidak ada cancel process — kamu bayar sesuai pakai. Stop topup coin = stop biaya. Data tetap accessible (read-only). Kalau mau full export: HQ → Export Data → download semua data outlet kamu dalam format CSV/SQL. No vendor lock-in.'],
     ];
     foreach ($faqs as $i => [$q, $a]):
     ?>
