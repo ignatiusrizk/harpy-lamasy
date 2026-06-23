@@ -322,7 +322,7 @@ $pageTitle  = '🧺 Produksi';
     <h1 style="margin:0 0 16px">🧺 Produksi</h1>
 
     <!-- Stage tabs -->
-    <div id="stageTabs" style="display:flex;gap:6px;overflow-x:auto;padding-bottom:8px;margin-bottom:12px;-webkit-overflow-scrolling:touch">
+    <div id="stageTabs" style="display:flex;gap:6px;overflow-x:auto;padding-bottom:8px;margin-bottom:12px;-webkit-overflow-scrolling:touch;max-width:100%;min-width:0">
       <button class="stage-tab active" data-stage="terima"  onclick="switchStage('terima')">📥 Terima <span class="cnt"></span></button>
       <button class="stage-tab"        data-stage="cuci"    onclick="switchStage('cuci')">🫧 Cuci <span class="cnt"></span></button>
       <button class="stage-tab"        data-stage="kering"  onclick="switchStage('kering')">💨 Kering <span class="cnt"></span></button>
