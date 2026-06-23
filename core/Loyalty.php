@@ -260,6 +260,154 @@ class Loyalty
         return $poin * $cfg['poin_value'];
     }
 
+    /**
+     * Phase 2: Generate kupon kode dari reward loyalty.
+     * Deduct saldo poin pelanggan, buat row hl_voucher source=loyalty
+     * dengan kode unik. Kupon bisa dishare (lihat /pelanggan portal)
+     * dan dipakai sendiri/teman saat order POS.
+     *
+     * Return: ['kode'=>'X', 'expired_at'=>'YYYY-MM-DD', 'voucher_id'=>N]
+     * Throws RuntimeException kalau saldo kurang / reward invalid.
+     */
+    public static function createCoupon(
+        int $tenantId, int $pelangganId, int $rewardId, ?int $outletId = null, ?int $userId = null
+    ): array {
+        $db = Database::get();
+        $db->beginTransaction();
+        try {
+            // Validate reward
+            $r = $db->prepare("SELECT * FROM hl_poin_reward WHERE id=? AND tenant_id=? AND is_active=1 LIMIT 1");
+            $r->execute([$rewardId, $tenantId]);
+            $reward = $r->fetch(PDO::FETCH_ASSOC);
+            if (!$reward) throw new RuntimeException('Reward tidak ditemukan atau tidak aktif.');
+            $poinDibutuhkan = (int)$reward['poin_dibutuhkan'];
+
+            // Lock & validate saldo
+            $cur = $db->prepare("SELECT poin_balance FROM hl_pelanggan WHERE id=? AND tenant_id=? FOR UPDATE");
+            $cur->execute([$pelangganId, $tenantId]);
+            $bal = (int)$cur->fetchColumn();
+            if ($bal < $poinDibutuhkan) throw new RuntimeException("Poin tidak cukup (saldo: $bal, butuh: $poinDibutuhkan).");
+
+            // Generate kode unik 8 chars (uppercase alphanumeric, exclude ambiguous)
+            $alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no I/O/0/1
+            $maxAttempt = 8;
+            $kode = null;
+            for ($i = 0; $i < $maxAttempt; $i++) {
+                $candidate = '';
+                for ($j = 0; $j < 8; $j++) $candidate .= $alphabet[random_int(0, strlen($alphabet) - 1)];
+                $chk = $db->prepare("SELECT 1 FROM hl_voucher WHERE tenant_id=? AND kode=? LIMIT 1");
+                $chk->execute([$tenantId, $candidate]);
+                if (!$chk->fetchColumn()) { $kode = $candidate; break; }
+            }
+            if (!$kode) throw new RuntimeException('Gagal generate kode unik, coba lagi.');
+
+            // Insert hl_voucher
+            $expiredAt = date('Y-m-d', strtotime('+90 days'));
+            $namaPel = '';
+            $telPel  = '';
+            $pStmt = $db->prepare("SELECT nama, telepon FROM hl_pelanggan WHERE id=? AND tenant_id=? LIMIT 1");
+            $pStmt->execute([$pelangganId, $tenantId]);
+            if ($p = $pStmt->fetch(PDO::FETCH_ASSOC)) { $namaPel = $p['nama']; $telPel = $p['telepon']; }
+
+            $ins = $db->prepare(
+                "INSERT INTO hl_voucher
+                  (tenant_id, outlet_id, promo_id, reward_id, pelanggan_id, source, kode,
+                   nama_penerima, telepon, expired_at, created_at)
+                 VALUES (?, ?, NULL, ?, ?, 'loyalty', ?, ?, ?, ?, NOW())"
+            );
+            $ins->execute([$tenantId, $outletId, $rewardId, $pelangganId, $kode, $namaPel, $telPel, $expiredAt]);
+            $voucherId = (int)$db->lastInsertId();
+
+            // Deduct saldo poin + log
+            $newBal = $bal - $poinDibutuhkan;
+            $db->prepare("UPDATE hl_pelanggan SET poin_balance=? WHERE id=? AND tenant_id=?")
+               ->execute([$newBal, $pelangganId, $tenantId]);
+            $db->prepare(
+                "INSERT INTO hl_loyalty_log
+                  (tenant_id, outlet_id, pelanggan_id, transaksi_id, reward_id, type, poin,
+                   balance_after, keterangan, created_by)
+                 VALUES (?,?,?, NULL, ?, 'redeem', ?, ?, ?, ?)"
+            )->execute([
+                $tenantId, $outletId, $pelangganId, $rewardId, -$poinDibutuhkan, $newBal,
+                'Generate kupon ' . $kode . ' (reward: ' . $reward['nama_reward'] . ')',
+                $userId,
+            ]);
+
+            $db->commit();
+            return [
+                'kode'       => $kode,
+                'voucher_id' => $voucherId,
+                'expired_at' => $expiredAt,
+                'reward'     => $reward,
+                'new_saldo'  => $newBal,
+            ];
+        } catch (Throwable $e) {
+            if ($db->inTransaction()) $db->rollBack();
+            throw $e;
+        }
+    }
+
+    /** Phase 2: cari kupon by kode, return reward info kalau valid (untuk apply di POS). */
+    public static function resolveCoupon(int $tenantId, ?int $outletId, string $kode): ?array
+    {
+        $db = Database::get();
+        $st = $db->prepare(
+            "SELECT v.id, v.kode, v.reward_id, v.pelanggan_id, v.expired_at, v.is_used,
+                    r.nama_reward, r.tipe, r.nilai, r.poin_dibutuhkan,
+                    p.nama AS pelanggan_nama
+               FROM hl_voucher v
+               LEFT JOIN hl_poin_reward r ON r.id=v.reward_id AND r.tenant_id=v.tenant_id
+               LEFT JOIN hl_pelanggan p ON p.id=v.pelanggan_id AND p.tenant_id=v.tenant_id
+              WHERE v.tenant_id=? AND v.source='loyalty' AND v.kode=? LIMIT 1"
+        );
+        $st->execute([$tenantId, $kode]);
+        $row = $st->fetch(PDO::FETCH_ASSOC);
+        if (!$row) return null;
+        if ((int)$row['is_used'] === 1) return ['error' => 'Kupon sudah terpakai.'];
+        if ($row['expired_at'] && $row['expired_at'] < date('Y-m-d')) return ['error' => 'Kupon kadaluwarsa.'];
+        if ($row['reward_id']) {
+            // Cek apply di outlet (kalau junction ada)
+            $oks = $db->prepare("SELECT COUNT(*) FROM hl_poin_reward_outlet WHERE reward_id=?");
+            $oks->execute([$row['reward_id']]);
+            $hasJunction = (int)$oks->fetchColumn() > 0;
+            if ($hasJunction && $outletId) {
+                $ok = $db->prepare("SELECT 1 FROM hl_poin_reward_outlet WHERE reward_id=? AND outlet_id=? LIMIT 1");
+                $ok->execute([$row['reward_id'], $outletId]);
+                if (!$ok->fetchColumn()) return ['error' => 'Kupon ini tidak berlaku di outlet ini.'];
+            }
+        }
+        return $row;
+    }
+
+    /** Phase 2: mark kupon as used (dipanggil saat POS apply). */
+    public static function useCoupon(int $tenantId, int $voucherId, string $noOrder): bool
+    {
+        $db = Database::get();
+        $st = $db->prepare(
+            "UPDATE hl_voucher
+                SET is_used=1, used_at=NOW(), used_by_order=?
+              WHERE id=? AND tenant_id=? AND source='loyalty' AND is_used=0"
+        );
+        $st->execute([$noOrder, $voucherId, $tenantId]);
+        return $st->rowCount() > 0;
+    }
+
+    /** Phase 2: list kupon aktif (belum used + belum expired) milik pelanggan. */
+    public static function myCoupons(int $tenantId, int $pelangganId): array
+    {
+        $db = Database::get();
+        $st = $db->prepare(
+            "SELECT v.id, v.kode, v.expired_at, v.is_used, v.used_at, v.used_by_order, v.created_at,
+                    r.nama_reward, r.tipe, r.nilai
+               FROM hl_voucher v
+               LEFT JOIN hl_poin_reward r ON r.id=v.reward_id AND r.tenant_id=v.tenant_id
+              WHERE v.tenant_id=? AND v.source='loyalty' AND v.pelanggan_id=?
+              ORDER BY v.is_used ASC, v.created_at DESC LIMIT 50"
+        );
+        $st->execute([$tenantId, $pelangganId]);
+        return $st->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
     /** Penyesuaian manual (admin) */
     public static function adjust(int $tenantId, int $pelangganId, int $poinDelta, string $note, ?int $userId = null): int
     {

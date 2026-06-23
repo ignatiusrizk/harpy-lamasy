@@ -31,6 +31,32 @@ if ($action === 'logout') {
     exit;
 }
 
+// Phase 2: generate kupon kode dari reward
+if ($action === 'generate_coupon' && $_SERVER['REQUEST_METHOD']==='POST') {
+    header('Content-Type: application/json');
+    verifyPortalCsrf();
+    $d = json_decode(file_get_contents('php://input'), true) ?: [];
+    $rewardId = (int)($d['reward_id'] ?? 0);
+    if ($rewardId <= 0) { echo json_encode(['error'=>'Reward tidak valid']); exit; }
+    require_once ROOT . '/core/Loyalty.php';
+    // Resolve tenant dari pelanggan
+    $tidStmt = $db->prepare("SELECT tenant_id FROM hl_pelanggan WHERE id=? LIMIT 1");
+    $tidStmt->execute([(int)$pel['id']]);
+    $pelTid = (int)$tidStmt->fetchColumn();
+    if ($pelTid <= 0) { echo json_encode(['error'=>'Tenant tidak ditemukan']); exit; }
+    // Cek outlet last order untuk default outlet_id (optional)
+    $oidStmt = $db->prepare("SELECT outlet_id FROM hl_transaksi WHERE pelanggan_id=? ORDER BY id DESC LIMIT 1");
+    $oidStmt->execute([(int)$pel['id']]);
+    $defaultOid = (int)($oidStmt->fetchColumn() ?: 0) ?: null;
+    try {
+        $result = Loyalty::createCoupon($pelTid, (int)$pel['id'], $rewardId, $defaultOid, null);
+        echo json_encode(['ok'=>true, 'kupon'=>$result]);
+    } catch (Throwable $e) {
+        echo json_encode(['error'=>$e->getMessage()]);
+    }
+    exit;
+}
+
 if ($action === 'regen_token' && $_SERVER['REQUEST_METHOD']==='POST') {
     header('Content-Type: application/json');
     verifyPortalCsrf();
@@ -90,6 +116,18 @@ try {
     $st->execute([(int)$pel['id']]);
     $activeOrders = $st->fetchAll(PDO::FETCH_ASSOC);
 } catch (Throwable $e) { error_log('[pelanggan active] ' . $e->getMessage()); }
+
+// Phase 2: Kupon aktif pelanggan
+$myCoupons = [];
+try {
+    require_once ROOT . '/core/Loyalty.php';
+    $tidStmt = $db->prepare("SELECT tenant_id FROM hl_pelanggan WHERE id=? LIMIT 1");
+    $tidStmt->execute([(int)$pel['id']]);
+    $pelTid = (int)$tidStmt->fetchColumn();
+    if ($pelTid > 0) {
+        $myCoupons = Loyalty::myCoupons($pelTid, (int)$pel['id']);
+    }
+} catch (Throwable) {}
 
 // Riwayat (20 terakhir done)
 $historyOrders = [];
@@ -165,16 +203,55 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
   <div class="card">
     <h2>🎁 Hadiah Tersedia</h2>
     <?php foreach ($rewards as $r): ?>
-      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #F1F5F9">
-        <div style="flex:1">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #F1F5F9;gap:8px">
+        <div style="flex:1;min-width:0">
           <div style="font-weight:600;font-size:14px;<?= $r['bisa_redeem'] ? '' : 'color:#94A3B8' ?>">
             <?= $r['bisa_redeem'] ? '✅' : '⏳' ?> <?= htmlspecialchars($r['nama_reward']) ?>
           </div>
           <div style="font-size:11px;color:#64748B;margin-top:2px"><?= (int)$r['poin_dibutuhkan'] ?> poin<?= $r['bisa_redeem'] ? '' : ' (butuh ' . (int)$r['kurang'] . ' lagi)' ?></div>
         </div>
+        <?php if ($r['bisa_redeem']): ?>
+          <button onclick="generateKupon(<?= (int)$r['id'] ?>, this)"
+                  style="background:#14B8A6;color:#fff;border:none;padding:6px 12px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap">
+            🎟️ Tukar Kupon
+          </button>
+        <?php endif; ?>
       </div>
     <?php endforeach; ?>
-    <div style="margin-top:10px;font-size:12px;color:#64748B;font-style:italic">💡 Kunjungi outlet untuk menukarkan hadiah</div>
+    <div style="margin-top:10px;font-size:12px;color:#64748B;font-style:italic">💡 Tukar jadi kupon kode untuk dipakai sendiri atau di-share via WA</div>
+  </div>
+  <?php endif; ?>
+
+  <?php if (!empty($myCoupons)): ?>
+  <div class="card">
+    <h2>🎟️ Kupon Saya (<?= count($myCoupons) ?>)</h2>
+    <?php foreach ($myCoupons as $c):
+      $isUsed = (int)$c['is_used'] === 1;
+      $isExpired = !$isUsed && $c['expired_at'] && $c['expired_at'] < date('Y-m-d');
+      $statusClass = $isUsed ? '#94A3B8' : ($isExpired ? '#DC2626' : '#0F766E');
+    ?>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:<?= $isUsed||$isExpired ? '#F1F5F9' : '#F0FDFA' ?>;border:1px solid <?= $isUsed||$isExpired ? '#E2E8F0' : '#99F6E4' ?>;border-radius:8px;margin-bottom:8px;gap:8px">
+        <div style="flex:1;min-width:0">
+          <div style="font-family:var(--mono,monospace);font-weight:700;font-size:16px;letter-spacing:1px;color:<?= $statusClass ?>">
+            <?= htmlspecialchars($c['kode']) ?>
+          </div>
+          <div style="font-size:12px;color:#64748B;margin-top:2px">
+            <?= htmlspecialchars($c['nama_reward'] ?: 'Reward') ?> · expired <?= htmlspecialchars($c['expired_at'] ?: '-') ?>
+            <?php if ($isUsed): ?>
+              <span style="color:#94A3B8"> · ✓ Sudah dipakai (<?= htmlspecialchars($c['used_by_order'] ?: '-') ?>)</span>
+            <?php elseif ($isExpired): ?>
+              <span style="color:#DC2626"> · ⌛ Kadaluwarsa</span>
+            <?php endif; ?>
+          </div>
+        </div>
+        <?php if (!$isUsed && !$isExpired): ?>
+          <button onclick="shareKupon('<?= htmlspecialchars($c['kode']) ?>', '<?= htmlspecialchars(addslashes($c['nama_reward'] ?: 'reward')) ?>', '<?= htmlspecialchars($c['expired_at']) ?>')"
+                  style="background:#22C55E;color:#fff;border:none;padding:6px 10px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap">
+            💬 Share
+          </button>
+        <?php endif; ?>
+      </div>
+    <?php endforeach; ?>
   </div>
   <?php endif; ?>
 
@@ -224,6 +301,31 @@ async function regenToken() {
     alert('✅ Token baru. Untuk login kembali, scan QR struk terbaru dari outlet.');
     window.location = '/p?msg=logout';
   }
+}
+
+async function generateKupon(rewardId, btn) {
+  if (!confirm('Tukar poin sekarang? Kupon akan keluar dengan kode unik (berlaku 90 hari).')) return;
+  btn.disabled = true; btn.textContent = '⏳ Generating...';
+  try {
+    const r = await fetch('?action=generate_coupon', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json','X-CSRF-Token':CSRF},
+      body: JSON.stringify({reward_id: rewardId})
+    });
+    const d = await r.json();
+    if (d.error) { alert('Gagal: ' + d.error); btn.disabled=false; btn.textContent='🎟️ Tukar Kupon'; return; }
+    alert('✅ Kupon berhasil dibuat!\n\nKode: ' + d.kupon.kode + '\nBerlaku sampai: ' + d.kupon.expired_at + '\n\nKupon Saya muncul di bawah — bisa di-share lewat WA.');
+    location.reload();
+  } catch (e) {
+    alert('Network error: ' + e.message);
+    btn.disabled=false; btn.textContent='🎟️ Tukar Kupon';
+  }
+}
+
+function shareKupon(kode, namaReward, expiredAt) {
+  const msg = `Halo! Ini kupon laundry LAMASY untuk kamu:\n\n*${kode}*\nReward: ${namaReward}\nBerlaku sampai: ${expiredAt}\n\nKasih kode ini ke kasir saat order. Otomatis dapat reward.`;
+  const url = 'https://wa.me/?text=' + encodeURIComponent(msg);
+  window.open(url, '_blank');
 }
 // Register service worker (PWA)
 if ('serviceWorker' in navigator) {

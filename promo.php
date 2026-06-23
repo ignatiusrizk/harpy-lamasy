@@ -188,13 +188,48 @@ if ($action) {
         $kode  = strtoupper(trim($_GET['kode'] ?? ''));
         $total = floatval($_GET['total'] ?? 0);
 
-        // Cek apakah kode adalah voucher milik tenant ini
+        // ── Phase 2: cek kupon kode source=loyalty dulu ────────
+        require_once ROOT . '/core/Loyalty.php';
+        $loyaltyKupon = Loyalty::resolveCoupon($tid, $oid, $kode);
+        if ($loyaltyKupon) {
+            if (isset($loyaltyKupon['error'])) { echo json_encode(['error'=>$loyaltyKupon['error']]); exit; }
+            // Calculate diskon sesuai reward.tipe
+            $tipe = $loyaltyKupon['tipe'];
+            $nilai = (float)$loyaltyKupon['nilai'];
+            switch ($tipe) {
+                case 'diskon_nominal': $diskon = $nilai; break;
+                case 'diskon_persen':  $diskon = $total * $nilai / 100; break;
+                case 'gratis_layanan': $diskon = $nilai; break; // treated as nominal off
+                default: $diskon = $nilai;
+            }
+            $diskon = min($diskon, $total); // cannot exceed total
+            $info = match($tipe) {
+                'diskon_nominal' => 'Rp ' . number_format($nilai,0,',','.') . ' off',
+                'diskon_persen'  => $nilai . '% off',
+                'gratis_layanan' => 'Gratis Rp ' . number_format($nilai,0,',','.'),
+                default          => 'Reward'
+            };
+            echo json_encode([
+                'valid'      => true,
+                'tipe'       => 'loyalty_coupon',
+                'voucher_id' => (int)$loyaltyKupon['id'],
+                'reward_id'  => (int)$loyaltyKupon['reward_id'],
+                'kode'       => $loyaltyKupon['kode'],
+                'nama'       => '🎟️ ' . ($loyaltyKupon['nama_reward'] ?: 'Reward Loyalty'),
+                'diskon'     => $diskon,
+                'info'       => $info,
+                'pelanggan'  => $loyaltyKupon['pelanggan_nama'] ?? null,
+            ]);
+            exit;
+        }
+
+        // Cek apakah kode adalah voucher milik tenant ini (source=promo)
         $vRows = TenantQuery::raw(
             "SELECT v.*, p.nama as promo_nama, p.tipe, p.nilai, p.min_transaksi, p.maks_diskon,
                 p.berlaku_sampai as promo_expired
                 FROM hl_voucher v
                 LEFT JOIN hl_promo p ON v.promo_id=p.id AND p.tenant_id=v.tenant_id
-                WHERE v.tenant_id=? AND v.kode=?",
+                WHERE v.tenant_id=? AND v.kode=? AND v.source='promo'",
             [$tid, $kode]
         );
         $v = $vRows[0] ?? null;
