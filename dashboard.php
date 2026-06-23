@@ -1456,18 +1456,32 @@ if ($_dashRole === 'kasir'):
       </div>
     </div>
 
-    <!-- INVENTORI KRITIS -->
+    <!-- INVENTORI KRITIS — friendly reminder (bukan blocker) -->
     <div id="inventoriKritisWrap" style="display:none;margin-top:16px">
-      <div class="hl-card" style="border-left:4px solid #EF4444">
-        <div class="hl-card-header">
-          <div class="alert-title">📦 Bahan Baku Stok Kritis
-            <span class="alert-badge" id="badgeInventoriKritis" style="background:#FEE2E2;color:#991B1B">0</span>
+      <div class="hl-card" style="border-left:4px solid #F59E0B;background:#FFFBEB">
+        <div class="hl-card-header" style="background:transparent;border-bottom:1px dashed #FDE68A">
+          <div class="alert-title" style="color:#78350F">
+            📦 Reminder: ada <span id="badgeInventoriKritis" style="font-weight:800;color:#78350F">0</span> bahan baku stok-nya menipis
           </div>
-          <a href="/inventori" style="font-size:12px;color:var(--teal);text-decoration:none">Kelola stok →</a>
+          <button onclick="dismissInvWarn()" style="background:none;border:none;color:#92400E;font-size:11px;cursor:pointer;text-decoration:underline">Tutup hari ini</button>
         </div>
-        <div class="hl-card-body" style="padding:12px" id="inventoriKritisList"></div>
+        <div class="hl-card-body" style="padding:12px 16px;color:#78350F;font-size:13px">
+          <div style="margin-bottom:10px;font-size:12.5px;line-height:1.5">
+            <strong>Tenant baru?</strong> Wajar kalau stok belum di-input. Kamu bisa <a href="/inventori" style="color:#0891B2;font-weight:700">setup inventori</a> kapan saja, atau <a href="#" onclick="event.preventDefault();dismissInvWarn()" style="color:#78350F">skip dulu</a> dan kembali nanti.
+          </div>
+          <div id="inventoriKritisList"></div>
+        </div>
       </div>
     </div>
+    <script>
+    // Dismiss-for-today (localStorage flag, key per outlet+date)
+    function dismissInvWarn(){
+      var key='hl_inv_warn_dismiss_'+(<?= (int)($outletId ?? 0) ?>)+'_'+new Date().toISOString().slice(0,10);
+      localStorage.setItem(key,'1');
+      var w=document.getElementById('inventoriKritisWrap');if(w)w.style.display='none';
+    }
+    (function(){var k='hl_inv_warn_dismiss_'+(<?= (int)($outletId ?? 0) ?>)+'_'+new Date().toISOString().slice(0,10);if(localStorage.getItem(k)){var w=document.getElementById('inventoriKritisWrap');if(w){w.dataset.dismissed='1';}}})();
+    </script>
 
 </div><!-- /hl-main -->
 

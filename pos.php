@@ -822,6 +822,19 @@ textarea{resize:vertical;min-height:64px}
 
 @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
 
+/* Antar ke Pelanggan — toggle card */
+.hl-antar-toggle{display:flex;align-items:center;gap:12px;margin:0 0 14px;padding:14px 16px;background:#F0FDFC;border:1.5px solid #BBF0EA;border-radius:12px;cursor:pointer;transition:all .15s;position:relative}
+.hl-antar-toggle:hover{background:#E0FBF7;border-color:#80E4D8}
+.hl-antar-toggle input[type=checkbox]{position:absolute;opacity:0;pointer-events:none}
+.hl-antar-icon{font-size:24px;flex-shrink:0;width:42px;height:42px;display:flex;align-items:center;justify-content:center;background:#fff;border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,.05)}
+.hl-antar-text{flex:1;min-width:0}
+.hl-antar-title{font-size:14px;font-weight:700;color:var(--navy);line-height:1.3}
+.hl-antar-sub{font-size:12px;color:var(--gray);margin-top:2px}
+.hl-antar-check{width:24px;height:24px;border-radius:50%;border:2px solid #BBF0EA;background:#fff;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.hl-antar-toggle:has(input:checked){background:#D1FAEF;border-color:#35E8D5;box-shadow:0 0 0 3px rgba(53,232,213,.15)}
+.hl-antar-toggle:has(input:checked) .hl-antar-check{background:#35E8D5;border-color:#35E8D5}
+.hl-antar-toggle:has(input:checked) .hl-antar-check::after{content:'✓';color:#0F1C3A;font-weight:900;font-size:14px}
+
 @media(max-width:800px){
   .main{padding:16px 14px}
   .grid-2{grid-template-columns:1fr;gap:14px}
@@ -969,17 +982,17 @@ textarea{resize:vertical;min-height:64px}
               <label>No. Telepon <span class="req">*</span></label>
               <input type="tel" id="f_telepon" placeholder="08xxxxxxxxxx"/>
             </div>
-            <!-- Member badge — muncul saat pelanggan punya membership aktif -->
-            <div class="form-group full" id="memberBadgeBox" style="display:none;background:#FEF3C7;border:1px solid #FDE68A;border-radius:8px;padding:8px 14px;margin:4px 0;font-size:12.5px;color:#92400E;">
-              <!-- isi auto by loadMemberInfo() -->
-            </div>
             <div class="form-group">
-              <label>Parfum / Pewangi <span style="font-size:10px;color:var(--gray);font-weight:400;">— opsional, dari Master Parfum outlet</span></label>
+              <label>Parfum / Pewangi <span style="font-size:10px;color:var(--gray);font-weight:400;">— opsional</span></label>
               <input type="text" id="f_parfum" list="parfumList" placeholder="Lavender, Original, Rose, dll"/>
-              <datalist id="parfumList">
-                <!-- Auto-populate from /pos.php?action=parfum_list (per outlet) -->
-              </datalist>
+              <datalist id="parfumList"></datalist>
             </div>
+          </div>
+          <!-- Member badge — muncul saat pelanggan punya membership aktif -->
+          <div id="memberBadgeBox" style="display:none;background:#FEF3C7;border:1px solid #FDE68A;border-radius:8px;padding:8px 14px;margin:0 0 12px;font-size:12.5px;color:#92400E;">
+            <!-- isi auto by loadMemberInfo() -->
+          </div>
+          <div class="form-row">
             <div class="form-group full">
               <label>Catatan Order</label>
               <textarea id="f_catatan" placeholder="Warna, permintaan khusus, kondisi pakaian, dll..." style="min-height:80px"></textarea>
@@ -988,20 +1001,24 @@ textarea{resize:vertical;min-height:64px}
         </div>
       </div>
 
-      <!-- ANTAR KE PELANGGAN -->
-      <div style="margin:14px 0;padding:12px 14px;background:#F0FDFC;border:1px solid #BBF0EA;border-radius:10px">
-        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:600">
-          <input type="checkbox" id="cb_antar" onchange="toggleAntarSection()"> 🛵 Antar ke Pelanggan
-        </label>
-        <div id="antarSection" style="display:none;margin-top:10px">
-          <label style="font-size:12px;font-weight:600;color:var(--gray);text-transform:uppercase;letter-spacing:.06em">Alamat (opsional)</label>
-          <textarea id="antar_alamat" class="input" rows="2" placeholder="Jl. Mawar 12, RT 03/RW 04..."></textarea>
-          <label style="font-size:12px;font-weight:600;color:var(--gray);text-transform:uppercase;letter-spacing:.06em;margin-top:8px;display:block">Patokan/Catatan</label>
-          <input type="text" id="antar_catatan" class="input" placeholder="Dekat warung Bu Inah">
-          <div id="antarZonaWrap" style="display:none;margin-top:8px">
-            <label style="font-size:12px;font-weight:600;color:var(--gray);text-transform:uppercase;letter-spacing:.06em">Zona</label>
-            <select id="antar_zona" class="input"><option value="">-- Pilih zona --</option></select>
-          </div>
+      <!-- ANTAR KE PELANGGAN — card toggle style -->
+      <label class="hl-antar-toggle" id="antarToggleCard">
+        <input type="checkbox" id="cb_antar" onchange="toggleAntarSection()">
+        <div class="hl-antar-icon">🛵</div>
+        <div class="hl-antar-text">
+          <div class="hl-antar-title">Antar ke Pelanggan</div>
+          <div class="hl-antar-sub">Aktifkan kalau pelanggan mau cucian diantar</div>
+        </div>
+        <div class="hl-antar-check"></div>
+      </label>
+      <div id="antarSection" style="display:none;margin:0 0 14px;padding:14px;background:#fff;border:1px solid #BBF0EA;border-radius:10px">
+        <label style="font-size:12px;font-weight:600;color:var(--gray);text-transform:uppercase;letter-spacing:.06em">Alamat (opsional)</label>
+        <textarea id="antar_alamat" class="input" rows="2" placeholder="Jl. Mawar 12, RT 03/RW 04..."></textarea>
+        <label style="font-size:12px;font-weight:600;color:var(--gray);text-transform:uppercase;letter-spacing:.06em;margin-top:8px;display:block">Patokan/Catatan</label>
+        <input type="text" id="antar_catatan" class="input" placeholder="Dekat warung Bu Inah">
+        <div id="antarZonaWrap" style="display:none;margin-top:8px">
+          <label style="font-size:12px;font-weight:600;color:var(--gray);text-transform:uppercase;letter-spacing:.06em">Zona</label>
+          <select id="antar_zona" class="input"><option value="">-- Pilih zona --</option></select>
         </div>
       </div>
 
