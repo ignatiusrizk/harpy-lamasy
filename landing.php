@@ -796,47 +796,112 @@ img { max-width: 100%; }
 }
 
 /* ══════════════════════════════════════════════════════
-   Footer
+   Footer (revamped)
 ══════════════════════════════════════════════════════ */
 .footer {
   position: relative; z-index: 1;
   background: var(--navy-c);
   border-top: 1px solid rgba(255,255,255,.06);
-  padding: 50px 24px 30px;
+  padding: 64px 24px 24px;
 }
 .footer-grid {
   max-width: 1100px; margin: 0 auto;
-  display: grid; grid-template-columns: 2fr 1fr 1fr 1fr;
-  gap: 40px; margin-bottom: 40px;
+  display: grid; grid-template-columns: 2.2fr 1fr 1fr 1fr;
+  gap: 48px; margin-bottom: 32px;
 }
+.footer-brand { display: flex; flex-direction: column; gap: 18px; }
 .footer-logo {
-  display: flex; align-items: center; gap: 10px;
-  font-size: 18px; font-weight: 800; margin-bottom: 14px;
+  display: flex; align-items: center; gap: 12px;
 }
-.footer-logo .lb {
-  width: 32px; height: 32px; border-radius: 8px;
-  background: linear-gradient(135deg, var(--teal), var(--teal-d));
-  display: flex; align-items: center; justify-content: center;
-  font-size: 16px;
+.footer-logo img { border-radius: 50%; }
+.footer-brand-text { display: flex; flex-direction: column; }
+.footer-brand-name { font-size: 18px; font-weight: 800; color: #fff; line-height: 1.2; }
+.footer-brand-sub { font-size: 12px; font-weight: 500; color: rgba(255,255,255,.45); margin-left: 6px; }
+.footer-brand-tag {
+  font-size: 10.5px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--teal); margin-top: 4px;
 }
-.footer-tagline { font-size: 13.5px; color: rgba(255,255,255,.4); line-height: 1.65; max-width: 220px; }
+.footer-desc {
+  font-size: 13.5px; line-height: 1.65;
+  color: rgba(255,255,255,.5);
+  max-width: 320px; margin: 0;
+}
+.footer-cta-wa {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 10px 16px;
+  background: rgba(53,232,213,.08);
+  border: 1px solid rgba(53,232,213,.22);
+  border-radius: 10px;
+  color: var(--teal); font-size: 13px; font-weight: 600;
+  width: fit-content;
+  transition: all .2s;
+  text-decoration: none;
+}
+.footer-cta-wa:hover { background: rgba(53,232,213,.15); transform: translateY(-1px); }
 .footer-col-title {
-  font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
-  color: rgba(255,255,255,.3); margin-bottom: 16px;
+  font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase;
+  color: rgba(255,255,255,.35); margin-bottom: 18px;
 }
-.footer-links { list-style: none; display: flex; flex-direction: column; gap: 10px; }
-.footer-links a { font-size: 13.5px; color: rgba(255,255,255,.5); transition: color .15s; }
+.footer-links { list-style: none; display: flex; flex-direction: column; gap: 11px; padding: 0; margin: 0; }
+.footer-links a { font-size: 13.5px; color: rgba(255,255,255,.55); transition: color .15s; text-decoration: none; }
 .footer-links a:hover { color: var(--teal); }
+
+/* Newsletter block */
+.footer-newsletter {
+  max-width: 1100px; margin: 0 auto 28px;
+  padding: 22px 28px;
+  background: linear-gradient(135deg, rgba(53,232,213,.05), rgba(99,102,241,.05));
+  border: 1px solid rgba(53,232,213,.18);
+  border-radius: 16px;
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 20px;
+}
+.footer-newsletter-text { flex: 1; min-width: 240px; }
+.footer-newsletter-title { font-size: 15px; font-weight: 700; color: #fff; }
+.footer-newsletter-sub { font-size: 12.5px; color: rgba(255,255,255,.55); margin-top: 4px; line-height: 1.5; }
+.footer-newsletter-form { display: flex; gap: 8px; flex: 1; max-width: 440px; min-width: 280px; }
+.footer-newsletter-form input {
+  flex: 1; padding: 11px 14px;
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 9px;
+  color: #fff; font-size: 13.5px; font-family: inherit;
+  outline: none; transition: border-color .15s;
+}
+.footer-newsletter-form input:focus { border-color: var(--teal); background: rgba(255,255,255,.08); }
+.footer-newsletter-form input::placeholder { color: rgba(255,255,255,.3); }
+.footer-newsletter-form button {
+  padding: 11px 18px;
+  background: var(--teal); color: var(--navy-d);
+  border: none; border-radius: 9px;
+  font-weight: 700; font-size: 13.5px;
+  cursor: pointer; transition: opacity .2s, transform .15s;
+  white-space: nowrap;
+}
+.footer-newsletter-form button:hover { opacity: .9; transform: translateY(-1px); }
+.footer-newsletter-form button:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+.footer-newsletter-success {
+  flex: 1; max-width: 440px;
+  padding: 12px 16px;
+  background: rgba(53,232,213,.12);
+  border-radius: 9px;
+  color: var(--teal); font-weight: 600; font-size: 13.5px; text-align: center;
+}
+
 .footer-bottom {
   max-width: 1100px; margin: 0 auto;
   padding-top: 24px;
   border-top: 1px solid rgba(255,255,255,.06);
   display: flex; align-items: center; justify-content: space-between;
-  flex-wrap: wrap; gap: 12px;
-  font-size: 12px; color: rgba(255,255,255,.3);
+  flex-wrap: wrap; gap: 16px;
+  font-size: 12px; color: rgba(255,255,255,.4);
 }
-.footer-bottom a { color: rgba(255,255,255,.4); transition: color .15s; }
+.footer-bottom-left { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.footer-sep { color: rgba(255,255,255,.18); }
+.footer-bottom-right { display: flex; gap: 20px; align-items: center; }
+.footer-bottom a { color: rgba(255,255,255,.5); transition: color .15s; text-decoration: none; }
 .footer-bottom a:hover { color: var(--teal); }
+.footer-admin { opacity: .35; font-size: 11px; }
 
 /* ══════════════════════════════════════════════════════
    Responsive
@@ -844,7 +909,10 @@ img { max-width: 100%; }
 @media (max-width: 900px) {
   .features-grid      { grid-template-columns: repeat(2, 1fr); }
   .testimonials-grid  { grid-template-columns: repeat(2, 1fr); }
-  .footer-grid        { grid-template-columns: 1fr 1fr; }
+  .footer-grid        { grid-template-columns: 1fr 1fr; gap: 32px; }
+  .footer-brand       { grid-column: 1 / -1; }
+  .footer-newsletter  { flex-direction: column; align-items: stretch; }
+  .footer-newsletter-form { max-width: 100%; }
   .mockup-body        { grid-template-columns: 1fr; }
   .mockup-sidebar     { display: none; }
   .mockup-stats       { grid-template-columns: repeat(3, 1fr); }
@@ -2010,46 +2078,79 @@ function switchCmpTab(tab, btn) {
 <!-- ── FOOTER ───────────────────────────────────────── -->
 <footer class="footer" id="kontak">
   <div class="footer-grid">
-    <div>
+    <!-- Brand block (wider) -->
+    <div class="footer-brand">
       <div class="footer-logo">
-        <img src="/assets/logo.png?v=<?= @filemtime(__DIR__.'/assets/logo.png') ?: '3' ?>" alt="LAMASY" width="40" height="40" loading="lazy" style="vertical-align:middle; margin-right:8px;">
-        LAMASY <span style="font-size:13px;font-weight:500;color:rgba(255,255,255,.45);">by Harpy</span>
+        <img src="/assets/logo.png?v=<?= @filemtime(__DIR__.'/assets/logo.png') ?: '3' ?>" alt="LAMASY" width="44" height="44" loading="lazy">
+        <div class="footer-brand-text">
+          <div class="footer-brand-name">LAMASY<span class="footer-brand-sub">by Harpy</span></div>
+          <div class="footer-brand-tag">ERP Laundry · AI Native</div>
+        </div>
       </div>
-      <div class="footer-tagline">Platform manajemen laundry modern untuk bisnis yang lebih rapi.</div>
+      <p class="footer-desc">Platform manajemen laundry modern dengan AI terintegrasi. Bayar sesuai pakai, tanpa langganan bulanan.</p>
+      <a href="https://wa.me/6285121519302?text=Halo+Tim+LAMASY%2C+saya+ingin+tahu+lebih+lanjut+tentang+LAMASY." target="_blank" rel="noopener" class="footer-cta-wa">
+        💬 Chat Langsung via WhatsApp
+      </a>
     </div>
+
+    <!-- Produk -->
     <div>
       <div class="footer-col-title">Produk</div>
       <ul class="footer-links">
-        <li><a href="#fitur">Fitur</a></li>
-        <li><a href="#harga">Harga</a></li>
+        <li><a href="#fitur">Fitur Lengkap</a></li>
+        <li><a href="#harga">Harga &amp; Coin</a></li>
+        <li><a href="#use-case">Cara Pakai</a></li>
+        <li><a href="#trust">Keamanan</a></li>
         <li><a href="#faq">FAQ</a></li>
-        <li><a href="/register.php">Daftar Gratis</a></li>
       </ul>
     </div>
+
+    <!-- Akun -->
     <div>
       <div class="footer-col-title">Akun</div>
       <ul class="footer-links">
-        <li><a href="/login.php">Login</a></li>
-        <li><a href="/register.php">Daftar Gratis</a></li>
-        <li><a href="#">Reset Password</a></li>
+        <li><a href="/register.php">🚀 Daftar Gratis</a></li>
+        <li><a href="/login.php">Login Tenant</a></li>
+        <li><a href="/p">Portal Pelanggan</a></li>
+        <li><a href="/reset-password">Reset Password</a></li>
       </ul>
     </div>
+
+    <!-- Perusahaan -->
     <div>
-      <div class="footer-col-title">Kontak</div>
+      <div class="footer-col-title">Perusahaan</div>
       <ul class="footer-links">
-        <li><a href="https://wa.me/6285121519302?text=Halo+Tim+LAMASY%2C+saya+ingin+tahu+lebih+lanjut+tentang+LAMASY." target="_blank">&#128172; WhatsApp</a></li>
-        <li><a href="mailto:halo@harpy.id">&#9993; halo@harpy.id</a></li>
-        <li><a href="#">&#127968; Jakarta, Indonesia</a></li>
+        <li><a href="#founder">Tentang Kami</a></li>
+        <li><a href="mailto:halo@harpy.id">halo@harpy.id</a></li>
+        <li><a href="/tos">Syarat &amp; Ketentuan</a></li>
+        <li><a href="/privacy">Kebijakan Privasi</a></li>
       </ul>
     </div>
   </div>
+
+  <!-- Newsletter -->
+  <div class="footer-newsletter">
+    <div class="footer-newsletter-text">
+      <div class="footer-newsletter-title">📬 Update fitur baru &amp; tips operasional</div>
+      <div class="footer-newsletter-sub">Subscribe dan dapat <strong>Checklist 7 Step Setup Laundry Digital</strong> gratis (PDF) langsung ke email.</div>
+    </div>
+    <form class="footer-newsletter-form" id="footerNewsletterForm">
+      <input type="email" name="email" placeholder="email@kamu.com" required aria-label="Email">
+      <button type="submit">Subscribe →</button>
+    </form>
+  </div>
+
+  <!-- Bottom bar -->
   <div class="footer-bottom">
-    <span>&copy; <?= date('Y') ?> PT Harpy Sinergi Mandiri. All rights reserved.</span>
-    <div style="display:flex;gap:20px;">
-      <a href="#">Privasi</a>
-      <a href="#">Syarat & Ketentuan</a>
-      <!-- Super admin link - kecil, tidak mencolok -->
-      <a href="/superadmin/login.php" style="opacity:.4;font-size:11px;">Admin</a>
+    <div class="footer-bottom-left">
+      <span>&copy; <?= date('Y') ?> PT Harpy Sinergi Mandiri</span>
+      <span class="footer-sep">·</span>
+      <span>🇮🇩 Made in Jakarta, Indonesia</span>
+    </div>
+    <div class="footer-bottom-right">
+      <a href="/tos">Syarat</a>
+      <a href="/privacy">Privasi</a>
+      <a href="/superadmin/login.php" class="footer-admin">Admin</a>
     </div>
   </div>
 </footer>
@@ -2071,6 +2172,40 @@ function toggleFaq(i) {
     icon.style.transform = 'rotate(180deg)';
   }
 }
+
+// ── Footer newsletter signup ───────────────────────
+document.getElementById('footerNewsletterForm')?.addEventListener('submit', function(e) {
+  e.preventDefault();
+  var form = e.target;
+  var email = form.email.value.trim();
+  var btn = form.querySelector('button');
+  if (!email) return;
+  btn.disabled = true;
+  btn.textContent = 'Mengirim...';
+  fetch('/api/lead.php', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: email, source: 'footer_newsletter' })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(d) {
+    if (d.ok) {
+      var success = document.createElement('div');
+      success.className = 'footer-newsletter-success';
+      success.textContent = '✓ Terima kasih! Cek email kamu sebentar lagi.';
+      form.parentNode.replaceChild(success, form);
+    } else {
+      btn.disabled = false;
+      btn.textContent = 'Subscribe →';
+      alert(d.error || 'Gagal subscribe. Coba lagi.');
+    }
+  })
+  .catch(function() {
+    btn.disabled = false;
+    btn.textContent = 'Subscribe →';
+    alert('Gagal subscribe. Cek koneksi internet.');
+  });
+});
 
 // ── Mobile nav toggle ──────────────────────────────
 function toggleMobileMenu() {
