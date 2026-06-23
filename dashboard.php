@@ -1432,8 +1432,8 @@ if ($_dashRole === 'kasir'):
       </div>
     </div>
 
-    <!-- MITRA DROP POINT INAKTIF -->
-    <div id="mitraInaktifWrap" style="display:none;margin-top:16px">
+    <!-- MITRA DROP POINT INAKTIF — full-width (grid-column 1/-1) -->
+    <div id="mitraInaktifWrap" style="display:none;margin-top:16px;grid-column:1/-1">
       <div class="hl-card" style="border-left:4px solid #F59E0B">
         <div class="hl-card-header">
           <div class="alert-title">📦 Mitra Drop Point Tidak Aktif &gt;7 Hari</div>
@@ -1443,8 +1443,8 @@ if ($_dashRole === 'kasir'):
       </div>
     </div>
 
-    <!-- MESIN ATTENTION -->
-    <div id="mesinAttentionWrap" style="display:none;margin-top:16px">
+    <!-- MESIN ATTENTION — full-width -->
+    <div id="mesinAttentionWrap" style="display:none;margin-top:16px;grid-column:1/-1">
       <div class="hl-card" style="border-left:4px solid #EF4444">
         <div class="hl-card-header">
           <div class="alert-title">🪙 Mesin Self-Service Selesai (Customer Perlu Diingatkan)
@@ -1456,8 +1456,8 @@ if ($_dashRole === 'kasir'):
       </div>
     </div>
 
-    <!-- INVENTORI KRITIS — friendly reminder (bukan blocker) -->
-    <div id="inventoriKritisWrap" style="display:none;margin-top:16px">
+    <!-- INVENTORI KRITIS — full-width friendly reminder -->
+    <div id="inventoriKritisWrap" style="display:none;margin-top:16px;grid-column:1/-1">
       <div class="hl-card" style="border-left:4px solid #F59E0B;background:#FFFBEB">
         <div class="hl-card-header" style="background:transparent;border-bottom:1px dashed #FDE68A">
           <div class="alert-title" style="color:#78350F">
