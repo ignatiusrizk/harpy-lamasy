@@ -117,6 +117,12 @@ class MigrationImporter
             $jobId,
         ]);
 
+        // Cleanup file kalau status 'completed' (success penuh).
+        // Keep file kalau 'partial' atau 'failed' untuk forensic / re-import.
+        if ($status === 'completed' && !empty($job['file_path']) && is_file($job['file_path'])) {
+            @unlink($job['file_path']);
+        }
+
         return $results;
     }
 

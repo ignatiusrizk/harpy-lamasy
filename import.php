@@ -107,7 +107,9 @@ if ($action) {
         } catch (Throwable $e) {
             $db->prepare("UPDATE hl_migration_jobs SET status='failed' WHERE id=?")->execute([$jobId]);
             @unlink($filePath);
-            echo json_encode(['error' => 'File tidak bisa dibaca: ' . $e->getMessage()]); exit;
+            // Log full error untuk ops, kasih generic message ke user (no PHPSpreadsheet path leak)
+            ErrorLogger::logException('import_parse', $e, $tid, $oid);
+            echo json_encode(['error' => 'File tidak bisa dibaca. Pastikan format CSV/XLSX/XLS valid dan tidak corrupt.']); exit;
         }
 
         if (empty($allRows)) {
