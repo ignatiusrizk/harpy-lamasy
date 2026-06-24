@@ -356,6 +356,15 @@ if ($action) {
 
         $db->beginTransaction();
         try {
+            // Lock header + re-check status di dalam transaksi (anti double-finalize)
+            $lock = $db->prepare("SELECT status FROM hl_opname WHERE id=? AND tenant_id=? AND outlet_id=? FOR UPDATE");
+            $lock->execute([$opnameId, $tid, $oid]);
+            $lockedStatus = $lock->fetchColumn();
+            if ($lockedStatus !== 'draft') {
+                $db->rollBack();
+                echo json_encode(['error'=>'Sesi sudah selesai']); exit;
+            }
+
             // Items dgn fisik terisi + selisih != 0 (JOIN bahan untuk harga + outlet)
             $items = $db->prepare(
                 "SELECT oi.id, oi.bahan_id, oi.stok_sistem, oi.stok_fisik, oi.selisih, b.harga_beli
