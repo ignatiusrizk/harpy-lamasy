@@ -96,6 +96,7 @@ class PaymentSettler
      */
     public static function settleSetupFee(array $payment): array
     {
+        require_once __DIR__ . '/BillingConfig.php';
         $db = Database::get();
         try {
             $db->beginTransaction();
@@ -159,6 +160,26 @@ class PaymentSettler
                     $newBal,
                     $payment['id'],
                 ]);
+            }
+
+            // ── Komisi affiliate (kalau tenant ini hasil referral) ──
+            $refSt = $db->prepare("SELECT id, affiliate_id, status FROM hl_affiliate_referral
+                                   WHERE tenant_id=? LIMIT 1");
+            $refSt->execute([$payment['tenant_id']]);
+            $ref = $refSt->fetch(PDO::FETCH_ASSOC);
+            if ($ref && $ref['status'] === 'signup') {
+                // affiliate harus active
+                $affSt = $db->prepare("SELECT id FROM hl_affiliate WHERE id=? AND status='active'");
+                $affSt->execute([$ref['affiliate_id']]);
+                if ($affSt->fetchColumn()) {
+                    $komisi = (int) BillingConfig::get('affiliate_commission', 100000);
+                    $db->prepare("UPDATE hl_affiliate_referral
+                                  SET status='activated', komisi=?, activated_at=NOW(), payment_id=?
+                                  WHERE id=? AND status='signup'")
+                       ->execute([$komisi, $payment['id'], $ref['id']]);
+                    $db->prepare("UPDATE hl_affiliate SET saldo_komisi = saldo_komisi + ? WHERE id=?")
+                       ->execute([$komisi, $ref['affiliate_id']]);
+                }
             }
 
             $db->commit();
