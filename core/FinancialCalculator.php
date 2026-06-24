@@ -55,7 +55,7 @@ class FinancialCalculator
             '5-1006' => $lr['beban']['bunga']            ?? 0,
             '5-1008' => $lr['beban']['komisi_mitra']     ?? 0,
             // 5-1099 catch-all: kas keluar operasional + beban manual (yang tak terpetakan)
-            '5-1099' => ($lr['beban']['operasional_kas'] ?? 0) + ($lr['beban']['manual'] ?? 0),
+            '5-1099' => ($lr['beban']['operasional_kas'] ?? 0) + ($lr['beban']['total_manual'] ?? 0),
             // 5-1003 sewa, 5-1004 utilitas, 5-1007 pemasaran → tidak terpisah di labaRugi → 0
         ];
         return (int)($map[$kode] ?? 0);
