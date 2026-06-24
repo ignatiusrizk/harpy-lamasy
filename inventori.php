@@ -241,6 +241,105 @@ if ($action) {
         exit;
     }
 
+    // ─── OPNAME: list riwayat ──────────────────────────
+    if ($action === 'opname_list') {
+        $rows = TenantQuery::raw(
+            "SELECT id, tanggal, status, total_item, total_selisih_item, nilai_selisih, finalized_at, created_at
+             FROM hl_opname WHERE tenant_id=? AND outlet_id=? ORDER BY created_at DESC LIMIT 50",
+            [$tid, $oid]
+        );
+        echo json_encode(['ok'=>true, 'rows'=>$rows]);
+        exit;
+    }
+
+    // ─── OPNAME: buat sesi draft + snapshot ────────────
+    if ($action === 'opname_create' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+        if (!$canManage) { echo json_encode(['error'=>'Akses ditolak']); exit; }
+        verifyCsrf();
+        $db = Database::get();
+        $db->beginTransaction();
+        try {
+            $tgl = date('Y-m-d');
+            $db->prepare("INSERT INTO hl_opname (tenant_id, outlet_id, tanggal, status, input_by)
+                          VALUES (?,?,?, 'draft', ?)")
+               ->execute([$tid, $oid, $tgl, (int)($user['id'] ?? 0)]);
+            $opnameId = (int)$db->lastInsertId();
+
+            // Snapshot semua bahan aktif outlet dari view
+            $bahan = $db->prepare("SELECT id AS bahan_id, stok_terkini FROM hl_bahan_stok
+                                   WHERE tenant_id=? AND outlet_id=? AND is_active=1 ORDER BY nama");
+            $bahan->execute([$tid, $oid]);
+            $rows = $bahan->fetchAll(PDO::FETCH_ASSOC);
+            $ins = $db->prepare("INSERT INTO hl_opname_item (opname_id, tenant_id, bahan_id, stok_sistem)
+                                 VALUES (?,?,?,?)");
+            foreach ($rows as $b) {
+                $ins->execute([$opnameId, $tid, (int)$b['bahan_id'], (int)$b['stok_terkini']]);
+            }
+            $db->prepare("UPDATE hl_opname SET total_item=? WHERE id=?")
+               ->execute([count($rows), $opnameId]);
+            $db->commit();
+            echo json_encode(['ok'=>true, 'id'=>$opnameId]);
+        } catch (Throwable $e) { $db->rollBack(); echo json_encode(['error'=>$e->getMessage()]); }
+        exit;
+    }
+
+    // ─── OPNAME: detail sesi + items ───────────────────
+    if ($action === 'opname_get') {
+        $id = (int)($_GET['id'] ?? 0);
+        $hdr = TenantQuery::rawOne(
+            "SELECT * FROM hl_opname WHERE id=? AND tenant_id=? AND outlet_id=?",
+            [$id, $tid, $oid]
+        );
+        if (!$hdr) { echo json_encode(['error'=>'Sesi tidak ditemukan']); exit; }
+        $items = TenantQuery::raw(
+            "SELECT oi.id, oi.bahan_id, oi.stok_sistem, oi.stok_fisik, oi.selisih,
+                    b.nama, b.satuan, b.kategori
+             FROM hl_opname_item oi
+             JOIN hl_bahan b ON b.id=oi.bahan_id AND b.tenant_id=oi.tenant_id
+             WHERE oi.opname_id=? AND oi.tenant_id=? ORDER BY b.nama",
+            [$id, $tid]
+        );
+        echo json_encode(['ok'=>true, 'header'=>$hdr, 'items'=>$items]);
+        exit;
+    }
+
+    // ─── OPNAME: simpan stok fisik (draft) ─────────────
+    if ($action === 'opname_save_fisik' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+        if (!$canManage) { echo json_encode(['error'=>'Akses ditolak']); exit; }
+        verifyCsrf();
+        $d = json_decode(file_get_contents('php://input'), true) ?: [];
+        $opnameId = (int)($d['opname_id'] ?? 0);
+        $items = $d['items'] ?? []; // [{item_id, stok_fisik}]
+        $db = Database::get();
+        // Pastikan sesi draft milik outlet ini
+        $chk = $db->prepare("SELECT status FROM hl_opname WHERE id=? AND tenant_id=? AND outlet_id=?");
+        $chk->execute([$opnameId, $tid, $oid]);
+        $st = $chk->fetchColumn();
+        if ($st === false) { echo json_encode(['error'=>'Sesi tidak ditemukan']); exit; }
+        if ($st !== 'draft') { echo json_encode(['error'=>'Sesi sudah selesai']); exit; }
+
+        $db->beginTransaction();
+        try {
+            $updNull = $db->prepare("UPDATE hl_opname_item SET stok_fisik=NULL, selisih=0
+                                     WHERE id=? AND tenant_id=? AND opname_id=?");
+            $updVal  = $db->prepare("UPDATE hl_opname_item SET stok_fisik=?, selisih=?-stok_sistem
+                                     WHERE id=? AND tenant_id=? AND opname_id=?");
+            foreach ($items as $it) {
+                $itemId   = (int)($it['item_id'] ?? 0);
+                $fisikRaw = $it['stok_fisik'];
+                if ($fisikRaw === '' || $fisikRaw === null) {
+                    $updNull->execute([$itemId, $tid, $opnameId]);
+                } else {
+                    $fisik = max(0, (int)$fisikRaw);
+                    $updVal->execute([$fisik, $fisik, $itemId, $tid, $opnameId]);
+                }
+            }
+            $db->commit();
+            echo json_encode(['ok'=>true]);
+        } catch (Throwable $e) { $db->rollBack(); echo json_encode(['error'=>$e->getMessage()]); }
+        exit;
+    }
+
     echo json_encode(['error' => 'Unknown action']);
     exit;
 }
