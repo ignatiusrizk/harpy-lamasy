@@ -188,6 +188,101 @@ if ($action) {
         exit;
     }
 
+    // ── DEDUCT COIN (manual adjust kurang) ────────────
+    if ($action === 'coin_deduct') {
+        SaPermission::require('billing.topup');
+        saVerifyCsrf();
+        $tenantId = (int)($_POST['tenant_id'] ?? 0);
+        $amount   = (int)($_POST['amount'] ?? 0);
+        $note     = trim($_POST['note'] ?? '');
+
+        if ($tenantId <= 0 || $amount <= 0) {
+            echo json_encode(['error' => 'Data tidak valid.']); exit;
+        }
+        if ($note === '') {
+            echo json_encode(['error' => 'Alasan deduct wajib diisi (audit trail).']); exit;
+        }
+        try {
+            $db->beginTransaction();
+            $stm = $db->prepare("SELECT coin_balance, nama_perusahaan FROM tenants WHERE id=?");
+            $stm->execute([$tenantId]);
+            $row = $stm->fetch(PDO::FETCH_ASSOC);
+            if (!$row) throw new RuntimeException('Tenant tidak ditemukan');
+
+            $bal = (int)$row['coin_balance'];
+            if ($amount > $bal) {
+                throw new RuntimeException("Coin tidak cukup. Saldo: $bal, requested: $amount");
+            }
+            $newBal = $bal - $amount;
+
+            $db->prepare("UPDATE tenants SET coin_balance = ? WHERE id = ?")->execute([$newBal, $tenantId]);
+            $db->prepare(
+                "INSERT INTO coin_ledger (tenant_id, type, amount, feature_used, description, balance_after)
+                 VALUES (?, 'deduct', ?, 'manual_adjust', ?, ?)"
+            )->execute([$tenantId, $amount, "Manual deduct: $note", $newBal]);
+
+            $db->commit();
+            logSuperAdminAction('deduct_coin', $tenantId, "Deduct $amount coin from {$row['nama_perusahaan']}. Reason: $note");
+            echo json_encode(['success' => true, 'new_balance' => $newBal]);
+        } catch (Throwable $e) {
+            $db->rollBack();
+            echo json_encode(['error' => 'Gagal: ' . $e->getMessage()]);
+        }
+        exit;
+    }
+
+    // ── EXTEND TRIAL ──────────────────────────────────
+    if ($action === 'extend_trial') {
+        SaPermission::require('clients.suspend'); // reuse suspend perm — same trust level
+        saVerifyCsrf();
+        $tenantId = (int)($_POST['tenant_id'] ?? 0);
+        $days     = (int)($_POST['days'] ?? 0);
+        $note     = trim($_POST['note'] ?? '');
+
+        if ($tenantId <= 0 || $days <= 0 || $days > 365) {
+            echo json_encode(['error' => 'Hari harus antara 1-365.']); exit;
+        }
+        if ($note === '') {
+            echo json_encode(['error' => 'Alasan extend trial wajib diisi.']); exit;
+        }
+        try {
+            $db->beginTransaction();
+            $stm = $db->prepare("SELECT trial_ends_at, status, nama_perusahaan FROM tenants WHERE id=?");
+            $stm->execute([$tenantId]);
+            $row = $stm->fetch(PDO::FETCH_ASSOC);
+            if (!$row) throw new RuntimeException('Tenant tidak ditemukan');
+
+            // Base date: kalau trial sudah lewat / kosong → mulai dari sekarang
+            $baseTs = ($row['trial_ends_at'] && strtotime($row['trial_ends_at']) > time())
+                ? strtotime($row['trial_ends_at'])
+                : time();
+            $newEndTs = $baseTs + ($days * 86400);
+            $newEnd = date('Y-m-d H:i:s', $newEndTs);
+
+            $db->prepare("UPDATE tenants SET trial_ends_at = ? WHERE id = ?")->execute([$newEnd, $tenantId]);
+
+            // Reactivate kalau suspended
+            $reactivated = false;
+            if ($row['status'] === 'suspended') {
+                $db->prepare("UPDATE tenants SET status='active' WHERE id=?")->execute([$tenantId]);
+                $reactivated = true;
+            }
+
+            $db->commit();
+            $msg = "Extend trial +$days hari → $newEnd. Reason: $note" . ($reactivated ? ' [reactivated]' : '');
+            logSuperAdminAction('extend_trial', $tenantId, $msg);
+            echo json_encode([
+                'success' => true,
+                'new_trial_ends_at' => $newEnd,
+                'reactivated' => $reactivated,
+            ]);
+        } catch (Throwable $e) {
+            $db->rollBack();
+            echo json_encode(['error' => 'Gagal: ' . $e->getMessage()]);
+        }
+        exit;
+    }
+
     // ── TOGGLE STATUS ─────────────────────────────────
     if ($action === 'toggle_status') {
         SaPermission::require('clients.suspend');
@@ -383,6 +478,71 @@ if ($action) {
   </div>
 </div>
 
+<!-- Deduct Coin Modal -->
+<div class="sa-modal-overlay" id="deductModal">
+  <div class="sa-modal">
+    <h3>− Kurangi Coin Manual</h3>
+    <input type="hidden" id="deductTenantId"/>
+    <div class="form-group">
+      <label>Tenant</label>
+      <input type="text" id="deductTenantName" readonly style="opacity:.6;"/>
+    </div>
+    <div class="form-group">
+      <label>Saldo Saat Ini</label>
+      <input type="text" id="deductCurrentBalance" readonly style="opacity:.6;font-family:var(--mono)"/>
+    </div>
+    <div class="form-group">
+      <label>Jumlah Coin yang Dikurangi</label>
+      <input type="number" id="deductAmount" placeholder="Contoh: 5000" min="1" required/>
+    </div>
+    <div class="form-group">
+      <label>Alasan (wajib) <span style="color:var(--coral)">*</span></label>
+      <input type="text" id="deductNote" placeholder="Refund, correction, abuse penalty, dll" required/>
+    </div>
+    <div class="sa-modal-footer">
+      <button class="sa-btn sa-btn-outline" onclick="closeModal('deductModal')">Batal</button>
+      <button class="sa-btn sa-btn-danger" onclick="submitDeduct()">− Kurangi Coin</button>
+    </div>
+  </div>
+</div>
+
+<!-- Extend Trial Modal -->
+<div class="sa-modal-overlay" id="extendTrialModal">
+  <div class="sa-modal">
+    <h3>⏰ Extend Trial</h3>
+    <input type="hidden" id="extTenantId"/>
+    <div class="form-group">
+      <label>Tenant</label>
+      <input type="text" id="extTenantName" readonly style="opacity:.6;"/>
+    </div>
+    <div class="form-group">
+      <label>Trial Berakhir Saat Ini</label>
+      <input type="text" id="extCurrentEnd" readonly style="opacity:.6;font-family:var(--mono)"/>
+    </div>
+    <div class="form-group">
+      <label>Tambah Berapa Hari?</label>
+      <input type="number" id="extDays" placeholder="Contoh: 7" min="1" max="365" required/>
+      <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">
+        <button type="button" class="sa-btn sa-btn-outline sa-btn-sm" onclick="document.getElementById('extDays').value=7">+7 hari</button>
+        <button type="button" class="sa-btn sa-btn-outline sa-btn-sm" onclick="document.getElementById('extDays').value=14">+14 hari</button>
+        <button type="button" class="sa-btn sa-btn-outline sa-btn-sm" onclick="document.getElementById('extDays').value=30">+30 hari</button>
+        <button type="button" class="sa-btn sa-btn-outline sa-btn-sm" onclick="document.getElementById('extDays').value=90">+90 hari</button>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Alasan (wajib) <span style="color:var(--coral)">*</span></label>
+      <input type="text" id="extNote" placeholder="Goodwill, payment delay, partner deal, dll" required/>
+    </div>
+    <div style="background:var(--teal-faint);border:1px solid rgba(53,232,213,.3);border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:12px;color:var(--teal)">
+      ℹ️ Kalau tenant suspended, action ini akan auto-reactivate ke status 'active'.
+    </div>
+    <div class="sa-modal-footer">
+      <button class="sa-btn sa-btn-outline" onclick="closeModal('extendTrialModal')">Batal</button>
+      <button class="sa-btn sa-btn-primary" onclick="submitExtendTrial()">⏰ Extend Trial</button>
+    </div>
+  </div>
+</div>
+
 <?php saRenderNavClose(); ?>
 
 <script>
@@ -515,7 +675,9 @@ function renderTenants(rows) {
       <td>
         <a href="client_detail.php?id=${t.id}" class="sa-btn sa-btn-sm sa-btn-outline">Detail</a>
         <a href="https://wa.me/${esc(t.owner_wa)}" target="_blank" class="sa-btn sa-btn-sm sa-btn-wa" style="margin-left:3px;">WA</a>
-        <button class="sa-btn sa-btn-sm sa-btn-primary" style="margin-left:3px;" onclick="openTopup(${t.id},'${esc(t.nama_perusahaan)}')">Topup</button>
+        <button class="sa-btn sa-btn-sm sa-btn-primary" style="margin-left:3px;" onclick="openTopup(${t.id},'${esc(t.nama_perusahaan)}')">+ Coin</button>
+        <button class="sa-btn sa-btn-sm sa-btn-outline" style="margin-left:3px;" onclick="openDeduct(${t.id},'${esc(t.nama_perusahaan)}',${t.coin_balance})" title="Kurangi coin">− Coin</button>
+        <button class="sa-btn sa-btn-sm sa-btn-outline" style="margin-left:3px;" onclick="openExtendTrial(${t.id},'${esc(t.nama_perusahaan)}','${t.trial_ends_at || ''}')" title="Tambah hari trial">+ Trial</button>
         <button class="sa-btn sa-btn-sm ${btnCls}" style="margin-left:3px;" onclick="toggleStatus(${t.id},'${opp}','${esc(t.nama_perusahaan)}')">${btnLbl}</button>
       </td>
     </tr>`;
@@ -599,6 +761,59 @@ function submitTopup() {
       if (d.error) { saShowToast(d.error, 'error'); return; }
       saShowToast('Topup berhasil! Saldo baru: ' + parseInt(d.new_balance).toLocaleString('id-ID'), 'success');
       closeModal('topupModal');
+      loadTenants();
+    });
+}
+
+// ── Deduct Coin ───────────────────────────────────────
+function openDeduct(id, nama, balance) {
+  document.getElementById('deductTenantId').value = id;
+  document.getElementById('deductTenantName').value = nama;
+  document.getElementById('deductCurrentBalance').value = parseInt(balance || 0).toLocaleString('id-ID') + ' coin';
+  document.getElementById('deductAmount').value = '';
+  document.getElementById('deductAmount').max = balance;
+  document.getElementById('deductNote').value = '';
+  document.getElementById('deductModal').classList.add('open');
+}
+function submitDeduct() {
+  const id     = document.getElementById('deductTenantId').value;
+  const amount = document.getElementById('deductAmount').value;
+  const note   = document.getElementById('deductNote').value.trim();
+  if (!amount || amount < 1) { saShowToast('Jumlah coin harus > 0', 'error'); return; }
+  if (!note) { saShowToast('Alasan deduct wajib diisi', 'error'); return; }
+  if (!confirm(`Yakin kurangi ${parseInt(amount).toLocaleString('id-ID')} coin?\n\nAksi ini ter-audit dengan alasan: "${note}"`)) return;
+  saPost('clients.php?action=coin_deduct', { tenant_id: id, amount, note })
+    .then(r => r.json()).then(d => {
+      if (d.error) { saShowToast(d.error, 'error'); return; }
+      saShowToast('Coin dikurangi. Saldo baru: ' + parseInt(d.new_balance).toLocaleString('id-ID'), 'success');
+      closeModal('deductModal');
+      loadTenants();
+    });
+}
+
+// ── Extend Trial ──────────────────────────────────────
+function openExtendTrial(id, nama, currentEnd) {
+  document.getElementById('extTenantId').value = id;
+  document.getElementById('extTenantName').value = nama;
+  document.getElementById('extCurrentEnd').value = currentEnd
+    ? new Date(currentEnd.replace(' ','T')).toLocaleString('id-ID', {day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})
+    : '— (belum ada trial_ends_at)';
+  document.getElementById('extDays').value = '';
+  document.getElementById('extNote').value = '';
+  document.getElementById('extendTrialModal').classList.add('open');
+}
+function submitExtendTrial() {
+  const id   = document.getElementById('extTenantId').value;
+  const days = document.getElementById('extDays').value;
+  const note = document.getElementById('extNote').value.trim();
+  if (!days || days < 1 || days > 365) { saShowToast('Hari harus 1-365', 'error'); return; }
+  if (!note) { saShowToast('Alasan wajib diisi', 'error'); return; }
+  saPost('clients.php?action=extend_trial', { tenant_id: id, days, note })
+    .then(r => r.json()).then(d => {
+      if (d.error) { saShowToast(d.error, 'error'); return; }
+      const msg = `Trial extended +${days} hari → ${d.new_trial_ends_at}` + (d.reactivated ? ' (auto-reactivated)' : '');
+      saShowToast(msg, 'success');
+      closeModal('extendTrialModal');
       loadTenants();
     });
 }
