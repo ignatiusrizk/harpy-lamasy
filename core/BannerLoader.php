@@ -74,21 +74,22 @@ class BannerLoader
     {
         return <<<HTML
 <style>
-.banner-carousel{position:relative;border-radius:14px;overflow:hidden;margin-bottom:18px;box-shadow:0 4px 16px rgba(15,123,108,.15);min-height:110px}
-.bn-slide{display:none;padding:18px 24px;min-height:110px;align-items:center;animation:bnFade .35s ease}
+.banner-carousel{position:relative;border-radius:18px;overflow:hidden;margin-bottom:22px;box-shadow:0 8px 32px rgba(15,123,108,.22),0 2px 8px rgba(0,0,0,.06);min-height:160px}
+.bn-slide{display:none;padding:32px 36px 38px;min-height:160px;align-items:center;animation:bnFade .4s ease;position:relative;overflow:hidden}
 .bn-slide.active{display:flex}
-.bn-content{display:flex;align-items:center;gap:18px;width:100%;flex-wrap:wrap}
-.bn-icon{font-size:36px;flex-shrink:0}
-.bn-text{flex:1;min-width:200px}
-.bn-title{font-size:17px;font-weight:800;letter-spacing:.01em;margin-bottom:4px;line-height:1.3}
-.bn-desc{font-size:13px;opacity:.92;line-height:1.5}
-.bn-cta{display:inline-block;background:rgba(255,255,255,.18);color:inherit;text-decoration:none;padding:8px 18px;border-radius:100px;font-size:13px;font-weight:700;flex-shrink:0;border:1px solid rgba(255,255,255,.3);transition:all .2s ease}
-.bn-cta:hover{background:rgba(255,255,255,.28);transform:translateY(-1px)}
-.bn-dots{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);display:flex;gap:6px}
-.bn-dot{width:8px;height:8px;border-radius:50%;border:none;background:rgba(255,255,255,.4);cursor:pointer;padding:0;transition:all .2s ease}
-.bn-dot.active{background:rgba(255,255,255,.95);width:24px;border-radius:4px}
-@keyframes bnFade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
-@media (max-width:640px){.bn-title{font-size:15px}.bn-icon{font-size:28px}.bn-cta{font-size:12px;padding:6px 14px}}
+.bn-slide::after{content:'';position:absolute;inset:0;background:radial-gradient(circle at 85% 30%,rgba(255,255,255,.12),transparent 55%);pointer-events:none}
+.bn-content{display:flex;align-items:center;gap:24px;width:100%;flex-wrap:wrap;position:relative;z-index:1}
+.bn-icon{font-size:54px;flex-shrink:0;filter:drop-shadow(0 2px 8px rgba(0,0,0,.15))}
+.bn-text{flex:1;min-width:240px}
+.bn-title{font-size:22px;font-weight:800;letter-spacing:-.005em;margin-bottom:6px;line-height:1.25;text-shadow:0 1px 2px rgba(0,0,0,.08)}
+.bn-desc{font-size:14.5px;opacity:.95;line-height:1.55}
+.bn-cta{display:inline-block;background:rgba(255,255,255,.22);color:inherit;text-decoration:none;padding:11px 22px;border-radius:100px;font-size:13.5px;font-weight:700;flex-shrink:0;border:1px solid rgba(255,255,255,.35);transition:all .2s ease;backdrop-filter:blur(4px)}
+.bn-cta:hover{background:rgba(255,255,255,.32);transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.12)}
+.bn-dots{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);display:flex;gap:7px;z-index:2}
+.bn-dot{width:9px;height:9px;border-radius:50%;border:none;background:rgba(255,255,255,.45);cursor:pointer;padding:0;transition:all .2s ease}
+.bn-dot.active{background:rgba(255,255,255,.98);width:28px;border-radius:5px}
+@keyframes bnFade{from{opacity:0;transform:translateY(6px) scale(.99)}to{opacity:1;transform:translateY(0) scale(1)}}
+@media (max-width:640px){.bn-slide{padding:22px 22px 30px;min-height:140px}.bn-title{font-size:17px}.bn-desc{font-size:13px}.bn-icon{font-size:38px}.bn-cta{font-size:12.5px;padding:8px 16px}.bn-content{gap:14px}}
 </style>
 <script>
 (function(){
