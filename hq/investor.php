@@ -108,6 +108,34 @@ if (!empty($_SERVER['HTTP_X_REQUESTED_WITH'])) {
             exit;
         }
 
+        // ── bagi_hasil_list ────────────────────────────────────
+        if ($action === 'bagi_hasil_list') {
+            $periode = preg_replace('/[^0-9\-]/', '', $_GET['periode'] ?? date('Y-m'));
+            echo json_encode(['ok'=>true, 'data'=>BagiHasilCalculator::hitung($tid, $periode), 'periode'=>$periode]);
+            exit;
+        }
+
+        // ── distribusi (1 investor) ────────────────────────────
+        if ($action === 'distribusi') {
+            $invId   = (int)($_POST['investor_id'] ?? 0);
+            $periode = preg_replace('/[^0-9\-]/', '', $_POST['periode'] ?? date('Y-m'));
+            $r = BagiHasilCalculator::distribusi($tid, $invId, $periode, $uid);
+            echo json_encode($r); exit;
+        }
+
+        // ── distribusi_semua ───────────────────────────────────
+        if ($action === 'distribusi_semua') {
+            $periode = preg_replace('/[^0-9\-]/', '', $_POST['periode'] ?? date('Y-m'));
+            $list = BagiHasilCalculator::hitung($tid, $periode);
+            $done = 0; $skip = 0;
+            foreach ($list as $row) {
+                if ($row['status']==='dibayar' || $row['jumlah'] <= 0) { $skip++; continue; }
+                $r = BagiHasilCalculator::distribusi($tid, $row['investor_id'], $periode, $uid);
+                if ($r['ok']) $done++; else $skip++;
+            }
+            echo json_encode(['ok'=>true, 'done'=>$done, 'skip'=>$skip]); exit;
+        }
+
         echo json_encode(['ok'=>false, 'error'=>'Action tidak dikenal']);
     } catch (Throwable $e) {
         echo json_encode(['ok'=>false, 'error'=>$e->getMessage()]);
@@ -231,12 +259,36 @@ require __DIR__ . '/_layout_open.php';
   </div>
 </div>
 
-<!-- ══════════ TAB: BAGI HASIL (placeholder Task 4) ══════════ -->
+<!-- ══════════ TAB: BAGI HASIL ══════════ -->
 <div class="inv-panel" id="tab-baghasil">
   <div id="tabBagiHasil">
-    <div class="inv-card" style="text-align:center;padding:40px;color:#9CA3AF">
-      <div style="font-size:2rem;margin-bottom:12px">💰</div>
-      <div style="font-weight:600;color:#6B7280">Tab Bagi Hasil akan diisi di Task 4</div>
+    <div class="inv-card">
+      <div class="bar-between" style="flex-wrap:wrap;gap:10px">
+        <h3 style="margin:0">💰 Distribusi Bagi Hasil</h3>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <label style="font-size:12px;font-weight:600;color:#374151;margin:0">Periode:</label>
+          <input type="month" id="bhPeriode" style="padding:7px 10px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px;font-family:inherit">
+          <button class="btn btn-teal btn-sm" onclick="loadBagiHasil()">Tampilkan</button>
+          <button class="btn btn-primary btn-sm" id="btnDistribusiSemua" onclick="distribusiSemua()">Distribusi Semua</button>
+        </div>
+      </div>
+      <div id="bhInfo" style="margin-top:10px;font-size:12px;color:#6B7280"></div>
+      <div style="overflow-x:auto;margin-top:14px">
+        <table class="inv-tbl">
+          <thead><tr>
+            <th>Investor</th>
+            <th>Scope</th>
+            <th class="num">Laba Basis</th>
+            <th class="num">%</th>
+            <th class="num">Jumlah Bagi Hasil</th>
+            <th>Status</th>
+            <th>Aksi</th>
+          </tr></thead>
+          <tbody id="bhBody">
+            <tr><td colspan="7" style="text-align:center;padding:30px;color:#9CA3AF">Pilih periode lalu klik Tampilkan</td></tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
 </div>
@@ -336,6 +388,7 @@ function invTab(name, btn) {
     btn.classList.add('active');
     document.getElementById('tab-' + name).classList.add('active');
     if (name === 'daftar') loadInvestor();
+    if (name === 'baghasil') loadBagiHasil();
 }
 
 // ── API helper ──────────────────────────────────────────────────
@@ -477,6 +530,101 @@ async function deleteInvestor(id, nama) {
     const d = await api('delete_investor', { id }, 'POST');
     if (d.ok) { toast('Investor dihapus'); loadInvestor(); }
     else toast(d.error || 'Gagal', false);
+}
+
+// ── Bagi Hasil: init periode picker ────────────────────────────
+(function() {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, '0');
+    document.getElementById('bhPeriode').value = y + '-' + m;
+})();
+
+// ── Load Bagi Hasil ─────────────────────────────────────────────
+async function loadBagiHasil() {
+    const periode = document.getElementById('bhPeriode').value || '';
+    document.getElementById('bhBody').innerHTML =
+        '<tr><td colspan="7" style="text-align:center;padding:30px;color:#9CA3AF">Memuat...</td></tr>';
+    document.getElementById('bhInfo').textContent = '';
+    const d = await api('bagi_hasil_list', { periode }, 'GET');
+    if (!d.ok) {
+        document.getElementById('bhBody').innerHTML =
+            `<tr><td colspan="7" style="color:#EF4444;padding:12px">${esc(d.error || 'Gagal memuat data')}</td></tr>`;
+        return;
+    }
+    const rows = d.data || [];
+    const usedPeriode = d.periode || periode;
+    if (!rows.length) {
+        document.getElementById('bhBody').innerHTML =
+            '<tr><td colspan="7" style="text-align:center;padding:30px;color:#9CA3AF">Tidak ada investor aktif</td></tr>';
+        document.getElementById('bhInfo').textContent = 'Periode: ' + usedPeriode;
+        return;
+    }
+
+    const pendingCount = rows.filter(r => r.status !== 'dibayar' && r.jumlah > 0).length;
+    document.getElementById('bhInfo').textContent =
+        'Periode: ' + usedPeriode + ' · ' + rows.length + ' investor · ' + pendingCount + ' pending';
+    document.getElementById('btnDistribusiSemua').disabled = pendingCount === 0;
+
+    const tbody = rows.map(r => {
+        const rugi = r.laba_basis <= 0 || r.jumlah <= 0;
+        const dibayar = r.status === 'dibayar';
+        const scopeBadge = r.scope === 'outlet'
+            ? '<span class="badge badge-outlet">Outlet</span>'
+            : '<span class="badge badge-tenant">Tenant</span>';
+        let statusCell;
+        if (dibayar) {
+            statusCell = '<span class="badge" style="background:#D1FAE5;color:#065F46">&#10003; Dibayar</span>';
+        } else if (rugi) {
+            statusCell = '<span class="badge" style="background:#FEF3C7;color:#92400E">Rugi/Nol</span>';
+        } else {
+            statusCell = '<span class="badge" style="background:#F3F4F6;color:#6B7280">Pending</span>';
+        }
+        let aksiCell;
+        if (dibayar) {
+            aksiCell = '<span style="font-size:11px;color:#9CA3AF">Selesai</span>';
+        } else {
+            const disabled = rugi ? ' disabled style="opacity:.45;cursor:not-allowed"' : '';
+            aksiCell = `<button class="btn btn-teal btn-sm"${disabled} onclick="bayarInvestor(${r.investor_id},'${usedPeriode}','${esc(r.nama)}')">Bayar</button>`;
+        }
+        return `<tr>
+          <td><strong>${esc(r.nama)}</strong></td>
+          <td>${scopeBadge}</td>
+          <td class="num">${rp(r.laba_basis)}</td>
+          <td class="num">${parseFloat(r.persentase||0).toFixed(2)}%</td>
+          <td class="num"><strong>${rp(r.jumlah)}</strong></td>
+          <td>${statusCell}</td>
+          <td style="white-space:nowrap">${aksiCell}</td>
+        </tr>`;
+    }).join('');
+    document.getElementById('bhBody').innerHTML = tbody;
+}
+
+// ── Bayar 1 investor ────────────────────────────────────────────
+async function bayarInvestor(investorId, periode, nama) {
+    if (!confirm(`Distribusi bagi hasil ke "${nama}" untuk periode ${periode}?`)) return;
+    const d = await api('distribusi', { investor_id: investorId, periode }, 'POST');
+    if (d.ok) {
+        toast(`Distribusi ${rp(d.jumlah)} ke ${nama} berhasil`);
+        loadBagiHasil();
+    } else {
+        toast(d.error || 'Gagal distribusi', false);
+    }
+}
+
+// ── Distribusi semua investor pending ──────────────────────────
+async function distribusiSemua() {
+    const periode = document.getElementById('bhPeriode').value || '';
+    if (!confirm(`Distribusi semua bagi hasil pending untuk periode ${periode}?\nProses ini tidak bisa dibatalkan.`)) return;
+    document.getElementById('btnDistribusiSemua').disabled = true;
+    const d = await api('distribusi_semua', { periode }, 'POST');
+    if (d.ok) {
+        toast(`Distribusi selesai: ${d.done} dibayar, ${d.skip} dilewati`);
+        loadBagiHasil();
+    } else {
+        toast(d.error || 'Gagal distribusi semua', false);
+        document.getElementById('btnDistribusiSemua').disabled = false;
+    }
 }
 
 // ── Init ─────────────────────────────────────────────────────────
