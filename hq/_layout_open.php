@@ -95,6 +95,10 @@ $_canSwitch = !empty($hqIsOwner) || !empty($hqIsManager);
          class="hq-side-link <?= $_aPage === 'hq-inventori' ? 'active' : '' ?>">
         <span class="ico">📦</span> Inventori
       </a>
+      <a href="/hq/supplier"
+         class="hq-side-link <?= $_aPage === 'hq-supplier' ? 'active' : '' ?>">
+        <span class="ico">🏭</span> Supplier
+      </a>
       <a href="/hq/mesin"
          class="hq-side-link <?= $_aPage === 'hq-mesin' ? 'active' : '' ?>">
         <span class="ico">🪙</span> Mesin Koin
