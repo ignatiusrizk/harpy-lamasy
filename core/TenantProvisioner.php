@@ -219,6 +219,8 @@ class TenantProvisioner
             ['bantuan.submit',       'bantuan',   'submit',        'Kirim tiket support baru'],
             ['bantuan.reply',        'bantuan',   'reply',         'Balas tiket support'],
             ['bantuan.close',        'bantuan',   'close',         'Tutup & beri rating tiket'],
+            // Investor & Bagi Hasil
+            ['investor.manage',      'investor',  'manage',        'Kelola investor & bagi hasil'],
         ];
 
         $stmtPerm = $db->prepare(
