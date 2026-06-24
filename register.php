@@ -226,21 +226,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['step3_submit'])) {
                 }
 
                 // 5c. Atribusi affiliate referral (kalau daftar via ?ref)
-                $refKode = $r['ref_kode'] ?? '';
-                if ($refKode !== '') {
-                    $aff = $db->prepare("SELECT id FROM hl_affiliate WHERE kode=? AND status='active'");
-                    $aff->execute([$refKode]);
-                    $affId = (int)$aff->fetchColumn();
-                    if ($affId) {
-                        // Self-referral guard: skip kalau email affiliate == email tenant
-                        $selfChk = $db->prepare("SELECT 1 FROM hl_affiliate WHERE id=? AND email=?");
-                        $selfChk->execute([$affId, $d['email']]);
-                        if (!$selfChk->fetchColumn()) {
-                            $db->prepare("INSERT IGNORE INTO hl_affiliate_referral (affiliate_id, tenant_id, status)
-                                          VALUES (?, ?, 'signup')")
-                               ->execute([$affId, $tenantId]);
+                try {
+                    $refKode = $r['ref_kode'] ?? '';
+                    if ($refKode !== '') {
+                        $aff = $db->prepare("SELECT id FROM hl_affiliate WHERE kode=? AND status='active'");
+                        $aff->execute([$refKode]);
+                        $affId = (int)$aff->fetchColumn();
+                        if ($affId) {
+                            // Self-referral guard: skip kalau email affiliate == email tenant
+                            $selfChk = $db->prepare("SELECT 1 FROM hl_affiliate WHERE id=? AND email=?");
+                            $selfChk->execute([$affId, $d['email']]);
+                            if (!$selfChk->fetchColumn()) {
+                                $db->prepare("INSERT IGNORE INTO hl_affiliate_referral (affiliate_id, tenant_id, status)
+                                              VALUES (?, ?, 'signup')")
+                                   ->execute([$affId, $tenantId]);
+                            }
                         }
                     }
+                } catch (Throwable $e) {
+                    error_log('[register affiliate referral] ' . $e->getMessage());
+                    // best-effort: jangan gagalkan registrasi
                 }
 
                 $db->commit();
