@@ -307,7 +307,7 @@ if (!empty($_SERVER['HTTP_X_REQUESTED_WITH'])) {
     if ($action === 'team_list') {
         SaPermission::require('super_admins.manage');
         $admins = $db->query(
-            "SELECT sa.id, sa.username, sa.name, sa.email, sa.notify_enabled,
+            "SELECT sa.id, sa.username, sa.name, sa.email, sa.notify_enabled, sa.twofa_enabled,
                     sa.is_active, sa.last_login, sa.created_at,
                     r.slug AS role_slug, r.name AS role_name
              FROM super_admins sa
@@ -441,6 +441,36 @@ if (!empty($_SERVER['HTTP_X_REQUESTED_WITH'])) {
         $db->prepare("UPDATE super_admins SET is_active=0 WHERE id=?")->execute([$id]);
         logSuperAdminAction('sa_team_delete', null, "Soft-delete SA #$id");
         echo json_encode(['ok' => true]);
+        exit;
+    }
+
+    // ── SA Team: toggle 2FA email ────────────────────
+    if ($action === 'team_2fa_toggle') {
+        saVerifyCsrf();
+        $id = (int)($_POST['id'] ?? 0);
+        $enabled = (int)($_POST['enabled'] ?? 0);
+        $myId = (int)($_SESSION['superadmin_id'] ?? 0);
+
+        // Self atau punya super_admins.manage perm
+        if ($id !== $myId && !SaPermission::has('super_admins.manage')) {
+            echo json_encode(['error' => 'Tidak punya akses untuk toggle 2FA SA lain']); exit;
+        }
+
+        // Cek email tersedia kalau enabling
+        if ($enabled) {
+            $email = $db->prepare("SELECT email FROM super_admins WHERE id=?");
+            $email->execute([$id]);
+            if (!$email->fetchColumn()) {
+                echo json_encode(['error' => 'Email SA belum diset. Edit akun + tambah email dulu.']); exit;
+            }
+        }
+
+        $method = $enabled ? 'email' : 'none';
+        $db->prepare("UPDATE super_admins SET twofa_enabled=?, twofa_method=? WHERE id=?")
+           ->execute([$enabled, $method, $id]);
+
+        logSuperAdminAction('sa_2fa_toggle', null, "Toggle 2FA SA #$id: " . ($enabled ? 'ENABLED' : 'DISABLED'));
+        echo json_encode(['ok' => true, 'enabled' => (bool)$enabled]);
         exit;
     }
 
@@ -840,13 +870,14 @@ $pageTitle  = 'Platform Settings';
             <th>Email</th>
             <th>Role</th>
             <th>Notify</th>
+            <th>2FA</th>
             <th>Status</th>
             <th>Last Login</th>
             <th>Aksi</th>
           </tr>
         </thead>
         <tbody id="teamTableBody">
-          <tr><td colspan="8" style="text-align:center;padding:24px;color:var(--ash)">Memuat...</td></tr>
+          <tr><td colspan="9" style="text-align:center;padding:24px;color:var(--ash)">Memuat...</td></tr>
         </tbody>
       </table>
     </div>
@@ -1359,7 +1390,7 @@ async function loadTeam() {
 
   const tbody = document.getElementById('teamTableBody');
   if (!r.admins || !r.admins.length) {
-    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--ash)">Belum ada admin.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:24px;color:var(--ash)">Belum ada admin.</td></tr>';
     return;
   }
 
@@ -1381,17 +1412,43 @@ async function loadTeam() {
       <td style="font-size:12px;color:var(--ink-soft)">${escapeHtml(a.email||'—')}</td>
       <td><span class="sa-badge ${roleBadge}">${escapeHtml(a.role_name||'—')}</span></td>
       <td style="font-size:12px">${a.notify_enabled==1?'✓':'—'}</td>
+      <td style="font-size:12px;text-align:center">
+        ${a.twofa_enabled==1
+          ? '<span class="sa-badge sa-badge-active" title="2FA email aktif">🔐 ON</span>'
+          : '<span style="color:var(--ash-dim);font-size:11px">OFF</span>'}
+      </td>
       <td>${statusBadge}</td>
       <td style="font-size:12px;color:var(--ash)">${escapeHtml(ll)}</td>
       <td>
         <div style="display:flex;gap:6px;flex-wrap:wrap">
           <button class="sa-btn sa-btn-outline sa-btn-sm" onclick='openTeamEdit(${rowData})'>✏️ Edit</button>
           <button class="sa-btn sa-btn-outline sa-btn-sm" onclick="openTeamPw(${a.id})">🔑</button>
+          <button class="sa-btn sa-btn-outline sa-btn-sm"
+                  style="${a.twofa_enabled==1?'border-color:var(--teal);color:var(--teal)':''}"
+                  onclick="toggle2FA(${a.id}, ${a.twofa_enabled==1 ? 0 : 1}, '${escapeHtml(a.name)}')"
+                  title="${a.twofa_enabled==1?'Matikan':'Aktifkan'} 2FA email">
+            🔐 ${a.twofa_enabled==1 ? 'Nonaktifkan' : 'Aktifkan'} 2FA
+          </button>
           ${a.role_slug !== 'owner' ? `<button class="sa-btn sa-btn-danger sa-btn-sm" onclick="deleteTeamAdmin(${a.id},'${escapeHtml(a.name)}')">🗑️</button>` : ''}
         </div>
       </td>
     </tr>`;
   }).join('');
+}
+
+async function toggle2FA(id, newState, name) {
+  const action = newState ? 'aktifkan' : 'nonaktifkan';
+  if (!confirm(`Yakin ${action} 2FA email untuk "${name}"?\n\n${newState ? 'Setelah aktif, login akan minta kode 6-digit yang dikirim via email.' : 'Login akan kembali tanpa kode 2FA — kurang aman.'}`)) return;
+  const fd = new FormData();
+  fd.append('id', id);
+  fd.append('enabled', newState);
+  const r = await saFetch('?action=team_2fa_toggle', { method: 'POST', body: fd });
+  if (r.ok) {
+    showToast(`2FA ${newState ? 'diaktifkan' : 'dinonaktifkan'} untuk ${name}`, true);
+    loadTeam();
+  } else {
+    showToast(r.error || 'Gagal toggle 2FA', false);
+  }
 }
 
 function openTeamCreate() {

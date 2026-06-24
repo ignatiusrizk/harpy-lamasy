@@ -89,36 +89,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($admin && password_verify($password, $admin['password'])) {
                 saClearFail($ip);
 
-                // Update last_login
-                Database::get()->prepare(
-                    "UPDATE super_admins SET last_login = NOW() WHERE id = ?"
-                )->execute([$admin['id']]);
-
-                // Set session
-                $_SESSION['superadmin_id'] = $admin['id'];
-                $_SESSION['sa_user'] = [
-                    'id'       => $admin['id'],
-                    'username' => $admin['username'],
-                    'name'     => $admin['name'],
-                ];
-
-                // Load RBAC perms into session
-                require_once SA_ROOT . '/../core/SaPermission.php';
-                SaPermission::loadIntoSession((int)$admin['id']);
-
-                // Log login
-                try {
-                    Database::get()->prepare(
-                        "INSERT INTO superadmin_logs (superadmin_id, action, description, ip_address)
-                         VALUES (?, 'login', 'Super admin login berhasil', ?)"
-                    )->execute([$admin['id'], $ip]);
-                } catch (Throwable $e) {
-                    if (class_exists('ErrorLogger')) ErrorLogger::logException('sa_audit', $e);
-                }
-
-                session_regenerate_id(true);
-                header('Location: dashboard.php');
-                exit;
+                // ── 2FA Gate ──────────────────────────────────────
+                // Kalau 2FA enabled, jangan set superadmin_id langsung.
+                // Pending state → user harus verify OTP dulu.
+                if (!empty($admin['twofa_enabled'])) {
+                    require_once SA_ROOT . '/../core/Sa2FA.php';
+                    $_SESSION['sa_pending_2fa'] = [
+                        'sa_id'    => (int)$admin['id'],
+                        'username' => $admin['username'],
+                        'name'     => $admin['name'],
+                        'ip'       => $ip,
+                        'started'  => time(),
+                    ];
+                    // Auto-kirim kode pertama
+                    $send = Sa2FA::send((int)$admin['id']);
+                    if (!$send['ok']) {
+                        unset($_SESSION['sa_pending_2fa']);
+                        $error = $send['error'] ?? 'Gagal kirim kode 2FA.';
+                    } else {
+                        session_regenerate_id(true);
+                        header('Location: login-2fa.php');
+                        exit;
+                    }
+                } else {
+                    // No 2FA → langsung session active
+                    saLoginActivate((int)$admin['id'], $admin, $ip);
+                    header('Location: dashboard.php');
             } else {
                 saRecordFail($ip);
                 sleep(1);
@@ -128,6 +124,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = 'Terjadi kesalahan sistem. Coba lagi.';
         }
     }
+}
+
+// Activate full SA session — dipanggil dari login flow OR dari login-2fa.php
+function saLoginActivate(int $saId, array $admin, string $ip): void {
+    Database::get()->prepare("UPDATE super_admins SET last_login=NOW() WHERE id=?")->execute([$saId]);
+
+    $_SESSION['superadmin_id'] = $saId;
+    $_SESSION['sa_user'] = [
+        'id'       => $saId,
+        'username' => $admin['username'],
+        'name'     => $admin['name'],
+    ];
+
+    require_once __DIR__ . '/../core/SaPermission.php';
+    SaPermission::loadIntoSession($saId);
+
+    unset($_SESSION['sa_pending_2fa']);
+
+    try {
+        Database::get()->prepare(
+            "INSERT INTO superadmin_logs (superadmin_id, action, description, ip_address)
+             VALUES (?, 'login', 'Super admin login berhasil', ?)"
+        )->execute([$saId, $ip]);
+    } catch (Throwable $e) {
+        if (class_exists('ErrorLogger')) ErrorLogger::logException('sa_audit', $e);
+    }
+
+    session_regenerate_id(true);
 }
 ?>
 <!DOCTYPE html>

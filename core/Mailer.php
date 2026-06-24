@@ -437,4 +437,40 @@ class Mailer
 </html>
 HTML;
     }
+
+    /**
+     * Kirim OTP 2FA ke email (untuk SuperAdmin login).
+     */
+    public static function sendOtp(
+        string $toEmail,
+        string $toName,
+        string $code,
+        int $minutesValid = 10
+    ): bool {
+        $codeFormatted = htmlspecialchars($code);
+        $name = htmlspecialchars($toName);
+
+        $html = self::baseTemplate('Kode Verifikasi SA', "
+            <h2 style='color:" . self::BRAND_DARK . ";margin:0 0 8px'>Kode Verifikasi Login 🔐</h2>
+            <p style='color:#555;margin:0 0 24px;line-height:1.65'>
+                Halo <strong>$name</strong>,<br>
+                Seseorang mencoba login ke akun SuperAdmin LAMASY kamu. Gunakan kode berikut untuk melanjutkan:
+            </p>
+            <div style='text-align:center;margin:32px 0'>
+                <div style='display:inline-block;background:#F0FDFA;border:2px solid " . self::BRAND_COLOR . ";
+                            padding:18px 36px;border-radius:12px;font-family:Menlo,Monaco,monospace;
+                            font-size:36px;font-weight:800;letter-spacing:.4em;color:" . self::BRAND_DARK . "'>
+                    $codeFormatted
+                </div>
+            </div>
+            <p style='color:#888;font-size:13px;text-align:center'>
+                Kode berlaku <strong>$minutesValid menit</strong>. Jangan share ke siapapun.
+            </p>
+            <p style='color:#aaa;font-size:12px;text-align:center;margin-top:20px'>
+                Bukan kamu yang login? Segera ganti password — akun mungkin terkompromi.
+            </p>
+        ");
+
+        return self::send($toEmail, $toName, 'Kode Verifikasi LAMASY: ' . $code, $html);
+    }
 }
