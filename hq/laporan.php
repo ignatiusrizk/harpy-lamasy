@@ -930,6 +930,8 @@ require __DIR__ . '/_layout_open.php';
       <button class="keu-stab" onclick="switchKeuTab('arus',this)">💧 Arus Kas</button>
       <button class="keu-stab" onclick="switchKeuTab('rasio',this)">📐 Rasio</button>
       <button class="keu-stab" onclick="switchKeuTab('aset',this)">🏭 Aset Tetap</button>
+      <button class="keu-stab" onclick="switchKeuTab('bukubesar',this)">📖 Buku Besar</button>
+      <button class="keu-stab" onclick="switchKeuTab('perubahanmodal',this)">📈 Perubahan Modal</button>
     </div>
 
     <!-- L/R panel -->
@@ -971,6 +973,26 @@ require __DIR__ . '/_layout_open.php';
         <span id="keuAsetPeriode" style="font-size:11px;font-weight:400;color:#9CA3AF"></span>
       </div>
       <div id="keuAsetContent"><div style="color:#9CA3AF;text-align:center;padding:30px">Memuat…</div></div>
+    </div>
+
+    <!-- Buku Besar panel -->
+    <div id="keuPanelBukubesar" class="panel" style="display:none;margin-bottom:18px">
+      <div class="panel-title">📖 Buku Besar
+        <span style="font-size:11px;font-weight:400;color:#9CA3AF">Mutasi per akun</span>
+      </div>
+      <div style="margin:10px 0">
+        <label style="font-size:13px;color:#6B7280;margin-right:8px">Pilih Akun:</label>
+        <select id="bbCoaSelect" onchange="loadBukuBesar()" style="padding:8px 12px;border:1px solid #D1D5DB;border-radius:8px;font-size:13px;min-width:280px">
+          <option value="">— Memuat akun… —</option>
+        </select>
+      </div>
+      <div id="keuBukubesarContent"><div style="color:#9CA3AF;text-align:center;padding:30px">Pilih akun untuk lihat mutasi.</div></div>
+    </div>
+
+    <!-- Perubahan Modal panel -->
+    <div id="keuPanelPerubahanmodal" class="panel" style="display:none;margin-bottom:18px">
+      <div class="panel-title">📈 Laporan Perubahan Modal</div>
+      <div id="keuPerubahanmodalContent"><div style="color:#9CA3AF;text-align:center;padding:30px">Memuat…</div></div>
     </div>
 
     <div id="keuPdfTarget" style="display:none"></div>
@@ -1373,7 +1395,7 @@ function switchKeuTab(tab, el) {
     if (p.id && p.id.startsWith('keuPanel')) p.style.display = 'none';
   });
   keuActiveTab = tab;
-  const map = {lr:'keuPanelLr',neraca:'keuPanelNeraca',arus:'keuPanelArus',rasio:'keuPanelRasio',aset:'keuPanelAset'};
+  const map = {lr:'keuPanelLr',neraca:'keuPanelNeraca',arus:'keuPanelArus',rasio:'keuPanelRasio',aset:'keuPanelAset',bukubesar:'keuPanelBukubesar',perubahanmodal:'keuPanelPerubahanmodal'};
   if (map[tab]) document.getElementById(map[tab]).style.display = '';
   loadKeuangan();
 }
@@ -1397,6 +1419,8 @@ function loadKeuangan() {
   else if (keuActiveTab === 'arus')   loadKeuArus();
   else if (keuActiveTab === 'rasio')  loadKeuRasio();
   else if (keuActiveTab === 'aset')   loadKeuAset();
+  else if (keuActiveTab === 'bukubesar')      { initBukuBesarDropdown(); return; }
+  else if (keuActiveTab === 'perubahanmodal') { loadPerubahanModal(); return; }
 }
 
 // ── L/R ──────────────────────────────────────────────
@@ -1701,6 +1725,78 @@ function renderKeuAset(d) {
   box.innerHTML = h;
 }
 
+// ── BUKU BESAR ────────────────────────────────────────
+let _bbCoaLoaded = false;
+async function initBukuBesarDropdown() {
+  if (!_bbCoaLoaded) {
+    try {
+      const r = await fetch('/hq/keuangan.php?action=coa_options', {headers:{'X-Requested-With':'XMLHttpRequest','X-CSRF-Token':KEU_CSRF}});
+      const d = await r.json();
+      if (d.ok) {
+        const sel = document.getElementById('bbCoaSelect');
+        const groups = {};
+        d.data.forEach(c => { (groups[c.tipe] = groups[c.tipe] || []).push(c); });
+        let html = '<option value="">— Pilih akun —</option>';
+        Object.keys(groups).forEach(tipe => {
+          html += `<optgroup label="${escapeHtml(tipe)}">`;
+          groups[tipe].forEach(c => { html += `<option value="${c.id}">${escapeHtml(c.kode)} · ${escapeHtml(c.nama)}</option>`; });
+          html += '</optgroup>';
+        });
+        sel.innerHTML = html;
+        _bbCoaLoaded = true;
+      }
+    } catch(e) {}
+  }
+}
+
+async function loadBukuBesar() {
+  const coaId = document.getElementById('bbCoaSelect').value;
+  const box = document.getElementById('keuBukubesarContent');
+  if (!coaId) { box.innerHTML = '<div style="color:#9CA3AF;text-align:center;padding:30px">Pilih akun untuk lihat mutasi.</div>'; return; }
+  box.innerHTML = '<div style="color:#9CA3AF;text-align:center;padding:30px">Memuat…</div>';
+  try {
+    const r = await fetch(`/hq/keuangan.php?action=laporan_buku_besar&coa_id=${coaId}&${keuParams()}`, {headers:{'X-Requested-With':'XMLHttpRequest','X-CSRF-Token':KEU_CSRF}});
+    const d = await r.json();
+    if (!d.ok) { box.innerHTML = `<div style="color:#DC2626;padding:20px">${escapeHtml(d.error||'Gagal')}</div>`; return; }
+    const x = d.data;
+    let rows = x.mutasi.map(m => `<tr>
+      <td>${new Date(m.tanggal).toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'})}</td>
+      <td>${escapeHtml(m.keterangan)}</td>
+      <td class="num">${m.debit?fmtRp(m.debit):'−'}</td>
+      <td class="num">${m.kredit?fmtRp(m.kredit):'−'}</td>
+      <td class="num"><strong>${fmtRp(m.saldo)}</strong></td>
+    </tr>`).join('');
+    if (!x.mutasi.length) rows = '<tr><td colspan="5" style="text-align:center;color:#9CA3AF;padding:20px">Tidak ada mutasi pada periode ini.</td></tr>';
+    box.innerHTML = `
+      <div style="margin-bottom:8px;font-size:13px;color:#6B7280">Saldo Awal: <strong>${fmtRp(x.saldo_awal)}</strong></div>
+      <table class="lap-table" style="width:100%"><thead><tr><th>Tgl</th><th>Keterangan</th><th class="num">Debit</th><th class="num">Kredit</th><th class="num">Saldo</th></tr></thead>
+      <tbody>${rows}</tbody></table>
+      <div style="margin-top:10px;text-align:right;font-size:14px"><strong>Saldo Akhir: ${fmtRp(x.saldo_akhir)}</strong></div>`;
+  } catch(e) { box.innerHTML = `<div style="color:#DC2626;padding:20px">${escapeHtml(e.message)}</div>`; }
+}
+
+// ── PERUBAHAN MODAL ────────────────────────────────────
+async function loadPerubahanModal() {
+  const box = document.getElementById('keuPerubahanmodalContent');
+  box.innerHTML = '<div style="color:#9CA3AF;text-align:center;padding:30px">Memuat…</div>';
+  try {
+    const r = await fetch(`/hq/keuangan.php?action=laporan_perubahan_modal&${keuParams()}`, {headers:{'X-Requested-With':'XMLHttpRequest','X-CSRF-Token':KEU_CSRF}});
+    const d = await r.json();
+    if (!d.ok) { box.innerHTML = `<div style="color:#DC2626;padding:20px">${escapeHtml(d.error||'Gagal')}</div>`; return; }
+    const x = d.data;
+    const sign = (n) => n < 0 ? `<span style="color:#DC2626">−${fmtRp(Math.abs(n))}</span>` : fmtRp(n);
+    box.innerHTML = `
+      <table class="lap-table" style="width:100%">
+        <tr><td>Modal Awal</td><td class="num"><strong>${fmtRp(x.modal_awal)}</strong></td></tr>
+        <tr><td>+ Setoran Modal periode ini</td><td class="num">${fmtRp(x.setoran_modal)}</td></tr>
+        <tr><td>− Prive periode ini</td><td class="num">${fmtRp(x.prive)}</td></tr>
+        <tr><td>+ Laba Bersih periode ini</td><td class="num">${sign(x.laba_bersih)}</td></tr>
+        <tr style="border-top:2px solid #1F3864"><td><strong>Modal Akhir</strong></td><td class="num"><strong>${fmtRp(x.modal_akhir)}</strong></td></tr>
+      </table>
+      <div style="margin-top:10px;font-size:12px;color:#9CA3AF">ℹ️ Modal akhir = total ekuitas di Neraca periode yang sama.</div>`;
+  } catch(e) { box.innerHTML = `<div style="color:#DC2626;padding:20px">${escapeHtml(e.message)}</div>`; }
+}
+
 // ── Keuangan AI Insight ────────────────────────────────
 async function loadKeuAiInsight() {
   const panel   = document.getElementById('keuAiPanel');
@@ -1749,7 +1845,7 @@ async function exportKeuPdf() {
   const outletName = outletSel.options[outletSel.selectedIndex].text.replace(/[^\w-]/g,'_');
   const filename   = `Keuangan_SAK_EMKM_${periode}_${outletName}.pdf`;
   const pdfTarget  = document.getElementById('keuPdfTarget');
-  const panelIds   = ['keuPanelLr','keuPanelNeraca','keuPanelArus','keuPanelRasio','keuPanelAset'];
+  const panelIds   = ['keuPanelLr','keuPanelNeraca','keuPanelArus','keuPanelRasio','keuPanelAset','keuPanelBukubesar','keuPanelPerubahanmodal'];
 
   let body = '';
   panelIds.forEach(id => {
