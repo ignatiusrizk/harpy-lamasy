@@ -127,6 +127,63 @@ if ($action) {
         exit;
     }
 
+    // ── GET: list Midtrans payments ───────────────────
+    if ($action === 'list_midtrans') {
+        $page   = max(1, (int)($_GET['page'] ?? 1));
+        $limit  = 25;
+        $offset = ($page - 1) * $limit;
+        $type   = $_GET['type']   ?? '';
+        $status = $_GET['status'] ?? '';
+        $from   = $_GET['from']   ?? '';
+        $to     = $_GET['to']     ?? '';
+        $q      = trim($_GET['q'] ?? '');
+
+        $where = ['1=1']; $params = [];
+
+        if ($type && in_array($type, ['topup_coin','setup_fee','outlet_activation'])) {
+            $where[] = 'sp.type = ?'; $params[] = $type;
+        }
+        if ($status && in_array($status, ['pending','paid','expired','failed','cancelled'])) {
+            $where[] = 'sp.status = ?'; $params[] = $status;
+        }
+        if ($from) { $where[] = 'DATE(sp.created_at) >= ?'; $params[] = $from; }
+        if ($to)   { $where[] = 'DATE(sp.created_at) <= ?'; $params[] = $to;   }
+        if ($q) {
+            $where[] = '(t.nama_perusahaan LIKE ? OR sp.order_id LIKE ?)';
+            $like = "%$q%"; array_push($params, $like, $like);
+        }
+
+        $w = implode(' AND ', $where);
+
+        $cnt = $db->prepare("SELECT COUNT(*) FROM saas_payments sp
+                              LEFT JOIN tenants t ON t.id = sp.tenant_id WHERE $w");
+        $cnt->execute($params);
+        $total = (int)$cnt->fetchColumn();
+
+        $stmt = $db->prepare(
+            "SELECT sp.*,
+                    t.nama_perusahaan,
+                    bdl.nama AS bundle_nama
+             FROM saas_payments sp
+             LEFT JOIN tenants           t   ON t.id   = sp.tenant_id
+             LEFT JOIN saas_coin_bundles bdl ON bdl.id = sp.ref_bundle_id
+             WHERE $w
+             ORDER BY sp.id DESC
+             LIMIT $limit OFFSET $offset"
+        );
+        $stmt->execute($params);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        echo json_encode([
+            'ok'    => true,
+            'rows'  => $rows,
+            'total' => $total,
+            'pages' => max(1, (int)ceil($total / $limit)),
+            'page'  => $page,
+        ]);
+        exit;
+    }
+
     // ── POST actions — CSRF required ──────────────────
     saVerifyCsrf();
 
@@ -350,6 +407,66 @@ if ($action) {
         exit;
     }
 
+    // ── REFUND MIDTRANS PAYMENT ───────────────────────
+    if ($action === 'refund') {
+        SaPermission::require('billing.topup');
+        $orderId = trim($_POST['order_id'] ?? '');
+        $reason  = trim($_POST['reason']   ?? 'SA manual refund');
+
+        if (!$orderId) { echo json_encode(['error' => 'order_id wajib diisi.']); exit; }
+
+        $p = $db->prepare("SELECT * FROM saas_payments WHERE order_id=? AND status='paid'");
+        $p->execute([$orderId]);
+        $payment = $p->fetch(PDO::FETCH_ASSOC);
+        if (!$payment) { echo json_encode(['error' => 'Payment tidak ditemukan atau belum paid.']); exit; }
+
+        require_once SA_ROOT . '/../core/MidtransClient.php';
+        $res = MidtransClient::refund($orderId, (int)$payment['amount'], $reason);
+        if (!$res['ok']) {
+            echo json_encode(['error' => $res['error'] ?? 'Refund gagal di Midtrans.']); exit;
+        }
+
+        $db->beginTransaction();
+        try {
+            $db->prepare("UPDATE saas_payments SET status='cancelled', updated_at=NOW() WHERE id=?")
+               ->execute([$payment['id']]);
+
+            if ($payment['type'] === 'topup_coin' && $payment['ref_bundle_id']) {
+                $b = $db->prepare("SELECT coin_didapat FROM saas_coin_bundles WHERE id=?");
+                $b->execute([$payment['ref_bundle_id']]);
+                $coinAmt = (int)$b->fetchColumn();
+
+                if ($coinAmt > 0) {
+                    $lockS = $db->prepare("SELECT coin_balance FROM tenants WHERE id=? FOR UPDATE");
+                    $lockS->execute([$payment['tenant_id']]);
+                    $cur    = (int)$lockS->fetchColumn();
+                    $newBal = max(0, $cur - $coinAmt);
+
+                    $db->prepare("UPDATE tenants SET coin_balance=? WHERE id=?")
+                       ->execute([$newBal, $payment['tenant_id']]);
+                    $db->prepare(
+                        "INSERT INTO coin_ledger
+                           (tenant_id, type, amount, feature_used, description, balance_after, payment_id)
+                         VALUES (?, 'deduct', ?, 'refund', ?, ?, ?)"
+                    )->execute([
+                        $payment['tenant_id'], $coinAmt,
+                        'Refund Midtrans payment ' . $orderId,
+                        $newBal, $payment['id'],
+                    ]);
+                }
+            }
+
+            $db->commit();
+        } catch (Throwable $e) {
+            $db->rollBack();
+            echo json_encode(['error' => 'DB error: ' . $e->getMessage()]); exit;
+        }
+
+        logSuperAdminAction('payment_refund', (int)$payment['tenant_id'], "Refund $orderId");
+        echo json_encode(['ok' => true, 'msg' => "Refund $orderId berhasil diproses."]);
+        exit;
+    }
+
     // ── MARK WA SENT ──────────────────────────────────
     if ($action === 'mark_wa_sent') {
         $d  = json_decode(file_get_contents('php://input'), true) ?: [];
@@ -461,6 +578,29 @@ if ($action) {
 .pkg-option .p-price { font-family: var(--mono); font-size: 13px; font-weight: 700; color: #6EE7B7; text-align: right; }
 .pkg-option .p-price small { display: block; font-size: 10px; color: var(--ash); font-family: var(--font); }
 
+/* ── Tabs ── */
+.pay-tabs { display:flex; gap:4px; margin-bottom:20px; border-bottom:1px solid var(--crease); padding-bottom:0; }
+.pay-tab  {
+  padding: 10px 20px; font-size:13px; font-weight:600; cursor:pointer;
+  border: 1px solid transparent; border-bottom:none; border-radius:8px 8px 0 0;
+  color: var(--ash); background:transparent; transition: color .15s, background .15s;
+  position:relative; bottom:-1px;
+}
+.pay-tab:hover { color:var(--glow); background:rgba(53,232,213,.05); }
+.pay-tab.active { color:var(--glow); background:var(--navy); border-color:var(--crease); border-bottom-color:var(--navy); }
+
+/* ── Midtrans status badges ── */
+.mt-status-paid      { color:#6EE7B7; font-size:12px; font-weight:700; }
+.mt-status-pending   { color:#FCD34D; font-size:12px; }
+.mt-status-expired   { color:var(--ash-dim); font-size:12px; }
+.mt-status-failed    { color:#F87171; font-size:12px; }
+.mt-status-cancelled { color:var(--ash-dim); font-size:12px; text-decoration:line-through; }
+
+/* ── Midtrans type badges ── */
+.mt-type-topup    { background:rgba(132,204,22,.10);  color:#6EE7B7; border:1px solid #A7F3D0; }
+.mt-type-setup    { background:rgba(53,232,213,.08);  color:#A5B4FC; border:1px solid #C7D2FE; }
+.mt-type-outlet   { background:rgba(245,158,11,.10);  color:#FCD34D; border:1px solid #FDE68A; }
+
 /* ── Separator ── */
 .modal-section-title {
   font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
@@ -482,6 +622,15 @@ if ($action) {
     <button class="sa-btn sa-btn-primary" onclick="openConfirmModal()">＋ Konfirmasi Pembayaran</button>
   </div>
 </div>
+
+<!-- Tabs -->
+<div class="pay-tabs">
+  <button class="pay-tab active" id="tabManualBtn" onclick="switchTab('manual')">💰 Pembayaran Manual</button>
+  <button class="pay-tab"        id="tabMidtransBtn" onclick="switchTab('midtrans')">🏦 Midtrans Payments</button>
+</div>
+
+<!-- ══ PANEL: PEMBAYARAN MANUAL ══════════════════════ -->
+<div id="panelManual">
 
 <!-- Stats -->
 <div class="pay-stats" id="statsBar">
@@ -534,6 +683,89 @@ if ($action) {
     </table>
   </div>
   <div class="sa-pagination" id="paginationWrap"></div>
+</div>
+
+</div><!-- /panelManual -->
+
+<!-- ══ PANEL: MIDTRANS PAYMENTS ═══════════════════════ -->
+<div id="panelMidtrans" style="display:none">
+
+<!-- Filter Midtrans -->
+<div class="sa-card" style="margin-bottom:20px">
+  <div class="sa-filter-bar">
+    <input type="text" id="mtSearch" placeholder="Nama tenant / order_id..." style="flex:1;min-width:180px" oninput="mtDebounceLoad()"/>
+    <select id="mtType" onchange="loadMidtrans()">
+      <option value="">Semua Tipe</option>
+      <option value="topup_coin">Topup Coin</option>
+      <option value="setup_fee">Setup Fee</option>
+      <option value="outlet_activation">Outlet Activation</option>
+    </select>
+    <select id="mtStatus" onchange="loadMidtrans()">
+      <option value="">Semua Status</option>
+      <option value="paid">Paid</option>
+      <option value="pending">Pending</option>
+      <option value="expired">Expired</option>
+      <option value="failed">Failed</option>
+      <option value="cancelled">Cancelled</option>
+    </select>
+    <input type="date" id="mtFrom" onchange="loadMidtrans()" style="width:140px" title="Dari tanggal"/>
+    <input type="date" id="mtTo"   onchange="loadMidtrans()" style="width:140px" title="Sampai tanggal"/>
+  </div>
+
+  <div class="sa-table-wrap">
+    <table class="sa-table">
+      <thead>
+        <tr>
+          <th>Order ID</th>
+          <th>Tenant</th>
+          <th>Tipe</th>
+          <th>Bundle</th>
+          <th>Amount</th>
+          <th>Payment Type</th>
+          <th>Status</th>
+          <th>Paid At</th>
+          <th>Aksi</th>
+        </tr>
+      </thead>
+      <tbody id="midtransBody">
+        <tr><td colspan="9" style="text-align:center;padding:32px;color:var(--ash-dim);">Memuat...</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="sa-pagination" id="mtPaginationWrap"></div>
+</div>
+
+</div><!-- /panelMidtrans -->
+
+<!-- ══ MODAL: REFUND ══════════════════════════════════ -->
+<div class="sa-modal-overlay" id="refundModal">
+  <div class="sa-modal" style="max-width:480px;">
+    <h3>↩ Refund Midtrans Payment</h3>
+    <input type="hidden" id="refundOrderId"/>
+    <div class="fg" style="margin-top:16px;">
+      <label>Order ID</label>
+      <input type="text" id="refundOrderIdDisplay" disabled style="opacity:.7;font-family:var(--mono);font-size:12px;"/>
+    </div>
+    <div class="fg">
+      <label>Tenant</label>
+      <input type="text" id="refundTenant" disabled style="opacity:.7;font-size:13px;"/>
+    </div>
+    <div class="fg">
+      <label>Amount</label>
+      <input type="text" id="refundAmount" disabled style="opacity:.7;font-family:var(--mono);font-size:13px;color:var(--glow);"/>
+    </div>
+    <div class="fg">
+      <label>Alasan Refund *</label>
+      <textarea id="refundReason" placeholder="Jelaskan alasan refund..." rows="3"></textarea>
+    </div>
+    <p style="font-size:12px;color:#F87171;margin-top:4px;">
+      ⚠️ Refund tidak bisa dibatalkan. Coin akan di-rollback otomatis jika topup_coin.
+    </p>
+    <div class="sa-modal-footer">
+      <button class="sa-btn sa-btn-outline" onclick="closeModal('refundModal')">Batal</button>
+      <button class="sa-btn sa-btn-danger"  onclick="submitRefund()">↩ Proses Refund</button>
+    </div>
+  </div>
 </div>
 
 <!-- ══ MODAL: KONFIRMASI PEMBAYARAN ══════════════════ -->
@@ -1060,6 +1292,124 @@ document.querySelectorAll('.sa-modal-overlay').forEach(el => {
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') document.querySelectorAll('.sa-modal-overlay.open').forEach(el => closeModal(el.id));
 });
+
+// ── Tab switching ─────────────────────────────────────
+function switchTab(tab) {
+  const isManual = (tab === 'manual');
+  document.getElementById('panelManual').style.display    = isManual ? '' : 'none';
+  document.getElementById('panelMidtrans').style.display  = isManual ? 'none' : '';
+  document.getElementById('tabManualBtn').classList.toggle('active', isManual);
+  document.getElementById('tabMidtransBtn').classList.toggle('active', !isManual);
+  if (!isManual && !_mtLoaded) { loadMidtrans(); }
+}
+
+// ── Midtrans Payments ─────────────────────────────────
+let mtCurrentPage = 1;
+let mtDebTimer    = null;
+let _mtLoaded     = false;
+
+const mtTypeLabel   = { topup_coin:'Topup Coin', setup_fee:'Setup Fee', outlet_activation:'Outlet Activation' };
+const mtTypeCls     = { topup_coin:'mt-type-topup', setup_fee:'mt-type-setup', outlet_activation:'mt-type-outlet' };
+const payTypeLabel  = { qris:'QRIS', bank_transfer:'VA Bank', gopay:'GoPay', shopeepay:'ShopeePay' };
+
+function mtDebounceLoad(){ clearTimeout(mtDebTimer); mtDebTimer = setTimeout(() => { mtCurrentPage=1; loadMidtrans(); }, 380); }
+
+function loadMidtrans(){
+  _mtLoaded = true;
+  const params = new URLSearchParams({
+    action: 'list_midtrans', page: mtCurrentPage,
+    q:      document.getElementById('mtSearch').value,
+    type:   document.getElementById('mtType').value,
+    status: document.getElementById('mtStatus').value,
+    from:   document.getElementById('mtFrom').value,
+    to:     document.getElementById('mtTo').value,
+  });
+  saFetch('payments.php?' + params)
+    .then(r => r.json()).then(d => {
+      if (!d.ok) return;
+      renderMidtransRows(d.rows);
+      renderMtPagination(d.page, d.pages, d.total);
+    });
+}
+
+function renderMidtransRows(rows){
+  const tb = document.getElementById('midtransBody');
+  if (!rows.length){
+    tb.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:32px;color:var(--ash-dim);">Belum ada data.</td></tr>';
+    return;
+  }
+  const now = Date.now();
+  tb.innerHTML = rows.map(p => {
+    const statusCls = 'mt-status-' + (p.status || 'pending');
+    const statusIcon = { paid:'✓', pending:'⏳', expired:'⌛', failed:'✗', cancelled:'✗' }[p.status] || '';
+    const statusLabel = { paid:'Paid', pending:'Pending', expired:'Expired', failed:'Failed', cancelled:'Cancelled' }[p.status] || p.status;
+
+    const paidAt = p.paid_at
+      ? new Date(p.paid_at).toLocaleDateString('id-ID', {day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})
+      : '—';
+
+    // Show refund button only for paid, within 90-day window (informational check)
+    let refundBtn = '';
+    if (p.status === 'paid') {
+      const paidTs = p.paid_at ? new Date(p.paid_at).getTime() : 0;
+      const daysOld = (now - paidTs) / 86400000;
+      const withinWindow = daysOld <= 90;
+      refundBtn = `<button class="sa-btn sa-btn-sm sa-btn-danger" ${withinWindow ? '' : 'title="Mungkin di luar 90-hari refund window Midtrans"'}
+                    onclick="openRefundModal(${JSON.stringify(p).replace(/"/g,'&quot;')})">↩ Refund</button>`;
+    }
+
+    return `<tr>
+      <td style="font-family:var(--mono);font-size:11px;color:var(--ash-dim);" title="${esc(p.order_id)}">${esc(p.order_id.length > 28 ? p.order_id.slice(0,25)+'…' : p.order_id)}</td>
+      <td style="font-size:13px;font-weight:600;">${esc(p.nama_perusahaan || '—')}</td>
+      <td><span class="pay-type-badge ${mtTypeCls[p.type]||''}">${mtTypeLabel[p.type]||p.type}</span></td>
+      <td style="font-size:12px;color:var(--ash);">${esc(p.bundle_nama || '—')}</td>
+      <td><span class="pay-nominal">${rp(p.amount)}</span></td>
+      <td style="font-size:12px;color:var(--ash);">${payTypeLabel[p.payment_type] || (p.payment_type ? esc(p.payment_type) : '—')}${p.va_bank ? ' · '+p.va_bank.toUpperCase() : ''}</td>
+      <td><span class="${statusCls}">${statusIcon} ${statusLabel}</span></td>
+      <td style="font-size:12px;color:var(--ash);">${paidAt}</td>
+      <td>${refundBtn}</td>
+    </tr>`;
+  }).join('');
+}
+
+function renderMtPagination(page, pages, total){
+  const el = document.getElementById('mtPaginationWrap');
+  let html = `<span style="font-size:12px;color:var(--ash-dim);margin-right:10px;">Total: ${total}</span>`;
+  html += `<button class="sa-btn sa-btn-sm sa-btn-outline ${page<=1?'disabled':''}" onclick="mtGotoPage(${page-1})">‹ Prev</button>`;
+  for(let i=Math.max(1,page-2);i<=Math.min(pages,page+2);i++)
+    html += `<button class="sa-btn sa-btn-sm ${i===page?'sa-btn-primary':'sa-btn-outline'}" onclick="mtGotoPage(${i})">${i}</button>`;
+  html += `<button class="sa-btn sa-btn-sm sa-btn-outline ${page>=pages?'disabled':''}" onclick="mtGotoPage(${page+1})">Next ›</button>`;
+  el.innerHTML = html;
+}
+function mtGotoPage(p){ mtCurrentPage=p; loadMidtrans(); }
+
+// ── Refund modal ──────────────────────────────────────
+function openRefundModal(p){
+  document.getElementById('refundOrderId').value        = p.order_id;
+  document.getElementById('refundOrderIdDisplay').value = p.order_id;
+  document.getElementById('refundTenant').value         = p.nama_perusahaan || '—';
+  document.getElementById('refundAmount').value         = rp(p.amount);
+  document.getElementById('refundReason').value         = '';
+  document.getElementById('refundModal').classList.add('open');
+}
+
+function submitRefund(){
+  const orderId = document.getElementById('refundOrderId').value;
+  const reason  = document.getElementById('refundReason').value.trim();
+  if (!reason) { saShowToast('Alasan refund wajib diisi.', 'error'); return; }
+
+  const form = new FormData();
+  form.append('order_id', orderId);
+  form.append('reason',   reason);
+
+  saFetch('payments.php?action=refund', { method:'POST', body: form })
+    .then(r => r.json()).then(d => {
+      if (d.error) { saShowToast(d.error, 'error'); return; }
+      saShowToast(d.msg || 'Refund berhasil.', 'success');
+      closeModal('refundModal');
+      loadMidtrans();
+    });
+}
 
 // Initial load
 loadPayments();
