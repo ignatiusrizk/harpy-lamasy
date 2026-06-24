@@ -21,3 +21,5 @@ Thumbs.db
 *.bak
 *.sql.bak
 *.tmp
+docs/exports/node_modules/
+docs/exports/package-lock.json
