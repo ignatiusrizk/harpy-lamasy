@@ -23,6 +23,13 @@ $message = $result['message'] ?? 'Terjadi kesalahan.';
 $expired = $result['expired'] ?? false;
 $alreadyUsed = $result['already_used'] ?? false;
 $tenantId    = $result['tenant_id'] ?? 0;
+
+// Redirect ke setup fee checkout kalau package punya setup_fee > 0
+if ($ok && !empty($result['needs_setup_fee']) && $tenantId) {
+    $_SESSION['tenant_id'] = $tenantId;
+    header('Location: /billing-checkout.php?type=setup_fee');
+    exit;
+}
 ?>
 <!DOCTYPE html>
 <html lang="id">

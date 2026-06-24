@@ -134,8 +134,48 @@ class EmailVerification
             UPDATE email_verifications SET used_at = NOW() WHERE id = ?
         ")->execute([$row['id']]);
 
-        // Update tenant: tandai verified (status → active, bukan trial)
-        // Trial adalah konsep outlet, bukan tenant
+        // Cek setup_fee dari package tenant
+        $pkgStmt = $db->prepare("
+            SELECT sp.setup_fee
+            FROM saas_packages sp
+            JOIN tenants t ON t.package_id = sp.id
+            WHERE t.id = ?
+            LIMIT 1
+        ");
+        $pkgStmt->execute([$row['tenant_id']]);
+        $setupFee = (int)($pkgStmt->fetchColumn() ?: 0);
+
+        if ($setupFee > 0) {
+            // Package berbayar — tandai verified_at tapi JANGAN aktifkan dulu.
+            // Status tetap pending_verification sampai setup fee dibayar.
+            $db->prepare("
+                UPDATE tenants
+                SET verified_at = NOW()
+                WHERE id = ? AND email = ? AND status = 'pending_verification'
+            ")->execute([$row['tenant_id'], $row['email']]);
+
+            // Fetch nama outlet (untuk keperluan caller jika ingin display)
+            $tenantStmt = $db->prepare("SELECT nama_perusahaan, owner_name FROM tenants WHERE id = ? LIMIT 1");
+            $tenantStmt->execute([$row['tenant_id']]);
+            $tenant = $tenantStmt->fetch();
+
+            // Notify super admin: email verified (best-effort)
+            try {
+                require_once __DIR__ . '/SaNotifier.php';
+                SaNotifier::emailVerified((int)$row['tenant_id']);
+            } catch (Throwable $e) { error_log('[SaNotify emailVerified] ' . $e->getMessage()); }
+
+            return [
+                'ok'              => true,
+                'tenant_id'       => (int)$row['tenant_id'],
+                'email'           => $row['email'],
+                'type'            => $row['type'],
+                'needs_setup_fee' => true,
+                'message'         => 'Email berhasil diverifikasi. Lanjutkan pembayaran setup fee.',
+            ];
+        }
+
+        // Free package — Update tenant: tandai verified + aktifkan langsung
         $db->prepare("
             UPDATE tenants
             SET verified_at = NOW(),
@@ -151,7 +191,7 @@ class EmailVerification
         $tenantStmt->execute([$row['tenant_id']]);
         $tenant = $tenantStmt->fetch();
 
-        // Kirim welcome email
+        // Kirim welcome email (hanya untuk free package — paid package kirim setelah setup fee)
         if ($tenant) {
             Mailer::sendWelcome(
                 $row['email'],
