@@ -75,8 +75,15 @@ if ($action) {
     exit;
 }
 
-renderSaHeader('🎨 Dashboard Banners');
 ?>
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<?php saRenderHead('Dashboard Banners'); ?>
+</head>
+<body>
+<div class="sa-layout">
+<?php saRenderNav('banners', 'Dashboard Banners'); ?>
 
 <div class="sa-content">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:10px">
@@ -316,4 +323,6 @@ async function delBanner(id) {
 document.addEventListener('DOMContentLoaded', loadBanners);
 </script>
 
-<?php renderSaFooter(); ?>
+<?php saRenderNavClose(); ?>
+</body>
+</html>
