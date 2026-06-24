@@ -141,7 +141,7 @@ if ($action) {
       </div>
     </div>
 
-    <div style="background:#F9FAFB;border:1px solid #E5E7EB;border-radius:8px;padding:8px 12px;margin-bottom:14px;font-size:11px;color:#6B7280">
+    <div style="background:rgba(28,37,64,.5);border:1px solid var(--crease);border-radius:8px;padding:8px 12px;margin-bottom:14px;font-size:11px;color:var(--ash)">
       🎨 Quick gradient:
       <button class="chip" onclick="setBg('linear-gradient(135deg,#0F7B6C,#10B981)')" type="button">Teal</button>
       <button class="chip" onclick="setBg('linear-gradient(135deg,#7C3AED,#EC4899)')" type="button">Purple</button>
