@@ -340,6 +340,63 @@ if ($action) {
         exit;
     }
 
+    // ─── OPNAME: finalize (adjust + ringkasan) ─────────
+    if ($action === 'opname_finalize' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+        if (!$canManage) { echo json_encode(['error'=>'Akses ditolak']); exit; }
+        verifyCsrf();
+        $d = json_decode(file_get_contents('php://input'), true) ?: [];
+        $opnameId = (int)($d['opname_id'] ?? 0);
+        $db = Database::get();
+
+        $hdr = $db->prepare("SELECT status, tanggal FROM hl_opname WHERE id=? AND tenant_id=? AND outlet_id=?");
+        $hdr->execute([$opnameId, $tid, $oid]);
+        $h = $hdr->fetch(PDO::FETCH_ASSOC);
+        if (!$h) { echo json_encode(['error'=>'Sesi tidak ditemukan']); exit; }
+        if ($h['status'] !== 'draft') { echo json_encode(['error'=>'Sesi sudah selesai']); exit; }
+
+        $db->beginTransaction();
+        try {
+            // Items dgn fisik terisi + selisih != 0 (JOIN bahan untuk harga + outlet)
+            $items = $db->prepare(
+                "SELECT oi.id, oi.bahan_id, oi.stok_sistem, oi.stok_fisik, oi.selisih, b.harga_beli
+                 FROM hl_opname_item oi
+                 JOIN hl_bahan b ON b.id=oi.bahan_id AND b.tenant_id=oi.tenant_id
+                 WHERE oi.opname_id=? AND oi.tenant_id=? AND oi.stok_fisik IS NOT NULL");
+            $items->execute([$opnameId, $tid]);
+            $rows = $items->fetchAll(PDO::FETCH_ASSOC);
+
+            $totalSelisihItem = 0;
+            $nilaiSelisih = 0;
+            $insMut = $db->prepare(
+                "INSERT INTO hl_bahan_mutasi
+                   (tenant_id, outlet_id, bahan_id, tipe, jumlah, stok_sebelum, stok_sesudah, harga_beli, supplier, catatan, input_by)
+                 VALUES (?,?,?, 'adjust', ?, ?, ?, NULL, NULL, ?, ?)");
+            $linkItem = $db->prepare("UPDATE hl_opname_item SET mutasi_id=? WHERE id=?");
+            foreach ($rows as $it) {
+                $selisih = (int)$it['selisih'];
+                if ($selisih === 0) continue;
+                $insMut->execute([
+                    $tid, $oid, (int)$it['bahan_id'],
+                    abs($selisih), (int)$it['stok_sistem'], (int)$it['stok_fisik'],
+                    "Opname #{$opnameId} " . $h['tanggal'], (int)($user['id'] ?? 0)
+                ]);
+                $linkItem->execute([(int)$db->lastInsertId(), (int)$it['id']]);
+                $totalSelisihItem++;
+                $nilaiSelisih += $selisih * (int)$it['harga_beli'];
+            }
+
+            $db->prepare("UPDATE hl_opname
+                          SET status='selesai', finalized_at=NOW(),
+                              total_selisih_item=?, nilai_selisih=?
+                          WHERE id=? AND tenant_id=? AND status='draft'")
+               ->execute([$totalSelisihItem, $nilaiSelisih, $opnameId, $tid]);
+
+            $db->commit();
+            echo json_encode(['ok'=>true, 'total_selisih_item'=>$totalSelisihItem, 'nilai_selisih'=>$nilaiSelisih]);
+        } catch (Throwable $e) { $db->rollBack(); echo json_encode(['error'=>$e->getMessage()]); }
+        exit;
+    }
+
     echo json_encode(['error' => 'Unknown action']);
     exit;
 }
