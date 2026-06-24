@@ -20,7 +20,9 @@
 class AIMigrationMapper
 {
     // Bump kalau prompt/schema berubah — cache lama auto-invalidate.
-    const MAPPER_VERSION = 6;
+    // v7: heuristic kenal kolom item 'Total'/'Subtotal' → subtotal_item, dan
+    //     izinkan >1 kolom biaya → biaya_tambahan (summable).
+    const MAPPER_VERSION = 7;
 
     // ── Target schema per entitas ─────────────────────
     // Deskripsi dipakai sebagai konteks untuk Claude.
@@ -367,7 +369,7 @@ class AIMigrationMapper
             'subtotal'         => ['subtotal','sub total','sub_total','subtotal nota'],
             'diskon'           => ['diskon','discount','potongan','disc'],
             'biaya_tambahan'   => ['tambahan express','biaya service','biaya tambahan','biaya jemput','biaya antar','tambahan','express fee','service fee'],
-            'total'            => ['total tagihan','total_tagihan','grand total','total bayar','total harga','amount','tagihan'],
+            'total'            => ['total tagihan','total_tagihan','grand total','total bayar','total harga','amount','tagihan','total'],
             'dp'               => ['dp','uang muka','down payment','um','panjar'],
             'tipe_order'       => ['jenis','tipe','tipe order','jenis order','kategori order','type','order type'],
             // Status & metode
@@ -381,10 +383,19 @@ class AIMigrationMapper
             'nama_layanan'     => ['nama layanan','nama_layanan','layanan','service','paket','detail layanan','nama'],
             'jumlah_item'      => ['jumlah','qty','quantity','kuantitas','jumlah item'],
             'satuan_item'      => ['satuan','satuan item','satuan_item','unit'],
-            'subtotal_item'    => ['total item','total_item','subtotal_item','subtotal layanan'],
+            // 'total' & 'subtotal' di sini SENGAJA — kalau file punya 'Total Tagihan'
+            // (→ total) lalu kolom item bernama polos 'Total'/'Subtotal' di bagian
+            // detail, kolom item jatuh ke subtotal_item krn target 'total'/'subtotal'
+            // sudah keburu kepakai (urutan schema + $used guard).
+            'subtotal_item'    => ['total item','total_item','subtotal_item','subtotal layanan','harga total','total harga item','total','subtotal'],
             'berat_kg'       => ['berat','berat kg','berat_kg','weight','qty kg'],
             'saldo_poin'     => ['saldo poin','poin','point','saldo_poin','points','poin pelanggan'],
         ];
+
+        // Field nominal yang akumulatif: boleh dipetakan dari >1 kolom file
+        // (importer menjumlahkannya — lihat $sumableFields di MigrationImporter).
+        // Mis. "Tambahan Express" + "Biaya Service" dua-duanya → biaya_tambahan.
+        $sumable = ['biaya_tambahan' => true];
 
         $mapping = [];
         $used    = [];
@@ -393,7 +404,7 @@ class AIMigrationMapper
             if ($hl === '') continue;
             $matched = null;
             foreach ($schema as $field => $def) {
-                if (isset($used[$field])) continue;
+                if (isset($used[$field]) && !isset($sumable[$field])) continue;
                 $al = $aliases[$field] ?? [$field, str_replace('_', ' ', $field)];
                 if (in_array($hl, $al, true)) { $matched = $field; break; }
             }
