@@ -88,18 +88,18 @@ if ($action) {
 <div class="sa-content">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:10px">
     <div>
-      <h1 style="margin:0;font-size:22px;color:#1B2D5A">🎨 Dashboard Banners</h1>
-      <p style="font-size:13px;color:#6B7280;margin-top:4px">Banner carousel yg tampil di dashboard semua tenant. Push fitur baru / promo / pengumuman.</p>
+      <h1 style="margin:0;font-size:22px;color:var(--glow)">🎨 Dashboard Banners</h1>
+      <p style="font-size:13px;color:var(--ash);margin-top:4px">Banner carousel yg tampil di dashboard semua tenant. Push fitur baru / promo / pengumuman.</p>
     </div>
-    <button class="btn btn-primary" onclick="openModal()">+ Tambah Banner</button>
+    <button class="sa-btn sa-btn-primary" onclick="openModal()">+ Tambah Banner</button>
   </div>
 
   <div id="bannerList" style="min-height:200px">⏳ Memuat...</div>
 </div>
 
 <!-- Modal -->
-<div class="modal-bg" id="bannerModal">
-  <div class="modal" style="max-width:680px">
+<div class="sa-modal-overlay" id="bannerModal">
+  <div class="sa-modal" style="max-width:680px">
     <h3 id="modalTitle">+ Tambah Banner</h3>
     <input type="hidden" id="f_id"/>
 
@@ -188,25 +188,33 @@ if ($action) {
       </div>
     </div>
 
-    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px">
-      <button class="btn btn-outline" onclick="closeModal()">Batal</button>
-      <button class="btn btn-primary" onclick="saveBanner()">💾 Simpan</button>
+    <div class="sa-modal-footer">
+      <button class="sa-btn sa-btn-outline" onclick="closeModal()">Batal</button>
+      <button class="sa-btn sa-btn-primary" onclick="saveBanner()">💾 Simpan</button>
     </div>
   </div>
 </div>
 
 <style>
-.chip{background:#fff;border:1px solid #D1D5DB;border-radius:100px;padding:3px 10px;font-size:10px;cursor:pointer;margin-right:4px}
-.chip:hover{border-color:#0F7B6C;color:#0F7B6C}
-.banner-card{border:1px solid #E5E7EB;border-radius:10px;padding:14px;margin-bottom:10px;display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;align-items:center;background:#fff}
+/* Quick gradient chip (di dlm modal) */
+.chip{background:rgba(28,37,64,.5);border:1px solid var(--crease);border-radius:100px;padding:3px 10px;font-size:10px;color:var(--ash);cursor:pointer;margin-right:4px;font-family:inherit}
+.chip:hover{border-color:var(--teal);color:var(--teal)}
+
+/* Banner list card (di luar modal, di sa-content) */
+.banner-card{border:1px solid var(--crease);border-radius:10px;padding:14px;margin-bottom:10px;display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;align-items:center;background:var(--paper)}
 .b-prev{padding:14px 18px;border-radius:10px;flex:1;min-width:260px;display:flex;gap:14px;align-items:center}
 .b-prev .icon{font-size:24px}
 .b-prev .title{font-weight:700;font-size:14px}
 .b-prev .desc{font-size:11px;opacity:.85}
-.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.fld{margin-bottom:10px}
-.fld label{display:block;font-size:12px;color:#6B7280;font-weight:600;margin-bottom:3px}
-.fld input,.fld textarea,.fld select{width:100%;padding:7px 10px;border:1px solid #D1D5DB;border-radius:6px;font-size:13px}
+
+/* Modal form layout */
+.sa-modal .form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.sa-modal .fld{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+.sa-modal .fld label{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ash)}
+.sa-modal .fld input,.sa-modal .fld textarea,.sa-modal .fld select{width:100%;padding:10px 14px;background:rgba(28,37,64,.5);border:1px solid var(--crease);border-radius:8px;color:var(--glow);font-family:var(--font);font-size:14px;outline:none;transition:border-color .15s,box-shadow .15s}
+.sa-modal .fld input:focus,.sa-modal .fld textarea:focus,.sa-modal .fld select:focus{border-color:var(--teal);box-shadow:0 0 0 3px var(--teal-faint)}
+.sa-modal .fld textarea{resize:vertical;min-height:80px}
+.sa-modal .fld select option{background:var(--slate);color:var(--glow)}
 </style>
 
 <script>
@@ -230,8 +238,8 @@ async function loadBanners() {
         ${r.cta_label?`<span style="background:rgba(255,255,255,.2);padding:4px 10px;border-radius:100px;font-size:10px;font-weight:700">${esc(r.cta_label)}</span>`:''}
       </div>
       <div style="display:flex;gap:6px;flex-shrink:0">
-        <button class="btn btn-outline btn-sm" onclick='openEdit(${JSON.stringify(r)})'>✏️</button>
-        <button class="btn btn-danger btn-sm" onclick="delBanner(${r.id})">🗑️</button>
+        <button class="sa-btn sa-btn-outline sa-btn-sm" onclick='openEdit(${JSON.stringify(r)})'>✏️</button>
+        <button class="sa-btn sa-btn-danger sa-btn-sm" onclick="delBanner(${r.id})">🗑️</button>
       </div>
     </div>
   `).join('');
