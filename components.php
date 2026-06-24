@@ -354,7 +354,8 @@ function renderTopbar(string $activePage = '', bool $minimalMode = false): void 
                 'orders'    => ['label'=>'Order',     'url'=>'/orders',    'perms'=>['orders.view_all','orders.view_own']],
                 'kanban'    => ['label'=>'Kanban',    'url'=>'/kanban',    'perms'=>['orders.view_all','orders.view_own']],
                 'kas'       => ['label'=>'Kas',       'url'=>'/kas',       'perm'=>'kas.view'],
-                'inventori' => ['label'=>'Inventori', 'url'=>'/inventori', 'perms'=>['inventori.view','kas.view']],
+                'inventori'  => ['label'=>'Inventori', 'url'=>'/inventori', 'perms'=>['inventori.view','kas.view']],
+                'pembelian'  => ['label'=>'Pembelian', 'url'=>'/pembelian', 'perm'=>'inventori.manage'],
                 'mesin'     => ['label'=>'Mesin Koin', 'url'=>'/mesin',     'perms'=>['mesin.view','pos.view']],
                 'produksi'     => ['label'=>'Produksi',     'url'=>'/produksi',     'perm'=>'produksi.work'],
                 'antar-jemput' => ['label'=>'Antar Jemput', 'url'=>'/antar-jemput', 'perm'=>'antar.view'],
@@ -458,7 +459,7 @@ function renderTopbar(string $activePage = '', bool $minimalMode = false): void 
       'karyawan'=>'👤','absensi'=>'📅','settings'=>'⚙️','audit'=>'🔍','outlet-settings'=>'🏪','payment-settings'=>'💳',
       'checklist'=>'✅','droppoint'=>'📦','owner_report'=>'📨','piutang'=>'💼','kanban'=>'🗂️','struk'=>'🧾',
       'loyalty'=>'⭐','retention'=>'😴','support'=>'🎧','import'=>'📥',
-      'inventori'=>'🧴','mesin'=>'🪙','produksi'=>'🧺',
+      'inventori'=>'🧴','pembelian'=>'🛒','mesin'=>'🪙','produksi'=>'🧺',
       'antar-jemput'=>'🚚','kurir-master'=>'🛵',
     ];
     ?>
