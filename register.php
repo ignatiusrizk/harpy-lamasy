@@ -47,6 +47,7 @@ if (empty($_SESSION['reg'])) {
         'captcha_a'   => $ca,
         'captcha_b'   => $cb,
         'captcha_ans' => $ca + $cb,
+        'ref_kode'    => preg_replace('/[^A-Z0-9]/', '', strtoupper($_GET['ref'] ?? '')),
     ];
 }
 
@@ -98,6 +99,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['step1_submit'])) {
         $d['nama_outlet']     = $namaOutlet;
         $d['nama_perusahaan'] = $namaPerusahaan;
         $d['kota']            = $kota;
+        // Preserve ref dari form jika session belum punya
+        if (empty($r['ref_kode'])) {
+            $r['ref_kode'] = preg_replace('/[^A-Z0-9]/', '', strtoupper($_POST['ref'] ?? ''));
+        }
         $r['step'] = 2; $step = 2;
         regResetCsrf();
     }
@@ -218,6 +223,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['step3_submit'])) {
                     )->execute([$tosVer, $_SERVER['REMOTE_ADDR'] ?? null, $tenantId]);
                 } catch (Throwable $e) {
                     error_log('[register.php] ToS record error: ' . $e->getMessage());
+                }
+
+                // 5c. Atribusi affiliate referral (kalau daftar via ?ref)
+                $refKode = $r['ref_kode'] ?? '';
+                if ($refKode !== '') {
+                    $aff = $db->prepare("SELECT id FROM hl_affiliate WHERE kode=? AND status='active'");
+                    $aff->execute([$refKode]);
+                    $affId = (int)$aff->fetchColumn();
+                    if ($affId) {
+                        // Self-referral guard: skip kalau email affiliate == email tenant
+                        $selfChk = $db->prepare("SELECT 1 FROM hl_affiliate WHERE id=? AND email=?");
+                        $selfChk->execute([$affId, $d['email']]);
+                        if (!$selfChk->fetchColumn()) {
+                            $db->prepare("INSERT IGNORE INTO hl_affiliate_referral (affiliate_id, tenant_id, status)
+                                          VALUES (?, ?, 'signup')")
+                               ->execute([$affId, $tenantId]);
+                        }
+                    }
                 }
 
                 $db->commit();
@@ -425,6 +448,7 @@ if ($step === 1): ?>
 
   <form method="POST" autocomplete="off">
     <input type="hidden" name="_csrf" value="<?= $csrf ?>">
+    <input type="hidden" name="ref" value="<?= htmlspecialchars($r['ref_kode'] ?? '') ?>">
     <div class="field">
       <label>Nama Outlet <span class="req">*</span></label>
       <input type="text" name="nama_outlet" required maxlength="80"
