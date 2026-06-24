@@ -162,6 +162,10 @@ $_canSwitch = !empty($hqIsOwner) || !empty($hqIsManager);
          class="hq-side-link <?= $_aPage === 'hq-billing' ? 'active' : '' ?>">
         <span class="ico">💳</span> Coin & Billing
       </a>
+      <a href="/hq/investor"
+         class="hq-side-link <?= $_aPage === 'hq-investor' ? 'active' : '' ?>">
+        <span class="ico">👥</span> Investor
+      </a>
       <a href="/hq/coin-info"
          class="hq-side-link <?= $_aPage === 'hq-coin-info' ? 'active' : '' ?>">
         <span class="ico">💲</span> Harga Fitur
