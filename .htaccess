@@ -27,6 +27,9 @@ RewriteCond %{REQUEST_METHOD} GET
 RewriteRule ^droppoint_manager\.php$ /droppoint [R=301,L]
 RewriteCond %{REQUEST_METHOD} GET
 RewriteRule ^owner_report\.php$ /owner-report [R=301,L]
+# Affiliate pages
+RewriteCond %{REQUEST_METHOD} GET
+RewriteRule ^affiliate/(register|login|dashboard|logout)\.php$ /affiliate/$1 [R=301,L]
 # Auth flow & email pages
 RewriteCond %{REQUEST_METHOD} GET
 RewriteRule ^(pending-verify|resend-verify|select-outlet|switch-outlet|no-assignment|account-suspended|outlet-suspended|add-outlet|verify-email|reset-password|demo-exit)\.php$ /$1 [R=301,L]
@@ -38,6 +41,8 @@ RewriteRule ^hq/(dashboard|outlet|laporan|keuangan|karyawan|mutasi|sdm|penggajia
 RewriteRule ^(dashboard|pos|orders|kanban|kas|checklist|laporan|piutang|layanan|promo|customer|loyalty|retention|karyawan|absensi|settings|struk|audit|import|support|login|logout|register|track|landing|tos|privacy|maintenance|demo|accept-tos|deposit|member|approval-inbox|outlet-settings|payment-settings|cek|inventori|mesin|self|produksi|antar-jemput|kurir|kurir-master|p|pelanggan|pelanggan-order)$ $1.php [L,QSA]
 RewriteRule ^droppoint$ droppoint_manager.php [L,QSA]
 RewriteRule ^owner-report$ owner_report.php [L,QSA]
+# Affiliate pages
+RewriteRule ^affiliate/(register|login|dashboard|logout)$ affiliate/$1.php [L,QSA]
 RewriteRule ^(pending-verify|resend-verify|select-outlet|switch-outlet|no-assignment|account-suspended|outlet-suspended|add-outlet|verify-email|reset-password|demo-exit)$ $1.php [L,QSA]
 
 # ── Block sensitive file types from web access ──────
