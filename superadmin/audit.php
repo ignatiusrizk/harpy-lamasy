@@ -39,11 +39,11 @@ if ($action) {
 
             if ($tab === 'sa') {
                 $sql = "SELECT l.id, l.superadmin_id, sa.username AS sa_username, sa.name AS sa_name,
-                               l.action, l.target_tenant_id, t.namaBisnis AS tenant_name,
+                               l.action, l.target_tenant_id, t.nama_perusahaan AS tenant_name,
                                l.description, l.ip_address, l.created_at
                         FROM superadmin_logs l
                         LEFT JOIN super_admins sa ON sa.id = l.superadmin_id
-                        LEFT JOIN saas_tenants t ON t.id = l.target_tenant_id";
+                        LEFT JOIN tenants t ON t.id = l.target_tenant_id";
                 if ($search) {
                     $where[] = "(sa.username LIKE ? OR sa.name LIKE ? OR l.description LIKE ? OR l.action LIKE ?)";
                     $like = "%$search%";
@@ -59,13 +59,13 @@ if ($action) {
                 $sql .= " ORDER BY l.id DESC LIMIT $perPage OFFSET $offset";
             }
             elseif ($tab === 'tenant') {
-                $sql = "SELECT a.id, a.tenant_id, t.namaBisnis AS tenant_name,
+                $sql = "SELECT a.id, a.tenant_id, t.nama_perusahaan AS tenant_name,
                                a.user_nama, a.user_role, a.modul, a.aksi,
                                a.keterangan, a.ref_id, a.ip_address, a.outlet_id, a.created_at
                         FROM hl_audit_log a
-                        LEFT JOIN saas_tenants t ON t.id = a.tenant_id";
+                        LEFT JOIN tenants t ON t.id = a.tenant_id";
                 if ($search) {
-                    $where[] = "(a.user_nama LIKE ? OR a.keterangan LIKE ? OR a.modul LIKE ? OR a.aksi LIKE ? OR t.namaBisnis LIKE ?)";
+                    $where[] = "(a.user_nama LIKE ? OR a.keterangan LIKE ? OR a.modul LIKE ? OR a.aksi LIKE ? OR t.nama_perusahaan LIKE ?)";
                     $like = "%$search%";
                     array_push($params, $like, $like, $like, $like, $like);
                 }
@@ -135,10 +135,10 @@ if ($action) {
 
             if ($tab === 'sa') {
                 $sql = "SELECT sa.username, sa.name, l.action, l.target_tenant_id,
-                               t.namaBisnis AS tenant_name, l.description, l.ip_address, l.created_at
+                               t.nama_perusahaan AS tenant_name, l.description, l.ip_address, l.created_at
                         FROM superadmin_logs l
                         LEFT JOIN super_admins sa ON sa.id = l.superadmin_id
-                        LEFT JOIN saas_tenants t ON t.id = l.target_tenant_id";
+                        LEFT JOIN tenants t ON t.id = l.target_tenant_id";
                 $headers = ['Username', 'Name', 'Action', 'Tenant ID', 'Tenant Name', 'Description', 'IP', 'Created'];
                 if ($search) {
                     $where[] = "(sa.username LIKE ? OR sa.name LIKE ? OR l.description LIKE ? OR l.action LIKE ?)";
@@ -152,13 +152,13 @@ if ($action) {
                 $sql .= " ORDER BY l.id DESC LIMIT 5000";
             }
             elseif ($tab === 'tenant') {
-                $sql = "SELECT t.namaBisnis AS tenant_name, a.user_nama, a.user_role, a.modul, a.aksi,
+                $sql = "SELECT t.nama_perusahaan AS tenant_name, a.user_nama, a.user_role, a.modul, a.aksi,
                                a.keterangan, a.ref_id, a.ip_address, a.outlet_id, a.created_at
                         FROM hl_audit_log a
-                        LEFT JOIN saas_tenants t ON t.id = a.tenant_id";
+                        LEFT JOIN tenants t ON t.id = a.tenant_id";
                 $headers = ['Tenant', 'User', 'Role', 'Modul', 'Aksi', 'Keterangan', 'Ref ID', 'IP', 'Outlet ID', 'Created'];
                 if ($search) {
-                    $where[] = "(a.user_nama LIKE ? OR a.keterangan LIKE ? OR a.modul LIKE ? OR a.aksi LIKE ? OR t.namaBisnis LIKE ?)";
+                    $where[] = "(a.user_nama LIKE ? OR a.keterangan LIKE ? OR a.modul LIKE ? OR a.aksi LIKE ? OR t.nama_perusahaan LIKE ?)";
                     $like = "%$search%";
                     array_push($params, $like, $like, $like, $like, $like);
                 }
