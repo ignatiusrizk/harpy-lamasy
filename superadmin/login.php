@@ -177,6 +177,11 @@ function saLoginActivate(int $saId, array $admin, string $ip): void {
   --gray:  #6C7A8D;
   --red:   #EF4444;
   --green: #10B981;
+  --crease:      #252D45;   /* hairline borders */
+  --crease-soft: #1C2540;   /* input background / softer borders */
+  --ink-soft:    #CBD5E1;   /* secondary text */
+  --ash:         #94A3B8;   /* muted text (labels) */
+  --ash-dim:     #64748B;   /* placeholder / tertiary */
   --font:  'Plus Jakarta Sans', sans-serif;
   --mono:  'DM Mono', monospace;
   --r:     12px;
