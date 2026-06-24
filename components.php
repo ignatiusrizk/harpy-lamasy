@@ -395,8 +395,7 @@ function renderTopbar(string $activePage = '', bool $minimalMode = false): void 
         'settings' => [
             'label' => 'Settings',
             'items' => [
-                'outlet-settings'  => ['label'=>'Outlet & Nota',   'url'=>'/outlet-settings',  'perm'=>'settings.roles'],
-                'payment-settings' => ['label'=>'Pembayaran QRIS', 'url'=>'/payment-settings', 'perm'=>'settings.roles'],
+                'outlet-settings' => ['label'=>'Outlet & Nota',  'url'=>'/outlet-settings', 'perm'=>'settings.roles'],
                 'settings'     => ['label'=>'Role & Permission', 'url'=>'/settings',     'perm'=>'settings.roles'],
                 'audit'        => ['label'=>'Audit Log',         'url'=>'/audit',         'perm'=>'audit.view'],
                 'owner_report' => ['label'=>'Notifikasi Owner',  'url'=>'/owner-report',
