@@ -250,7 +250,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'uploa
 <!DOCTYPE html>
 <html lang="id">
 <head>
-<?php renderHead('Pembayaran QRIS'); ?>
+<?php renderHead('Pembayaran'); ?>
 </head>
 <body>
 <?php renderTopbar('payment-settings'); ?>
@@ -259,11 +259,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'uploa
   <div class="settings-tabs" style="display:flex;gap:2px;margin-bottom:18px;border-bottom:1px solid var(--off)">
     <a href="/outlet-settings" class="settings-tab" style="padding:11px 18px;border-bottom:3px solid transparent;color:var(--gray);font-weight:600;font-size:14px;text-decoration:none">🏢 Outlet & Nota</a>
     <a href="/struk" class="settings-tab" style="padding:11px 18px;border-bottom:3px solid transparent;color:var(--gray);font-weight:600;font-size:14px;text-decoration:none">🧾 Struk & Invoice</a>
-    <a href="/payment-settings" class="settings-tab active" style="padding:11px 18px;border-bottom:3px solid var(--teal);color:var(--navy-d);font-weight:700;font-size:14px;text-decoration:none">💳 Pembayaran QRIS</a>
+    <a href="/payment-settings" class="settings-tab active" style="padding:11px 18px;border-bottom:3px solid var(--teal);color:var(--navy-d);font-weight:700;font-size:14px;text-decoration:none">💳 Pembayaran</a>
   </div>
 
   <div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:10px;padding:14px 18px;margin-bottom:18px;font-size:13.5px;color:#1E40AF;line-height:1.55">
-    💡 <strong>Pembayaran QRIS</strong> — upload gambar QRIS dari banking app outlet ini. Customer akan scan QR ini di POS saat pilih bayar QRIS. Settlement langsung ke rekening outlet.
+    💡 <strong>Pembayaran</strong> — atur metode pembayaran yang muncul di POS + upload gambar QRIS outlet (kalau pakai bayar via QRIS). Settlement QRIS langsung ke rekening outlet.
   </div>
 
   <div style="max-width:680px">
