@@ -182,18 +182,23 @@ if ($action) {
             if (!$po || $po['status'] !== 'requested') {
                 throw new RuntimeException('Payout tidak valid atau sudah diproses.');
             }
+            // Cap bayar ke saldo current (lock affiliate row dulu)
+            $affRow = $db->prepare("SELECT saldo_komisi FROM hl_affiliate WHERE id=? FOR UPDATE");
+            $affRow->execute([(int)$po['affiliate_id']]);
+            $saldoCur = (int)$affRow->fetchColumn();
+            $bayar    = min((int)$po['jumlah'], $saldoCur);
             $db->prepare(
-                "UPDATE hl_affiliate_payout SET status='paid', paid_at=NOW(), catatan_sa=? WHERE id=?"
-            )->execute([$catatan, $id]);
+                "UPDATE hl_affiliate_payout SET status='paid', jumlah=?, paid_at=NOW(), catatan_sa=? WHERE id=?"
+            )->execute([$bayar, $catatan, $id]);
             $db->prepare(
                 "UPDATE hl_affiliate
-                 SET saldo_komisi = GREATEST(0, saldo_komisi - ?),
+                 SET saldo_komisi  = saldo_komisi  - ?,
                      total_dibayar = total_dibayar + ?
                  WHERE id=?"
-            )->execute([(int)$po['jumlah'], (int)$po['jumlah'], (int)$po['affiliate_id']]);
+            )->execute([$bayar, $bayar, (int)$po['affiliate_id']]);
             $db->commit();
             logSuperAdminAction('affiliate_mark_paid', (int)$po['affiliate_id'],
-                "Payout ID $id dibayar Rp " . number_format((int)$po['jumlah']) . ". " . $catatan);
+                "Payout ID $id dibayar Rp " . number_format($bayar) . ". " . $catatan);
             echo json_encode(['success' => true]);
         } catch (Throwable $e) {
             $db->rollBack();
@@ -281,8 +286,8 @@ $commissionNow = BillingConfig::getInt('affiliate_commission', 100000);
 .aff-badge-paid      { color:var(--sage); font-weight:600; font-size:12.5px; }
 .aff-badge-requested { color:var(--amber); font-weight:600; font-size:12.5px; }
 .aff-badge-rejected  { color:#F43F5E; font-weight:600; font-size:12.5px; }
-.aff-badge-pending   { color:var(--ash); font-size:12.5px; }
-.aff-badge-converted { color:var(--sage); font-size:12.5px; }
+.aff-badge-signup    { color:var(--ash); font-size:12.5px; }
+.aff-badge-activated { color:var(--sage); font-size:12.5px; }
 </style>
 </head>
 <body>
@@ -368,8 +373,8 @@ $commissionNow = BillingConfig::getInt('affiliate_commission', 100000);
               style="background:var(--slate-elev);border:1px solid var(--crease-soft);
                      border-radius:8px;color:var(--white);padding:8px 12px;font-size:13px;">
         <option value="">Semua Status</option>
-        <option value="pending">Pending</option>
-        <option value="converted">Converted</option>
+        <option value="signup">Signup</option>
+        <option value="activated">Aktivasi</option>
       </select>
       <button class="sa-btn-sm sa-btn-primary" onclick="loadReferral(1)">Cari</button>
     </div>
