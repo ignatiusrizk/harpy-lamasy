@@ -702,6 +702,13 @@ if ($action) {
 
     echo json_encode(['error'=>'Unknown action']); exit;
 }
+
+// Load QRIS data untuk modal display di payment method
+$_pageOid = TenantResolver::outletId();
+$_pageTid = TenantResolver::id();
+$outletQrisStmt = Database::get()->prepare("SELECT qris_image, qris_label FROM outlets WHERE id=? AND tenant_id=?");
+$outletQrisStmt->execute([$_pageOid, $_pageTid]);
+$outletQrisData = $outletQrisStmt->fetch(PDO::FETCH_ASSOC) ?: ['qris_image'=>null, 'qris_label'=>null];
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -1232,13 +1239,21 @@ textarea{resize:vertical;min-height:64px}
               </div>
               <div class="form-group">
                 <label>Metode</label>
-                <select id="f_metode">
+                <select id="f_metode" onchange="onMetodeChange()">
                   <option value="cash">💵 Cash</option>
                   <option value="transfer">🏦 Transfer</option>
-                  <option value="qris">📱 QRIS</option>
+                  <option value="qris" <?= !$outletQrisData['qris_image'] ? 'disabled' : '' ?>>
+                    📱 QRIS<?= !$outletQrisData['qris_image'] ? ' (belum di-setup)' : '' ?>
+                  </option>
                 </select>
               </div>
             </div>
+<script>
+window.outletQris = <?= json_encode([
+    'image' => $outletQrisData['qris_image'],
+    'label' => $outletQrisData['qris_label'],
+]) ?>;
+</script>
 
             <!-- Bayar pakai Saldo Deposit (Phase 4.1) — muncul kalau pelanggan punya saldo > 0 -->
             <div id="depositBox" style="display:none;background:#F0FDF4;border:1px solid #BBF7D0;border-radius:8px;padding:10px 14px;margin-bottom:8px;font-size:13px;color:#166534">
@@ -1339,6 +1354,47 @@ textarea{resize:vertical;min-height:64px}
       <button class="btn btn-teal-sm" onclick="kirimNotaWA()" title="Kirim nota via WhatsApp (150 koin)">📲 Kirim WA</button>
       <a id="openStrukBtn" href="#" target="_blank" class="btn btn-teal-sm">↗ Buka Penuh</a>
       <button class="btn btn-teal-sm" onclick="window.location.href='/orders'">📋 Orders</button>
+    </div>
+  </div>
+</div>
+
+<!-- QR Display Modal — Static QRIS Payment -->
+<div class="modal-overlay" id="modalQris" style="display:none">
+  <div class="modal" style="max-width:440px">
+    <div class="modal-header">
+      <span class="modal-title">💳 Pembayaran QRIS</span>
+      <button class="modal-close" onclick="closeQrisModal()">✕</button>
+    </div>
+    <div class="modal-body" style="padding:20px;text-align:center">
+      <div style="font-size:13px;color:#6b7280;margin-bottom:4px">Total Pembayaran</div>
+      <div style="font-size:28px;font-weight:700;color:#0d9488;margin-bottom:16px">
+        Rp <span id="qrisAmount">0</span>
+      </div>
+
+      <div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:16px;display:inline-block;margin-bottom:12px">
+        <img id="qrisImageEl" src="" alt="QRIS"
+             style="display:block;width:280px;height:280px;object-fit:contain">
+      </div>
+
+      <div id="qrisLabelEl" style="font-weight:600;color:#374151;margin-bottom:16px"></div>
+
+      <div style="background:#fef3c7;border:1px solid #fcd34d;border-radius:8px;padding:12px;text-align:left;font-size:13px;color:#78350f;margin-bottom:16px">
+        <strong>Cara bayar:</strong>
+        <ol style="margin:6px 0 0 18px;padding:0">
+          <li>Customer scan QR pakai banking app</li>
+          <li>Cek banking app outlet untuk notif masuk</li>
+          <li>Pastikan nominal masuk sesuai total</li>
+          <li>Klik tombol di bawah</li>
+        </ol>
+      </div>
+    </div>
+    <div class="modal-footer" style="gap:8px;flex-wrap:wrap">
+      <button class="btn btn-primary" style="flex:1;padding:12px" onclick="confirmQrisPayment()">
+        ✓ Pembayaran Diterima
+      </button>
+      <button class="btn btn-outline" style="flex:1;padding:12px" onclick="cancelQrisPayment()">
+        Batal
+      </button>
     </div>
   </div>
 </div>
@@ -2019,6 +2075,45 @@ document.addEventListener('click', e => {
     document.getElementById('acList').classList.remove('open');
 });
 
+// ─── QRIS Modal (Static QRIS POS) ──────────────────────
+let _qrisConfirmed = false;
+
+function onMetodeChange() {
+  const metode = document.getElementById('f_metode').value;
+  if (metode === 'qris') {
+    if (!window.outletQris || !window.outletQris.image) {
+      alert('QRIS belum di-setup oleh owner. Pilih metode lain.');
+      document.getElementById('f_metode').value = 'cash';
+      return;
+    }
+    openQrisModal();
+  }
+}
+
+function openQrisModal() {
+  const total = parseFloat(document.getElementById('f_dp').value) || 0;
+  document.getElementById('qrisAmount').textContent = total.toLocaleString('id-ID');
+  document.getElementById('qrisImageEl').src = window.outletQris.image;
+  document.getElementById('qrisLabelEl').textContent = window.outletQris.label || '';
+  _qrisConfirmed = false;
+  document.getElementById('modalQris').style.display = 'flex';
+}
+
+function confirmQrisPayment() {
+  _qrisConfirmed = true;
+  document.getElementById('modalQris').style.display = 'none';
+}
+
+function cancelQrisPayment() {
+  _qrisConfirmed = false;
+  document.getElementById('modalQris').style.display = 'none';
+  document.getElementById('f_metode').value = 'cash'; // reset to default
+}
+
+function closeQrisModal() {
+  cancelQrisPayment();
+}
+
 function saveTransaksi() {
   const nama = document.getElementById('f_nama').value.trim();
   const telp = document.getElementById('f_telepon').value.trim();
@@ -2031,6 +2126,12 @@ function saveTransaksi() {
   const dp    = document.getElementById('sumDP')?.textContent || 'Rp 0';
   const sisa  = document.getElementById('sumSisa')?.textContent || 'Rp 0';
   const metode = document.getElementById('f_metode')?.options[document.getElementById('f_metode').selectedIndex]?.text || '-';
+  const metodeVal = document.getElementById('f_metode').value;
+  if (metodeVal === 'qris' && !_qrisConfirmed) {
+    alert('Konfirmasi pembayaran QRIS dulu sebelum simpan.');
+    openQrisModal();
+    return;
+  }
   const fotoOK = !!document.getElementById('f_foto_path').value;
 
   document.getElementById('cfmBody').innerHTML =
