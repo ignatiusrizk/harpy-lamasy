@@ -115,6 +115,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     // No 2FA → langsung session active
                     saLoginActivate((int)$admin['id'], $admin, $ip);
                     header('Location: dashboard.php');
+                    exit;
+                }
             } else {
                 saRecordFail($ip);
                 sleep(1);
