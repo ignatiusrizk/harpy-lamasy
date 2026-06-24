@@ -25,7 +25,7 @@ if (!empty($_SERVER['HTTP_X_REQUESTED_WITH'])) {
     verifyCsrf();
 
     // ── LAPORAN ENDPOINTS ──────────────────────────────────
-    if (in_array($action, ['laporan_lr','laporan_neraca','laporan_arus_kas','laporan_rasio','laporan_aset'], true)) {
+    if (in_array($action, ['laporan_lr','laporan_neraca','laporan_arus_kas','laporan_rasio','laporan_aset','laporan_buku_besar','laporan_perubahan_modal'], true)) {
         requirePermission('keuangan.view');
         $periode = preg_replace('/[^0-9\-]/', '', $_GET['periode'] ?? date('Y-m'));
         $oid     = (int)($_GET['outlet_id'] ?? 0) ?: null;
@@ -46,6 +46,15 @@ if (!empty($_SERVER['HTTP_X_REQUESTED_WITH'])) {
                 case 'laporan_aset':
                     $endDate = date('Y-m-t', strtotime($periode.'-01'));
                     echo json_encode(['ok'=>true,'data'=> FinancialCalculator::hitungNilaiBukuAset($tid,$oid,$endDate)]);
+                    break;
+                case 'laporan_buku_besar':
+                    $coaId = (int)($_GET['coa_id'] ?? 0);
+                    $data = FinancialCalculator::bukuBesar($tid, $oid, $periode, $coaId);
+                    echo json_encode(['ok'=>true,'data'=> $data]);
+                    break;
+                case 'laporan_perubahan_modal':
+                    $data = FinancialCalculator::perubahanModal($tid, $oid, $periode);
+                    echo json_encode(['ok'=>true,'data'=> $data]);
                     break;
             }
         } catch (Throwable $e) {
@@ -288,6 +297,19 @@ if (!empty($_SERVER['HTTP_X_REQUESTED_WITH'])) {
         $rows = $db->prepare($q);
         $rows->execute($p);
         echo json_encode(['ok'=>true,'data'=>$rows->fetchAll(PDO::FETCH_ASSOC)]);
+        exit;
+    }
+
+    // ── COA OPTIONS (untuk dropdown laporan buku besar) ──
+    if ($action === 'coa_options') {
+        try {
+            $s = $db->prepare("SELECT id, kode, nama, tipe FROM hl_coa
+                               WHERE tenant_id=? AND is_active=1 ORDER BY kode");
+            $s->execute([$tid]);
+            echo json_encode(['ok'=>true, 'data'=>$s->fetchAll(PDO::FETCH_ASSOC)]);
+        } catch (Throwable $e) {
+            echo json_encode(['ok'=>false, 'error'=>$e->getMessage()]);
+        }
         exit;
     }
 
