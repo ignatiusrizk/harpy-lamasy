@@ -267,18 +267,25 @@ class StrukGenerator
         $transactions = $trxSt->fetchAll(PDO::FETCH_ASSOC);
 
         // Bangun synthetic transaksi & items untuk renderPdf
-        $bulanId = $tid . '-INV-' . str_pad($piutangId, 5, '0', STR_PAD_LEFT);
+        $bulanId   = $tid . '-INV-' . str_pad((string)$piutangId, 5, '0', STR_PAD_LEFT);
+        $invoiceNo = $piu['invoice_no'] ?: $bulanId;   // formal kalau ada, else synthetic
+        $pajakPersen = (float)($piu['pajak_persen'] ?? 0);
+        $subtotalInv = (float)$piu['total_tagihan'];
+        $pajakAmount = $subtotalInv * $pajakPersen / 100;
+        $grandTotal  = $subtotalInv + $pajakAmount;
         $trx = [
-            'no_order'       => $bulanId,
+            'no_order'       => $invoiceNo,
             'tanggal'        => $piu['periode_start'],
             'created_at'     => $piu['created_at'],
             'nama_pelanggan' => $piu['pelanggan_nama'],
             'telepon'        => $piu['pelanggan_telp'],
-            'subtotal'       => $piu['total_tagihan'],
+            'subtotal'       => $subtotalInv,
             'diskon'         => 0,
-            'total'          => $piu['total_tagihan'],
-            'dp'             => $piu['total_dibayar'],
-            'sisa_bayar'     => $piu['sisa_tagihan'],
+            'pajak_persen'   => $pajakPersen,
+            'pajak_amount'   => $pajakAmount,
+            'total'          => $grandTotal,
+            'dp'             => (float)$piu['total_dibayar'],
+            'sisa_bayar'     => $grandTotal - (float)$piu['total_dibayar'],
             'metode_bayar'   => 'Transfer',
             'catatan'        => $piu['catatan'],
             'jatuh_tempo'    => $piu['jatuh_tempo'],
@@ -899,6 +906,16 @@ tbody tr:nth-child(even) td { background: #f8faff; }
                   };
             $h .= "  <tr><td>" . htmlspecialchars($tipeLabel) . "</td><td class='r'>+Rp " . self::rpNum($biayaTbhPdf) . "</td></tr>\n";
         }
+
+        // ── PPN (B2B invoice, hanya kalau pajak_persen > 0) ──
+        $pjP = (float)($trx['pajak_persen'] ?? 0);
+        $pjA = (float)($trx['pajak_amount'] ?? 0);
+        if ($pjP > 0) {
+            $h .= "  <tr><td>Subtotal</td><td class='r'>Rp " . self::rpNum($trx['subtotal']) . "</td></tr>\n";
+            $pjLabel = rtrim(rtrim(number_format($pjP, 2), '0'), '.');
+            $h .= "  <tr><td>PPN {$pjLabel}%</td><td class='r'>Rp " . self::rpNum($pjA) . "</td></tr>\n";
+        }
+
         if (!empty($tmpl['show_total'])) {
             $h .= "  <tr class='grand'><td>TOTAL</td><td class='r'>Rp " . self::rpNum($trx['total']) . "</td></tr>\n";
         }
