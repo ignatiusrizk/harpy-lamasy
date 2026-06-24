@@ -34,6 +34,7 @@ if ($action) {
         $ctaL    = substr(trim((string)($d['cta_label'] ?? '')), 0, 40);
         $ctaU    = substr(trim((string)($d['cta_url']   ?? '')), 0, 255);
         $bg      = substr(trim((string)($d['bg_gradient'] ?? 'linear-gradient(135deg,#0F7B6C,#10B981)')), 0, 80);
+        $imgUrl  = substr(trim((string)($d['image_url'] ?? '')), 0, 255);
         $color   = substr(trim((string)($d['text_color'] ?? '#FFFFFF')), 0, 20);
         $icon    = substr(trim((string)($d['icon'] ?? '')), 0, 20);
         $aktif   = (int)($d['is_active'] ?? 1) ? 1 : 0;
@@ -46,21 +47,56 @@ if ($action) {
         try {
             if ($id > 0) {
                 $st = $db->prepare("UPDATE saas_banners
-                    SET judul=?, deskripsi=?, cta_label=?, cta_url=?, bg_gradient=?,
+                    SET judul=?, deskripsi=?, cta_label=?, cta_url=?, bg_gradient=?, image_url=?,
                         text_color=?, icon=?, is_active=?, urutan=?, starts_at=?, ends_at=?
                     WHERE id=?");
-                $st->execute([$judul, $desk, $ctaL, $ctaU, $bg, $color, $icon, $aktif, $urut, $starts, $ends, $id]);
+                $st->execute([$judul, $desk, $ctaL, $ctaU, $bg, $imgUrl ?: null, $color, $icon, $aktif, $urut, $starts, $ends, $id]);
             } else {
                 $st = $db->prepare("INSERT INTO saas_banners
-                    (judul, deskripsi, cta_label, cta_url, bg_gradient,
+                    (judul, deskripsi, cta_label, cta_url, bg_gradient, image_url,
                      text_color, icon, is_active, urutan, starts_at, ends_at)
-                    VALUES (?,?,?,?,?, ?,?,?,?, ?,?)");
-                $st->execute([$judul, $desk, $ctaL, $ctaU, $bg, $color, $icon, $aktif, $urut, $starts, $ends]);
+                    VALUES (?,?,?,?,?, ?,?,?,?, ?,?,?)");
+                $st->execute([$judul, $desk, $ctaL, $ctaU, $bg, $imgUrl ?: null, $color, $icon, $aktif, $urut, $starts, $ends]);
             }
             echo json_encode(['success'=>true]);
         } catch (Throwable $e) {
             echo json_encode(['error'=>'Gagal: '.$e->getMessage()]);
         }
+        exit;
+    }
+
+    if ($action === 'upload' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+        if (empty($_FILES['file']) || $_FILES['file']['error'] !== UPLOAD_ERR_OK) {
+            echo json_encode(['error' => 'File upload gagal']); exit;
+        }
+        $f = $_FILES['file'];
+        if ($f['size'] > 800 * 1024) {
+            echo json_encode(['error' => 'Ukuran maksimal 800 KB']); exit;
+        }
+        $mime = mime_content_type($f['tmp_name']) ?: '';
+        $allowed = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp'];
+        if (!isset($allowed[$mime])) {
+            echo json_encode(['error' => 'Hanya JPG, PNG, atau WebP']); exit;
+        }
+        // Optional: minimum dimension check (skip kalau getimagesize gagal)
+        $info = @getimagesize($f['tmp_name']);
+        if ($info && ($info[0] < 800 || $info[1] < 200)) {
+            echo json_encode(['error' => "Ukuran minimal 800 × 200 px. Gambar Anda: {$info[0]} × {$info[1]} px"]); exit;
+        }
+
+        $dir = dirname(__DIR__) . '/assets/banners';
+        if (!is_dir($dir)) @mkdir($dir, 0755, true);
+
+        $name = 'bn_' . time() . '_' . bin2hex(random_bytes(4)) . '.' . $allowed[$mime];
+        $dest = $dir . '/' . $name;
+        if (!move_uploaded_file($f['tmp_name'], $dest)) {
+            echo json_encode(['error' => 'Gagal simpan file']); exit;
+        }
+        echo json_encode([
+            'url' => '/assets/banners/' . $name,
+            'width' => $info[0] ?? null,
+            'height' => $info[1] ?? null,
+        ]);
         exit;
     }
 
@@ -130,24 +166,56 @@ if ($action) {
       </div>
     </div>
 
-    <div class="form-row">
-      <div class="fld">
-        <label>Background Gradient (CSS)</label>
-        <input type="text" id="f_bg" maxlength="80" placeholder="linear-gradient(135deg,#0F7B6C,#10B981)"/>
+    <!-- Background mode: Gambar atau Gradient -->
+    <div class="fld">
+      <label>Background</label>
+      <div style="display:flex;gap:6px;margin-bottom:10px">
+        <button type="button" class="mode-btn active" id="modeImgBtn" onclick="setMode('image')">📷 Gambar</button>
+        <button type="button" class="mode-btn" id="modeGradBtn" onclick="setMode('gradient')">🎨 Gradient</button>
       </div>
-      <div class="fld">
-        <label>Text Color</label>
-        <input type="text" id="f_color" maxlength="20" placeholder="#FFFFFF"/>
-      </div>
-    </div>
 
-    <div style="background:rgba(28,37,64,.5);border:1px solid var(--crease);border-radius:8px;padding:8px 12px;margin-bottom:14px;font-size:11px;color:var(--ash)">
-      🎨 Quick gradient:
-      <button class="chip" onclick="setBg('linear-gradient(135deg,#0F7B6C,#10B981)')" type="button">Teal</button>
-      <button class="chip" onclick="setBg('linear-gradient(135deg,#7C3AED,#EC4899)')" type="button">Purple</button>
-      <button class="chip" onclick="setBg('linear-gradient(135deg,#F59E0B,#EF4444)')" type="button">Sunset</button>
-      <button class="chip" onclick="setBg('linear-gradient(135deg,#1E40AF,#0891B2)')" type="button">Ocean</button>
-      <button class="chip" onclick="setBg('linear-gradient(135deg,#111827,#374151)')" type="button">Dark</button>
+      <!-- IMAGE MODE -->
+      <div id="imgPanel">
+        <input type="hidden" id="f_image_url"/>
+        <input type="file" id="f_imgfile" accept="image/jpeg,image/png,image/webp" style="display:none" onchange="uploadImg(this.files[0])"/>
+        <div id="imgPreview" style="display:none;position:relative;border-radius:10px;overflow:hidden;border:1px solid var(--crease);background:var(--slate-elev);aspect-ratio:4/1;margin-bottom:8px">
+          <img id="imgEl" src="" style="width:100%;height:100%;object-fit:cover;display:block"/>
+          <button type="button" onclick="removeImg()" style="position:absolute;top:8px;right:8px;background:rgba(10,15,31,.8);border:1px solid var(--crease);color:var(--glow);width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:14px">×</button>
+          <div id="imgDimInfo" style="position:absolute;bottom:8px;left:8px;background:rgba(10,15,31,.8);color:var(--glow);font-size:10px;padding:3px 8px;border-radius:4px;font-family:var(--mono)"></div>
+        </div>
+        <button type="button" class="sa-btn sa-btn-outline" id="uploadBtn" onclick="document.getElementById('f_imgfile').click()" style="width:100%;justify-content:center;padding:14px">
+          <span id="uploadLbl">📤 Upload Gambar Banner</span>
+        </button>
+        <div style="background:rgba(53,232,213,.06);border:1px solid rgba(53,232,213,.18);border-radius:8px;padding:10px 12px;margin-top:10px;font-size:11px;color:var(--ink-soft);line-height:1.6">
+          <div style="color:var(--teal);font-weight:700;letter-spacing:.04em;text-transform:uppercase;font-size:10px;margin-bottom:4px">📐 Spesifikasi Gambar</div>
+          <div><strong style="color:var(--glow)">Optimal:</strong> 1600 × 400 px (rasio 4:1)</div>
+          <div><strong style="color:var(--glow)">Minimum:</strong> 800 × 200 px</div>
+          <div><strong style="color:var(--glow)">Format:</strong> JPG, PNG, WebP — <strong style="color:var(--glow)">Maks:</strong> 800 KB</div>
+          <div style="margin-top:4px;color:var(--ash)">⚠️ Gambar akan di-cover (penuhi banner, di-crop bila perlu). Letakkan elemen penting di tengah.</div>
+        </div>
+      </div>
+
+      <!-- GRADIENT MODE -->
+      <div id="gradPanel" style="display:none">
+        <div class="form-row">
+          <div class="fld" style="margin-bottom:0">
+            <label>Background Gradient (CSS)</label>
+            <input type="text" id="f_bg" maxlength="80" placeholder="linear-gradient(135deg,#0F7B6C,#10B981)"/>
+          </div>
+          <div class="fld" style="margin-bottom:0">
+            <label>Text Color</label>
+            <input type="text" id="f_color" maxlength="20" placeholder="#FFFFFF"/>
+          </div>
+        </div>
+        <div style="background:rgba(28,37,64,.5);border:1px solid var(--crease);border-radius:8px;padding:8px 12px;margin-top:10px;font-size:11px;color:var(--ash)">
+          🎨 Quick gradient:
+          <button class="chip" onclick="setBg('linear-gradient(135deg,#0F7B6C,#10B981)')" type="button">Teal</button>
+          <button class="chip" onclick="setBg('linear-gradient(135deg,#7C3AED,#EC4899)')" type="button">Purple</button>
+          <button class="chip" onclick="setBg('linear-gradient(135deg,#F59E0B,#EF4444)')" type="button">Sunset</button>
+          <button class="chip" onclick="setBg('linear-gradient(135deg,#1E40AF,#0891B2)')" type="button">Ocean</button>
+          <button class="chip" onclick="setBg('linear-gradient(135deg,#111827,#374151)')" type="button">Dark</button>
+        </div>
+      </div>
     </div>
 
     <div class="form-row">
@@ -200,6 +268,11 @@ if ($action) {
 .chip{background:rgba(28,37,64,.5);border:1px solid var(--crease);border-radius:100px;padding:3px 10px;font-size:10px;color:var(--ash);cursor:pointer;margin-right:4px;font-family:inherit}
 .chip:hover{border-color:var(--teal);color:var(--teal)}
 
+/* Mode toggle (gambar vs gradient) */
+.mode-btn{flex:1;padding:8px 14px;background:rgba(28,37,64,.4);border:1px solid var(--crease);border-radius:8px;color:var(--ash);font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s}
+.mode-btn:hover{color:var(--glow);border-color:var(--ash-dim)}
+.mode-btn.active{background:var(--teal-faint);color:var(--teal);border-color:var(--teal)}
+
 /* Banner list card (di luar modal, di sa-content) */
 .banner-card{border:1px solid var(--crease);border-radius:10px;padding:14px;margin-bottom:10px;display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;align-items:center;background:var(--paper)}
 .b-prev{padding:14px 18px;border-radius:10px;flex:1;min-width:260px;display:flex;gap:14px;align-items:center}
@@ -227,9 +300,17 @@ async function loadBanners() {
   if (d.error) { list.innerHTML = `<div style="background:rgba(244,63,94,.10);border:1px solid rgba(244,63,94,.40);padding:14px;border-radius:8px;color:#F43F5E">${esc(d.error)}</div>`; return; }
   const rows = d.rows || [];
   if (!rows.length) { list.innerHTML = '<div style="padding:40px;text-align:center;color:#9CA3AF">Belum ada banner. Klik "Tambah Banner" untuk mulai.</div>'; return; }
-  list.innerHTML = rows.map(r => `
+  list.innerHTML = rows.map(r => {
+    const bgStyle = r.image_url
+      ? `background:url('${esc(r.image_url)}') center/cover no-repeat;color:${esc(r.text_color)};position:relative`
+      : `background:${esc(r.bg_gradient)};color:${esc(r.text_color)}`;
+    const imgBadge = r.image_url
+      ? `<span style="position:absolute;top:8px;right:8px;background:rgba(10,15,31,.7);color:var(--teal);font-size:10px;padding:2px 8px;border-radius:4px;font-weight:700">🖼 IMG</span>`
+      : '';
+    return `
     <div class="banner-card">
-      <div class="b-prev" style="background:${esc(r.bg_gradient)};color:${esc(r.text_color)}">
+      <div class="b-prev" style="${bgStyle}">
+        ${imgBadge}
         <span class="icon">${esc(r.icon||'📌')}</span>
         <div style="flex:1">
           <div class="title">${esc(r.judul)} ${r.is_active==1?'':'<span style="font-size:10px;background:rgba(0,0,0,.2);padding:1px 6px;border-radius:100px">OFF</span>'}</div>
@@ -242,11 +323,10 @@ async function loadBanners() {
         <button class="sa-btn sa-btn-danger sa-btn-sm" onclick="delBanner(${r.id})">🗑️</button>
       </div>
     </div>
-  `).join('');
+  `;}).join('');
 }
 
-function openModal() {
-  document.getElementById('modalTitle').textContent = '+ Tambah Banner';
+function resetForm() {
   document.getElementById('f_id').value = '';
   document.getElementById('f_judul').value = '';
   document.getElementById('f_deskripsi').value = '';
@@ -255,10 +335,18 @@ function openModal() {
   document.getElementById('f_cta_url').value = '';
   document.getElementById('f_bg').value = 'linear-gradient(135deg,#0F7B6C,#10B981)';
   document.getElementById('f_color').value = '#FFFFFF';
+  document.getElementById('f_image_url').value = '';
   document.getElementById('f_starts').value = '';
   document.getElementById('f_ends').value = '';
   document.getElementById('f_urutan').value = 0;
   document.getElementById('f_active').value = 1;
+  setImage('');
+  setMode('image');
+}
+
+function openModal() {
+  document.getElementById('modalTitle').textContent = '+ Tambah Banner';
+  resetForm();
   document.getElementById('bannerModal').classList.add('open');
   updatePreview();
   document.querySelectorAll('#bannerModal input, #bannerModal textarea').forEach(el => el.addEventListener('input', updatePreview));
@@ -266,8 +354,62 @@ function openModal() {
 function closeModal() { document.getElementById('bannerModal').classList.remove('open'); }
 function setBg(g) { document.getElementById('f_bg').value = g; updatePreview(); }
 
+function setMode(mode) {
+  const isImg = mode === 'image';
+  document.getElementById('modeImgBtn').classList.toggle('active', isImg);
+  document.getElementById('modeGradBtn').classList.toggle('active', !isImg);
+  document.getElementById('imgPanel').style.display = isImg ? 'block' : 'none';
+  document.getElementById('gradPanel').style.display = isImg ? 'none' : 'block';
+  // Kalau switch ke gradient, clear image
+  if (!isImg) setImage('');
+  updatePreview();
+}
+
+function setImage(url, w, h) {
+  document.getElementById('f_image_url').value = url || '';
+  const preview = document.getElementById('imgPreview');
+  const img = document.getElementById('imgEl');
+  const info = document.getElementById('imgDimInfo');
+  if (url) {
+    img.src = url;
+    info.textContent = (w && h) ? `${w} × ${h} px` : '';
+    preview.style.display = 'block';
+    document.getElementById('uploadLbl').textContent = '🔄 Ganti Gambar';
+  } else {
+    preview.style.display = 'none';
+    document.getElementById('uploadLbl').textContent = '📤 Upload Gambar Banner';
+  }
+  updatePreview();
+}
+
+function removeImg() {
+  setImage('');
+}
+
+async function uploadImg(file) {
+  if (!file) return;
+  if (file.size > 800 * 1024) { alert('Ukuran file maksimal 800 KB. File Anda: ' + (file.size/1024).toFixed(0) + ' KB'); return; }
+  const btn = document.getElementById('uploadBtn');
+  const lbl = document.getElementById('uploadLbl');
+  btn.disabled = true; lbl.textContent = '⏳ Mengupload...';
+  const fd = new FormData();
+  fd.append('file', file);
+  try {
+    const r = await fetch('?action=upload', { method: 'POST', body: fd });
+    const d = await r.json();
+    if (d.error) { alert(d.error); }
+    else { setImage(d.url, d.width, d.height); }
+  } catch (e) {
+    alert('Upload gagal: ' + e.message);
+  } finally {
+    btn.disabled = false;
+    document.getElementById('f_imgfile').value = '';
+  }
+}
+
 function openEdit(r) {
   document.getElementById('modalTitle').textContent = '✏️ Edit Banner';
+  resetForm();
   document.getElementById('f_id').value = r.id;
   document.getElementById('f_judul').value = r.judul;
   document.getElementById('f_deskripsi').value = r.deskripsi || '';
@@ -280,6 +422,12 @@ function openEdit(r) {
   document.getElementById('f_ends').value = (r.ends_at||'').replace(' ','T').substring(0,16);
   document.getElementById('f_urutan').value = r.urutan;
   document.getElementById('f_active').value = r.is_active;
+  if (r.image_url) {
+    setImage(r.image_url);
+    setMode('image');
+  } else {
+    setMode('gradient');
+  }
   document.getElementById('bannerModal').classList.add('open');
   updatePreview();
   document.querySelectorAll('#bannerModal input, #bannerModal textarea').forEach(el => el.addEventListener('input', updatePreview));
@@ -287,7 +435,12 @@ function openEdit(r) {
 
 function updatePreview() {
   const p = document.getElementById('banPreview');
-  p.style.background = document.getElementById('f_bg').value;
+  const imgUrl = document.getElementById('f_image_url').value;
+  if (imgUrl) {
+    p.style.background = `url('${imgUrl}') center/cover no-repeat`;
+  } else {
+    p.style.background = document.getElementById('f_bg').value;
+  }
   p.style.color = document.getElementById('f_color').value;
   document.getElementById('prevIcon').textContent = document.getElementById('f_icon').value || '📌';
   document.getElementById('prevJudul').textContent = document.getElementById('f_judul').value || 'Judul Banner';
@@ -306,6 +459,7 @@ async function saveBanner() {
     cta_label: document.getElementById('f_cta_label').value,
     cta_url: document.getElementById('f_cta_url').value,
     bg_gradient: document.getElementById('f_bg').value,
+    image_url: document.getElementById('f_image_url').value,
     text_color: document.getElementById('f_color').value,
     starts_at: document.getElementById('f_starts').value ? document.getElementById('f_starts').value.replace('T',' ') + ':00' : null,
     ends_at: document.getElementById('f_ends').value ? document.getElementById('f_ends').value.replace('T',' ') + ':00' : null,

@@ -39,14 +39,23 @@ class BannerLoader
 
         $h = '<div class="banner-carousel" id="bannerCarousel">';
         foreach ($banners as $i => $b) {
-            $bg    = htmlspecialchars($b['bg_gradient'] ?? 'linear-gradient(135deg,#0F7B6C,#10B981)');
             $color = htmlspecialchars($b['text_color']  ?? '#fff');
+            // Image takes priority over gradient if uploaded
+            if (!empty($b['image_url'])) {
+                $bg = "url('" . htmlspecialchars($b['image_url']) . "') center/cover no-repeat";
+                $hasImg = true;
+            } else {
+                $bg = htmlspecialchars($b['bg_gradient'] ?? 'linear-gradient(135deg,#0F7B6C,#10B981)');
+                $hasImg = false;
+            }
             $icon  = $b['icon']      ? '<span class="bn-icon">' . htmlspecialchars($b['icon']) . '</span>' : '';
             $cta   = ($b['cta_label'] && $b['cta_url'])
                 ? '<a href="' . htmlspecialchars($b['cta_url']) . '" class="bn-cta">' . htmlspecialchars($b['cta_label']) . '</a>'
                 : '';
             $desc  = $b['deskripsi']  ? '<div class="bn-desc">' . htmlspecialchars($b['deskripsi']) . '</div>' : '';
-            $h .= '<div class="bn-slide ' . ($i === 0 ? 'active' : '') . '" data-idx="' . $i . '" '
+            // Image banners get a dark overlay for text legibility
+            $overlay = $hasImg ? ' bn-has-img' : '';
+            $h .= '<div class="bn-slide' . ($i === 0 ? ' active' : '') . $overlay . '" data-idx="' . $i . '" '
                 . 'style="background:' . $bg . ';color:' . $color . ';">'
                 . '<div class="bn-content">'
                 . $icon
@@ -78,6 +87,8 @@ class BannerLoader
 .bn-slide{display:none;padding:32px 36px 38px;min-height:160px;align-items:center;animation:bnFade .4s ease;position:relative;overflow:hidden}
 .bn-slide.active{display:flex}
 .bn-slide::after{content:'';position:absolute;inset:0;background:radial-gradient(circle at 85% 30%,rgba(255,255,255,.12),transparent 55%);pointer-events:none}
+/* Image-mode banners get dark gradient overlay for text legibility */
+.bn-slide.bn-has-img::after{background:linear-gradient(90deg,rgba(0,0,0,.55) 0%,rgba(0,0,0,.32) 55%,rgba(0,0,0,.18) 100%)}
 .bn-content{display:flex;align-items:center;gap:24px;width:100%;flex-wrap:wrap;position:relative;z-index:1}
 .bn-icon{font-size:54px;flex-shrink:0;filter:drop-shadow(0 2px 8px rgba(0,0,0,.15))}
 .bn-text{flex:1;min-width:240px}
