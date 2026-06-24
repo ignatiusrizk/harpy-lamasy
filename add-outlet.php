@@ -236,7 +236,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['step2_submit'])) {
             // Paid/pending outlet: JANGAN switch session ke outlet baru
             // Tenant tetap di outlet yang sedang aktif
             // (sesi tidak berubah, TenantResolver tidak perlu di-reset)
-            $successMode = 'pending_payment';
+            // Redirect ke billing-checkout untuk pembayaran outlet activation
+            unset($_SESSION['ao']);
+            header('Location: /billing-checkout.php?type=outlet_activation&outlet_id=' . $outletId);
+            exit;
         } else {
             // Trial outlet: switch ke outlet baru langsung
             $_SESSION['outlet_id'] = $outletId;
