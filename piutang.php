@@ -18,6 +18,17 @@ $oid = TenantResolver::outletId();
 $action = $_GET['action'] ?? '';
 $db = Database::get();
 
+// ── Helper: Generate invoice number INV/YYYY/MM/000N ──
+function generateInvoiceNo(PDO $db, int $tid): string {
+    $ym = date('Y/m');
+    $prefix = "INV/$ym/";
+    $stmt = $db->prepare("SELECT COUNT(*) FROM hl_piutang
+                          WHERE tenant_id=? AND invoice_no LIKE ?");
+    $stmt->execute([$tid, $prefix . '%']);
+    $next = (int)$stmt->fetchColumn() + 1;
+    return $prefix . str_pad((string)$next, 4, '0', STR_PAD_LEFT);
+}
+
 // ── API: list piutang + summary (paginated) ──
 if ($action === 'list') {
     header('Content-Type: application/json');
@@ -221,8 +232,14 @@ if ($action === 'mark_invoiced' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         $s->execute([$id,$tid,$oid]); $row = $s->fetch(PDO::FETCH_ASSOC);
         if (!$row) { echo json_encode(['error'=>'Piutang tidak ditemukan']); exit; }
 
-        $db->prepare("UPDATE hl_piutang SET status='sudah_tagih', invoice_sent_at=NOW()
-                       WHERE id=? AND tenant_id=?")->execute([$id,$tid]);
+        // Read PPN from POST + generate invoice_no
+        $pajak = max(0, min(100, (float)($d['pajak_persen'] ?? 0)));
+        $invoiceNo = $row['invoice_no'] ?: generateInvoiceNo($db, $tid);
+        $db->prepare("UPDATE hl_piutang
+                       SET status='sudah_tagih', invoice_sent_at=NOW(),
+                           invoice_no=?, pajak_persen=?
+                       WHERE id=? AND tenant_id=?")
+           ->execute([$invoiceNo, $pajak, $id, $tid]);
 
         try { CoinLedger::deduct('invoice_b2b', (string)$id); } catch (Throwable $e) {
             ErrorLogger::logException('coin_deduct', $e, $tid, $oid);
@@ -234,7 +251,9 @@ if ($action === 'mark_invoiced' && $_SERVER['REQUEST_METHOD'] === 'POST') {
             $p = preg_replace('/[^0-9]/','',$row['telepon']);
             if (strpos($p,'0')===0) $p = '62'.substr($p,1);
             elseif (strpos($p,'62')!==0) $p = '62'.$p;
-            $txt = "Halo *{$row['nama']}*,\n\nInvoice tagihan laundry periode "
+            $txt = "Halo *{$row['nama']}*,\n\n"
+                 . "No. Invoice: *{$invoiceNo}*\n"
+                 . "Invoice tagihan laundry periode "
                  . date('d M', strtotime($row['periode_start'])) . " – "
                  . date('d M Y', strtotime($row['periode_end'])) . ":\n"
                  . "Jumlah order: {$row['total_order']}\n"
@@ -644,9 +663,12 @@ async function doBulkGen(){
 }
 
 async function markInvoiced(id){
+  const pajakStr = prompt('PPN (%) untuk invoice ini?\n\nKosongkan atau 0 = tanpa PPN.\nContoh: 11 untuk PPN 11%', '0');
+  if (pajakStr === null) return; // batal
+  const pajak = Math.max(0, Math.min(100, parseFloat(pajakStr) || 0));
   if (!confirm('Tandai sebagai sudah tagih? (deduct 200 coin + buka WA invoice)')) return;
   try {
-    const r = await fetch('piutang.php?action=mark_invoiced', {method:'POST', headers:{'Content-Type':'application/json','X-CSRF-Token':CSRF}, body:JSON.stringify({id})});
+    const r = await fetch('piutang.php?action=mark_invoiced', {method:'POST', headers:{'Content-Type':'application/json','X-CSRF-Token':CSRF}, body:JSON.stringify({id, pajak_persen: pajak})});
     const d = await r.json();
     if (d.error){ alert('⚠️ '+d.error); return; }
     if (d.wa) window.open(d.wa, '_blank');
