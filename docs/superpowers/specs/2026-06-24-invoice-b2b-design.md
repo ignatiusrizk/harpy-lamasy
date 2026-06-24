@@ -1,66 +1,81 @@
-# Invoice B2B Document — Design Spec
+# Invoice B2B Enhancement — Design Spec
 
 **Tanggal:** 24 Juni 2026
 **Author:** Ignatius Rizky
-**Status:** Draft → Awaiting user review
+**Status:** REVISED — enhancement (fitur dasar sudah ada)
+
+---
+
+## ⚠️ Koreksi Penting
+
+Versi awal spec ini mengasumsikan invoice B2B dibangun dari nol. **Salah.**
+`StrukGenerator::generateInvoice()` sudah ada dan fully wired:
+- Endpoint `api/struk.php?action=generate_invoice&id={piutang}[&preview=1]`
+- Tombol "📄 Invoice" di `piutang.php` (preview + paid variant)
+- Render A4: header+logo, title INVOICE, line-item per-order, bill-to klien, jatuh tempo, totals, rekening box, footer + QR
+- Coin deduction 200 (`generate_invoice`)
+
+Spec ini di-rewrite jadi **enhancement** atas fitur existing — bukan build baru.
 
 ---
 
 ## 1. Tujuan
 
-Tenant laundry bisa generate **dokumen invoice profesional** (HTML print → PDF) untuk klien B2B (hotel, restoran, kos) dari piutang yang sudah ada. Invoice menampilkan kop outlet, nomor invoice formal, rincian per-order, total + PPN opsional, dan info pembayaran — cocok untuk kebutuhan accounting klien B2B.
+Sempurnakan invoice B2B existing dengan 2 hal yang belum ada:
+
+1. **PPN opsional** — banyak klien hotel butuh invoice + PPN 11% untuk accounting
+2. **Nomor invoice formal** — ganti synthetic `{tid}-INV-00001` jadi `INV/YYYY/MM/000N` (counter per tenant per bulan, immutable)
 
 **Scope:**
-- Dokumen invoice HTML print-friendly di `api/invoice.php?id={piutang_id}`
-- Nomor invoice formal (`INV/YYYY/MM/0001`) generate saat di-tagih
-- Line-item per-order (tanggal, no order, total) dari periode piutang
-- PPN opsional (default 0, owner set per invoice)
-- Letterhead outlet + logo (kalau ada `tenants.logo_path`)
-- Status badge (LUNAS / SEBAGIAN / BELUM LUNAS)
-- Info pembayaran dari payment methods outlet
-- Tombol cetak di `piutang.php`
+- Schema: 2 kolom di `hl_piutang` (invoice_no, pajak_persen)
+- `mark_invoiced`: generate invoice_no + simpan pajak_persen (input PPN di modal Tagih)
+- `StrukGenerator::generateInvoice()`: pakai invoice_no formal + render baris PPN
+- Render totals: subtotal → PPN → grand total
 
-**Out of scope (Phase 1):**
-- Public invoice link via token (klien akses tanpa login) — owner cetak PDF manual, kirim ke klien
-- Recurring auto-generate (cron bulanan)
-- Portal B2B client (klien lihat semua invoice sendiri)
-- Payment online dari invoice
-- Per-item granularity (per layanan dalam order) — pakai per-order saja
+**Out of scope:**
+- ❌ Payment methods di invoice — DROP. Rekening box existing (bank/no/atas nama dari `hl_struk_template`) lebih tepat untuk transfer B2B daripada label metode. Tidak diubah.
+- Public invoice link via token (klien akses tanpa login) — owner cetak manual
+- Recurring auto-generate (cron)
+- Portal B2B client
+- Payment online
 - Multi-currency
-- Email invoice otomatis (WA link existing sudah cukup)
 
 ---
 
 ## 2. Background
 
-**Current state — sudah ada `piutang.php` + `hl_piutang`:**
+**Fitur invoice existing (`core/StrukGenerator.php::generateInvoice`):**
 
-Sistem AR/billing B2B sudah jalan:
-- `generate` — buat tagihan single customer per periode dari hl_transaksi
-- `generate_bulk` — Faktur Massal: generate semua customer B2B sekaligus per periode
-- `mark_invoiced` — tandai terkirim + WA link ringkasan (200 coin via CoinLedger)
-- `bayar` — catat pelunasan (partial/full), update status
-- `reminder` — kirim reminder
-- Status: belum_tagih / sudah_tagih / sebagian / lunas
-- Aging: outstanding, due_week, overdue
-- `sisa_tagihan` STORED GENERATED column
+```
+Input: piutang_id, deductCoin bool
+Flow:
+  1. Load hl_piutang + pelanggan (nama/telp/alamat)
+  2. Load hl_transaksi dalam periode → line items per-order
+     ("Order #{no_order} ({tgl})", harga = total)
+  3. Synthetic $trx: no_order = "{tid}-INV-{piutang:05d}",
+     subtotal/total = total_tagihan, dp = total_dibayar,
+     sisa_bayar = sisa_tagihan, jatuh_tempo
+  4. loadTemplate(tid, oid, 'b2b') → hl_struk_template
+  5. render() → A4 HTML invoice
+  6. deductCoin (200)
+```
+
+**Render existing (`renderPdf`):**
+- Header: logo (`tmpl.logo` / outlet) + nama outlet + alamat
+- Title "INVOICE" + No: {no_order} + Jatuh Tempo (kalau show_jatuh_tempo)
+- Bill-to: pelanggan nama/telp/alamat
+- Tabel line-items: # / Layanan / Qty / Harga Satuan / Subtotal
+- Totals: subtotal (kalau breakdown), diskon, biaya tambahan, **TOTAL**, DP, metode, sisa bayar
+- Rekening box: bank / no rekening / atas nama (dari `hl_struk_template.rekening_*`)
+- Footer ucapan/sosmed/syarat + QR tracking
+
+**Gap nyata:**
+- Totals tidak ada baris PPN — total = total_tagihan apa adanya
+- Nomor invoice synthetic `{tid}-INV-00001` — tidak formal, tidak sequential per bulan, berubah-ubah kalau piutang_id beda
 
 **Schema existing:**
-- `hl_piutang`: pelanggan_id, periode_start, periode_end, jatuh_tempo, total_order, total_tagihan, total_dibayar, sisa_tagihan, status, invoice_sent_at, lunas_at
-- `hl_transaksi`: no_order, tanggal, total, dp, pelanggan_id, outlet_id
-- `hl_transaksi_item`: nama_layanan, satuan, jumlah, harga_satuan, subtotal (per order — untuk detail kalau perlu)
-- `tenants.logo_path`: VARCHAR(255) NULL — logo untuk letterhead
-- `hl_payment_methods`: payment methods per outlet (baru dibangun) — untuk info pembayaran
-
-**Pain point / gap vs Smartlink:**
-- Smartlink punya "Faktur Massal (Invoice Hotel)" — bulk invoice generation + dokumen invoice formal
-- LAMASY: bulk generate sudah ada, tapi `mark_invoiced` cuma kirim WA text ringkasan. **Tidak ada dokumen invoice formal dengan rincian** yang bisa dipakai klien B2B untuk accounting mereka
-- Klien hotel/resto butuh: nomor invoice, kop perusahaan, rincian order, PPN, untuk proses pembayaran internal mereka
-
-**Why HTML print (bukan dompdf):**
-- Codebase pakai pattern HTML print + `window.print()` di `api/payslip.php`, `api/label.php`, struk
-- No dompdf dependency di project
-- Browser "Save as PDF" sudah cukup + konsisten dengan existing UX
+- `hl_piutang`: id, pelanggan_id, periode_start/end, jatuh_tempo, total_order, total_tagihan, total_dibayar, sisa_tagihan (generated), status, invoice_sent_at
+- `hl_struk_template`: tipe='b2b', rekening_bank/nomor/atas_nama, show_* flags, footer_*
 
 ---
 
@@ -68,22 +83,16 @@ Sistem AR/billing B2B sudah jalan:
 
 ### 3.1 Komponen
 
-**New:**
-```
-api/invoice.php?id={piutang_id}[&auto_print=1]   ← HTML invoice print-friendly
-db/migrations/2026-06-24-invoice-b2b.sql          ← 2 ALTER columns
-```
-
 **Modified:**
 ```
-piutang.php   ← tombol "Cetak Invoice" + generate invoice_no di mark_invoiced + PPN input
+core/StrukGenerator.php   ← generateInvoice(): pakai invoice_no formal + PPN dari piutang
+                             renderPdf(): baris PPN di totals (kalau pajak > 0)
+piutang.php               ← mark_invoiced: generate invoice_no + simpan pajak_persen
+                             modal Tagih: input PPN %
+db/migrations/2026-06-24-invoice-b2b.sql   ← 2 ALTER columns
 ```
 
-**Existing reused (no change):**
-- `hl_piutang` data (periode, pelanggan, total)
-- `hl_transaksi` (line-item source — re-query live)
-- `tenants.logo_path` (letterhead)
-- `hl_payment_methods` (info pembayaran)
+**No change:** api/struk.php (endpoint sudah ada), rekening box, line-item logic.
 
 ### 3.2 Schema Delta
 
@@ -93,112 +102,39 @@ ALTER TABLE hl_piutang
   ADD COLUMN pajak_persen DECIMAL(5,2) NOT NULL DEFAULT 0 AFTER total_tagihan;
 ```
 
-- `invoice_no`: nomor formal, NULL sampai di-tagih (`mark_invoiced`). Format `INV/2026/06/0001`. Immutable setelah di-set.
-- `pajak_persen`: PPN % (default 0). Owner set saat tagih. Invoice hitung pajak dari total_tagihan.
+Additive nullable/default — existing rows tidak terdampak. Existing piutang yang sudah di-invoice (invoice_no NULL) akan generate nomor saat di-cetak/re-tagih.
 
-Additive, nullable/default — existing piutang rows tidak terdampak.
-
-### 3.3 Data Flow
+### 3.3 Data Flow (Delta)
 
 ```
-┌──────────────────────────────────────────────────┐
-│ A. GENERATE INVOICE NUMBER (saat tagih)           │
-└──────────────────────────────────────────────────┘
-[Owner /piutang → klik "Tagih" pada baris piutang]
-       ↓
-Modal mark_invoiced: input PPN % (default 0)
+[Owner /piutang → "Tagih" → modal input PPN % (default 0)]
        ↓
 mark_invoiced POST:
-  - kalau invoice_no NULL → generateInvoiceNo() → INV/YYYY/MM/000N
-  - simpan pajak_persen
-  - status = sudah_tagih, invoice_sent_at = NOW()
-  - deduct coin (existing)
-  - return WA link (ringkasan + sebut nomor invoice)
-
-┌──────────────────────────────────────────────────┐
-│ B. CETAK INVOICE                                  │
-└──────────────────────────────────────────────────┘
-[Owner klik "Cetak Invoice" pada baris piutang]
+  - kalau invoice_no NULL → generateInvoiceNo() → INV/YYYY/MM/000N → simpan
+  - clamp pajak 0–100, simpan pajak_persen
+  - (existing: status=sudah_tagih, invoice_sent_at, deduct coin, WA link)
        ↓
-GET /api/invoice.php?id={piutang_id}
+[Owner "📄 Invoice"]  → api/struk.php?action=generate_invoice
        ↓
-tenant_guard + permission laporan.export
+StrukGenerator::generateInvoice():
+  - no_order = piu.invoice_no (kalau ada) else synthetic fallback
+  - hitung pajak = total_tagihan × pajak_persen/100
+  - pass pajak_persen + pajak_amount ke $trx
        ↓
-Load hl_piutang (WHERE id + tenant_id + outlet_id) → 404 kalau gak ada
-       ↓
-Load pelanggan (nama, alamat, telepon)
-       ↓
-Load letterhead: outlets (nama, alamat, telepon) + tenants.logo_path
-       ↓
-Re-query LINE ITEMS dari hl_transaksi:
-  SELECT no_order, tanggal, total
-  WHERE pelanggan_id=? AND outlet_id=? AND tenant_id=?
-    AND DATE(tanggal) BETWEEN periode_start AND periode_end
-  ORDER BY tanggal, id
-       ↓
-Hitung: subtotal = SUM(total), pajak = subtotal × pajak_persen/100,
-        grand_total = subtotal + pajak, sisa = grand_total - total_dibayar
-       ↓
-Load info pembayaran: hl_payment_methods aktif (label) untuk outlet
-       ↓
-Render HTML invoice + (auto_print=1 → window.print())
+renderPdf totals:
+  Subtotal: total_tagihan
+  PPN {persen}%: pajak_amount   ← baru, hanya kalau pajak > 0
+  TOTAL: total_tagihan + pajak
+  DP / Sisa: recalc dengan grand total
 ```
 
 ---
 
-## 4. Invoice Document Layout
+## 4. Detail Perubahan
 
-```
-┌────────────────────────────────────────────────────────────┐
-│  [Logo]  RIZKY LAUNDRY JAKARTA              INVOICE         │
-│          Jl. Sudirman No. 12, Jakarta                       │
-│          Telp: 0812-3456-7890        No: INV/2026/06/0001   │
-│                                      Tanggal: 24 Jun 2026   │
-│                                      Jatuh Tempo: 30 Jun 2026│
-├────────────────────────────────────────────────────────────┤
-│  Ditagihkan kepada:                                         │
-│  Hotel Santika Jakarta                                      │
-│  Jl. Thamrin No. 5, Jakarta                                 │
-│  Periode: 01 Jun 2026 – 30 Jun 2026                         │
-├────────────────────────────────────────────────────────────┤
-│  No   Tanggal      No Order        Total                    │
-│  1    02 Jun 2026  HTL-0601-1      337.500                  │
-│  2    05 Jun 2026  HTL-0605-3      240.000                  │
-│  3    08 Jun 2026  HTL-0608-2      180.000                  │
-│  ...                                                         │
-│                                    ───────────────────────  │
-│                          Subtotal:          2.450.000       │
-│                          PPN 11%:             269.500       │
-│                          ═══════════════════════════        │
-│                          TOTAL:             2.719.500       │
-│                          Dibayar:             500.000       │
-│                          SISA TAGIHAN:      2.219.500       │
-├────────────────────────────────────────────────────────────┤
-│  Pembayaran ke:                       [Badge: BELUM LUNAS]  │
-│  Tunai · Transfer Bank · QRIS (dari payment methods)        │
-│                                                              │
-│  Terima kasih atas kerjasamanya.                            │
-│                                                              │
-│  [ 🖨️ Cetak / Simpan PDF ]  (hidden saat @media print)     │
-└────────────────────────────────────────────────────────────┘
-```
+### 4.1 Invoice Number Generation
 
-**Detail render:**
-- **Logo**: `tenants.logo_path` kalau ada (`<img>`), else nama outlet text saja
-- **No invoice**: `invoice_no` kalau ada, else "DRAFT (belum ditagih)"
-- **Line items**: per-order — Tanggal, No Order (`no_order`), Total. Order-level granularity (bukan per layanan).
-- **PPN row**: muncul hanya kalau `pajak_persen > 0`
-- **Status badge**: warna by status — lunas=hijau, sebagian=kuning, belum_tagih/sudah_tagih=merah
-- **Info pembayaran**: label payment methods aktif outlet (comma-separated), atau qris_label kalau ada
-- **Print button**: `@media print { .no-print { display:none } }`
-
----
-
-## 5. Backend Logic
-
-### 5.1 Invoice Number Generation (`piutang.php`)
-
-Helper, dipanggil di `mark_invoiced` kalau invoice_no masih NULL:
+Helper di `piutang.php` (atau StrukGenerator static):
 
 ```php
 function generateInvoiceNo(PDO $db, int $tid): string {
@@ -212,239 +148,156 @@ function generateInvoiceNo(PDO $db, int $tid): string {
 }
 ```
 
-Counter per tenant per bulan. Disimpan ke `hl_piutang.invoice_no`, immutable.
+Generate sekali saat `mark_invoiced` (kalau NULL), immutable setelahnya.
 
-### 5.2 mark_invoiced Update (`piutang.php`)
+### 4.2 mark_invoiced (piutang.php)
 
-Tambah di existing `mark_invoiced` handler:
-1. Baca `pajak_persen` dari POST (validate 0–100, default 0)
-2. Kalau `invoice_no` NULL → generate + simpan
-3. Simpan `pajak_persen`
-4. WA message include nomor invoice + (existing ringkasan)
-
+Tambah:
 ```php
 $pajak = max(0, min(100, (float)($d['pajak_persen'] ?? 0)));
-// ... setelah load $row:
-$invoiceNo = $row['invoice_no'];
-if (!$invoiceNo) {
-    $invoiceNo = generateInvoiceNo($db, $tid);
-}
+// setelah load $row:
+$invoiceNo = $row['invoice_no'] ?: generateInvoiceNo($db, $tid);
 $db->prepare("UPDATE hl_piutang
               SET status='sudah_tagih', invoice_sent_at=NOW(),
                   invoice_no=?, pajak_persen=?
               WHERE id=? AND tenant_id=?")
    ->execute([$invoiceNo, $pajak, $id, $tid]);
 ```
+WA text tambah baris `"No. Invoice: {$invoiceNo}\n"` di awal pesan.
 
-WA text tambah baris: `"No. Invoice: {$invoiceNo}\n"` di awal.
-
-### 5.3 api/invoice.php
-
-```php
-define('ROOT', dirname(__DIR__));
-require_once ROOT . '/middleware/tenant_guard.php';
-$user = currentUser();
-$tid = TenantResolver::id();
-$oid = TenantResolver::outletId();
-if (!hasPermission('laporan.export')) { http_response_code(403); exit('Akses ditolak'); }
-
-$id = (int)($_GET['id'] ?? 0);
-if ($id <= 0) { http_response_code(400); exit('ID invalid'); }
-
-// Load piutang (tenant + outlet scope)
-$p = TenantQuery::rawOne(
-  "SELECT pi.*, pl.nama AS pel_nama, pl.alamat AS pel_alamat, pl.telepon AS pel_telepon,
-          o.nama_outlet, o.alamat AS outlet_alamat, o.telepon AS outlet_telepon,
-          t.logo_path
-   FROM hl_piutang pi
-   JOIN hl_pelanggan pl ON pl.id=pi.pelanggan_id AND pl.tenant_id=pi.tenant_id
-   LEFT JOIN outlets o ON o.id=pi.outlet_id
-   LEFT JOIN tenants t ON t.id=pi.tenant_id
-   WHERE pi.id=? AND pi.tenant_id=? AND pi.outlet_id=?",
-  [$id, $tid, $oid]
-);
-if (!$p) { http_response_code(404); exit('Invoice tidak ditemukan'); }
-
-// Line items per-order
-$items = TenantQuery::rawAll(
-  "SELECT no_order, tanggal, total
-   FROM hl_transaksi
-   WHERE pelanggan_id=? AND outlet_id=? AND tenant_id=?
-     AND DATE(tanggal) BETWEEN ? AND ?
-   ORDER BY tanggal, id",
-  [$p['pelanggan_id'], $oid, $tid, $p['periode_start'], $p['periode_end']]
-);
-
-$subtotal = array_sum(array_map(fn($r) => (float)$r['total'], $items));
-$pajak    = $subtotal * ((float)$p['pajak_persen'] / 100);
-$grand    = $subtotal + $pajak;
-$dibayar  = (float)$p['total_dibayar'];
-$sisa     = $grand - $dibayar;
-
-// Info pembayaran dari payment methods aktif
-$methods = TenantQuery::rawAll(
-  "SELECT label FROM hl_payment_methods
-   WHERE outlet_id=? AND tenant_id=? AND is_active=1 ORDER BY sort_order, id",
-  [$oid, $tid]
-);
-$methodLabels = implode(' · ', array_map(fn($m) => $m['label'], $methods)) ?: 'Hubungi outlet';
-
-// Render HTML (letterhead, table, totals, badge) + auto_print
-```
-
-**Status badge mapping:**
-```php
-$badge = match($p['status']) {
-    'lunas'    => ['LUNAS', '#16a34a'],
-    'sebagian' => ['SEBAGIAN', '#ca8a04'],
-    default    => ['BELUM LUNAS', '#dc2626'],
-};
-```
-
-### 5.4 piutang.php — Tombol Cetak
-
-Di list view tiap baris piutang, tambah tombol:
-```javascript
-<a href="/api/invoice.php?id=${p.id}" target="_blank" class="hl-btn hl-btn-sm hl-btn-outline">🖨️ Invoice</a>
-```
-
-Plus PPN input di modal "Tagih" (mark_invoiced):
+Modal Tagih tambah field:
 ```html
-<label>PPN (%) <small>opsional, kosongkan = 0</small></label>
+<label>PPN (%) <small>opsional, kosong = 0</small></label>
 <input type="number" id="inv_pajak" min="0" max="100" step="0.01" value="0">
 ```
+`markInvoiced()` JS kirim `pajak_persen` di body POST.
+
+### 4.3 StrukGenerator::generateInvoice
+
+```php
+// invoice_no formal
+$invoiceNo = $piu['invoice_no'] ?: ($tid . '-INV-' . str_pad((string)$piutangId, 5, '0', STR_PAD_LEFT));
+$pajakPersen = (float)($piu['pajak_persen'] ?? 0);
+$subtotal = (float)$piu['total_tagihan'];
+$pajakAmount = $subtotal * $pajakPersen / 100;
+$grandTotal = $subtotal + $pajakAmount;
+
+$trx = [
+    'no_order'     => $invoiceNo,            // formal number
+    // ...
+    'subtotal'     => $subtotal,
+    'pajak_persen' => $pajakPersen,          // baru
+    'pajak_amount' => $pajakAmount,          // baru
+    'total'        => $grandTotal,           // subtotal + pajak
+    'dp'           => (float)$piu['total_dibayar'],
+    'sisa_bayar'   => $grandTotal - (float)$piu['total_dibayar'],
+    // ...
+];
+```
+
+### 4.4 renderPdf — Baris PPN
+
+Di blok totals (sebelum baris TOTAL), tambah:
+```php
+// PPN (B2B invoice, kalau pajak_persen > 0)
+$pjP = (float)($trx['pajak_persen'] ?? 0);
+$pjA = (float)($trx['pajak_amount'] ?? 0);
+if ($pjP > 0) {
+    // subtotal selalu tampil kalau ada pajak
+    $h .= "  <tr><td>Subtotal</td><td class='r'>Rp " . self::rpNum($trx['subtotal']) . "</td></tr>\n";
+    $h .= "  <tr><td>PPN " . rtrim(rtrim(number_format($pjP,2),'0'),'.') . "%</td><td class='r'>Rp " . self::rpNum($pjA) . "</td></tr>\n";
+}
+```
+Diletakkan sebelum `if (show_total)` TOTAL row. TOTAL pakai `$trx['total']` (sudah grand total). Backward compat: retail nota tidak ada pajak_persen → blok skip.
 
 ---
 
-## 6. Existing System Integration
+## 5. Security
 
-### 6.1 Piutang Flow
-Tidak mengubah generate / generate_bulk / bayar / reminder. Hanya extend `mark_invoiced` (tambah invoice_no + pajak) dan tambah action cetak baru.
-
-### 6.2 Payment Methods
-Invoice baca `hl_payment_methods` (fitur baru) untuk seksi "Pembayaran ke". Kalau outlet belum setup, fallback "Hubungi outlet".
-
-### 6.3 Coin Ledger
-`mark_invoiced` existing sudah deduct `invoice_b2b` (200 coin). Tidak berubah — cetak invoice itu sendiri gratis (cuma render).
+- Tidak ada surface baru — semua via existing endpoint dengan tenant+outlet scope di generateInvoice query
+- PPN input clamp 0–100 server-side di mark_invoiced
+- invoice_no server-generated, immutable
+- htmlspecialchars existing di render
 
 ---
 
-## 7. Security
-
-- **Access control**: `api/invoice.php` butuh tenant_guard + `laporan.export` permission (sama dengan piutang generate)
-- **Tenant + outlet scope**: SELECT WHERE id + tenant_id + outlet_id → cross-tenant akses return 404
-- **Invoice link tidak public**: butuh login owner. Klien B2B terima PDF hasil cetak owner (Opsi A). Token-based public invoice = future.
-- **XSS**: htmlspecialchars semua data (nama, alamat, label)
-- **PPN input**: clamp 0–100 server-side
-- **Logo path**: render dari `tenants.logo_path` (tenant-controlled saat upload, sudah tervalidasi di flow logo upload existing)
-
----
-
-## 8. Edge Cases
+## 6. Edge Cases
 
 | Skenario | Handler |
 |----------|---------|
-| Piutang belum di-tagih (invoice_no NULL) | Invoice tampil "DRAFT (belum ditagih)" tanpa nomor — tetap bisa cetak preview |
-| PPN = 0 | Row PPN hidden, total = subtotal |
-| Status lunas | Badge hijau "LUNAS" |
-| Partial payment (sebagian) | Badge kuning, tampil dibayar + sisa |
-| Order di-edit/hapus setelah piutang dibuat | Re-query live → invoice reflect data terkini (subtotal bisa beda dari total_tagihan tersimpan). Tampilkan subtotal hasil re-query sebagai source of truth untuk dokumen. |
-| Tidak ada order di periode (data drift) | Tabel kosong + subtotal 0 — warning "Tidak ada order di periode ini" |
-| Outlet belum punya logo | Letterhead text-only (nama outlet) |
-| Outlet belum setup payment methods | "Pembayaran ke: Hubungi outlet" |
-| Cross-tenant akses (manipulate id) | 404 |
-| Pelanggan retail (bukan B2B) | Tetap bisa cetak — tidak ada blocking, tapi use case utama B2B |
+| Piutang lama (invoice_no NULL) di-cetak | Fallback synthetic `{tid}-INV-00001` (existing behavior) sampai di-tagih ulang |
+| PPN = 0 | Blok PPN skip, total = total_tagihan (behavior existing tidak berubah) |
+| Re-tagih piutang yang sudah punya invoice_no | invoice_no tidak di-regenerate (immutable via `?:`) — pajak boleh update |
+| Retail nota (bukan b2b) | pajak_persen tidak ada di $trx → blok PPN skip |
+| Partial payment + PPN | sisa = grand total − dibayar (recalc benar) |
+| Counter rollover bulan | Prefix INV/YYYY/MM/ reset per bulan via LIKE filter |
 
 ---
 
-## 9. Testing Plan
+## 7. Testing Plan
 
-### 9.1 Manual Smoke Test
+### 7.1 Smoke Test
 
-1. Login owner → /piutang → pastikan ada piutang B2B (generate kalau belum)
-2. Klik "Tagih" pada baris → modal muncul dengan input PPN → isi 11 → submit
-3. Verify DB: `SELECT invoice_no, pajak_persen, status FROM hl_piutang WHERE id=N` → invoice_no = INV/2026/06/000N, pajak_persen=11, status=sudah_tagih
-4. Klik "🖨️ Invoice" pada baris → tab baru buka /api/invoice.php?id=N
-5. Verify invoice render: kop outlet + logo, nomor invoice, bill-to klien, tabel order per baris, subtotal + PPN 11% + total, status badge, info pembayaran
-6. Klik "Cetak / Simpan PDF" → browser print dialog → save as PDF works
-7. Catat pembayaran sebagian via "Bayar" → cetak invoice lagi → badge "SEBAGIAN" + sisa tagihan terupdate
+1. Migration apply → verify 2 kolom di hl_piutang
+2. /piutang → "Tagih" piutang B2B → modal muncul input PPN → isi 11 → submit
+3. Verify DB: invoice_no = INV/2026/06/000N, pajak_persen = 11
+4. "📄 Invoice" → invoice render dengan: nomor formal di header, baris Subtotal + PPN 11% + TOTAL (grand), sisa benar
+5. Tagih piutang ke-2 → invoice_no increment (000N+1)
+6. PPN 0 (atau kosong) → invoice tanpa baris PPN, total = tagihan
 
-### 9.2 Edge Case Test
+### 7.2 Edge Cases
 
 | # | Test | Expected |
 |---|------|----------|
-| 1 | Cetak invoice piutang belum ditagih | "DRAFT (belum ditagih)", tetap render |
-| 2 | PPN 0 | Row PPN tidak muncul |
-| 3 | Status lunas | Badge hijau LUNAS |
-| 4 | Cross-tenant id manipulation | 404 |
-| 5 | Outlet tanpa logo | Letterhead text-only |
-| 6 | Outlet tanpa payment methods | "Hubungi outlet" |
-| 7 | auto_print=1 | window.print() otomatis |
+| 1 | Cetak piutang lama (invoice_no NULL, belum re-tagih) | Synthetic fallback, no crash |
+| 2 | PPN 0 | No baris PPN |
+| 3 | Re-tagih piutang ada invoice_no | Nomor tetap, pajak update |
+| 4 | Retail nota cetak | Tidak terpengaruh (no pajak row) |
+| 5 | PPN 11 + partial paid | Sisa = grand − dibayar |
 
 ---
 
-## 10. Implementation Phasing
+## 8. Implementation Phasing
 
-3 commits, ~2.5 jam:
+2 commits, ~1 jam:
 
-**Commit 1 — Schema + Invoice Numbering (~30 menit):**
+**Commit 1 — Schema + Numbering + mark_invoiced (~30 menit):**
 - Migration 2 kolom
 - generateInvoiceNo() helper
-- mark_invoiced integration (invoice_no + pajak)
+- mark_invoiced: invoice_no + pajak + PPN input modal + JS
 
-**Commit 2 — Invoice Document (~75 menit):**
-- api/invoice.php HTML render
-- Letterhead + line items + totals + badge + payment info
-
-**Commit 3 — Piutang UI Integration (~30 menit):**
-- Tombol Cetak Invoice di list
-- PPN input di modal Tagih
+**Commit 2 — Invoice Render PPN (~30 menit):**
+- generateInvoice(): invoice_no formal + pajak calc
+- renderPdf(): baris PPN
 - Smoke test E2E
 
 ---
 
-## 11. Files Inventory
+## 9. Files Inventory
 
 ### New
 - `db/migrations/2026-06-24-invoice-b2b.sql`
-- `api/invoice.php`
 
 ### Modified
-- `piutang.php` — tombol cetak + PPN input + invoice_no generation di mark_invoiced
+- `piutang.php` — mark_invoiced (invoice_no + pajak) + modal PPN input + JS
+- `core/StrukGenerator.php` — generateInvoice (invoice_no + pajak calc) + renderPdf (PPN row)
 
 ---
 
-## 12. Out of Scope (Phase 1)
+## 10. Success Criteria
 
-- Public invoice link via token (klien akses tanpa login)
-- Recurring auto-generate (cron bulanan)
-- Portal B2B client (klien lihat semua invoice + history)
-- Payment online dari invoice
-- Per-item granularity (per layanan dalam order)
-- Multi-currency
-- Email invoice otomatis
-- Invoice template customization per tenant
-- Kwitansi/receipt terpisah setelah lunas
+- ✅ Invoice tampil nomor formal INV/YYYY/MM/000N (sequential per tenant per bulan)
+- ✅ PPN opsional dihitung + ditampilkan benar (subtotal → PPN → grand total)
+- ✅ PPN = 0 → behavior invoice existing tidak berubah
+- ✅ Nomor invoice immutable setelah di-generate
+- ✅ Zero regression: retail nota + invoice existing tetap render benar
+- ✅ Rekening box existing dipertahankan (lebih tepat dari payment-method labels)
 
 ---
 
-## 13. Success Criteria
+## 11. References
 
-- ✅ Owner cetak invoice profesional dari piutang dalam <30 detik
-- ✅ Invoice punya nomor formal (INV/YYYY/MM/000N) yang unik per tenant per bulan
-- ✅ Line-item per-order tampil dengan tanggal + no order + total
-- ✅ PPN opsional dihitung benar
-- ✅ Letterhead pakai logo + alamat outlet
-- ✅ Status badge akurat (lunas/sebagian/belum)
-- ✅ Save as PDF via browser print works
-- ✅ Zero impact ke flow piutang existing (generate/bayar/reminder)
-
----
-
-## 14. References
-
-- Print pattern: `api/payslip.php` (HTML print + auto_print + @media print)
-- Piutang existing: `piutang.php` (generate, generate_bulk, mark_invoiced, bayar, reminder)
-- Nota numbering pattern: `core/NotaFormatter.php`
-- Payment methods (sibling feature): `docs/superpowers/specs/2026-06-24-payment-methods-design.md`
-- Line-item source: `hl_transaksi` (no_order, tanggal, total)
+- Existing: `core/StrukGenerator.php::generateInvoice()` (line ~234) + `renderPdf()` (line ~660)
+- Endpoint: `api/struk.php?action=generate_invoice`
+- UI: `piutang.php` (mark_invoiced handler + list row "📄 Invoice" button)
+- Template: `hl_struk_template` tipe='b2b' (rekening_*, show_* flags)
