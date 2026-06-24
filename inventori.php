@@ -485,6 +485,7 @@ if ($action) {
     <button class="inv-tab active" onclick="switchTab('stok',this)">📦 Stok Bahan</button>
     <button class="inv-tab" onclick="switchTab('mutasi',this)">📜 Riwayat Mutasi</button>
     <button class="inv-tab" onclick="switchTab('alert',this)">⚠️ Restock Alert</button>
+    <button class="inv-tab" onclick="switchTab('opname',this)">📋 Stok Opname</button>
   </div>
 
   <!-- ═════ TAB: STOK BAHAN ═════ -->
@@ -593,6 +594,18 @@ if ($action) {
         </table>
       </div>
     </div>
+  </div>
+
+  <!-- ═════ TAB: STOK OPNAME ═════ -->
+  <div id="tab-opname" class="tab-content" style="display:none">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <h3 style="margin:0;font-size:15px">📋 Riwayat Stok Opname</h3>
+      <?php if ($canManage): ?>
+      <button class="hl-btn hl-btn-primary hl-btn-sm" onclick="opnameCreate()">+ Mulai Opname Baru</button>
+      <?php endif; ?>
+    </div>
+    <div id="opnameListWrap"><div style="color:#9CA3AF;padding:20px;text-align:center">Memuat…</div></div>
+    <div id="opnameDetailWrap" style="display:none;margin-top:16px"></div>
   </div>
 
 </div>
@@ -741,6 +754,7 @@ function switchTab(tab, el) {
   if (tab === 'stok')   loadStok();
   if (tab === 'mutasi') loadMutasi();
   if (tab === 'alert')  loadAlert();
+  if (tab === 'opname') loadOpnameList();
 }
 
 // ── FILTER KATEGORI ────────────────────────────────
@@ -975,6 +989,119 @@ const katLabel = window.katLabelInventori;
 function tipeIcon(t) { return { masuk:'⬆️', keluar:'⬇️', adjust:'⚖️', transfer:'↔️' }[t] || ''; }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 // showToast() global sudah di-inject oleh renderToast()
+
+// ── STOK OPNAME ────────────────────────────────────
+async function loadOpnameList() {
+  const wrap = document.getElementById('opnameListWrap');
+  document.getElementById('opnameDetailWrap').style.display = 'none';
+  document.getElementById('opnameListWrap').style.display = 'block';
+  wrap.innerHTML = '<div style="color:#9CA3AF;padding:20px;text-align:center">Memuat…</div>';
+  const r = await fetch('/inventori.php?action=opname_list');
+  const d = await r.json();
+  if (!d.ok) { wrap.innerHTML = '<div style="color:#DC2626;padding:20px">'+esc(d.error||'Gagal')+'</div>'; return; }
+  if (!d.rows.length) { wrap.innerHTML = '<div style="color:#9CA3AF;padding:20px;text-align:center">Belum ada opname.</div>'; return; }
+  let h = '<table class="hl-table"><thead><tr><th>Tanggal</th><th>Status</th><th class="td-num">Item</th><th class="td-num">Selisih</th><th class="td-num">Nilai</th><th></th></tr></thead><tbody>';
+  d.rows.forEach(o => {
+    const badge = o.status==='selesai' ? '<span style="color:#059669">✓ Selesai</span>' : '<span style="color:#92400E">Draft</span>';
+    const nilai = o.status==='selesai' ? fmtNilai(o.nilai_selisih) : '-';
+    const aksi = o.status==='selesai'
+      ? `<button class="hl-btn hl-btn-outline hl-btn-sm" onclick="opnameOpen(${parseInt(o.id)})">👁 Detail</button>`
+      : `<button class="hl-btn hl-btn-primary hl-btn-sm" onclick="opnameOpen(${parseInt(o.id)})">Lanjut</button>`;
+    h += `<tr><td>${new Date(o.tanggal).toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'})}</td>
+      <td>${badge}</td><td class="td-num">${parseInt(o.total_item)||0}</td>
+      <td class="td-num">${o.status==='selesai'?parseInt(o.total_selisih_item)||0:'-'}</td>
+      <td class="td-num">${nilai}</td><td>${aksi}</td></tr>`;
+  });
+  wrap.innerHTML = h + '</tbody></table>';
+}
+
+function fmtNilai(n) { n=parseInt(n)||0; const s=n<0?'−':(n>0?'+':''); return s+'Rp '+Math.abs(n).toLocaleString('id-ID'); }
+
+async function opnameCreate() {
+  if (!confirm('Mulai sesi opname baru? Stok sistem akan di-snapshot sekarang.')) return;
+  const r = await fetch('/inventori.php?action=opname_create', {
+    method:'POST',
+    headers:{'Content-Type':'application/json','X-CSRF-Token':CSRF()},
+    body: JSON.stringify({})
+  });
+  const d = await r.json();
+  if (!d.ok) { showToast(d.error||'Gagal membuat opname', 'error'); return; }
+  opnameOpen(d.id);
+}
+
+async function opnameOpen(id) {
+  const r = await fetch('/inventori.php?action=opname_get&id='+id);
+  const d = await r.json();
+  if (!d.ok) { showToast(d.error||'Gagal membuka opname', 'error'); return; }
+  const h = d.header, items = d.items;
+  const isDraft = h.status === 'draft';
+  const wrap = document.getElementById('opnameDetailWrap');
+  document.getElementById('opnameListWrap').style.display = 'none';
+  wrap.style.display = 'block';
+
+  let rows = items.map(it => {
+    const fisik = it.stok_fisik === null ? '' : it.stok_fisik;
+    const sel = it.stok_fisik === null ? '-' : (it.selisih>0?'+'+it.selisih:it.selisih);
+    const selColor = it.selisih<0?'#DC2626':(it.selisih>0?'#059669':'#6B7280');
+    const inputCell = isDraft
+      ? `<input type="number" min="0" data-item="${parseInt(it.id)}" value="${esc(String(fisik))}" oninput="opnameRecalc(this,${parseInt(it.stok_sistem)})" style="width:80px;padding:4px 8px;border:1px solid #D1D5DB;border-radius:6px">`
+      : (it.stok_fisik===null?'-':it.stok_fisik);
+    return `<tr><td>${esc(it.nama)}</td><td>${esc(it.satuan)}</td><td class="td-num">${parseInt(it.stok_sistem)}</td>
+      <td class="td-num">${inputCell}</td><td class="td-num sel-cell" style="color:${selColor}">${sel}</td></tr>`;
+  }).join('');
+
+  const tglLabel = new Date(h.tanggal).toLocaleDateString('id-ID');
+  const statusLabel = isDraft ? '<span style="color:#92400E;font-size:12px">[Draft]</span>' : '<span style="color:#059669;font-size:12px">[Selesai]</span>';
+  wrap.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <h3 style="margin:0;font-size:15px">Opname ${tglLabel} ${statusLabel}</h3>
+      <button class="hl-btn hl-btn-outline hl-btn-sm" onclick="loadOpnameList()">← Kembali</button>
+    </div>
+    <table class="hl-table"><thead><tr><th>Bahan</th><th>Satuan</th><th class="td-num">Sistem</th><th class="td-num">Fisik</th><th class="td-num">Selisih</th></tr></thead><tbody>${rows}</tbody></table>
+    ${isDraft ? `<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
+      <button class="hl-btn hl-btn-outline" onclick="opnameSave(${parseInt(id)})">💾 Simpan Draft</button>
+      <button class="hl-btn hl-btn-primary" onclick="opnameFinalize(${parseInt(id)})">✅ Finalize &amp; Adjust</button></div>` : ''}`;
+}
+
+function opnameRecalc(input, sistem) {
+  const fisik = input.value === '' ? null : parseInt(input.value);
+  const cell = input.closest('tr').querySelector('.sel-cell');
+  if (fisik === null || isNaN(fisik)) { cell.textContent='-'; cell.style.color='#6B7280'; return; }
+  const sel = fisik - sistem;
+  cell.textContent = sel>0?'+'+sel:sel;
+  cell.style.color = sel<0?'#DC2626':(sel>0?'#059669':'#6B7280');
+}
+
+function collectItems() {
+  return [...document.querySelectorAll('#opnameDetailWrap input[data-item]')].map(i => ({
+    item_id: parseInt(i.dataset.item), stok_fisik: i.value
+  }));
+}
+
+async function opnameSave(id) {
+  const r = await fetch('/inventori.php?action=opname_save_fisik', {
+    method:'POST',
+    headers:{'Content-Type':'application/json','X-CSRF-Token':CSRF()},
+    body: JSON.stringify({opname_id:id, items:collectItems()})
+  });
+  const d = await r.json();
+  if (!d.ok) { showToast(d.error||'Gagal menyimpan', 'error'); return; }
+  showToast('Draft tersimpan');
+}
+
+async function opnameFinalize(id) {
+  await opnameSave(id);
+  if (!confirm('Finalize opname? Selisih akan jadi penyesuaian stok permanen.')) return;
+  const r = await fetch('/inventori.php?action=opname_finalize', {
+    method:'POST',
+    headers:{'Content-Type':'application/json','X-CSRF-Token':CSRF()},
+    body: JSON.stringify({opname_id:id})
+  });
+  const d = await r.json();
+  if (!d.ok) { showToast(d.error||'Gagal finalize', 'error'); return; }
+  showToast('Opname selesai. '+d.total_selisih_item+' bahan disesuaikan, nilai selisih '+fmtNilai(d.nilai_selisih)+'.');
+  loadOpnameList();
+}
 
 // ── INIT ───────────────────────────────────────────
 (function init() {
