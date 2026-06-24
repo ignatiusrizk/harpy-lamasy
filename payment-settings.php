@@ -383,10 +383,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'uploa
     </div>
 
     <div style="margin-bottom:14px">
-      <label style="display:block;font-weight:600;margin-bottom:6px;color:#374151">Emoji Icon</label>
-      <input id="methodEmoji" type="text" maxlength="4" placeholder="💳"
-             style="width:80px;padding:10px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:18px;text-align:center;box-sizing:border-box">
-      <div style="font-size:12px;color:#9ca3af;margin-top:4px">Default: 💳</div>
+      <label style="display:block;font-weight:600;margin-bottom:6px;color:#374151">Icon</label>
+      <input type="hidden" id="methodEmoji" value="💳">
+      <div id="emojiPicker" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+      <div style="font-size:12px;color:#9ca3af;margin-top:6px">Pilih icon yang sesuai dengan metode pembayaran</div>
     </div>
 
     <div id="methodModalError" style="display:none;background:#fee2e2;border:1px solid #fca5a5;color:#991b1b;padding:10px;border-radius:8px;font-size:13px;margin-bottom:12px"></div>
@@ -439,22 +439,43 @@ async function loadMethods() {
   }).join('');
 }
 
+const EMOJI_OPTIONS = ['💳','💵','🏦','📱','💸','💰','🪙','🎫','🎟️','💼','🧾','🛒'];
+
+function renderEmojiPicker(selected) {
+  const picker = document.getElementById('emojiPicker');
+  picker.innerHTML = EMOJI_OPTIONS.map(e => {
+    const isSel = e === selected;
+    return `<button type="button" data-emoji="${e}"
+      style="width:44px;height:44px;font-size:22px;border:2px solid ${isSel ? '#0d9488' : '#e5e7eb'};
+             background:${isSel ? '#f0fdfa' : '#fff'};border-radius:8px;cursor:pointer;
+             display:flex;align-items:center;justify-content:center;transition:all 0.15s"
+      onclick="selectEmoji('${e}')">${e}</button>`;
+  }).join('');
+}
+
+function selectEmoji(emoji) {
+  document.getElementById('methodEmoji').value = emoji;
+  renderEmojiPicker(emoji);
+}
+
 function openMethodModal(id = null) {
   document.getElementById('methodModalError').style.display = 'none';
   document.getElementById('methodEditId').value = id || '';
   if (id) {
-    // Find row data dari list (re-query loadMethods response indirectly via fetch)
     fetch('/payment-settings?action=method_list').then(r => r.json()).then(d => {
       const row = d.methods.find(m => parseInt(m.id) === id);
       if (!row) return;
       document.getElementById('methodModalTitle').textContent = 'Edit Metode Pembayaran';
       document.getElementById('methodLabel').value = row.label;
-      document.getElementById('methodEmoji').value = row.emoji || '💳';
+      const e = row.emoji || '💳';
+      document.getElementById('methodEmoji').value = e;
+      renderEmojiPicker(e);
     });
   } else {
     document.getElementById('methodModalTitle').textContent = 'Tambah Metode Pembayaran';
     document.getElementById('methodLabel').value = '';
     document.getElementById('methodEmoji').value = '💳';
+    renderEmojiPicker('💳');
   }
   document.getElementById('methodModal').style.display = 'flex';
   setTimeout(() => document.getElementById('methodLabel').focus(), 50);
