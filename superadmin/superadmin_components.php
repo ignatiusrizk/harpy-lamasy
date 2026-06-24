@@ -352,18 +352,21 @@ function saRenderHead(string $title = 'Super Admin'): void {
       border-radius: 14px; overflow: hidden;
       margin-bottom: 24px;
     }
-    .sa-card-header {
-      padding: 16px 22px;
+    .sa-card-header, .sa-card-head {
+      padding: 18px 24px;
       border-bottom: 1px solid var(--crease);
       display: flex; align-items: center; justify-content: space-between;
       gap: 12px; flex-wrap: wrap;
     }
-    .sa-card-header h3 {
+    .sa-card-header h3, .sa-card-head h3 {
       font-family: var(--display);
       font-size: 16px; font-weight: 700; color: var(--glow);
       letter-spacing: -.022em;
+      display: inline-flex; align-items: center; gap: 8px;
     }
-    .sa-card-body { padding: 22px; }
+    .sa-card-body { padding: 22px 24px; }
+    /* Description paragraph following card-head — match horizontal padding */
+    .sa-card-head + p { padding: 14px 24px 4px; font-size: 13px; color: var(--ash); line-height: 1.5; margin: 0 !important; }
 
     /* chart-style card */
     .sa-chart-card {
@@ -383,18 +386,21 @@ function saRenderHead(string $title = 'Super Admin'): void {
     .sa-table-wrap { overflow-x: auto; }
     .sa-table { width: 100%; border-collapse: collapse; font-size: 13px; }
     .sa-table th {
-      padding: 11px 16px; text-align: left;
+      padding: 12px 16px; text-align: left;
       font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
       color: var(--ash);
       border-bottom: 1px solid var(--crease);
       background: rgba(10,15,31,.4);
     }
     .sa-table td {
-      padding: 13px 16px;
+      padding: 14px 16px;
       border-bottom: 1px solid rgba(37,45,69,.5);
       color: var(--ink-soft);
       vertical-align: middle;
     }
+    /* Breathing room: edge cells get extra outer padding */
+    .sa-table th:first-child, .sa-table td:first-child { padding-left: 24px; }
+    .sa-table th:last-child,  .sa-table td:last-child  { padding-right: 24px; }
     .sa-table tr:last-child td { border-bottom: none; }
     .sa-table tr:hover td { background: rgba(53,232,213,.04); }
     .sa-table a { color: var(--teal); transition: color .12s; text-decoration: none; }
