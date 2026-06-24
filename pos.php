@@ -450,6 +450,17 @@ if ($action) {
                 $catatan = $catatan === '' ? $depCatatan : ($catatan . ' · ' . $depCatatan);
             }
 
+            // Defense: validate metode_bayar against active methods config (anti-tamper)
+            $_metodeIn = $data['metode_bayar'] ?? 'cash';
+            $_validate = $db->prepare("
+                SELECT 1 FROM hl_payment_methods
+                WHERE outlet_id=? AND tenant_id=? AND code=? AND is_active=1
+            ");
+            $_validate->execute([$oid, $tid, $_metodeIn]);
+            if (!$_validate->fetchColumn()) {
+                throw new RuntimeException('Metode pembayaran tidak valid atau dinonaktifkan.');
+            }
+
             // Bangun INSERT dinamis sesuai kolom yg tersedia
             // $dp di DB = $totalPaid (semua sumber payment: cash + deposit)
             $cols   = ['tenant_id','outlet_id','no_order','tanggal','pelanggan_id','nama_pelanggan','telepon',
@@ -709,6 +720,24 @@ $_pageTid = TenantResolver::id();
 $outletQrisStmt = Database::get()->prepare("SELECT qris_image, qris_label FROM outlets WHERE id=? AND tenant_id=?");
 $outletQrisStmt->execute([$_pageOid, $_pageTid]);
 $outletQrisData = $outletQrisStmt->fetch(PDO::FETCH_ASSOC) ?: ['qris_image'=>null, 'qris_label'=>null];
+
+// Load active payment methods untuk dropdown render
+$methodsStmt = Database::get()->prepare("
+    SELECT code, label, emoji
+    FROM hl_payment_methods
+    WHERE outlet_id=? AND tenant_id=? AND is_active=1
+    ORDER BY sort_order, id
+");
+$methodsStmt->execute([$_pageOid, $_pageTid]);
+$activeMethods = $methodsStmt->fetchAll(PDO::FETCH_ASSOC);
+// Fallback ke 3 default kalau outlet belum punya rows (shouldn't happen post-migration, defensive)
+if (!$activeMethods) {
+    $activeMethods = [
+        ['code'=>'cash',     'label'=>'Tunai',         'emoji'=>'💵'],
+        ['code'=>'transfer', 'label'=>'Transfer Bank', 'emoji'=>'🏦'],
+        ['code'=>'qris',     'label'=>'QRIS',          'emoji'=>'📱'],
+    ];
+}
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -1240,11 +1269,12 @@ textarea{resize:vertical;min-height:64px}
               <div class="form-group">
                 <label>Metode</label>
                 <select id="f_metode" onchange="onMetodeChange()">
-                  <option value="cash">💵 Cash</option>
-                  <option value="transfer">🏦 Transfer</option>
-                  <option value="qris" <?= !$outletQrisData['qris_image'] ? 'disabled' : '' ?>>
-                    📱 QRIS<?= !$outletQrisData['qris_image'] ? ' (belum di-setup)' : '' ?>
-                  </option>
+                  <?php foreach ($activeMethods as $m): ?>
+                    <?php $isQrisDisabled = ($m['code'] === 'qris' && empty($outletQrisData['qris_image'])); ?>
+                    <option value="<?= htmlspecialchars($m['code']) ?>" <?= $isQrisDisabled ? 'disabled' : '' ?>>
+                      <?= htmlspecialchars($m['emoji']) ?> <?= htmlspecialchars($m['label']) ?><?= $isQrisDisabled ? ' (belum di-setup)' : '' ?>
+                    </option>
+                  <?php endforeach; ?>
                 </select>
               </div>
             </div>
