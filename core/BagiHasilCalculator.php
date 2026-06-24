@@ -82,7 +82,10 @@ class BagiHasilCalculator
         // COA id prive (3-1003) + outlet untuk kas/jurnal
         $kasOutlet = $oid ?: (int) TenantResolver::outletId();
         $coaPrive = self::coaIdByKode($db, $tenantId, '3-1003');
-        $tgl = date('Y-m-d');
+
+        // Anchor tanggal ke periode (akhir bulan periode), tapi jangan future-date
+        $lastDayPeriode = date('Y-m-t', strtotime($periode . '-01'));
+        $tgl = min($lastDayPeriode, date('Y-m-d'));
 
         $db->beginTransaction();
         try {
