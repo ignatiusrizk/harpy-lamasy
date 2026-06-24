@@ -57,6 +57,19 @@ class StrukGenerator
         return $base . '/track.php?order=' . $noOrder;
     }
 
+    /**
+     * Map metode_bayar ke label display yang proper.
+     */
+    private static function metodeBayarLabel(?string $method): string
+    {
+        return match($method) {
+            'cash'     => 'Tunai',
+            'transfer' => 'Transfer Bank',
+            'qris'     => 'QRIS',
+            'deposit'  => 'Saldo Deposit',
+            default    => ucfirst((string)$method),
+        };
+    }
 
     // ── Coin cost per tipe ─────────────────────────────
     const COIN_RETAIL  = 'generate_nota';    // 50 coin
@@ -544,7 +557,7 @@ body {
             $h .= self::tRow('DP', 'Rp ' . self::rpNum($trx['dp']), $maxChar);
         }
         if (!empty($tmpl['show_metode_bayar']) && !empty($trx['metode_bayar'])) {
-            $h .= self::tRow('Bayar', ucfirst($trx['metode_bayar']), $maxChar);
+            $h .= self::tRow('Bayar', self::metodeBayarLabel($trx['metode_bayar']), $maxChar);
         }
         if (!empty($tmpl['show_sisa_bayar']) && (float)($trx['sisa_bayar'] ?? 0) > 0) {
             $h .= "<div class='row b'>"
@@ -864,7 +877,7 @@ tbody tr:nth-child(even) td { background: #f8faff; }
             $h .= "  <tr><td>DP</td><td class='r'>Rp " . self::rpNum($trx['dp']) . "</td></tr>\n";
         }
         if (!empty($tmpl['show_metode_bayar']) && !empty($trx['metode_bayar'])) {
-            $h .= "  <tr><td>Metode Bayar</td><td class='r'>" . self::esc(ucfirst($trx['metode_bayar'])) . "</td></tr>\n";
+            $h .= "  <tr><td>Metode Bayar</td><td class='r'>" . self::esc(self::metodeBayarLabel($trx['metode_bayar'])) . "</td></tr>\n";
         }
         if (!empty($tmpl['show_sisa_bayar']) && (float)($trx['sisa_bayar'] ?? 0) > 0) {
             $h .= "  <tr class='grand'><td>SISA BAYAR</td><td class='r'>Rp " . self::rpNum($trx['sisa_bayar']) . "</td></tr>\n";
