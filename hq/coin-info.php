@@ -32,6 +32,18 @@ foreach ($pricing as $p) {
     $grouped[$p['kategori']][] = $p;
 }
 
+// Ambil coin bundles untuk top-up
+try {
+    $bundles = $db->query(
+        "SELECT id, nama, harga, coin_didapat, bonus_pct, is_featured
+           FROM saas_coin_bundles
+          WHERE is_active = 1
+          ORDER BY urutan ASC, id ASC"
+    )->fetchAll(PDO::FETCH_ASSOC);
+} catch (Throwable $e) {
+    $bundles = [];
+}
+
 // Saldo coin sekarang
 $saldo = (int)($hqTenant['coin_balance'] ?? 0);
 
@@ -93,6 +105,36 @@ $katMeta = [
     margin-top:24px; padding:14px; background:#F7F8FC; border-radius:10px;
     font-size:12px; color:#6C7A8D; line-height:1.5;
   }
+
+  .bundle-section { margin-bottom:30px; }
+  .bundle-section h2 {
+    font-size:16px; font-weight:700; color:#0F1C3A; margin-bottom:16px; display:flex; align-items:center; gap:8px;
+  }
+  .bundle-grid {
+    display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:14px;
+  }
+  .bundle-card {
+    background:#fff; border:1.5px solid #E5E7EB; border-radius:12px; padding:16px;
+    display:flex; flex-direction:column; gap:12px;
+    transition:all .15s;
+    position:relative;
+  }
+  .bundle-card:hover { border-color:#35E8D5; box-shadow:0 4px 12px rgba(53,232,213,.12); }
+  .bundle-card.featured { border-color:#35E8D5; background:linear-gradient(135deg,rgba(53,232,213,.05) 0%,rgba(53,232,213,.02) 100%); }
+  .bundle-card.featured::before { content:'⭐ REKOMENDASI'; position:absolute; top:8px; right:8px; font-size:9px; font-weight:700; background:#35E8D5; color:#0F1C3A; padding:3px 8px; border-radius:4px; letter-spacing:.05em; }
+  .bundle-card .nama { font-size:14px; font-weight:700; color:#0F1C3A; }
+  .bundle-card .info { font-size:12px; color:#6C7A8D; line-height:1.4; }
+  .bundle-card .harga-section { display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-top:1px solid #E5E7EB; border-bottom:1px solid #E5E7EB; }
+  .bundle-card .harga-section .harga { font-size:16px; font-weight:800; color:#0F1C3A; font-family:'DM Mono',monospace; }
+  .bundle-card .harga-section .harga small { display:block; font-size:11px; font-weight:500; color:#9CA3AF; }
+  .bundle-card .coin-amount { font-size:13px; font-weight:700; color:#35E8D5; text-align:right; font-family:'DM Mono',monospace; }
+  .bundle-card .bonus { font-size:11px; color:#10B981; font-weight:600; margin-top:4px; }
+  .bundle-card .btn-topup {
+    display:block; text-align:center; padding:10px 14px; background:#0F1C3A; color:#fff;
+    border-radius:8px; border:none; cursor:pointer; font-weight:600; font-size:13px;
+    transition:all .15s; text-decoration:none;
+  }
+  .bundle-card .btn-topup:hover { background:#1B2D5A; transform:translateY(-1px); box-shadow:0 4px 12px rgba(15,28,58,.2); }
 </style>
 
 <h1>💲 Harga Fitur Coin
@@ -152,6 +194,42 @@ $katMeta = [
     </div>
   <?php endforeach; ?>
 
+<?php endif; ?>
+
+<!-- Coin Bundles Top-up Section -->
+<?php if (!empty($bundles)): ?>
+  <div class="bundle-section">
+    <h2>💳 Top-up Coin Sekarang</h2>
+    <div class="bundle-grid">
+      <?php foreach ($bundles as $b): ?>
+        <div class="bundle-card <?= !empty($b['is_featured']) ? 'featured' : '' ?>">
+          <div class="nama"><?= htmlspecialchars($b['nama']) ?></div>
+          <div class="info">
+            Beli paket coin dan dapatkan akses ke fitur premium
+          </div>
+          <div class="harga-section">
+            <div>
+              <div class="harga">
+                Rp <?= number_format($b['harga'], 0, ',', '.') ?>
+                <small>via QRIS/VA</small>
+              </div>
+            </div>
+            <div>
+              <div class="coin-amount"><?= number_format($b['coin_didapat'], 0, ',', '.') ?></div>
+              <div style="font-size:10px;color:#6C7A8D;">coin</div>
+            </div>
+          </div>
+          <?php if (!empty($b['bonus_pct']) && (float)$b['bonus_pct'] > 0): ?>
+            <div class="bonus">✨ Bonus <?= number_format($b['bonus_pct'], 0) ?>% coin!</div>
+          <?php endif; ?>
+          <a href="/billing-checkout.php?type=topup_coin&bundle_id=<?= (int)$b['id'] ?>"
+             class="btn-topup">
+            💳 Top-up Sekarang
+          </a>
+        </div>
+      <?php endforeach; ?>
+    </div>
+  </div>
 <?php endif; ?>
 
 <div class="note-footer">
