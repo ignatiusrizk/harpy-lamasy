@@ -25,8 +25,21 @@ if (!$body || empty($body['order_id'])) {
     exit;
 }
 
-// 2. Verify signature
-if (!MidtransClient::verifySignature($body)) {
+// 2. Verify signature (gracefully handle missing server_key)
+try {
+    $sigValid = MidtransClient::verifySignature($body);
+} catch (Throwable $e) {
+    http_response_code(401);
+    if (class_exists('ErrorLogger')) {
+        ErrorLogger::log('midtrans_webhook_verify_error', json_encode([
+            'order_id' => $body['order_id'] ?? null,
+            'error'    => $e->getMessage(),
+        ]));
+    }
+    echo json_encode(['error' => 'Signature verification failed (config issue?)']);
+    exit;
+}
+if (!$sigValid) {
     http_response_code(401);
     if (class_exists('ErrorLogger')) {
         ErrorLogger::log('midtrans_webhook_bad_sig', json_encode([
