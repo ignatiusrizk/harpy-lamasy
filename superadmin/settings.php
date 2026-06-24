@@ -580,6 +580,118 @@ if (!empty($_SERVER['HTTP_X_REQUESTED_WITH'])) {
         exit;
     }
 
+    // ══════════════════════════════════════════════════════════
+    // EMAIL TEMPLATE EDITOR
+    // ══════════════════════════════════════════════════════════
+    require_once dirname(__DIR__) . '/core/EmailTemplate.php';
+
+    if ($action === 'emails_list') {
+        SaPermission::require('super_admins.manage');
+        // Auto-seed kalau kosong
+        if (empty(EmailTemplate::listAll())) {
+            EmailTemplate::seedDefaults();
+        }
+        echo json_encode(['ok' => true, 'templates' => EmailTemplate::listAll()]);
+        exit;
+    }
+
+    if ($action === 'email_get') {
+        SaPermission::require('super_admins.manage');
+        $slug = $_GET['slug'] ?? '';
+        $tpl = $db->prepare("SELECT * FROM saas_email_templates WHERE slug=?");
+        $tpl->execute([$slug]);
+        $row = $tpl->fetch(PDO::FETCH_ASSOC);
+        if (!$row) { echo json_encode(['error' => 'Template tidak ditemukan']); exit; }
+        $row['variables_parsed'] = json_decode($row['variables'] ?? '[]', true);
+        echo json_encode(['ok' => true, 'template' => $row]);
+        exit;
+    }
+
+    if ($action === 'email_save') {
+        SaPermission::require('super_admins.manage');
+        saVerifyCsrf();
+        try {
+            EmailTemplate::save([
+                'slug'        => $_POST['slug'] ?? '',
+                'name'        => $_POST['name'] ?? '',
+                'subject'     => $_POST['subject'] ?? '',
+                'body_html'   => $_POST['body_html'] ?? '',
+                'variables'   => $_POST['variables'] ?? '[]',
+                'description' => $_POST['description'] ?? '',
+                'is_active'   => (int)($_POST['is_active'] ?? 1),
+            ], (int)($_SESSION['superadmin_id'] ?? 0));
+            logSuperAdminAction('email_template_save', null, "Save template: " . ($_POST['slug'] ?? ''));
+            echo json_encode(['ok' => true]);
+        } catch (Throwable $e) {
+            echo json_encode(['error' => $e->getMessage()]);
+        }
+        exit;
+    }
+
+    if ($action === 'email_reset') {
+        SaPermission::require('super_admins.manage');
+        saVerifyCsrf();
+        $slug = $_POST['slug'] ?? '';
+        if (!EmailTemplate::resetToDefault($slug)) {
+            echo json_encode(['error' => 'Template default tidak ditemukan untuk slug ini']); exit;
+        }
+        logSuperAdminAction('email_template_reset', null, "Reset template to default: $slug");
+        echo json_encode(['ok' => true]);
+        exit;
+    }
+
+    if ($action === 'email_seed_all') {
+        SaPermission::require('super_admins.manage');
+        saVerifyCsrf();
+        $count = EmailTemplate::seedDefaults();
+        logSuperAdminAction('email_template_seed', null, "Seed defaults: added $count template baru");
+        echo json_encode(['ok' => true, 'added' => $count]);
+        exit;
+    }
+
+    if ($action === 'email_preview') {
+        SaPermission::require('super_admins.manage');
+        $subject = $_POST['subject'] ?? '';
+        $body = $_POST['body_html'] ?? '';
+        $vars = json_decode($_POST['vars'] ?? '{}', true) ?: [];
+        echo json_encode([
+            'ok' => true,
+            'subject' => EmailTemplate::interpolate($subject, $vars),
+            'html'    => EmailTemplate::interpolate($body, $vars),
+        ]);
+        exit;
+    }
+
+    if ($action === 'email_test_send') {
+        SaPermission::require('super_admins.manage');
+        saVerifyCsrf();
+        $to = trim($_POST['to'] ?? '');
+        $subject = trim($_POST['subject'] ?? '');
+        $body = $_POST['body_html'] ?? '';
+        $vars = json_decode($_POST['vars'] ?? '{}', true) ?: [];
+
+        if (!filter_var($to, FILTER_VALIDATE_EMAIL)) {
+            echo json_encode(['error' => 'Email tujuan tidak valid']); exit;
+        }
+        if (!$subject || !$body) {
+            echo json_encode(['error' => 'Subject + body wajib diisi']); exit;
+        }
+
+        require_once dirname(__DIR__) . '/core/Mailer.php';
+        $renderedSubject = EmailTemplate::interpolate($subject, $vars);
+        $renderedBody = EmailTemplate::interpolate($body, $vars);
+        // Note: pakai baseTemplate wrapper untuk format yang konsisten
+        $wrapped = Mailer::baseTemplate($renderedSubject, $renderedBody);
+        $sent = Mailer::send($to, 'Test Recipient', '[TEST] ' . $renderedSubject, $wrapped);
+        if ($sent) {
+            logSuperAdminAction('email_template_test', null, "Test send to $to (subject: $renderedSubject)");
+            echo json_encode(['ok' => true]);
+        } else {
+            echo json_encode(['error' => Mailer::getLastError() ?: 'Gagal kirim email']);
+        }
+        exit;
+    }
+
     http_response_code(400);
     echo json_encode(['error' => 'Action tidak dikenal']);
     exit;
@@ -681,6 +793,7 @@ $pageTitle  = 'Platform Settings';
   <button class="set-tab" onclick="switchTab('notify',this);loadNotify()">🔔 Notifications</button>
   <button class="set-tab" onclick="switchTab('team',this);loadTeam()">👥 SA Team</button>
   <button class="set-tab" onclick="switchTab('roles',this);loadRoles()">🛡️ Roles &amp; Permissions</button>
+  <button class="set-tab" onclick="switchTab('emails',this);loadEmails()">📧 Email Templates</button>
 </div>
 
 <!-- ══════════════════════════ MAINTENANCE TAB ═══════════════════════════ -->
@@ -910,6 +1023,111 @@ $pageTitle  = 'Platform Settings';
           <tr><td colspan="5" style="text-align:center;color:var(--ash);padding:24px">Loading…</td></tr>
         </tbody>
       </table>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════ EMAIL TEMPLATES TAB ════════════════════ -->
+<div class="set-panel" id="tab-emails">
+  <div class="sa-card">
+    <div class="sa-card-head">
+      <h3>📧 Email Templates</h3>
+      <button class="sa-btn sa-btn-outline sa-btn-sm" onclick="seedEmails()" title="Restore semua template ke versi default">↻ Reset Semua ke Default</button>
+    </div>
+    <p style="font-size:13px;color:var(--ash);margin-bottom:16px">
+      Customize subject + body email yang dikirim ke tenant (verifikasi, welcome, OTP 2FA, dll).
+      Pakai <code style="color:var(--teal);background:rgba(53,232,213,.1);padding:2px 6px;border-radius:4px">{{nama_var}}</code> untuk dynamic content.
+      Toggle aktif/non-aktif → fallback ke default hardcode kalau di-disable.
+    </p>
+    <div class="sa-table-wrap">
+      <table class="sa-table">
+        <thead>
+          <tr>
+            <th>Template</th>
+            <th>Slug</th>
+            <th>Subject</th>
+            <th style="text-align:center">Status</th>
+            <th>Updated</th>
+            <th style="text-align:right">Aksi</th>
+          </tr>
+        </thead>
+        <tbody id="emailsTableBody">
+          <tr><td colspan="6" style="text-align:center;padding:32px;color:var(--ash)">Loading…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ MODAL: Edit Email Template ══════════ -->
+<div id="emailEditModal" class="sa-modal-overlay">
+  <div class="sa-modal" style="max-width:900px;max-height:92vh;overflow-y:auto">
+    <h3 id="emailModalTitle">Edit Template</h3>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+      <div class="form-group">
+        <label>Slug (locked)</label>
+        <input type="text" id="em_slug" readonly style="opacity:.6"
+               style="width:100%;padding:10px 14px;background:var(--slate-elev);border:1.5px solid var(--crease);border-radius:8px;color:var(--glow);font-family:var(--mono);font-size:13px"/>
+      </div>
+      <div class="form-group">
+        <label>Status</label>
+        <select id="em_active"
+                style="width:100%;padding:10px 14px;background:var(--slate-elev);border:1.5px solid var(--crease);border-radius:8px;color:var(--glow);font-size:14px">
+          <option value="1">✅ Aktif (pakai versi ini)</option>
+          <option value="0">⏸ Nonaktif (fallback ke hardcode default)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-group" style="margin-bottom:14px">
+      <label>Nama Template</label>
+      <input type="text" id="em_name"
+             style="width:100%;padding:10px 14px;background:var(--slate-elev);border:1.5px solid var(--crease);border-radius:8px;color:var(--glow);font-size:14px"/>
+    </div>
+
+    <div class="form-group" style="margin-bottom:14px">
+      <label>Subject Email <span style="color:var(--ash-dim);font-weight:400;font-size:11px">(boleh pakai {{vars}})</span></label>
+      <input type="text" id="em_subject"
+             style="width:100%;padding:10px 14px;background:var(--slate-elev);border:1.5px solid var(--crease);border-radius:8px;color:var(--glow);font-size:14px"/>
+    </div>
+
+    <div class="form-group" style="margin-bottom:10px">
+      <label>Body HTML <span style="color:var(--ash-dim);font-weight:400;font-size:11px">(boleh pakai {{vars}} + HTML inline styling)</span></label>
+      <div id="em_vars_hint" style="margin-bottom:8px;font-size:11px;color:var(--ash)">
+        Variables tersedia: <span id="em_vars_list">—</span>
+      </div>
+      <textarea id="em_body" rows="14"
+                style="width:100%;padding:14px;background:var(--slate-elev);border:1.5px solid var(--crease);border-radius:8px;color:var(--glow);font-family:var(--mono);font-size:12.5px;line-height:1.6;resize:vertical;min-height:280px"></textarea>
+    </div>
+
+    <div class="form-group" style="margin-bottom:14px">
+      <label>Deskripsi (internal)</label>
+      <input type="text" id="em_description"
+             style="width:100%;padding:10px 14px;background:var(--slate-elev);border:1.5px solid var(--crease);border-radius:8px;color:var(--glow);font-size:13px"/>
+    </div>
+
+    <!-- Preview + Test -->
+    <div style="border-top:1px solid var(--crease);padding-top:16px;margin-top:18px">
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:end;margin-bottom:14px">
+        <button class="sa-btn sa-btn-outline sa-btn-sm" onclick="previewEmail()">👁️ Preview</button>
+        <div style="flex:1;display:flex;gap:8px">
+          <input type="email" id="em_test_to" placeholder="email@test.com"
+                 style="flex:1;padding:8px 12px;background:var(--slate-elev);border:1.5px solid var(--crease);border-radius:8px;color:var(--glow);font-size:13px"/>
+          <button class="sa-btn sa-btn-outline sa-btn-sm" onclick="testSendEmail()">📤 Test Send</button>
+        </div>
+      </div>
+      <div id="em_preview_wrap" style="display:none;background:#fff;border:1px solid var(--crease);border-radius:10px;padding:20px;max-height:400px;overflow-y:auto">
+        <div style="color:#666;font-size:11px;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Subject:</div>
+        <div id="em_preview_subject" style="color:#0F1C3A;font-size:18px;font-weight:700;margin-bottom:14px"></div>
+        <div id="em_preview_body" style="color:#333;font-family:Inter,Arial,sans-serif;font-size:14px"></div>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:10px;margin-top:18px;justify-content:flex-end;flex-wrap:wrap">
+      <button class="sa-btn sa-btn-outline" onclick="resetEmail()" id="em_reset_btn" style="margin-right:auto">↻ Reset ke Default</button>
+      <button class="sa-btn sa-btn-secondary" onclick="closeEmailEdit()">Batal</button>
+      <button class="sa-btn sa-btn-primary" onclick="saveEmail()">💾 Simpan</button>
     </div>
   </div>
 </div>
@@ -1687,6 +1905,170 @@ async function deleteRole(id, name) {
     loadRoles();
   } else {
     saToast(r.error || 'Gagal hapus', 'err');
+  }
+}
+
+// ════════════════════════════════════════════════════════════════
+// EMAIL TEMPLATES TAB
+// ════════════════════════════════════════════════════════════════
+async function loadEmails() {
+  const r = await saFetch('?action=emails_list');
+  if (!r.ok) { saToast(r.error || 'Gagal load', 'err'); return; }
+  const body = document.getElementById('emailsTableBody');
+  if (!r.templates || !r.templates.length) {
+    body.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--ash);padding:24px">Belum ada template</td></tr>';
+    return;
+  }
+  body.innerHTML = r.templates.map(t => `
+    <tr>
+      <td>
+        <div style="font-weight:600;color:var(--glow)">${escapeHtml(t.name)}</div>
+        <div style="font-size:11px;color:var(--ash-dim);margin-top:2px">${escapeHtml(t.description || '')}</div>
+      </td>
+      <td><code style="color:var(--teal);font-size:12px">${escapeHtml(t.slug)}</code></td>
+      <td style="font-size:12.5px;color:var(--ink-soft);max-width:300px">${escapeHtml(t.subject)}</td>
+      <td style="text-align:center">
+        ${t.is_active == 1
+          ? '<span class="sa-badge sa-badge-active">Aktif</span>'
+          : '<span class="sa-badge" style="background:rgba(148,163,184,.1);color:var(--ash);border:1px solid var(--crease)">Off</span>'}
+      </td>
+      <td style="font-size:11px;color:var(--ash);font-family:var(--mono)">${escapeHtml((t.updated_at || '').slice(0, 16))}</td>
+      <td style="text-align:right">
+        <button class="sa-btn sa-btn-outline sa-btn-sm" onclick="openEmailEdit('${escapeHtml(t.slug)}')">Edit</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+async function openEmailEdit(slug) {
+  const r = await saFetch('?action=email_get&slug=' + encodeURIComponent(slug));
+  if (!r.ok) { saToast(r.error || 'Gagal load template', 'err'); return; }
+  const t = r.template;
+  document.getElementById('emailModalTitle').textContent = '📧 ' + t.name;
+  document.getElementById('em_slug').value = t.slug;
+  document.getElementById('em_name').value = t.name;
+  document.getElementById('em_subject').value = t.subject;
+  document.getElementById('em_body').value = t.body_html;
+  document.getElementById('em_description').value = t.description || '';
+  document.getElementById('em_active').value = String(t.is_active);
+
+  const vars = t.variables_parsed || [];
+  document.getElementById('em_vars_list').innerHTML = vars.length
+    ? vars.map(v => `<code style="color:var(--teal);background:rgba(53,232,213,.1);padding:1px 6px;border-radius:3px;margin-right:4px;cursor:pointer" onclick="insertVar('${v}')">{{${v}}}</code>`).join('')
+    : '<em style="color:var(--ash-dim)">tidak ada</em>';
+
+  document.getElementById('em_preview_wrap').style.display = 'none';
+  document.getElementById('emailEditModal').classList.add('show');
+}
+
+function closeEmailEdit() {
+  document.getElementById('emailEditModal').classList.remove('show');
+}
+
+function insertVar(v) {
+  const ta = document.getElementById('em_body');
+  const pos = ta.selectionStart || ta.value.length;
+  const text = `{{${v}}}`;
+  ta.value = ta.value.slice(0, pos) + text + ta.value.slice(pos);
+  ta.focus();
+  ta.setSelectionRange(pos + text.length, pos + text.length);
+}
+
+async function saveEmail() {
+  const slug = document.getElementById('em_slug').value;
+  const fd = new FormData();
+  fd.append('slug', slug);
+  fd.append('name', document.getElementById('em_name').value.trim());
+  fd.append('subject', document.getElementById('em_subject').value.trim());
+  fd.append('body_html', document.getElementById('em_body').value);
+  fd.append('description', document.getElementById('em_description').value.trim());
+  fd.append('is_active', document.getElementById('em_active').value);
+
+  // Get variables from current row (preserve)
+  fd.append('variables', '[]');  // backend keeps existing if same slug
+
+  const r = await saFetch('?action=email_save', { method: 'POST', body: fd });
+  if (r.ok) {
+    saToast('Template tersimpan ✓', 'ok');
+    closeEmailEdit();
+    loadEmails();
+  } else {
+    saToast(r.error || 'Gagal simpan', 'err');
+  }
+}
+
+async function previewEmail() {
+  // Dummy vars untuk preview — sesuai variable yang di-hint
+  const sampleVars = {
+    name: 'Budi Santoso',
+    outlet_name: 'Laundry Rapi',
+    link: 'https://lamasy.harpy.id/verify-email?token=ABC123',
+    dashboard_link: 'https://lamasy.harpy.id/dashboard',
+    code: '478291',
+    minutes_valid: '10',
+    coin_balance: '10.000',
+    email: 'budi@example.com',
+    timestamp: new Date().toLocaleString('id-ID'),
+  };
+  const fd = new FormData();
+  fd.append('subject', document.getElementById('em_subject').value);
+  fd.append('body_html', document.getElementById('em_body').value);
+  fd.append('vars', JSON.stringify(sampleVars));
+
+  const r = await saFetch('?action=email_preview', { method: 'POST', body: fd });
+  if (!r.ok) { saToast(r.error || 'Preview gagal', 'err'); return; }
+  document.getElementById('em_preview_subject').textContent = r.subject;
+  document.getElementById('em_preview_body').innerHTML = r.html;
+  document.getElementById('em_preview_wrap').style.display = 'block';
+}
+
+async function testSendEmail() {
+  const to = document.getElementById('em_test_to').value.trim();
+  if (!to) { saToast('Masukkan email tujuan', 'err'); return; }
+  const sampleVars = {
+    name: 'Test User', outlet_name: 'Test Outlet',
+    link: 'https://lamasy.harpy.id/test-link',
+    dashboard_link: 'https://lamasy.harpy.id/dashboard',
+    code: '123456', minutes_valid: '10', coin_balance: '10.000',
+    email: to, timestamp: new Date().toLocaleString('id-ID'),
+  };
+  const fd = new FormData();
+  fd.append('to', to);
+  fd.append('subject', document.getElementById('em_subject').value);
+  fd.append('body_html', document.getElementById('em_body').value);
+  fd.append('vars', JSON.stringify(sampleVars));
+
+  const r = await saFetch('?action=email_test_send', { method: 'POST', body: fd });
+  if (r.ok) {
+    saToast('Test email terkirim ke ' + to + ' ✓', 'ok');
+  } else {
+    saToast(r.error || 'Gagal kirim test', 'err');
+  }
+}
+
+async function resetEmail() {
+  const slug = document.getElementById('em_slug').value;
+  if (!confirm(`Reset template "${slug}" ke versi default?\n\nPerubahan custom yang sudah disimpan akan di-overwrite.`)) return;
+  const fd = new FormData();
+  fd.append('slug', slug);
+  const r = await saFetch('?action=email_reset', { method: 'POST', body: fd });
+  if (r.ok) {
+    saToast('Reset ke default', 'ok');
+    openEmailEdit(slug);
+    loadEmails();
+  } else {
+    saToast(r.error || 'Gagal reset', 'err');
+  }
+}
+
+async function seedEmails() {
+  if (!confirm('Tambah template default yang belum ada?\n\nTemplate yang sudah ada tidak di-overwrite — cuma yang missing akan di-seed.\nUntuk reset template tertentu ke default, buka Edit → "↻ Reset ke Default".')) return;
+  const r = await saFetch('?action=email_seed_all', { method: 'POST' });
+  if (r.ok) {
+    saToast(r.added > 0 ? `Tambah ${r.added} template default ✓` : 'Semua template sudah ada — tidak ada yang ditambah.', 'ok');
+    loadEmails();
+  } else {
+    saToast(r.error || 'Gagal seed', 'err');
   }
 }
 

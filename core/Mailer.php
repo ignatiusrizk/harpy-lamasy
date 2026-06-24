@@ -277,14 +277,23 @@ class Mailer
         string $token,
         string $namaOutlet = ''
     ): bool {
-        $link   = self::appUrl() . '/verify-email?token=' . urlencode($token);
-        $outlet = htmlspecialchars($namaOutlet ?: $toName);
-
+        $link = self::appUrl() . '/verify-email?token=' . urlencode($token);
+        $vars = [
+            'name'        => htmlspecialchars($toName),
+            'outlet_name' => htmlspecialchars($namaOutlet ?: $toName),
+            'link'        => $link,
+        ];
+        // DB template first → fallback hardcode
+        $rendered = self::renderTemplate('verification', $vars);
+        if ($rendered) {
+            return self::send($toEmail, $toName, $rendered['subject'],
+                self::baseTemplate($rendered['subject'], $rendered['html']));
+        }
         $html = self::baseTemplate('Verifikasi Email LAMASY', "
-            <h2 style='color:" . self::BRAND_DARK . ";margin:0 0 8px'>Halo, " . htmlspecialchars($toName) . "! 👋</h2>
+            <h2 style='color:" . self::BRAND_DARK . ";margin:0 0 8px'>Halo, {$vars['name']}! 👋</h2>
             <p style='color:#555;margin:0 0 24px;line-height:1.65'>
                 Terima kasih sudah mendaftar <strong>LAMASY</strong>
-                untuk outlet <strong>$outlet</strong>.<br>
+                untuk outlet <strong>{$vars['outlet_name']}</strong>.<br>
                 Klik tombol di bawah untuk mengaktifkan akun kamu.
             </p>
             <div style='text-align:center;margin:32px 0'>
@@ -304,8 +313,23 @@ class Mailer
                 Atau salin: <a href='$link' style='color:" . self::BRAND_COLOR . "'>$link</a>
             </p>
         ");
-
         return self::send($toEmail, $toName, 'Verifikasi Email LAMASY', $html);
+    }
+
+    /**
+     * Template renderer (DB-first). Returns null kalau template gak ada,
+     * caller fallback ke hardcode.
+     */
+    private static function renderTemplate(string $slug, array $vars): ?array {
+        if (!class_exists('EmailTemplate')) {
+            @require_once __DIR__ . '/EmailTemplate.php';
+        }
+        if (!class_exists('EmailTemplate')) return null;
+        try {
+            return EmailTemplate::render($slug, $vars);
+        } catch (Throwable) {
+            return null;
+        }
     }
 
     public static function sendPasswordReset(
@@ -314,6 +338,13 @@ class Mailer
         string $token
     ): bool {
         $link = self::appUrl() . '/reset-password?token=' . urlencode($token);
+        $vars = ['name' => htmlspecialchars($toName), 'link' => $link, 'email' => htmlspecialchars($toEmail)];
+
+        $rendered = self::renderTemplate('password_reset', $vars);
+        if ($rendered) {
+            return self::send($toEmail, $toName, $rendered['subject'],
+                self::baseTemplate($rendered['subject'], $rendered['html']));
+        }
 
         $html = self::baseTemplate('Reset Password LAMASY', "
             <h2 style='color:" . self::BRAND_DARK . ";margin:0 0 8px'>Reset Password</h2>
@@ -343,8 +374,20 @@ class Mailer
         string $namaOutlet
     ): bool {
         $loginUrl = self::appUrl() . '/login';
-        $outlet   = htmlspecialchars($namaOutlet);
+        $vars = [
+            'name'           => htmlspecialchars($toName),
+            'outlet_name'    => htmlspecialchars($namaOutlet),
+            'dashboard_link' => $loginUrl,
+            'coin_balance'   => '10.000',
+        ];
 
+        $rendered = self::renderTemplate('welcome', $vars);
+        if ($rendered) {
+            return self::send($toEmail, $toName, $rendered['subject'],
+                self::baseTemplate($rendered['subject'], $rendered['html']));
+        }
+
+        $outlet = $vars['outlet_name'];
         $html = self::baseTemplate('Selamat Datang di LAMASY! 🎉', "
             <h2 style='color:" . self::BRAND_DARK . ";margin:0 0 8px'>Akun kamu sudah aktif! 🎉</h2>
             <p style='color:#555;margin:0 0 8px;line-height:1.65'>
@@ -395,7 +438,7 @@ class Mailer
     }
 
     // ── Base HTML template ────────────────────────────────
-    private static function baseTemplate(string $title, string $content): string
+    public static function baseTemplate(string $title, string $content): string
     {
         $year      = date('Y');
         $appUrl    = self::appUrl();
@@ -447,8 +490,20 @@ HTML;
         string $code,
         int $minutesValid = 10
     ): bool {
-        $codeFormatted = htmlspecialchars($code);
-        $name = htmlspecialchars($toName);
+        $vars = [
+            'name'           => htmlspecialchars($toName),
+            'code'           => htmlspecialchars($code),
+            'minutes_valid'  => (string)$minutesValid,
+        ];
+
+        $rendered = self::renderTemplate('otp', $vars);
+        if ($rendered) {
+            return self::send($toEmail, $toName, $rendered['subject'],
+                self::baseTemplate($rendered['subject'], $rendered['html']));
+        }
+
+        $codeFormatted = $vars['code'];
+        $name = $vars['name'];
 
         $html = self::baseTemplate('Kode Verifikasi SA', "
             <h2 style='color:" . self::BRAND_DARK . ";margin:0 0 8px'>Kode Verifikasi Login 🔐</h2>
