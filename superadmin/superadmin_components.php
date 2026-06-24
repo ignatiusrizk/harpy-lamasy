@@ -113,26 +113,38 @@ function saRenderHead(string $title = 'Super Admin'): void {
       0%   { background-position: 0% 50%; }
       100% { background-position: 200% 50%; }
     }
+    /* Gradient border (teal→violet→teal shimmer) — for AI cards */
     .sa-ai-border {
-      position: relative;
+      position: relative; border-radius: 14px;
+      border: 1px solid transparent;
+      background:
+        linear-gradient(var(--slate), var(--slate)) padding-box,
+        linear-gradient(110deg, var(--teal) 0%, var(--ai-violet) 50%, var(--teal) 100%) border-box;
+      background-size: 100% 100%, 200% 100%;
+      animation: saAiShimmer 6s linear infinite;
     }
-    .sa-ai-border::before {
-      content: ''; position: absolute; inset: -1px; z-index: -1;
-      border-radius: inherit;
+    /* Top accent strip — for page-level AI hero */
+    .sa-ai-strip {
+      height: 2px; border-radius: 999px;
       background: linear-gradient(110deg, var(--teal) 0%, var(--ai-violet) 50%, var(--teal) 100%);
       background-size: 200% 100%;
       animation: saAiShimmer 6s linear infinite;
-      opacity: .6;
+      margin-bottom: 16px;
     }
     .sa-ai-pill {
       display: inline-flex; align-items: center; gap: 5px;
-      padding: 2px 9px; border-radius: 20px;
+      padding: 3px 10px; border-radius: 20px;
       background: var(--ai-glow); color: var(--ai-violet);
       border: 1px solid rgba(167,139,250,.32);
-      font-size: 10.5px; font-weight: 600; letter-spacing: .04em;
+      font-size: 10.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+      box-shadow: 0 0 12px rgba(167,139,250,.18);
     }
     .sa-ai-pill::before {
       content: '✦'; font-size: 10px;
+    }
+    /* Subtle AI glow tint (for alerts/cards) */
+    .sa-ai-glow {
+      box-shadow: 0 0 0 1px rgba(167,139,250,.18) inset, 0 8px 24px rgba(167,139,250,.08);
     }
 
     /* ── Live pulse dot ── */

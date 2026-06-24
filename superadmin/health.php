@@ -609,10 +609,10 @@ canvas { width: 100% !important; }
 <?php
   $aiToday = getAIUsageStats(date('Y-m-d'));
 ?>
-<div style="background:rgba(10,15,31,.4);border:1px solid var(--crease);border-radius:14px;padding:24px;margin-top:24px">
+<div class="sa-ai-border" style="padding:24px;margin-top:24px">
   <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:16px;flex-wrap:wrap;gap:12px">
     <div>
-      <h3 style="margin:0 0 4px;font-size:16px;font-weight:700;color:var(--glow)">🤖 AI Usage Stats — Hari Ini</h3>
+      <h3 style="margin:0 0 4px;font-size:16px;font-weight:700;color:var(--glow);display:inline-flex;align-items:center;gap:10px">AI Usage Stats — Hari Ini <span class="sa-ai-pill">Live</span></h3>
       <p style="margin:0;font-size:12px;color:var(--ash)">Per fitur · semua tenant · <?= date('d M Y') ?></p>
     </div>
     <div style="display:flex;gap:16px;font-size:12px">

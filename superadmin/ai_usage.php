@@ -150,8 +150,11 @@ $csrf = saGetCsrf();
 <div class="sa-layout">
 <?php saRenderNav('ai_usage', 'AI Usage'); ?>
 
+<div class="sa-ai-strip"></div>
 <div class="sa-page-header">
-  <h1>🤖 AI Usage & Margin</h1>
+  <h1 style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+    AI Usage &amp; Margin <span class="sa-ai-pill">Powered by Claude</span>
+  </h1>
   <p>Monitor pemakaian AI per tenant, cost actual vs revenue coin</p>
 </div>
 

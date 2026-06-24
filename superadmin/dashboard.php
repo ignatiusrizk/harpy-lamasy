@@ -369,10 +369,13 @@ if ($action) {
     </div>
 
     <?php if (!empty($_aiAbusers)): ?>
-    <div style="margin-top:14px;background:rgba(244,63,94,.10);border:1px solid rgba(244,63,94,.40);border-radius:10px;padding:14px 16px">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-        <div style="font-size:13px;font-weight:700;color:#F43F5E">⚠️ <?= count($_aiAbusers) ?> tenant hit rate limit AI hari ini</div>
-        <a href="/superadmin/health.php" style="color:#F43F5E;font-size:11px;font-weight:700;text-decoration:none">Cek detail →</a>
+    <div class="sa-ai-glow" style="margin-top:14px;background:rgba(167,139,250,.06);border:1px solid rgba(167,139,250,.32);border-radius:10px;padding:14px 16px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;gap:10px;flex-wrap:wrap">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span class="sa-ai-pill">AI Rate Limit</span>
+          <span style="font-size:13px;font-weight:700;color:var(--ai-violet)"><?= count($_aiAbusers) ?> tenant hit rate limit hari ini</span>
+        </div>
+        <a href="/superadmin/health.php" style="color:var(--ai-violet);font-size:11px;font-weight:700;text-decoration:none">Cek detail →</a>
       </div>
       <table style="width:100%;font-size:12px;color:var(--ink-soft)">
         <thead><tr style="text-align:left;color:var(--ash);font-size:10px;text-transform:uppercase">
