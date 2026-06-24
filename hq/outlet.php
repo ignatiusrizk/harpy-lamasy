@@ -354,6 +354,19 @@ require __DIR__ . '/_layout_open.php';
           <small style="color:#9CA3AF;font-weight:400">Akan ditampilkan paling depan</small>
         </label>
       </div>
+
+      <!-- QRIS Setup section -->
+      <div style="border-top:1px solid #E5E7EB;padding-top:14px;margin-top:4px">
+        <label style="display:block;font-weight:600;margin-bottom:6px">💳 Pembayaran QRIS</label>
+        <div id="edQrisStatus" style="font-size:13px;color:#6B7280;margin-bottom:8px">—</div>
+        <a id="edQrisBtn" href="#" class="btn btn-light btn-sm" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px">
+          💳 <span id="edQrisBtnText">Setup QRIS</span>
+        </a>
+        <small style="display:block;color:#9CA3AF;font-size:11px;margin-top:6px">
+          Upload gambar QRIS dari banking app. Customer akan scan di POS saat pilih bayar QRIS.
+        </small>
+      </div>
+
       <button class="btn btn-primary" style="padding:12px;font-size:14px" onclick="submitEdit()">
         💾 Simpan Perubahan
       </button>
@@ -438,10 +451,7 @@ async function loadList(){
         <div class="ocard-coin">${coinShow}</div>
         <div class="ocard-actions">
           ${canEnter ? `<a href="/switch-outlet?id=${o.id}&t=${o.switch_token}" class="btn btn-primary btn-sm">Masuk →</a>` : ''}
-          ${!isClosed ? `<button class="btn btn-light btn-sm" onclick="openEdit(${o.id})">✏️ Edit</button>
-<a href="/hq/outlet-qris?outlet_id=${o.id}" class="btn btn-light btn-sm" style="text-decoration:none;display:inline-flex;align-items:center;gap:4px">
-  ${o.qris_image ? '💳 QRIS ✓' : '💳 Setup QRIS'}
-</a>` : ''}
+          ${!isClosed ? `<button class="btn btn-light btn-sm" onclick="openEdit(${o.id})">✏️ Edit</button>` : ''}
           ${topupBtn}
         </div>
       </div>
@@ -466,6 +476,20 @@ async function openEdit(id){
     document.getElementById('edTargetBulanan').value = parseInt(o.target_omset_bulanan) || 0;
   }
   document.getElementById('edMain').checked = parseInt(o.is_main) === 1;
+
+  // QRIS section
+  const qrisBtn = document.getElementById('edQrisBtn');
+  const qrisStatus = document.getElementById('edQrisStatus');
+  const qrisBtnText = document.getElementById('edQrisBtnText');
+  qrisBtn.href = '/hq/outlet-qris?outlet_id=' + o.id;
+  if (o.qris_image) {
+    qrisStatus.innerHTML = '<span style="color:#059669">✓ Sudah di-setup</span> · ' + escapeHtml(o.qris_label || '');
+    qrisBtnText.textContent = 'Ganti / Hapus QRIS';
+  } else {
+    qrisStatus.innerHTML = '<span style="color:#9CA3AF">Belum di-setup</span>';
+    qrisBtnText.textContent = 'Setup QRIS';
+  }
+
   document.getElementById('editAlert').innerHTML = '';
   openModal('editModal');
 }
