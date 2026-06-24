@@ -59,7 +59,7 @@ function maskKey(?string $key): string {
   <?php if ($err): ?><div class="sa-alert-banner danger"><?= htmlspecialchars($err) ?></div><?php endif; ?>
 
   <form method="POST">
-    <input type="hidden" name="_csrf" value="<?= htmlspecialchars(saCsrf()) ?>">
+    <input type="hidden" name="_csrf" value="<?= htmlspecialchars(saGetCsrf()) ?>">
 
     <div class="sa-card">
       <div class="sa-card-head">
