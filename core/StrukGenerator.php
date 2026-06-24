@@ -58,17 +58,46 @@ class StrukGenerator
     }
 
     /**
-     * Map metode_bayar ke label display yang proper.
+     * Resolve display label untuk metode pembayaran.
+     *
+     * Lookup ke hl_payment_methods (per-outlet config). Cache per-request.
+     * Fallback graceful ke ucfirst($code) untuk orphan codes (historical
+     * transactions where method was deleted, or pre-migration data).
      */
-    private static function metodeBayarLabel(?string $method): string
+    private static function metodeBayarLabel(?string $code, ?int $outletId = null): string
     {
-        return match($method) {
+        if (!$code) return '';
+
+        static $cache = [];
+        $key = ($outletId ?? 0) . ':' . $code;
+        if (isset($cache[$key])) return $cache[$key];
+
+        // DB lookup jika outlet_id tersedia
+        if ($outletId) {
+            try {
+                $db = Database::get();
+                $stmt = $db->prepare(
+                    "SELECT emoji, label FROM hl_payment_methods
+                     WHERE outlet_id=? AND code=? LIMIT 1"
+                );
+                $stmt->execute([$outletId, $code]);
+                $row = $stmt->fetch(PDO::FETCH_ASSOC);
+                if ($row) {
+                    return $cache[$key] = trim(($row['emoji'] ?? '') . ' ' . $row['label']);
+                }
+            } catch (Throwable $e) {
+                // Fall through to default mapping
+            }
+        }
+
+        // Fallback for orphan codes (deleted methods, pre-migration data)
+        $defaults = [
             'cash'     => 'Tunai',
             'transfer' => 'Transfer Bank',
             'qris'     => 'QRIS',
             'deposit'  => 'Saldo Deposit',
-            default    => ucfirst((string)$method),
-        };
+        ];
+        return $cache[$key] = $defaults[$code] ?? ucfirst($code);
     }
 
     // ── Coin cost per tipe ─────────────────────────────
@@ -557,7 +586,7 @@ body {
             $h .= self::tRow('DP', 'Rp ' . self::rpNum($trx['dp']), $maxChar);
         }
         if (!empty($tmpl['show_metode_bayar']) && !empty($trx['metode_bayar'])) {
-            $h .= self::tRow('Bayar', self::metodeBayarLabel($trx['metode_bayar']), $maxChar);
+            $h .= self::tRow('Bayar', self::metodeBayarLabel($trx['metode_bayar'], $trx['outlet_id'] ?? null), $maxChar);
         }
         if (!empty($tmpl['show_sisa_bayar']) && (float)($trx['sisa_bayar'] ?? 0) > 0) {
             $h .= "<div class='row b'>"
@@ -877,7 +906,7 @@ tbody tr:nth-child(even) td { background: #f8faff; }
             $h .= "  <tr><td>DP</td><td class='r'>Rp " . self::rpNum($trx['dp']) . "</td></tr>\n";
         }
         if (!empty($tmpl['show_metode_bayar']) && !empty($trx['metode_bayar'])) {
-            $h .= "  <tr><td>Metode Bayar</td><td class='r'>" . self::esc(self::metodeBayarLabel($trx['metode_bayar'])) . "</td></tr>\n";
+            $h .= "  <tr><td>Metode Bayar</td><td class='r'>" . self::esc(self::metodeBayarLabel($trx['metode_bayar'], $trx['outlet_id'] ?? null)) . "</td></tr>\n";
         }
         if (!empty($tmpl['show_sisa_bayar']) && (float)($trx['sisa_bayar'] ?? 0) > 0) {
             $h .= "  <tr class='grand'><td>SISA BAYAR</td><td class='r'>Rp " . self::rpNum($trx['sisa_bayar']) . "</td></tr>\n";
