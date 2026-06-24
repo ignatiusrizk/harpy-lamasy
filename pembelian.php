@@ -188,6 +188,73 @@ if ($action) {
         exit;
     }
 
+    // ─── PO DIPESAN (draft → dipesan, validasi ≥1 item) ──
+    if ($action === 'po_dipesan' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+        if (!$canManage) { echo json_encode(['error' => 'Akses ditolak']); exit; }
+        verifyCsrf();
+        $d = json_decode(file_get_contents('php://input'), true) ?: [];
+        $poId = (int)($d['po_id'] ?? 0);
+        $db = Database::get();
+        // validasi: draft + punya item
+        $hdr = $db->prepare("SELECT status FROM hl_po WHERE id=? AND tenant_id=? AND outlet_id=?");
+        $hdr->execute([$poId, $tid, $oid]);
+        $st = $hdr->fetchColumn();
+        if ($st === false) { echo json_encode(['error' => 'PO tidak ditemukan']); exit; }
+        if ($st !== 'draft') { echo json_encode(['error' => 'PO bukan draft']); exit; }
+        $cnt = $db->prepare("SELECT COUNT(*) FROM hl_po_item WHERE po_id=? AND tenant_id=?");
+        $cnt->execute([$poId, $tid]);
+        if ((int)$cnt->fetchColumn() < 1) { echo json_encode(['error' => 'PO belum punya item']); exit; }
+        $db->prepare("UPDATE hl_po SET status='dipesan', dipesan_at=NOW() WHERE id=? AND tenant_id=? AND status='draft'")
+           ->execute([$poId, $tid]);
+        echo json_encode(['ok' => true]); exit;
+    }
+
+    // ─── PO TERIMA (FOR UPDATE + mutasi masuk, anti double-receive) ──
+    if ($action === 'po_terima' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+        if (!$canManage) { echo json_encode(['error' => 'Akses ditolak']); exit; }
+        verifyCsrf();
+        $d = json_decode(file_get_contents('php://input'), true) ?: [];
+        $poId = (int)($d['po_id'] ?? 0);
+        $db = Database::get();
+        $db->beginTransaction();
+        try {
+            // Lock header + re-check status (anti double-receive)
+            $lock = $db->prepare("SELECT p.status, p.no_po, s.nama AS supplier_nama
+                                  FROM hl_po p LEFT JOIN hl_supplier s ON s.id=p.supplier_id AND s.tenant_id=p.tenant_id
+                                  WHERE p.id=? AND p.tenant_id=? AND p.outlet_id=? FOR UPDATE");
+            $lock->execute([$poId, $tid, $oid]);
+            $po = $lock->fetch(PDO::FETCH_ASSOC);
+            if (!$po) { $db->rollBack(); echo json_encode(['error' => 'PO tidak ditemukan']); exit; }
+            if ($po['status'] !== 'dipesan') { $db->rollBack(); echo json_encode(['error' => 'PO harus berstatus dipesan']); exit; }
+
+            $items = $db->prepare("SELECT id, bahan_id, qty, harga_satuan FROM hl_po_item WHERE po_id=? AND tenant_id=?");
+            $items->execute([$poId, $tid]);
+            $rows = $items->fetchAll(PDO::FETCH_ASSOC);
+
+            $stokQ = $db->prepare("SELECT stok_terkini FROM hl_bahan_stok WHERE id=? AND tenant_id=? AND outlet_id=?");
+            $insMut = $db->prepare(
+                "INSERT INTO hl_bahan_mutasi
+                   (tenant_id, outlet_id, bahan_id, tipe, jumlah, stok_sebelum, stok_sesudah, harga_beli, supplier, catatan, input_by)
+                 VALUES (?,?,?, 'masuk', ?, ?, ?, ?, ?, ?, ?)");
+            $linkItem = $db->prepare("UPDATE hl_po_item SET mutasi_id=? WHERE id=?");
+            foreach ($rows as $it) {
+                $stokQ->execute([(int)$it['bahan_id'], $tid, $oid]);
+                $sebelum = (int)$stokQ->fetchColumn();
+                $qty = (int)$it['qty'];
+                $insMut->execute([
+                    $tid, $oid, (int)$it['bahan_id'], $qty, $sebelum, $sebelum + $qty,
+                    (int)$it['harga_satuan'], $po['supplier_nama'] ?: null,
+                    "PO #{$po['no_po']}", (int)($user['id'] ?? 0)
+                ]);
+                $linkItem->execute([(int)$db->lastInsertId(), (int)$it['id']]);
+            }
+            $db->prepare("UPDATE hl_po SET status='diterima', diterima_at=NOW() WHERE id=? AND tenant_id=? AND status='dipesan'")
+               ->execute([$poId, $tid]);
+            $db->commit();
+            echo json_encode(['ok' => true, 'count' => count($rows)]); exit;
+        } catch (Throwable $e) { $db->rollBack(); echo json_encode(['error' => $e->getMessage()]); exit; }
+    }
+
     echo json_encode(['error' => 'Unknown action']);
     exit;
 }
