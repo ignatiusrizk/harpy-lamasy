@@ -438,7 +438,10 @@ async function loadList(){
         <div class="ocard-coin">${coinShow}</div>
         <div class="ocard-actions">
           ${canEnter ? `<a href="/switch-outlet?id=${o.id}&t=${o.switch_token}" class="btn btn-primary btn-sm">Masuk →</a>` : ''}
-          ${!isClosed ? `<button class="btn btn-light btn-sm" onclick="openEdit(${o.id})">✏️ Edit</button>` : ''}
+          ${!isClosed ? `<button class="btn btn-light btn-sm" onclick="openEdit(${o.id})">✏️ Edit</button>
+<a href="/hq/outlet-qris?outlet_id=${o.id}" class="btn btn-light btn-sm" style="text-decoration:none;display:inline-flex;align-items:center;gap:4px">
+  ${o.qris_image ? '💳 QRIS ✓' : '💳 Setup QRIS'}
+</a>` : ''}
           ${topupBtn}
         </div>
       </div>
