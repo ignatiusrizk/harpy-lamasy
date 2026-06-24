@@ -7,11 +7,16 @@
 
 require_once __DIR__ . '/../master/config/db.php';
 require_once __DIR__ . '/../core/Database.php';
+require_once __DIR__ . '/../core/BillingConfig.php';
 
-// Simple secret check (anti-abuse public URL)
-$expected = 'lamasy-cleanup-2026';  // Bisa pindah ke BillingConfig later
+// Secret check via DB (rotate via saas_billing_config — jangan hardcode)
+$expected = BillingConfig::get('cron_secret', '');
+if (!$expected) {
+    http_response_code(503);
+    exit('Cron secret not configured. Set "cron_secret" in saas_billing_config.');
+}
 $key = $_GET['key'] ?? '';
-if ($key !== $expected) {
+if (!hash_equals($expected, $key)) {
     http_response_code(403);
     exit('Forbidden');
 }

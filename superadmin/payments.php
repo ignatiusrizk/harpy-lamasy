@@ -420,6 +420,12 @@ if ($action) {
         $payment = $p->fetch(PDO::FETCH_ASSOC);
         if (!$payment) { echo json_encode(['error' => 'Payment tidak ditemukan atau belum paid.']); exit; }
 
+        // Guard: refund hanya untuk topup_coin — setup_fee/outlet_activation butuh flow manual
+        if ($payment['type'] !== 'topup_coin') {
+            echo json_encode(['error' => 'Refund hanya didukung untuk top-up coin. Untuk setup_fee / outlet_activation, gunakan flow manual.']);
+            exit;
+        }
+
         require_once SA_ROOT . '/../core/MidtransClient.php';
         $res = MidtransClient::refund($orderId, (int)$payment['amount'], $reason);
         if (!$res['ok']) {

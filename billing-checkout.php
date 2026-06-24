@@ -58,17 +58,20 @@ elseif ($type === 'outlet_activation') {
 }
 
 // Check existing pending payment (resume kalau ada)
+// Strict AND-clause: semua ref harus cocok — hindari false match antar bundle/outlet berbeda
 $existing = $db->prepare(
     "SELECT * FROM saas_payments
      WHERE tenant_id=? AND type=? AND status='pending' AND expires_at > NOW()
-       AND (ref_bundle_id <=> ? OR ref_outlet_id <=> ? OR (ref_package_id <=> ? AND ? = 'setup_fee'))
+       AND COALESCE(ref_bundle_id, 0) = COALESCE(?, 0)
+       AND COALESCE(ref_outlet_id, 0) = COALESCE(?, 0)
+       AND COALESCE(ref_package_id, 0) = COALESCE(?, 0)
      ORDER BY id DESC LIMIT 1"
 );
 $existing->execute([
     $tenantId, $type,
     $refBundleId,
     $refOutletId,
-    $refPackageId, $type
+    $refPackageId,
 ]);
 $payment = $existing->fetch(PDO::FETCH_ASSOC);
 

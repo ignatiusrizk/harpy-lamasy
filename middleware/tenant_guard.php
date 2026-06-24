@@ -103,6 +103,44 @@ if (($_SESSION['role'] ?? '') === 'mitra') {
     exit;
 }
 
+// ── Billing gate: pending_verification + verified → harus bayar setup_fee ──
+// Tenant yang sudah verify email tapi belum bayar setup_fee diizinkan login,
+// namun setiap halaman (kecuali billing-checkout itu sendiri) di-redirect ke checkout.
+(function () {
+    if (!isset($_SESSION['tenant_id'])) return;
+
+    $uri = $_SERVER['REQUEST_URI'] ?? '';
+    // Whitelist: billing-checkout, logout, dan AJAX calls yang sudah di-handle sendiri
+    $whitelisted = ['/billing-checkout', '/logout', '/api/billing-status'];
+    foreach ($whitelisted as $w) {
+        if (str_starts_with($uri, $w)) return;
+    }
+
+    try {
+        $st = Database::get()->prepare(
+            "SELECT status, verified_at FROM tenants WHERE id=? LIMIT 1"
+        );
+        $st->execute([(int)$_SESSION['tenant_id']]);
+        $t = $st->fetch(PDO::FETCH_ASSOC);
+
+        if ($t && $t['status'] === 'pending_verification' && !empty($t['verified_at'])) {
+            // Email verified but setup_fee not paid yet
+            if (!empty($_GET['action']) || !empty($_SERVER['HTTP_X_REQUESTED_WITH'])) {
+                header('Content-Type: application/json');
+                echo json_encode([
+                    'error'    => 'Akun belum aktif. Selesaikan pembayaran setup fee terlebih dahulu.',
+                    'redirect' => '/billing-checkout?type=setup_fee',
+                ]);
+            } else {
+                header('Location: /billing-checkout?type=setup_fee');
+            }
+            exit;
+        }
+    } catch (Throwable) {
+        // Non-fatal — jangan block jika query gagal
+    }
+})();
+
 // ── Resolve & validasi tenant ─────────────────────────
 TenantResolver::resolve();
 

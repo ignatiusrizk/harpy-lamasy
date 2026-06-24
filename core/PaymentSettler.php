@@ -92,7 +92,7 @@ class PaymentSettler
     }
 
     /**
-     * Setup fee: activate tenant.
+     * Setup fee: activate tenant + assign package limits + seed coin_awal + send welcome.
      */
     public static function settleSetupFee(array $payment): array
     {
@@ -101,21 +101,89 @@ class PaymentSettler
             $db->beginTransaction();
 
             // Idempotency: kalau tenant sudah active, no-op
-            $st = $db->prepare("SELECT status FROM tenants WHERE id=?");
+            $st = $db->prepare("SELECT status, email, owner_name, nama_perusahaan FROM tenants WHERE id=?");
             $st->execute([$payment['tenant_id']]);
-            $currentStatus = $st->fetchColumn();
+            $tenant = $st->fetch(PDO::FETCH_ASSOC);
 
-            if ($currentStatus === 'active') {
+            if (!$tenant) throw new RuntimeException('Tenant not found');
+
+            if ($tenant['status'] === 'active') {
                 $db->rollBack();
                 return ['ok' => true, 'note' => 'Tenant already active'];
             }
 
+            // Idempotency: check apakah coin_ledger sudah ada untuk payment ini (setup_fee awal)
+            $ledgerExists = $db->prepare("SELECT id FROM coin_ledger WHERE payment_id=? AND type='topup'");
+            $ledgerExists->execute([$payment['id']]);
+            $alreadySeeded = (bool)$ledgerExists->fetchColumn();
+
+            // Get package (coin_awal + max_outlets)
+            $coinAwal = 0;
+            $maxOutlets = 1;
+            $pkgNama = '';
+            if (!empty($payment['ref_package_id'])) {
+                $pkg = $db->prepare("SELECT coin_awal, max_outlets, nama FROM saas_packages WHERE id=?");
+                $pkg->execute([$payment['ref_package_id']]);
+                $pkgRow = $pkg->fetch(PDO::FETCH_ASSOC);
+                if ($pkgRow) {
+                    $coinAwal   = (int)$pkgRow['coin_awal'];
+                    $maxOutlets = (int)$pkgRow['max_outlets'];
+                    $pkgNama    = $pkgRow['nama'];
+                }
+            }
+
+            // UPDATE tenants: status active + package limits
             $db->prepare(
-                "UPDATE tenants SET status='active' WHERE id=? AND status IN ('pending_verification','trial','suspended')"
-            )->execute([$payment['tenant_id']]);
+                "UPDATE tenants
+                    SET status='active', package_assigned_at=NOW(), max_outlets=?
+                  WHERE id=? AND status IN ('pending_verification','trial','suspended')"
+            )->execute([$maxOutlets, $payment['tenant_id']]);
+
+            // Seed coin_awal kalau belum pernah di-seed + coin_awal > 0
+            $newBal = null;
+            if (!$alreadySeeded && $coinAwal > 0) {
+                $db->prepare("UPDATE tenants SET coin_balance = coin_balance + ? WHERE id=?")
+                   ->execute([$coinAwal, $payment['tenant_id']]);
+
+                $balSt = $db->prepare("SELECT coin_balance FROM tenants WHERE id=?");
+                $balSt->execute([$payment['tenant_id']]);
+                $newBal = (int)$balSt->fetchColumn();
+
+                $db->prepare(
+                    "INSERT INTO coin_ledger (tenant_id, outlet_id, type, amount, feature_used, description, balance_after, payment_id)
+                     VALUES (?, NULL, 'topup', ?, 'setup_fee', ?, ?, ?)"
+                )->execute([
+                    $payment['tenant_id'],
+                    $coinAwal,
+                    "Coin awal package " . ($pkgNama ?: "#{$payment['ref_package_id']}"),
+                    $newBal,
+                    $payment['id'],
+                ]);
+            }
 
             $db->commit();
-            return ['ok' => true, 'tenant_activated' => $payment['tenant_id']];
+
+            // Side effects: Mailer + SaNotifier (best-effort, after commit)
+            @require_once dirname(__DIR__) . '/core/Mailer.php';
+            @require_once dirname(__DIR__) . '/core/SaNotifier.php';
+
+            $email    = $tenant['email']        ?? '';
+            $name     = $tenant['owner_name']   ?? $tenant['nama_perusahaan'] ?? '';
+            $outletName = $tenant['nama_perusahaan'] ?? '';
+
+            if ($email && class_exists('Mailer') && method_exists('Mailer', 'sendWelcome')) {
+                try { Mailer::sendWelcome($email, $name, $outletName); } catch (Throwable) {}
+            }
+            if (class_exists('SaNotifier') && method_exists('SaNotifier', 'tenantActivated')) {
+                try { SaNotifier::tenantActivated($payment['tenant_id']); } catch (Throwable) {}
+            }
+
+            return [
+                'ok'               => true,
+                'tenant_activated' => $payment['tenant_id'],
+                'coin_seeded'      => $coinAwal,
+                'new_balance'      => $newBal,
+            ];
         } catch (Throwable $e) {
             if ($db->inTransaction()) $db->rollBack();
             return ['ok' => false, 'error' => $e->getMessage()];
@@ -152,6 +220,13 @@ class PaymentSettler
                ->execute([$payment['ref_outlet_id']]);
 
             $db->commit();
+
+            // Side effect: notif (best-effort, after commit)
+            @require_once dirname(__DIR__) . '/core/SaNotifier.php';
+            if (class_exists('SaNotifier') && method_exists('SaNotifier', 'outletActivated')) {
+                try { SaNotifier::outletActivated($payment['ref_outlet_id'], true); } catch (Throwable) {}
+            }
+
             return ['ok' => true, 'outlet_activated' => $payment['ref_outlet_id']];
         } catch (Throwable $e) {
             if ($db->inTransaction()) $db->rollBack();

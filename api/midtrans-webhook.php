@@ -70,6 +70,21 @@ if ($payment['status'] === 'paid') {
     exit;
 }
 
+// 4b. Defense-in-depth: signature-verified amount must match stored amount
+$gross = (int)round((float)($body['gross_amount'] ?? 0));
+if ($gross !== (int)$payment['amount']) {
+    if (class_exists('ErrorLogger')) {
+        ErrorLogger::log('midtrans_webhook_amount_mismatch', json_encode([
+            'order_id' => $body['order_id'],
+            'expected' => $payment['amount'],
+            'received' => $gross,
+        ]));
+    }
+    http_response_code(200);  // accept (signed) but DO NOT settle
+    echo json_encode(['ok' => false, 'error' => 'Amount mismatch — not settled']);
+    exit;
+}
+
 // 5. Map Midtrans status → internal status
 $txStatus = $body['transaction_status'] ?? '';
 $fraudStatus = $body['fraud_status'] ?? 'accept';

@@ -151,13 +151,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $tenantStatus = $user['tenant_status'];
             if (in_array($tenantStatus, ['suspended', 'closed'])) {
                 $error = '🔒 Akun ditangguhkan. Hubungi tim LAMASY untuk informasi lebih lanjut.';
-            } elseif ($tenantStatus === 'pending_verification') {
-                // Redirect ke pending-verify (set session minimal dulu)
+            } elseif ($tenantStatus === 'pending_verification' && empty($user['verified_at'])) {
+                // Email belum diverifikasi → redirect ke pending-verify
                 session_regenerate_id(true);
                 $_SESSION['tenant_id']      = $user['tenant_id'];
                 $_SESSION['pending_verify'] = true;
                 header('Location: /pending-verify');
                 exit;
+            } elseif ($tenantStatus === 'pending_verification' && !empty($user['verified_at'])) {
+                // Email sudah diverifikasi tapi setup_fee belum dibayar
+                // Izinkan login — tenant_guard akan redirect ke billing-checkout
+                // (fall-through ke login flow normal di bawah)
             } else {
                 clearLoginAttempts($username, $clientIp);
 
