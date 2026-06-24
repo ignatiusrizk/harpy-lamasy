@@ -11,6 +11,56 @@ class FinancialCalculator
         return $oid ? " AND outlet_id = " . (int)$oid : "";
     }
 
+    // Normal balance side per tipe akun COA
+    private static function normalSign(string $tipe): string
+    {
+        return in_array($tipe, ['aset_lancar','aset_tetap','beban_pokok','beban_operasional','beban_lain'], true)
+            ? 'debit' : 'kredit';
+    }
+
+    // Saldo akun (by coa_id) s/d endDate dari jurnal manual, sesuai normal balance.
+    private static function saldoAkunByCoa(int $tenantId, ?int $outletId, int $coaId, string $endDate, string $normalSign): int
+    {
+        $of = self::o($outletId);
+        try {
+            // kredit-debit kalau normal kredit; debit-kredit kalau normal debit
+            $expr = $normalSign === 'debit'
+                ? "SUM(CASE WHEN arah='debit' THEN jumlah ELSE -jumlah END)"
+                : "SUM(CASE WHEN arah='kredit' THEN jumlah ELSE -jumlah END)";
+            $s = Database::get()->prepare("
+                SELECT COALESCE($expr, 0)
+                FROM hl_jurnal_manual
+                WHERE tenant_id=? AND coa_id=? AND DATE(tanggal) <= ? $of
+            ");
+            $s->execute([$tenantId, $coaId, $endDate]);
+            return (int)$s->fetchColumn();
+        } catch (Throwable) {
+            return 0;
+        }
+    }
+
+    // Nilai agregat periode untuk akun P&L (pendapatan/beban) by kode COA.
+    // Map ke komponen labaRugi(). Kode tanpa sumber langsung → 0 (kecuali catch-all).
+    private static function aggregatePnLForCoa(int $tenantId, ?int $outletId, string $periode, string $kode): int
+    {
+        $lr = self::labaRugi($tenantId, $outletId, $periode);
+        $map = [
+            '4-1001' => $lr['pendapatan']['kiloan']      ?? 0,
+            '4-1002' => $lr['pendapatan']['b2b']         ?? 0,
+            '4-1003' => $lr['pendapatan']['drop_point']  ?? 0,
+            '4-1099' => $lr['pendapatan']['lain']        ?? 0,
+            '5-1001' => $lr['beban']['gaji']             ?? 0,
+            '5-1002' => $lr['beban']['bahan_baku']       ?? 0,
+            '5-1005' => $lr['beban']['penyusutan']       ?? 0,
+            '5-1006' => $lr['beban']['bunga']            ?? 0,
+            '5-1008' => $lr['beban']['komisi_mitra']     ?? 0,
+            // 5-1099 catch-all: kas keluar operasional + beban manual (yang tak terpetakan)
+            '5-1099' => ($lr['beban']['operasional_kas'] ?? 0) + ($lr['beban']['manual'] ?? 0),
+            // 5-1003 sewa, 5-1004 utilitas, 5-1007 pemasaran → tidak terpisah di labaRugi → 0
+        ];
+        return (int)($map[$kode] ?? 0);
+    }
+
     // ── Penyusutan per bulan (PHP, no GENERATED COLUMN) ──────
     private static function penyusutanBulan(array $a): int
     {
@@ -771,6 +821,111 @@ class FinancialCalculator
         $margin   = 1 - $rasioVar;
 
         return $margin > 0 ? (int) round($tetap / $margin) : 0;
+    }
+
+    // ════════════════════════════════════════════════════════════
+    // LAPORAN PERUBAHAN MODAL
+    // ════════════════════════════════════════════════════════════
+    public static function perubahanModal(int $tenantId, ?int $outletId, string $periode): array
+    {
+        $start   = $periode . '-01';
+        $endDate  = date('Y-m-t', strtotime($start));
+        $prevEnd  = date('Y-m-t', strtotime($start . ' -1 month'));
+
+        // Akumulasi s/d akhir bulan lalu (modal awal)
+        $modalDisetorAwal = self::getSaldoManual($tenantId, $outletId, 'modal_disetor', $prevEnd);
+        $priveAwal        = self::getSaldoManual($tenantId, $outletId, 'prive',         $prevEnd);
+        $labaDitahanAwal  = self::hitungLabaDitahan($tenantId, $outletId, $periode); // s/d periode-1
+        $modalAwal = $modalDisetorAwal - $priveAwal + $labaDitahanAwal;
+
+        // Mutasi periode ini (delta s/d endDate vs s/d prevEnd)
+        $setoranPeriode = self::getSaldoManual($tenantId, $outletId, 'modal_disetor', $endDate) - $modalDisetorAwal;
+        $privePeriode   = self::getSaldoManual($tenantId, $outletId, 'prive',         $endDate) - $priveAwal;
+        $labaPeriode    = self::labaRugi($tenantId, $outletId, $periode)['laba_bersih'];
+
+        $modalAkhir = $modalAwal + $setoranPeriode - $privePeriode + $labaPeriode;
+
+        return [
+            'periode'       => $periode,
+            'modal_awal'    => $modalAwal,
+            'setoran_modal' => $setoranPeriode,
+            'prive'         => $privePeriode,
+            'laba_bersih'   => $labaPeriode,
+            'modal_akhir'   => $modalAkhir,
+        ];
+    }
+
+    // ════════════════════════════════════════════════════════════
+    // BUKU BESAR (per akun COA)
+    // ════════════════════════════════════════════════════════════
+    public static function bukuBesar(int $tenantId, ?int $outletId, string $periode, int $coaId): array
+    {
+        $db      = Database::get();
+        $start   = $periode . '-01';
+        $endDate = date('Y-m-t', strtotime($start));
+        $prevEnd = date('Y-m-t', strtotime($start . ' -1 month'));
+        $of      = self::o($outletId);
+
+        // Load COA (tenant scope)
+        $c = $db->prepare("SELECT id, kode, nama, tipe FROM hl_coa WHERE id=? AND tenant_id=? LIMIT 1");
+        $c->execute([$coaId, $tenantId]);
+        $coa = $c->fetch(PDO::FETCH_ASSOC);
+        if (!$coa) throw new RuntimeException('Akun tidak ditemukan');
+
+        $isPnL = in_array($coa['tipe'], ['pendapatan','pendapatan_lain','beban_pokok','beban_operasional','beban_lain'], true);
+        $normalSign = self::normalSign($coa['tipe']);
+
+        $mutasi = [];
+        $saldoAwal = 0;
+
+        if ($isPnL) {
+            // P&L: saldo awal 0, 1 baris agregat
+            $agg = self::aggregatePnLForCoa($tenantId, $outletId, $periode, $coa['kode']);
+            if ($agg != 0) {
+                $isPendapatan = in_array($coa['tipe'], ['pendapatan','pendapatan_lain'], true);
+                $mutasi[] = [
+                    'tanggal'    => $endDate,
+                    'keterangan' => 'Akumulasi ' . $coa['nama'] . ' periode ' . $periode,
+                    'debit'      => $isPendapatan ? 0 : $agg,
+                    'kredit'     => $isPendapatan ? $agg : 0,
+                    'saldo'      => $agg,
+                ];
+            }
+            $saldoAkhir = $agg;
+        } else {
+            // Neraca (manual): saldo awal = akumulasi s/d prevEnd, mutasi per-entry
+            $saldoAwal = self::saldoAkunByCoa($tenantId, $outletId, $coaId, $prevEnd, $normalSign);
+            $st = $db->prepare("
+                SELECT tanggal, keterangan, jumlah, arah
+                FROM hl_jurnal_manual
+                WHERE tenant_id=? AND coa_id=? AND DATE(tanggal) BETWEEN ? AND ? $of
+                ORDER BY tanggal ASC, id ASC
+            ");
+            $st->execute([$tenantId, $coaId, $start, $endDate]);
+            $running = $saldoAwal;
+            foreach ($st->fetchAll(PDO::FETCH_ASSOC) as $e) {
+                $debit  = $e['arah'] === 'debit'  ? (int)$e['jumlah'] : 0;
+                $kredit = $e['arah'] === 'kredit' ? (int)$e['jumlah'] : 0;
+                $running += $normalSign === 'debit' ? ($debit - $kredit) : ($kredit - $debit);
+                $mutasi[] = [
+                    'tanggal'    => $e['tanggal'],
+                    'keterangan' => $e['keterangan'],
+                    'debit'      => $debit,
+                    'kredit'     => $kredit,
+                    'saldo'      => $running,
+                ];
+            }
+            $saldoAkhir = $running;
+        }
+
+        return [
+            'periode'     => $periode,
+            'akun'        => $coa,
+            'is_pnl'      => $isPnL,
+            'saldo_awal'  => $saldoAwal,
+            'mutasi'      => $mutasi,
+            'saldo_akhir' => $saldoAkhir,
+        ];
     }
 
     // ════════════════════════════════════════════════════════════
