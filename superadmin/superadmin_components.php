@@ -744,6 +744,9 @@ function saRenderNav(string $activePage = '', string $pageTitle = ''): void {
         <a href="/superadmin/audit.php" class="sa-nav-link <?= $activePage === 'audit' ? 'active' : '' ?>">
           <span class="icon">📜</span> Audit Log
         </a>
+        <a href="/superadmin/billing-config.php" class="sa-nav-link <?= $activePage === 'billing-config' ? 'active' : '' ?>">
+          <span class="icon">💳</span> Billing Config
+        </a>
       </nav>
 
       <div class="sa-sidebar-footer">
