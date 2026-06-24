@@ -339,6 +339,28 @@ class TenantProvisioner
         return $count;
     }
 
+    /**
+     * Seed 3 default built-in payment methods untuk outlet baru.
+     * Cash, Transfer, QRIS — all is_builtin=1, is_active=1.
+     *
+     * Idempotent: INSERT IGNORE skip kalau rows sudah ada (UNIQUE constraint).
+     */
+    public static function seedPaymentMethods(PDO $db, int $tenantId, int $outletId): void
+    {
+        $db->prepare("
+            INSERT IGNORE INTO hl_payment_methods
+                (tenant_id, outlet_id, code, label, emoji, is_builtin, is_active, sort_order)
+            VALUES
+                (?, ?, 'cash',     'Tunai',         '💵', 1, 1, 1),
+                (?, ?, 'transfer', 'Transfer Bank', '🏦', 1, 1, 2),
+                (?, ?, 'qris',     'QRIS',          '📱', 1, 1, 3)
+        ")->execute([
+            $tenantId, $outletId,
+            $tenantId, $outletId,
+            $tenantId, $outletId,
+        ]);
+    }
+
     // ── Internal helpers ──────────────────────────────
     private static function generateSlug(string $namaOutlet): string
     {

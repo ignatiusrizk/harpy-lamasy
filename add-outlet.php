@@ -160,6 +160,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['step2_submit'])) {
         ]);
         $outletId = (int)$db->lastInsertId();
 
+        // Seed default payment methods (cash/transfer/qris) untuk outlet baru
+        try {
+            require_once ROOT . '/core/TenantProvisioner.php';
+            TenantProvisioner::seedPaymentMethods($db, $tid, $outletId);
+        } catch (Throwable $e) {
+            error_log('seedPaymentMethods failed for outlet ' . $outletId . ': ' . $e->getMessage());
+            // Non-fatal: migration backfill or first POS access will compensate
+        }
+
         // Auto-set nota_prefix dari nama outlet (kalau kolom sudah ada)
         try {
             require_once ROOT . '/core/NotaFormatter.php';
