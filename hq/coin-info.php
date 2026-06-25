@@ -224,6 +224,32 @@ $katMeta = [
     transition:all .15s; text-decoration:none;
   }
   .bundle-card .btn-topup:hover { background:#1B2D5A; transform:translateY(-1px); box-shadow:0 4px 12px rgba(15,28,58,.2); }
+
+  /* ── Coin Tabs ── */
+  .coin-tabs { display:flex; gap:8px; margin-bottom:18px; border-bottom:2px solid #F0F0F3; }
+  .coin-tab { background:none; border:none; padding:10px 16px; font-size:14px; font-weight:600; color:#6B7280; cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-2px; }
+  .coin-tab.active { color:#0F1C3A; border-bottom-color:#35E8D5; }
+  .cu-toolbar { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px; }
+  .cu-cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin-bottom:20px; }
+  .cu-card { background:#fff; border:1px solid #EEF0F3; border-radius:12px; padding:14px 16px; }
+  .cu-card .lbl { font-size:11px; text-transform:uppercase; letter-spacing:.04em; color:#9CA3AF; }
+  .cu-card .val { font-size:22px; font-weight:800; font-family:'DM Mono',monospace; margin-top:4px; }
+  .cu-section { margin-bottom:22px; }
+  .cu-bar-row { display:flex; align-items:center; gap:10px; margin-bottom:8px; font-size:13px; }
+  .cu-bar-row .cu-bar-lbl { width:150px; flex-shrink:0; }
+  .cu-bar-track { flex:1; background:#F0F0F3; border-radius:6px; height:14px; overflow:hidden; }
+  .cu-bar-fill { height:100%; background:linear-gradient(90deg,#35E8D5,#1B9E92); }
+  .cu-bar-val { width:130px; text-align:right; flex-shrink:0; color:#6B7280; font-family:'DM Mono',monospace; }
+  .cu-ledger-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+  .cu-table { width:100%; border-collapse:collapse; font-size:13px; }
+  .cu-table th { text-align:left; padding:8px; color:#9CA3AF; font-size:11px; text-transform:uppercase; border-bottom:1px solid #EEF0F3; }
+  .cu-table td { padding:8px; border-bottom:1px solid #F5F5F7; }
+  .cu-amt-deduct { color:#DC2626; font-weight:600; }
+  .cu-amt-topup { color:#059669; font-weight:600; }
+  .cu-pager { display:flex; gap:8px; justify-content:center; margin-top:14px; }
+  .cu-pager button { padding:6px 14px; border:1px solid #E5E7EB; border-radius:8px; background:#fff; cursor:pointer; font-size:13px; }
+  .cu-pager button:disabled { opacity:.4; cursor:default; }
+  .cu-empty { text-align:center; padding:30px; color:#9CA3AF; font-size:14px; }
 </style>
 
 <h1>💲 Harga Fitur Coin
@@ -231,6 +257,13 @@ $katMeta = [
     Daftar harga coin per fitur. Update otomatis dari sistem.
   </small>
 </h1>
+
+<div class="coin-tabs">
+  <button class="coin-tab active" data-tab="harga" onclick="switchCoinTab('harga',this)">💰 Harga Fitur</button>
+  <button class="coin-tab" data-tab="riwayat" onclick="switchCoinTab('riwayat',this)">📊 Riwayat &amp; Pemakaian</button>
+</div>
+
+<div id="tab-harga" class="coin-tab-pane">
 
 <!-- Saldo Banner -->
 <div class="info-banner">
@@ -331,5 +364,102 @@ $katMeta = [
   Harga dapat berubah sewaktu-waktu sesuai kebijakan platform.
   Cek halaman ini secara berkala untuk pricing terbaru. Setiap perubahan harga didokumentasikan di history platform.
 </div>
+
+</div><!-- /#tab-harga -->
+
+<div id="tab-riwayat" class="coin-tab-pane" style="display:none">
+  <div class="cu-toolbar">
+    <h2 style="font-size:1.1rem;font-weight:700;color:#0F1C3A;margin:0">📊 Riwayat &amp; Pemakaian Coin</h2>
+    <label style="font-size:13px;color:#6B7280">Periode:
+      <input type="month" id="cuBulan" value="<?= date('Y-m') ?>" style="padding:6px 8px;border:1px solid #E5E7EB;border-radius:8px">
+    </label>
+  </div>
+  <div id="cuCards" class="cu-cards"></div>
+  <div id="cuBreakdown" class="cu-section"></div>
+  <div class="cu-section">
+    <div class="cu-ledger-head">
+      <strong>Rincian Transaksi</strong>
+      <select id="cuType" style="padding:6px 8px;border:1px solid #E5E7EB;border-radius:8px;font-size:13px">
+        <option value="semua">Semua</option><option value="deduct">Pemakaian</option><option value="topup">Top-up</option>
+      </select>
+    </div>
+    <div id="cuLedger"></div>
+    <div id="cuPager" class="cu-pager"></div>
+  </div>
+</div><!-- /#tab-riwayat -->
+
+<script>
+const CU_KAT = {
+  dokumen:{ico:'📄',label:'Dokumen'}, whatsapp:{ico:'📱',label:'WhatsApp'},
+  ai:{ico:'🤖',label:'AI Tools'}, export:{ico:'📤',label:'Export'}, lainnya:{ico:'⚙️',label:'Lainnya'}
+};
+let cuPage = 1, cuLoaded = false;
+
+function switchCoinTab(tab, el) {
+  document.querySelectorAll('.coin-tab').forEach(b => b.classList.toggle('active', b === el));
+  document.getElementById('tab-harga').style.display   = tab === 'harga'   ? '' : 'none';
+  document.getElementById('tab-riwayat').style.display = tab === 'riwayat' ? '' : 'none';
+  if (tab === 'riwayat' && !cuLoaded) { cuLoaded = true; cuLoadAll(); }
+}
+function cuBulan() { return document.getElementById('cuBulan').value || ''; }
+
+async function cuFetch(action, extra='') {
+  const r = await fetch(`/hq/coin-info?action=${action}&bulan=${cuBulan()}${extra}`,
+    { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+  return r.json();
+}
+
+async function cuLoadAll() { cuPage = 1; await Promise.all([cuLoadSummary(), cuLoadBreakdown(), cuLoadLedger()]); }
+
+async function cuLoadSummary() {
+  const d = await cuFetch('coin_summary');
+  if (!d.ok) return;
+  document.getElementById('cuCards').innerHTML =
+    `<div class="cu-card"><div class="lbl">Saldo Coin</div><div class="val" style="color:#0F1C3A">${fmtNum(d.saldo)}</div></div>
+     <div class="cu-card"><div class="lbl">Terpakai (periode)</div><div class="val" style="color:#DC2626">−${fmtNum(d.deduct)}</div></div>
+     <div class="cu-card"><div class="lbl">Top-up (periode)</div><div class="val" style="color:#059669">+${fmtNum(d.topup)}</div></div>`;
+}
+
+async function cuLoadBreakdown() {
+  const d = await cuFetch('coin_breakdown');
+  const box = document.getElementById('cuBreakdown');
+  if (!d.ok || !d.total_deduct) { box.innerHTML = '<div class="cu-empty">Belum ada pemakaian periode ini</div>'; return; }
+  let html = '<strong style="display:block;margin-bottom:12px">Pemakaian per Kategori</strong>';
+  d.per_kategori.forEach(k => {
+    const meta = CU_KAT[k.kategori] || CU_KAT.lainnya;
+    const pct = Math.round(k.total / d.total_deduct * 100);
+    html += `<div class="cu-bar-row">
+      <span class="cu-bar-lbl">${meta.ico} ${esc(meta.label)}</span>
+      <span class="cu-bar-track"><span class="cu-bar-fill" style="width:${pct}%"></span></span>
+      <span class="cu-bar-val">${fmtNum(k.total)} (${pct}%)</span></div>`;
+  });
+  box.innerHTML = html;
+}
+
+async function cuLoadLedger() {
+  const type = document.getElementById('cuType').value;
+  const d = await cuFetch('coin_ledger', `&type=${type}&page=${cuPage}`);
+  const box = document.getElementById('cuLedger');
+  if (!d.ok || !d.rows.length) { box.innerHTML = '<div class="cu-empty">Belum ada transaksi periode ini</div>'; document.getElementById('cuPager').innerHTML=''; return; }
+  let rows = d.rows.map(r => {
+    const isDed = r.type === 'deduct';
+    const amt = (isDed ? '−' : '+') + fmtNum(r.amount);
+    const cls = isDed ? 'cu-amt-deduct' : 'cu-amt-topup';
+    const tgl = new Date(r.created_at.replace(' ','T')).toLocaleString('id-ID',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
+    return `<tr><td>${esc(tgl)}</td><td>${esc(r.nama_fitur||'-')}</td><td>${esc(r.nama_outlet||'—')}</td>
+      <td class="${cls}">${amt}</td><td style="font-family:'DM Mono',monospace">${fmtNum(r.balance_after)}</td></tr>`;
+  }).join('');
+  box.innerHTML = `<table class="cu-table"><thead><tr><th>Tanggal</th><th>Fitur</th><th>Outlet</th><th>Coin</th><th>Saldo</th></tr></thead><tbody>${rows}</tbody></table>`;
+  document.getElementById('cuPager').innerHTML =
+    `<button onclick="cuPage--;cuLoadLedger()" ${d.page<=1?'disabled':''}>‹ Prev</button>
+     <span style="align-self:center;font-size:13px;color:#6B7280">Hal ${d.page}/${d.pages||1}</span>
+     <button onclick="cuPage++;cuLoadLedger()" ${d.page>=d.pages?'disabled':''}>Next ›</button>`;
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const b = document.getElementById('cuBulan'); if (b) b.addEventListener('change', cuLoadAll);
+  const t = document.getElementById('cuType'); if (t) t.addEventListener('change', () => { cuPage=1; cuLoadLedger(); });
+});
+</script>
 
 <?php require __DIR__ . '/_layout_close.php'; ?>
