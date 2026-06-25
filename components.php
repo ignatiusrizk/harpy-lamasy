@@ -142,6 +142,17 @@ function renderGlobalJsHelpers(): void { ?>
     window.capitalize = s => s ? s.charAt(0).toUpperCase() + s.slice(1) : '';
     window.katLabelInventori = k => ({deterjen:'🧴 Deterjen', parfum:'🌸 Parfum', pewangi:'💧 Pewangi', plastik_kemasan:'📦 Plastik', peralatan:'🔧 Peralatan', lainnya:'📋 Lainnya'}[k] || k);
 
+    // ── Status bar (native app): jangan overlay — webview turun di bawah status bar (fix konten terpotong) ──
+    (function(){
+      try {
+        var SB = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.StatusBar;
+        if (!SB) return;
+        if (SB.setOverlaysWebView) SB.setOverlaysWebView({ overlay: false });
+        if (SB.setBackgroundColor) SB.setBackgroundColor({ color: '#0F1C3A' });
+        if (SB.setStyle) SB.setStyle({ style: 'LIGHT' }); // teks status bar terang (bg navy gelap)
+      } catch(e) {}
+    })();
+
     // ── Hardware back button (native app): jangan keluar app — mundur ke halaman/menu sebelumnya ──
     (function(){
       try {
