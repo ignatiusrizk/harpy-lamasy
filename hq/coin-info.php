@@ -47,6 +47,95 @@ try {
 // Saldo coin sekarang
 $saldo = (int)($hqTenant['coin_balance'] ?? 0);
 
+// ── AJAX: Riwayat & Pemakaian Coin (read-only, tenant scope) ──
+$action = $_GET['action'] ?? '';
+if ($action !== '') {
+    header('Content-Type: application/json');
+    // Validasi periode YYYY-MM, fallback bulan ini (Asia/Jakarta)
+    $bulan = (string)($_GET['bulan'] ?? '');
+    if (!preg_match('/^\d{4}-\d{2}$/', $bulan)) $bulan = date('Y-m');
+    $periodeStart = $bulan . '-01 00:00:00';
+    $periodeEnd   = date('Y-m-01 00:00:00', strtotime($bulan . '-01 +1 month'));
+    try {
+        if ($action === 'coin_summary') {
+            $s = $db->prepare(
+                "SELECT
+                   COALESCE(SUM(CASE WHEN type='topup'  THEN amount END),0) AS topup,
+                   COALESCE(SUM(CASE WHEN type='deduct' THEN amount END),0) AS deduct,
+                   COUNT(*) AS cnt
+                 FROM coin_ledger
+                 WHERE tenant_id=? AND created_at >= ? AND created_at < ?");
+            $s->execute([$tid, $periodeStart, $periodeEnd]);
+            $r = $s->fetch(PDO::FETCH_ASSOC) ?: ['topup'=>0,'deduct'=>0,'cnt'=>0];
+            echo json_encode(['ok'=>true, 'saldo'=>$saldo,
+                'topup'=>(int)$r['topup'], 'deduct'=>(int)$r['deduct'], 'count'=>(int)$r['cnt']]);
+            exit;
+        }
+        if ($action === 'coin_breakdown') {
+            $s = $db->prepare(
+                "SELECT cl.feature_used,
+                        COALESCE(p.nama_fitur, cl.feature_used, 'Lainnya') AS nama,
+                        COALESCE(p.kategori, 'lainnya') AS kategori,
+                        SUM(cl.amount) AS total
+                 FROM coin_ledger cl
+                 LEFT JOIN saas_coin_pricing p ON p.feature_key = cl.feature_used
+                 WHERE cl.tenant_id=? AND cl.type='deduct'
+                   AND cl.created_at >= ? AND cl.created_at < ?
+                 GROUP BY cl.feature_used
+                 ORDER BY total DESC");
+            $s->execute([$tid, $periodeStart, $periodeEnd]);
+            $perFitur = $s->fetchAll(PDO::FETCH_ASSOC);
+            $perKat = []; $totalDeduct = 0;
+            foreach ($perFitur as &$f) {
+                $f['total'] = (int)$f['total'];
+                $totalDeduct += $f['total'];
+                $k = $f['kategori'];
+                $perKat[$k] = ($perKat[$k] ?? 0) + $f['total'];
+            }
+            unset($f);
+            $katArr = [];
+            foreach ($perKat as $k => $v) $katArr[] = ['kategori'=>$k, 'total'=>$v];
+            usort($katArr, fn($a,$b) => $b['total'] - $a['total']);
+            echo json_encode(['ok'=>true, 'per_fitur'=>$perFitur,
+                'per_kategori'=>$katArr, 'total_deduct'=>$totalDeduct]);
+            exit;
+        }
+        if ($action === 'coin_ledger') {
+            $type = $_GET['type'] ?? 'semua';
+            $page = max(1, (int)($_GET['page'] ?? 1));
+            $per  = 30; $off = ($page - 1) * $per;
+            $typeSql = ''; $params = [$tid, $periodeStart, $periodeEnd];
+            if ($type === 'topup' || $type === 'deduct') { $typeSql = ' AND cl.type=?'; }
+            // total count
+            $cParams = $params; if ($typeSql) $cParams[] = $type;
+            $c = $db->prepare("SELECT COUNT(*) FROM coin_ledger cl
+                               WHERE cl.tenant_id=? AND cl.created_at >= ? AND cl.created_at < ?{$typeSql}");
+            $c->execute($cParams);
+            $total = (int)$c->fetchColumn();
+            // rows
+            $lParams = $params; if ($typeSql) $lParams[] = $type;
+            $lParams[] = $per; $lParams[] = $off;
+            $l = $db->prepare(
+                "SELECT cl.type, cl.amount, cl.feature_used, cl.description, cl.balance_after, cl.created_at,
+                        COALESCE(p.nama_fitur, cl.feature_used, '-') AS nama_fitur,
+                        o.nama_outlet
+                 FROM coin_ledger cl
+                 LEFT JOIN saas_coin_pricing p ON p.feature_key = cl.feature_used
+                 LEFT JOIN outlets o ON o.id = cl.outlet_id AND o.tenant_id = cl.tenant_id
+                 WHERE cl.tenant_id=? AND cl.created_at >= ? AND cl.created_at < ?{$typeSql}
+                 ORDER BY cl.created_at DESC
+                 LIMIT ? OFFSET ?");
+            $l->execute($lParams);
+            echo json_encode(['ok'=>true, 'rows'=>$l->fetchAll(PDO::FETCH_ASSOC),
+                'total'=>$total, 'page'=>$page, 'pages'=>(int)ceil($total / $per)]);
+            exit;
+        }
+        echo json_encode(['ok'=>false, 'error'=>'Unknown action']); exit;
+    } catch (Throwable $e) {
+        echo json_encode(['ok'=>false, 'error'=>$e->getMessage()]); exit;
+    }
+}
+
 $katMeta = [
     'dokumen'  => ['ico' => '📄', 'label' => 'Dokumen & Nota'],
     'whatsapp' => ['ico' => '📱', 'label' => 'WhatsApp Notifikasi'],
