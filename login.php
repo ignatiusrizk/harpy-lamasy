@@ -17,6 +17,8 @@ ini_set('session.cookie_httponly', 1);
 ini_set('session.use_strict_mode', 1);
 ini_set('session.cookie_samesite', 'Strict');
 ini_set('session.cookie_secure',   1);
+ini_set('session.cookie_lifetime', 86400); // cookie persist ~1 hari (survive app close di webview)
+ini_set('session.gc_maxlifetime',  86400); // server tak purge sesi <1 hari
 
 if (session_status() === PHP_SESSION_NONE) session_start();
 
