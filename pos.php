@@ -978,6 +978,55 @@ textarea{resize:vertical;min-height:64px}
 </head>
 <body>
 <?php renderTopbar('pos'); ?>
+<script src="/assets/vendor/html2canvas.min.js?v=<?= @filemtime(__DIR__.'/assets/vendor/html2canvas.min.js') ?: '1' ?>"></script>
+<script src="/assets/js/thermal-print.js?v=<?= @filemtime(__DIR__.'/assets/js/thermal-print.js') ?: '1' ?>"></script>
+
+<!-- Modal pilih printer thermal (app-only) -->
+<div id="printerModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:99999;align-items:center;justify-content:center">
+  <div style="background:#fff;border-radius:14px;padding:18px;max-width:340px;width:90%;max-height:80vh;overflow:auto">
+    <h3 style="margin:0 0 12px;font-size:16px;color:#0F1C3A">🖨 Printer Thermal</h3>
+    <div style="font-size:13px;color:#374151;margin-bottom:8px">Terpilih: <strong id="printerCurrent">—</strong></div>
+    <button class="btn btn-teal-sm" onclick="posPickPrinter()">🔍 Cari / Ganti Printer</button>
+    <div id="printerList" style="margin-top:10px"></div>
+    <label style="display:flex;gap:8px;align-items:center;margin-top:14px;font-size:13px;cursor:pointer">
+      <input type="checkbox" id="printerAuto" onchange="ThermalPrint.setAuto(this.checked)">
+      Auto-cetak struk setelah simpan order
+    </label>
+    <p style="font-size:11px;color:#9CA3AF;margin:10px 0 0">Printer harus sudah di-pair di Setelan Bluetooth HP.</p>
+    <div style="text-align:right;margin-top:14px"><button class="btn btn-outline" onclick="document.getElementById('printerModal').style.display='none'">Tutup</button></div>
+  </div>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  if (window.ThermalPrint && ThermalPrint.isAvailable()) {
+    var b = document.getElementById('btnPrinterSetting'); if (b) b.style.display = '';
+  }
+});
+function posOpenPrinterModal() {
+  var pr = ThermalPrint.getPrinter();
+  document.getElementById('printerCurrent').textContent = pr ? pr.name : '—';
+  document.getElementById('printerAuto').checked = ThermalPrint.autoEnabled();
+  document.getElementById('printerList').innerHTML = '';
+  document.getElementById('printerModal').style.display = 'flex';
+}
+async function posPickPrinter() {
+  var box = document.getElementById('printerList');
+  box.innerHTML = '<div style="font-size:12px;color:#6B7280">🔍 Mencari printer (±6 dtk)…</div>';
+  try {
+    var list = await ThermalPrint.scanPrinters(6000);
+    if (!list.length) { box.innerHTML = '<div style="font-size:12px;color:#DC2626">Tak ada printer ketemu. Pastikan printer nyala & sudah di-pair di Setelan Bluetooth.</div>'; return; }
+    box.innerHTML = list.map(function (p) {
+      return '<button class="btn btn-teal-sm" style="display:block;width:100%;margin:4px 0;text-align:left" ' +
+             'onclick=\'posSelectPrinter(' + JSON.stringify(p).replace(/'/g, "&#39;") + ')\'>🖨 ' + esc(p.name) + '</button>';
+    }).join('');
+  } catch (e) { box.innerHTML = '<div style="font-size:12px;color:#DC2626">Gagal: ' + esc(e.message || 'error') + '</div>'; }
+}
+function posSelectPrinter(p) {
+  ThermalPrint.setPrinter(p);
+  document.getElementById('printerCurrent').textContent = p.name;
+  showToast('✅ Printer dipilih: ' + p.name, 'success');
+}
+</script>
 
 <div class="main">
   <div class="grid-2">
@@ -1380,6 +1429,7 @@ window.outletQris = <?= json_encode([
     <div class="modal-footer" style="gap:6px;flex-wrap:wrap">
       <button class="btn btn-outline" onclick="closeModal()">Tutup</button>
       <button class="btn btn-green" onclick="printStruk()">🖨️ Print Struk</button>
+      <button id="btnPrinterSetting" class="btn btn-teal-sm" style="display:none" onclick="posOpenPrinterModal()">⚙️ Printer</button>
       <button class="btn btn-teal-sm" onclick="printLabel()" title="Cetak label stiker (ukuran diatur di Outlet Settings)">🏷 Label</button>
       <button class="btn btn-teal-sm" onclick="kirimNotaWA()" title="Kirim nota via WhatsApp (150 koin)">📲 Kirim WA</button>
       <a id="openStrukBtn" href="#" target="_blank" class="btn btn-teal-sm">↗ Buka Penuh</a>
@@ -2259,6 +2309,10 @@ async function showStruk(id) {
       const h = frame.contentDocument?.body?.scrollHeight;
       if (h && h > 200) frame.style.minHeight = Math.min(h + 20, 600) + 'px';
     } catch(e) {}
+    // Auto-cetak BT kalau diaktifkan (app + printer terpilih)
+    if (window.ThermalPrint && ThermalPrint.isAvailable() && ThermalPrint.getPrinter() && ThermalPrint.autoEnabled()) {
+      setTimeout(() => posPrintStrukBT(), 350);
+    }
   };
   frame.src = apiUrl;
   return; // ── legacy code tidak dijalankan di bawah ini ──
@@ -2323,7 +2377,40 @@ async function showStruk(id) {
   document.getElementById('modalStruk').classList.add('open');
 }
 
+// Node struk di dalam iframe (same-origin). Return .struk element atau body.
+function posStrukNode() {
+  const frame = document.getElementById('strukFrame');
+  try {
+    const doc = frame && frame.contentDocument;
+    if (doc) return doc.querySelector('.struk') || doc.body;
+  } catch (e) {}
+  return null;
+}
+function posStrukWidthPx() {
+  // 58mm→384, 80mm→576. Default 576 (thermal_80). Sesuaikan saat tuning device.
+  return (window.POS_STRUK_FORMAT === 'thermal_58') ? 384 : 576;
+}
+async function posPrintStrukBT() {
+  const node = posStrukNode();
+  if (!node) { showToast('Struk belum siap', 'error'); return false; }
+  try {
+    showToast('🖨 Mencetak…', 'info');
+    await ThermalPrint.print(node, posStrukWidthPx());
+    showToast('✅ Struk tercetak', 'success');
+    return true;
+  } catch (e) {
+    showToast('❌ ' + (e.message || 'Gagal cetak'), 'error');
+    return false;
+  }
+}
 function printStruk() {
+  // Di app + printer terpilih → cetak BT langsung; else dialog iframe/web (fallback)
+  if (window.ThermalPrint && ThermalPrint.isAvailable()) {
+    if (ThermalPrint.getPrinter()) { posPrintStrukBT(); return; }
+    showToast('Pilih printer dulu (🖨 Printer)', 'error');
+    if (typeof posOpenPrinterModal === 'function') posOpenPrinterModal();
+    return;
+  }
   const frame = document.getElementById('strukFrame');
   if (frame && frame.contentWindow) {
     frame.contentWindow.focus();
