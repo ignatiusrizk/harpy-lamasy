@@ -97,7 +97,7 @@ function renderHead(string $title = 'LAMASY'): void {
     $isPortalPelanggan = strpos($_uri, '/pelanggan') === 0 || strpos($_uri, '/p?') === 0 || strpos($_uri, '/p/') === 0;
     ?>
     <meta charset="UTF-8"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
     <meta name="csrf-token" content="<?= htmlspecialchars($csrf) ?>"/>
     <link rel="icon" type="image/png" href="/assets/icon-192.png?v=<?= @filemtime(__DIR__.'/assets/icon-192.png') ?: '3' ?>"/>
     <link rel="apple-touch-icon" href="/assets/apple-touch-icon-180.png?v=<?= @filemtime(__DIR__.'/assets/apple-touch-icon-180.png') ?: '3' ?>"/>
