@@ -57,7 +57,7 @@ if ($action === 'ask' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         echo json_encode([
             'ok'          => true,
             'answer'      => $result['answer'],
-            'sql'         => $result['sql'],
+            // 'sql' sengaja TIDAK dikirim ke client (jangan bocorkan query mentah ke user)
             'rows'        => $result['rows'],
             'row_count'   => $result['row_count'],
             'tokens_used' => $result['tokens_used'],
@@ -268,8 +268,7 @@ async function submitQ() {
     const tableHtml = renderResultTable(d.rows);
     const detailHtml = `
       <details class="ai-detail">
-        <summary>🔍 Lihat SQL & data mentah (${d.row_count} baris)</summary>
-        <div class="ai-sql">${esc(d.sql)}</div>
+        <summary>📊 Lihat data (${d.row_count} baris)</summary>
         ${tableHtml}
         <div style="margin-top:6px;font-size:10px;color:#9CA3AF">${d.tokens_used} tokens · ${d.generated_at}</div>
       </details>
