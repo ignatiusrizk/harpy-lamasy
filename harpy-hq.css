@@ -195,6 +195,5 @@
   /* Outlet switch button → icon only */
   .hq-top-switch { font-size: 0; padding: 5px 8px; }
   .hq-top-switch::before { content: '🏪'; font-size: 14px; }
-  .hq-top-logout { font-size: 0; padding: 5px 8px; }
-  .hq-top-logout::before { content: '⏻'; font-size: 14px; }
+  .hq-top-logout { font-size: 11px; padding: 5px 9px; }
 }
