@@ -147,9 +147,13 @@ if (($_SESSION['role'] ?? '') === 'mitra') {
 TenantResolver::resolve();
 
 // ── Session timeout ───────────────────────────────────
+// Min 1 hari idle / 7 hari absolut — enforce di sini supaya berlaku walau
+// db.php prod (gitignored) masih SESSION_TIMEOUT lama (30 menit).
 $_now = time();
+$_sessTimeout  = max(defined('SESSION_TIMEOUT')  ? SESSION_TIMEOUT  : 0, 86400);
+$_sessLifetime = max(defined('SESSION_LIFETIME') ? SESSION_LIFETIME : 0, 604800);
 if (isset($_SESSION['hl_last_activity'])) {
-    if ($_now - $_SESSION['hl_last_activity'] > SESSION_TIMEOUT) {
+    if ($_now - $_SESSION['hl_last_activity'] > $_sessTimeout) {
         session_destroy();
         if ((!empty($_GET['action']) || !empty($_SERVER['HTTP_X_REQUESTED_WITH'])) && ($_SERVER['HTTP_SEC_FETCH_MODE'] ?? '') !== 'navigate') {
             header('Content-Type: application/json');
@@ -161,7 +165,7 @@ if (isset($_SESSION['hl_last_activity'])) {
     }
 }
 if (isset($_SESSION['hl_login_time'])) {
-    if ($_now - $_SESSION['hl_login_time'] > SESSION_LIFETIME) {
+    if ($_now - $_SESSION['hl_login_time'] > $_sessLifetime) {
         session_destroy();
         header('Location: /login?msg=session_expired');
         exit;

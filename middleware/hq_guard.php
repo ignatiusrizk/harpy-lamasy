@@ -57,9 +57,11 @@ if (empty($_SESSION['user_id']) || empty($_SESSION['tenant_id'])) {
 
 // ── Session timeout (sama dengan tenant_guard) ────────
 $_now = time();
+// Min 1 hari idle / 7 hari absolut (selaras tenant_guard; override nilai lama db.php prod)
+$_sessTimeout  = max(defined('SESSION_TIMEOUT')  ? SESSION_TIMEOUT  : 0, 86400);
+$_sessLifetime = max(defined('SESSION_LIFETIME') ? SESSION_LIFETIME : 0, 604800);
 if (isset($_SESSION['hl_last_activity'])
-    && defined('SESSION_TIMEOUT')
-    && ($_now - $_SESSION['hl_last_activity'] > SESSION_TIMEOUT)) {
+    && ($_now - $_SESSION['hl_last_activity'] > $_sessTimeout)) {
     session_destroy();
     if ((!empty($_GET['action']) || !empty($_SERVER['HTTP_X_REQUESTED_WITH'])) && ($_SERVER['HTTP_SEC_FETCH_MODE'] ?? '') !== 'navigate') {
         header('Content-Type: application/json');
@@ -70,8 +72,7 @@ if (isset($_SESSION['hl_last_activity'])
     exit;
 }
 if (isset($_SESSION['hl_login_time'])
-    && defined('SESSION_LIFETIME')
-    && ($_now - $_SESSION['hl_login_time'] > SESSION_LIFETIME)) {
+    && ($_now - $_SESSION['hl_login_time'] > $_sessLifetime)) {
     session_destroy();
     header('Location: /login?msg=session_expired');
     exit;
