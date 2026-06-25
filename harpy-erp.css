@@ -994,7 +994,7 @@ body { font-family: var(--font); background: var(--off); color: var(--dark); min
     font-size: 0; padding: 5px 8px;
   }
   .ol-top-logout::before {
-    content: '⏻'; font-size: 14px;
+    content: '🚪'; font-size: 14px;
   }
 }
 
