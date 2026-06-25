@@ -970,15 +970,10 @@ textarea{resize:vertical;min-height:64px}
   /* Bulk toolbar wrap di HP */
   #bulkToolbar{flex-direction:column;align-items:stretch!important;gap:8px}
   #bulkToolbar select,#bulkToolbar button{width:100%}
-  .items-table{table-layout:fixed !important;width:100% !important}
-  .items-table th{min-width:0 !important}
-  .items-table th:nth-child(1){width:auto !important}
-  .items-table th:nth-child(2){width:52px !important}
-  .items-table th:nth-child(3){width:52px !important}
-  .items-table th:nth-child(4){width:80px !important}
+  /* Tabel edit item: scroll horizontal (jangan paksa-fit → klip). Sembunyikan kolom subtotal utk hemat ruang. */
+  .items-table{min-width:440px}
   .items-table th:nth-child(5),.items-table td:nth-child(5){display:none !important}
-  .items-table th:nth-child(6){width:32px !important}
-  .items-table td input,.items-table td select{width:100% !important;min-width:0 !important}
+  .items-table td input,.items-table td select{width:100%;min-width:0}
   .action-btns{flex-wrap:wrap}
   .pay-opt{grid-template-columns:1fr 1fr}
   /* Tombol di action col harus stack vertikal supaya readable */
