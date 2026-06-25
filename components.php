@@ -473,7 +473,47 @@ function renderTopbar(string $activePage = '', bool $minimalMode = false): void 
           <div class="ol-side-sub" title="<?= htmlspecialchars($brandNama) ?>">
             <?= htmlspecialchars($brandNama) ?>
           </div>
-          <?php if ($activeOutletNama !== $brandNama): ?>
+          <?php
+          // ── Outlet switcher (dipindah dari topbar biar topbar tak sumpek) ──
+          $sideShowOutlet = !$minimalMode && TenantResolver::hasOutlet();
+          if ($sideShowOutlet):
+            $curOid   = TenantResolver::outletId();
+            $sdb      = Database::get();
+            $sst      = $sdb->prepare(
+              "SELECT id, nama_outlet, status FROM outlets
+               WHERE tenant_id = ? AND status IN ('trial','grace','active')
+               ORDER BY is_main DESC, nama_outlet ASC"
+            );
+            $sst->execute([TenantResolver::id()]);
+            $sideOutlets = $sst->fetchAll();
+            $sideMulti   = count($sideOutlets) > 1;
+            $sideSecret  = hash('sha256', session_id() . ($user['id'] ?? '') . 'switch_outlet_v1');
+          ?>
+            <?php if ($sideMulti): ?>
+            <details class="ol-side-outlet-sw">
+              <summary class="ol-side-outlet" title="<?= htmlspecialchars($activeOutletNama) ?>">
+                📍 <span class="ol-side-outlet-nm"><?= htmlspecialchars($activeOutletNama) ?></span>
+                <span class="ol-side-outlet-cv">▾</span>
+              </summary>
+              <div class="ol-side-outlet-opts">
+                <?php foreach ($sideOutlets as $o):
+                  $oAct = (int)$o['id'] === $curOid;
+                  $oTok = substr(hash_hmac('sha256', 'so:' . ($user['id'] ?? '') . ':' . (int)$o['id'], $sideSecret), 0, 16);
+                ?>
+                <a href="/switch-outlet?id=<?= (int)$o['id'] ?>&t=<?= $oTok ?>"
+                   class="ol-side-outlet-opt <?= $oAct ? 'active' : '' ?>">
+                  <?= $oAct ? '✓ ' : '' ?><?= htmlspecialchars($o['nama_outlet']) ?>
+                  <span class="st"><?= htmlspecialchars($o['status']) ?></span>
+                </a>
+                <?php endforeach; ?>
+              </div>
+            </details>
+            <?php else: ?>
+            <div class="ol-side-outlet" title="<?= htmlspecialchars($activeOutletNama) ?>">
+              📍 <?= htmlspecialchars($activeOutletNama) ?>
+            </div>
+            <?php endif; ?>
+          <?php elseif ($activeOutletNama !== $brandNama): ?>
           <div class="ol-side-outlet" title="<?= htmlspecialchars($activeOutletNama) ?>">
             📍 <?= htmlspecialchars($activeOutletNama) ?>
           </div>
@@ -743,66 +783,7 @@ function renderTopbar(string $activePage = '', bool $minimalMode = false): void 
               <span class="ol-top-chip" title="Saldo coin">🪙 <?= $coinFmt ?></span>
             <?php endif; ?>
 
-            <?php
-            // ── Outlet switcher ──
-            if (!$minimalMode && TenantResolver::hasOutlet()):
-              $currentOutletId = TenantResolver::outletId();
-              $currentOutletNm = TenantResolver::namaOutlet();
-              $tdb  = Database::get();
-              $stmt = $tdb->prepare(
-                "SELECT id, nama_outlet, status FROM outlets
-                 WHERE tenant_id = ? AND status IN ('trial','grace','active')
-                 ORDER BY is_main DESC, nama_outlet ASC"
-              );
-              $stmt->execute([TenantResolver::id()]);
-              $allOutlets = $stmt->fetchAll();
-              $hasMulti = count($allOutlets) > 1;
-            ?>
-            <div class="hl-outlet-switch" style="position:relative;min-width:0">
-              <button class="ol-top-chip" type="button"
-                      onclick="this.nextElementSibling.classList.toggle('open')"
-                      style="border:none;cursor:pointer;font-family:inherit;min-width:0;max-width:100%">
-                <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-block;min-width:0;max-width:36vw"><?= htmlspecialchars($currentOutletNm) ?></span>
-                <span style="font-size:9px;opacity:.6;flex-shrink:0">▼</span>
-              </button>
-              <div class="hl-outlet-dropdown" style="display:none;position:absolute;top:calc(100% + 6px);
-                           right:0;background:#fff;border:1px solid #D5DAE8;border-radius:10px;
-                           box-shadow:0 8px 24px rgba(27,45,90,.12);min-width:240px;z-index:1000;
-                           padding:6px;max-height:380px;overflow-y:auto">
-                <div style="font-size:10px;color:var(--gray);font-weight:700;padding:8px 12px 4px;
-                            text-transform:uppercase;letter-spacing:.06em">
-                  <?= $hasMulti ? 'Pilih Outlet' : 'Outlet Aktif' ?>
-                </div>
-                <?php
-                  // Secret sama dengan switch-outlet.php
-                  $swSecret = hash('sha256', session_id() . ($user['id'] ?? '') . 'switch_outlet_v1');
-                ?>
-                <?php foreach ($allOutlets as $o):
-                  $isActive = (int)$o['id'] === $currentOutletId;
-                  $swToken  = substr(hash_hmac('sha256', 'so:' . ($user['id'] ?? '') . ':' . (int)$o['id'], $swSecret), 0, 16);
-                ?>
-                <a href="/switch-outlet?id=<?= (int)$o['id'] ?>&t=<?= $swToken ?>"
-                   style="display:block;padding:8px 12px;border-radius:6px;text-decoration:none;
-                          color:<?= $isActive ? 'var(--navy)' : 'var(--dark)' ?>;font-size:13px;
-                          font-weight:<?= $isActive ? '700' : '500' ?>;
-                          background:<?= $isActive ? 'var(--teal-bg)' : 'transparent' ?>">
-                  <?= $isActive ? '✓ ' : '' ?><?= htmlspecialchars($o['nama_outlet']) ?>
-                  <span style="float:right;font-size:10px;color:var(--gray);text-transform:uppercase">
-                    <?= $o['status'] ?>
-                  </span>
-                </a>
-                <?php endforeach; ?>
-              </div>
-              <script>
-              document.addEventListener('click',function(e){
-                if(!e.target.closest('.hl-outlet-switch')){
-                  document.querySelectorAll('.hl-outlet-dropdown.open').forEach(function(el){el.classList.remove('open')});
-                }
-              });
-              </script>
-              <style>.hl-outlet-dropdown.open{display:block!important}</style>
-            </div>
-            <?php endif; ?>
+            <?php /* Outlet switcher dipindah ke side menu (ol-side-outlet-sw) — topbar tak sumpek */ ?>
 
             <span class="ol-top-user"><?= htmlspecialchars($user['nama']) ?></span>
             <?php if (!$minimalMode && TenantResolver::canAccessHqV2()): ?>

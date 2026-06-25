@@ -663,6 +663,36 @@ body { font-family: var(--font); background: var(--off); color: var(--dark); min
   opacity: .8;
 }
 
+/* ── Outlet switcher di side menu (dipindah dari topbar) ── */
+.ol-side-outlet-sw { margin-top: 3px; }
+.ol-side-outlet-sw > summary {
+  list-style: none; cursor: pointer; display: flex; align-items: center; gap: 4px;
+  margin-top: 0; opacity: 1;
+}
+.ol-side-outlet-sw > summary::-webkit-details-marker { display: none; }
+.ol-side-outlet-sw .ol-side-outlet-nm {
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1 1 auto; min-width: 0;
+}
+.ol-side-outlet-sw .ol-side-outlet-cv {
+  font-size: 8px; flex-shrink: 0; transition: transform .15s;
+}
+.ol-side-outlet-sw[open] .ol-side-outlet-cv { transform: rotate(180deg); }
+.ol-side-outlet-opts {
+  margin-top: 6px; display: flex; flex-direction: column; gap: 2px;
+  background: rgba(255,255,255,.04); border-radius: 8px; padding: 4px;
+}
+.ol-side-outlet-opt {
+  display: flex; align-items: center; gap: 6px;
+  padding: 7px 9px; border-radius: 6px; text-decoration: none;
+  font-size: 12px; font-weight: 500; color: var(--white);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.ol-side-outlet-opt.active { background: rgba(53,232,213,.18); font-weight: 700; color: var(--teal); }
+.ol-side-outlet-opt:hover { background: rgba(255,255,255,.08); }
+.ol-side-outlet-opt .st {
+  margin-left: auto; font-size: 9px; text-transform: uppercase; opacity: .55; flex-shrink: 0;
+}
+
 .ol-side-nav {
   padding: 12px 10px 20px;
   display: flex; flex-direction: column; gap: 2px;
