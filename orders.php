@@ -841,7 +841,7 @@ tbody td{padding:11px 12px;vertical-align:middle}
 .modal-title{font-size:15px;font-weight:700;color:var(--navy)}
 .modal-close{background:none;border:none;font-size:18px;cursor:pointer;color:var(--gray);padding:4px}
 .modal-body{padding:20px;flex:1;overflow-y:auto}
-.modal-footer{padding:16px 20px;border-top:1px solid var(--light);display:flex;gap:10px;justify-content:flex-end;position:sticky;bottom:0;background:var(--white)}
+.modal-footer{padding:16px 20px;border-top:1px solid var(--light);display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;position:sticky;bottom:0;background:var(--white)}
 
 .form-group{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
 .form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
