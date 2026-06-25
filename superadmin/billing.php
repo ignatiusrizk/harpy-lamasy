@@ -10,6 +10,34 @@ require_once SA_ROOT . '/../core/SaPermission.php';
 
 date_default_timezone_set('Asia/Jakarta');
 
+/**
+ * Sumber revenue gabungan: pembayaran manual (saas_manual_payments confirmed)
+ * + pembayaran Midtrans otomatis (saas_payments paid). Kolom dinormalisasi:
+ * tenant_id, type (setup_fee/coin_topup/adjustment), nominal, coin, bayar (DATE).
+ * Tidak double-count: kedua tabel sumber record terpisah (webhook hanya tulis
+ * saas_payments + coin_ledger, tak pernah saas_manual_payments).
+ */
+function smpRevenueSource(): string {
+    return "(
+        SELECT tenant_id,
+               CASE WHEN type='custom' THEN 'adjustment' ELSE type END AS type,
+               nominal_dibayar AS nominal,
+               coin_dikreditkan AS coin,
+               tanggal_bayar AS bayar
+        FROM saas_manual_payments
+        WHERE status='confirmed'
+        UNION ALL
+        SELECT sp.tenant_id,
+               CASE WHEN sp.type='topup_coin' THEN 'coin_topup' ELSE 'setup_fee' END AS type,
+               sp.amount AS nominal,
+               COALESCE((SELECT cl.amount FROM coin_ledger cl
+                         WHERE cl.payment_id=sp.id AND cl.type='topup' LIMIT 1),0) AS coin,
+               DATE(COALESCE(sp.paid_at, sp.created_at)) AS bayar
+        FROM saas_payments sp
+        WHERE sp.status='paid'
+    ) rev";
+}
+
 $action = $_GET['action'] ?? '';
 
 if ($action) {
@@ -25,24 +53,23 @@ if ($action) {
         function smpStats(PDO $db, int $month, int $year): array {
             $s = $db->prepare(
                 "SELECT
-                   COALESCE(SUM(CASE WHEN type='setup_fee'  THEN nominal_dibayar END),0) AS setup_fee,
-                   COALESCE(SUM(CASE WHEN type='coin_topup' THEN nominal_dibayar END),0) AS coin_topup,
-                   COALESCE(SUM(CASE WHEN type='adjustment' THEN nominal_dibayar END),0) AS adjustment,
-                   COALESCE(SUM(nominal_dibayar),0) AS grand_total,
-                   COALESCE(SUM(coin_dikreditkan),0) AS total_coin,
+                   COALESCE(SUM(CASE WHEN type='setup_fee'  THEN nominal END),0) AS setup_fee,
+                   COALESCE(SUM(CASE WHEN type='coin_topup' THEN nominal END),0) AS coin_topup,
+                   COALESCE(SUM(CASE WHEN type='adjustment' THEN nominal END),0) AS adjustment,
+                   COALESCE(SUM(nominal),0) AS grand_total,
+                   COALESCE(SUM(coin),0) AS total_coin,
                    COUNT(*) AS txn_count
-                 FROM saas_manual_payments
-                 WHERE status='confirmed'
-                   AND MONTH(tanggal_bayar)=? AND YEAR(tanggal_bayar)=?"
+                 FROM " . smpRevenueSource() . "
+                 WHERE MONTH(bayar)=? AND YEAR(bayar)=?"
             );
             $s->execute([$month, $year]);
             return $s->fetch(PDO::FETCH_ASSOC) ?: [];
         }
 
         $ytdS = $db->prepare(
-            "SELECT COALESCE(SUM(nominal_dibayar),0) AS total,
-                    COALESCE(SUM(coin_dikreditkan),0) AS total_coin
-             FROM saas_manual_payments WHERE status='confirmed' AND YEAR(tanggal_bayar)=?"
+            "SELECT COALESCE(SUM(nominal),0) AS total,
+                    COALESCE(SUM(coin),0) AS total_coin
+             FROM " . smpRevenueSource() . " WHERE YEAR(bayar)=?"
         );
         $ytdS->execute([$y]);
         $ytdRow = $ytdS->fetch(PDO::FETCH_ASSOC);
@@ -71,12 +98,11 @@ if ($action) {
         }
 
         $rows = $db->query(
-            "SELECT DATE_FORMAT(tanggal_bayar,'%Y-%m') AS mon,
+            "SELECT DATE_FORMAT(bayar,'%Y-%m') AS mon,
                     type,
-                    COALESCE(SUM(nominal_dibayar),0) AS rev
-             FROM saas_manual_payments
-             WHERE status='confirmed'
-               AND tanggal_bayar >= DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 5 MONTH),'%Y-%m-01')
+                    COALESCE(SUM(nominal),0) AS rev
+             FROM " . smpRevenueSource() . "
+             WHERE bayar >= DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 5 MONTH),'%Y-%m-01')
              GROUP BY mon, type
              ORDER BY mon"
         )->fetchAll(PDO::FETCH_ASSOC);
@@ -106,12 +132,11 @@ if ($action) {
     if ($action === 'top_tenants') {
         $rows = $db->query(
             "SELECT t.id, t.nama_perusahaan AS nama_outlet, t.owner_name,
-                    COALESCE(SUM(p.nominal_dibayar),0) AS total_spent,
+                    COALESCE(SUM(p.nominal),0) AS total_spent,
                     COUNT(*) AS txn_count,
                     t.coin_balance
-             FROM saas_manual_payments p
+             FROM " . smpRevenueSource() . " p
              JOIN tenants t ON t.id = p.tenant_id
-             WHERE p.status='confirmed'
              GROUP BY t.id
              ORDER BY total_spent DESC
              LIMIT 5"
