@@ -138,7 +138,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_notif'])) {
     } elseif (!$hasNotifSettings) {
         $notifError = 'Kolom notif_settings belum ada. Jalankan SQL migration dulu.';
     } else {
-        $alerts = ['coin_low', 'trial_ending', 'daily_report'];
+        $alerts = ['coin_low', 'trial_ending', 'daily_report', 'alert_anomali'];
         $channels = ['email', 'wa'];
         $prefs = [];
         foreach ($alerts as $a) {
@@ -332,6 +332,7 @@ $notifDefaults = [
     'coin_low'      => ['email'=>1, 'wa'=>0],
     'trial_ending'  => ['email'=>1, 'wa'=>1],
     'daily_report'  => ['email'=>0, 'wa'=>0],
+    'alert_anomali' => ['email'=>0, 'wa'=>1],  // default ON (perilaku existing); bisa di-OFF utk hemat coin
 ];
 $notifPrefs = $notifDefaults;
 if (!empty($hqTenant['notif_settings'])) {
@@ -731,11 +732,13 @@ require __DIR__ . '/_layout_open.php';
           <tbody>
             <?php
             $alertRows = [
-                'coin_low'     => ['🪙 Coin Hampir Habis', 'Kirim alert kalau saldo coin <1000'],
-                'trial_ending' => ['⏰ Trial Mau Berakhir', 'Reminder H-3 dan H-1 sebelum trial habis'],
-                'daily_report' => ['📊 Laporan Harian', 'Ringkasan omset & order tiap pagi'],
+                'coin_low'      => ['🪙 Coin Hampir Habis', 'Kirim alert kalau saldo coin <1000'],
+                'trial_ending'  => ['⏰ Trial Mau Berakhir', 'Reminder H-3 dan H-1 sebelum trial habis'],
+                'daily_report'  => ['📊 Laporan Harian', 'Ringkasan omset & order tiap pagi'],
+                'alert_anomali' => ['🚨 Alert Anomali Otomatis', 'Deteksi omset turun / order menumpuk / absensi rendah → WA owner. <strong>Pakai coin</strong> tiap alert.'],
             ];
             foreach ($alertRows as $key => [$lbl, $desc]):
+              $waOnly = ($key === 'alert_anomali'); // anomali tak punya channel email
             ?>
             <tr style="border-top:1px solid #F3F4F6">
               <td style="padding:11px 12px">
@@ -743,9 +746,13 @@ require __DIR__ . '/_layout_open.php';
                 <div style="font-size:11px;color:#9CA3AF;margin-top:2px"><?= $desc ?></div>
               </td>
               <td style="padding:11px 10px;text-align:center">
+                <?php if ($waOnly): ?>
+                  <span style="color:#D1D5DB">—</span>
+                <?php else: ?>
                 <input type="checkbox" name="notif[<?= $key ?>][email]" value="1"
                        <?= $notifPrefs[$key]['email'] ? 'checked' : '' ?>
                        style="width:18px;height:18px;accent-color:#35E8D5;cursor:pointer">
+                <?php endif; ?>
               </td>
               <td style="padding:11px 10px;text-align:center">
                 <input type="checkbox" name="notif[<?= $key ?>][wa]" value="1"

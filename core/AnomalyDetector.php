@@ -18,6 +18,10 @@ class AnomalyDetector
     public static function check(int $tenantId, int $outletId): void
     {
         try {
+            // Hormati toggle owner: skip kalau Alert Anomali dimatikan (hemat coin).
+            // Default ON — hanya skip kalau di-set eksplisit wa=0 di notif_settings.
+            if (!self::isEnabled($tenantId)) return;
+
             self::checkOmsetDrop($tenantId, $outletId);
             self::checkKasBelumDiinput($tenantId, $outletId);
             self::checkOrderMenumpuk($tenantId, $outletId);
@@ -26,6 +30,24 @@ class AnomalyDetector
         } catch (Throwable $e) {
             error_log('[AnomalyDetector::check] ' . $e->getMessage());
         }
+    }
+
+    /** Apakah alert anomali aktif untuk tenant ini? Default true; false hanya kalau owner set wa=0. */
+    private static function isEnabled(int $tenantId): bool
+    {
+        try {
+            $db = Database::get();
+            $s = $db->prepare("SELECT notif_settings FROM tenants WHERE id=?");
+            $s->execute([$tenantId]);
+            $raw = $s->fetchColumn();
+            if ($raw) {
+                $j = json_decode($raw, true);
+                if (is_array($j) && isset($j['alert_anomali'])) {
+                    return (int)($j['alert_anomali']['wa'] ?? 1) === 1;
+                }
+            }
+        } catch (Throwable) {}
+        return true; // belum di-konfigurasi → default aktif (perilaku existing)
     }
 
     // 1) Omset hari ini turun ≥30% dari rata-rata 7 hari terakhir
