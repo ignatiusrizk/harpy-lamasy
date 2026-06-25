@@ -142,6 +142,24 @@ function renderGlobalJsHelpers(): void { ?>
     window.capitalize = s => s ? s.charAt(0).toUpperCase() + s.slice(1) : '';
     window.katLabelInventori = k => ({deterjen:'🧴 Deterjen', parfum:'🌸 Parfum', pewangi:'💧 Pewangi', plastik_kemasan:'📦 Plastik', peralatan:'🔧 Peralatan', lainnya:'📋 Lainnya'}[k] || k);
 
+    // ── Hardware back button (native app): jangan keluar app — mundur ke halaman/menu sebelumnya ──
+    (function(){
+      try {
+        var App = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App;
+        if (!App || !App.addListener) return;
+        App.addListener('backButton', function(e){
+          // Kalau ada modal/overlay terbuka, tutup itu dulu (jangan navigasi)
+          var openModal = document.querySelector('.modal.open, [data-modal-open="1"]');
+          if (openModal) { openModal.classList.remove('open'); openModal.removeAttribute('data-modal-open'); return; }
+          if (e && e.canGoBack) { window.history.back(); return; }
+          // Di root history: jangan keluar — arahkan ke dashboard; kalau sudah di dashboard, minimize (bukan exit)
+          var p = location.pathname.replace(/\/$/, '');
+          if (p !== '/dashboard' && p !== '/login' && p !== '') { location.href = '/dashboard'; }
+          else { try { App.minimizeApp(); } catch(_){} }
+        });
+      } catch(e) {}
+    })();
+
     // ══════════════════════════════════════════════════════
     // PRODUCT TOUR — sidebar walkthrough untuk first-time user
     // Activates after outlet ready. Targets data-tour="<key>" elements.
