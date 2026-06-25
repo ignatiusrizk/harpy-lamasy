@@ -1762,3 +1762,28 @@ html, body { overflow-x: hidden; }
   }
   .hl-tour-arrow { display: none; }
 }
+
+/* ══════════════════════════════════════════════════════
+   MOBILE TYPE SCALE — kecilkan teks komponen di HP (≤600 / ≤380).
+   Taps & jarak (padding) sengaja TIDAK diubah agar tetap ramah jempol.
+   Teks polos (body) sudah ikut root font-size. Blok ini untuk yg ber-px eksplisit.
+   ══════════════════════════════════════════════════════ */
+@media (max-width: 600px) {
+  .hl-btn        { font-size: 13px; }
+  .hl-btn-lg     { font-size: 14px; }
+  .hl-btn-sm     { font-size: 11px; }
+  .hl-badge      { font-size: 10px; }
+  .hl-stat-label, .hl-filter-label { font-size: 11px; }
+  .hl-modal-title { font-size: 14px; }
+  .hl-nav-link, .hl-nav-drawer-user-nama { font-size: 13px; }
+  input, select, textarea { font-size: 13px; }
+  .hl-table      { font-size: 12px; }
+  /* kartu/metrik dashboard (label + sub teks) */
+  .metric-label, .ocard-label, .pl-label, .stat-label, .card-label { font-size: 11px; }
+  .metric-sub, .ocard-sub, .hero p { font-size: 12px; }
+}
+@media (max-width: 380px) {
+  .hl-btn { font-size: 12px; }
+  .hl-table { font-size: 11px; }
+  .metric-label, .ocard-label, .pl-label { font-size: 10px; }
+}
