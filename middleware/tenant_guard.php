@@ -84,7 +84,7 @@ require_once ROOT . '/core/ErrorLogger.php';
 
 // ── Cek login ─────────────────────────────────────────
 if (empty($_SESSION['user_id']) || empty($_SESSION['tenant_id'])) {
-    if (!empty($_GET['action']) || !empty($_SERVER['HTTP_X_REQUESTED_WITH'])) {
+    if ((!empty($_GET['action']) || !empty($_SERVER['HTTP_X_REQUESTED_WITH'])) && ($_SERVER['HTTP_SEC_FETCH_MODE'] ?? '') !== 'navigate') {
         header('Content-Type: application/json');
         echo json_encode(['error' => 'Sesi habis. Silakan login kembali.', 'redirect' => '/login']);
     } else {
@@ -151,7 +151,7 @@ $_now = time();
 if (isset($_SESSION['hl_last_activity'])) {
     if ($_now - $_SESSION['hl_last_activity'] > SESSION_TIMEOUT) {
         session_destroy();
-        if (!empty($_GET['action']) || !empty($_SERVER['HTTP_X_REQUESTED_WITH'])) {
+        if ((!empty($_GET['action']) || !empty($_SERVER['HTTP_X_REQUESTED_WITH'])) && ($_SERVER['HTTP_SEC_FETCH_MODE'] ?? '') !== 'navigate') {
             header('Content-Type: application/json');
             echo json_encode(['error' => 'Sesi habis. Silakan login kembali.', 'redirect' => '/login']);
         } else {

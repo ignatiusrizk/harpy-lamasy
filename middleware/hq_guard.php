@@ -46,7 +46,7 @@ require_once ROOT . '/core/TenantResolver.php';
 
 // ── Auth check ────────────────────────────────────────
 if (empty($_SESSION['user_id']) || empty($_SESSION['tenant_id'])) {
-    if (!empty($_GET['action']) || !empty($_SERVER['HTTP_X_REQUESTED_WITH'])) {
+    if ((!empty($_GET['action']) || !empty($_SERVER['HTTP_X_REQUESTED_WITH'])) && ($_SERVER['HTTP_SEC_FETCH_MODE'] ?? '') !== 'navigate') {
         header('Content-Type: application/json');
         echo json_encode(['error'=>'Sesi habis. Silakan login kembali.', 'redirect'=>'/login']);
     } else {
@@ -61,7 +61,7 @@ if (isset($_SESSION['hl_last_activity'])
     && defined('SESSION_TIMEOUT')
     && ($_now - $_SESSION['hl_last_activity'] > SESSION_TIMEOUT)) {
     session_destroy();
-    if (!empty($_GET['action']) || !empty($_SERVER['HTTP_X_REQUESTED_WITH'])) {
+    if ((!empty($_GET['action']) || !empty($_SERVER['HTTP_X_REQUESTED_WITH'])) && ($_SERVER['HTTP_SEC_FETCH_MODE'] ?? '') !== 'navigate') {
         header('Content-Type: application/json');
         echo json_encode(['error'=>'Sesi habis. Silakan login kembali.', 'redirect'=>'/login']);
     } else {
