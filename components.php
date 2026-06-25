@@ -478,14 +478,8 @@ function renderTopbar(string $activePage = '', bool $minimalMode = false): void 
           $sideShowOutlet = !$minimalMode && TenantResolver::hasOutlet();
           if ($sideShowOutlet):
             $curOid   = TenantResolver::outletId();
-            $sdb      = Database::get();
-            $sst      = $sdb->prepare(
-              "SELECT id, nama_outlet, status FROM outlets
-               WHERE tenant_id = ? AND status IN ('trial','grace','active')
-               ORDER BY is_main DESC, nama_outlet ASC"
-            );
-            $sst->execute([TenantResolver::id()]);
-            $sideOutlets = $sst->fetchAll();
+            // Outlet yang BOLEH diakses user: owner→semua, staff→hanya yg di-assign
+            $sideOutlets = TenantResolver::getAssignedOutlets();
             $sideMulti   = count($sideOutlets) > 1;
             $sideSecret  = hash('sha256', session_id() . ($user['id'] ?? '') . 'switch_outlet_v1');
           ?>
