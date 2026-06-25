@@ -42,8 +42,9 @@ class AnomalyDetector
             $raw = $s->fetchColumn();
             if ($raw) {
                 $j = json_decode($raw, true);
+                // Channel yg benar-benar jalan = email (WA belum diimplementasi).
                 if (is_array($j) && isset($j['alert_anomali'])) {
-                    return (int)($j['alert_anomali']['wa'] ?? 1) === 1;
+                    return (int)($j['alert_anomali']['email'] ?? 1) === 1;
                 }
             }
         } catch (Throwable) {}
