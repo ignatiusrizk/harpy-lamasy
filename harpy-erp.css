@@ -989,12 +989,9 @@ body { font-family: var(--font); background: var(--off); color: var(--dark); min
   .ol-top-switch::before {
     content: '🏢'; font-size: 14px;
   }
-  /* Logout → icon only */
+  /* Logout → teks ringkas (konsisten dgn HQ, anti-tofu glyph) */
   .ol-top-logout {
-    font-size: 0; padding: 5px 8px;
-  }
-  .ol-top-logout::before {
-    content: '🚪'; font-size: 14px;
+    font-size: 11px; padding: 5px 9px;
   }
 }
 
