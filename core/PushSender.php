@@ -121,6 +121,7 @@ class PushSender
             'token' => $data['access_token'],
             'exp'   => time() + (int)($data['expires_in'] ?? 3600),
         ]));
+        @chmod($cacheFile, 0600);
         return $data['access_token'];
     }
 
