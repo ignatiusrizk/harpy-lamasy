@@ -237,7 +237,7 @@ if ($action) {
 .kb-empty{color:#9CA3AF;font-size:12px;text-align:center;padding:20px 8px;font-style:italic}
 
 .kb-toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px}
-.kb-live{font-size:11px;color:#10B981;font-weight:700;display:flex;align-items:center;gap:6px}
+.kb-live{font-size:11px;color:#10B981;font-weight:700;display:flex;align-items:center;gap:6px;white-space:nowrap}
 .kb-live .dot{display:inline-block;width:7px;height:7px;background:#10B981;border-radius:50%;animation:livePulse 2s infinite}
 @keyframes livePulse{0%,100%{opacity:1}50%{opacity:.3}}
 </style>
@@ -251,9 +251,9 @@ if ($action) {
       <h1 style="font-size:1.3rem;font-weight:800;color:var(--navy)">🗂️ Kanban Antrian Order</h1>
       <p style="font-size:12px;color:var(--gray)">Auto-refresh 60 detik · Klik <strong>Lanjut</strong> untuk pindah status</p>
     </div>
-    <div style="display:flex;gap:10px;align-items:center">
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
       <span class="kb-live"><span class="dot"></span>live · <span id="kbTs">—</span></span>
-      <span id="kbCapWarn" style="display:none;background:#FEF3C7;color:#92400E;padding:4px 8px;border-radius:8px;font-size:11px;font-weight:600"
+      <span id="kbCapWarn" style="display:none;background:#FEF3C7;color:#92400E;padding:4px 8px;border-radius:8px;font-size:11px;font-weight:600;white-space:nowrap"
             title="Sebagian order mungkin tidak tampil. Hubungi support kalau persisten.">⚠️ Cap reached</span>
       <button class="hl-btn hl-btn-outline hl-btn-sm" onclick="loadKanban()">↻ Refresh</button>
       <?php if (hasPermission('pos.view')): ?>
