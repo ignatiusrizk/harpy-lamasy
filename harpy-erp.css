@@ -396,7 +396,7 @@ body { font-family: var(--font); background: var(--off); color: var(--dark); min
   border-bottom-left-radius: var(--r-lg);
   border-bottom-right-radius: var(--r-lg);
   box-shadow: var(--shadow);
-  max-height: 300px; opacity: 1; overflow: hidden;
+  max-height: 800px; opacity: 1; overflow: hidden;
   transition: max-height .28s ease, opacity .2s ease, padding .2s ease;
 }
 .hl-filter-bar.collapsed {
