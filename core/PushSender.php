@@ -182,18 +182,17 @@ class PushSender
         try {
             if (!self::eventExists($eventKode)) return;
             $cfg = self::config();
-            if ($cfg === null) { // Firebase belum dikonfigurasi → no-op
-                ErrorLogger::log('push_debug', 'config null: pid="' . (defined('PUSH_FCM_PROJECT_ID') ? PUSH_FCM_PROJECT_ID : '(undef)') . '" sapath="' . (defined('PUSH_FCM_SA_PATH') ? PUSH_FCM_SA_PATH : '(undef)') . '" file_exists=' . ((defined('PUSH_FCM_SA_PATH') && is_file(PUSH_FCM_SA_PATH)) ? '1' : '0'), $tenantId, $outletId);
-                return;
-            }
+            if ($cfg === null) return; // Firebase belum dikonfigurasi → no-op
 
             $db    = Database::get();
             $users = self::resolveRecipients($db, $eventKode, $tenantId, $outletId, $targetUserIds);
-            $tokens = $users ? self::tokensForUsers($db, $tenantId, $users) : [];
+            if (!$users) return;
+            $tokens = self::tokensForUsers($db, $tenantId, $users);
+            if (!$tokens) return;
+
             $accessToken = self::accessToken($cfg);
-            ErrorLogger::log('push_debug', "evt=$eventKode users=" . count($users) . ' tokens=' . count($tokens) . ' token_ok=' . ($accessToken !== null ? '1' : '0'), $tenantId, $outletId);
-            if (!$tokens || $accessToken === null) {
-                if ($accessToken === null) ErrorLogger::log('push', 'Gagal ambil FCM access token', $tenantId, $outletId);
+            if ($accessToken === null) {
+                ErrorLogger::log('push', 'Gagal ambil FCM access token', $tenantId, $outletId);
                 return;
             }
             foreach ($tokens as $tok) {
