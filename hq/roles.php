@@ -18,6 +18,7 @@
 $activePage = 'hq-roles';
 define('ROOT', dirname(__DIR__));
 require_once ROOT . '/middleware/hq_guard.php';
+require_once ROOT . '/core/PushSender.php';
 
 $db   = Database::get();
 $tid  = (int)$hqTenant['id'];
@@ -78,6 +79,16 @@ if ($action) {
         exit;
     }
 
+    if ($action === 'push_events_list') {
+        header('Content-Type: application/json');
+        $out = [];
+        foreach (PushSender::EVENTS as $kode => $meta) {
+            $out[] = ['kode' => $kode, 'label' => $meta['label']];
+        }
+        echo json_encode(['events' => $out]);
+        exit;
+    }
+
     if ($action === 'detail') {
         $rid = (int)($_GET['id'] ?? 0);
         try {
@@ -117,10 +128,16 @@ if ($action) {
             }
             unset($usr);
 
+            // Subscribed push events
+            $pe = $db->prepare("SELECT event_kode FROM hl_role_push_event WHERE tenant_id=? AND role_id=?");
+            $pe->execute([$tid, $rid]);
+            $pushEvents = $pe->fetchAll(PDO::FETCH_COLUMN);
+
             echo json_encode([
                 'role'        => $role,
                 'permissions' => $permIds,
                 'users'       => $users,
+                'push_events' => $pushEvents,
             ]);
         } catch (Throwable $e) {
             echo json_encode(['error'=>$e->getMessage()]);
@@ -167,6 +184,19 @@ if ($action) {
                 $ins = $db->prepare("INSERT INTO hl_role_permissions (tenant_id, role_id, permission_id) VALUES (?,?,?)");
                 foreach ($permIds as $pid) {
                     if ($pid > 0) $ins->execute([$tid, $rid, $pid]);
+                }
+            }
+
+            // Langganan push event (DELETE + re-INSERT) — tenant-scoped.
+            $db->prepare("DELETE FROM hl_role_push_event WHERE tenant_id=? AND role_id=?")
+               ->execute([$tid, $rid]);
+            $pushEvents = $d['push_events'] ?? [];
+            if (is_array($pushEvents)) {
+                $insPE = $db->prepare("INSERT INTO hl_role_push_event (tenant_id, role_id, event_kode) VALUES (?,?,?)");
+                foreach ($pushEvents as $ek) {
+                    if (PushSender::eventExists((string)$ek)) {
+                        $insPE->execute([$tid, $rid, (string)$ek]);
+                    }
                 }
             }
 
@@ -342,6 +372,7 @@ require __DIR__ . '/_layout_open.php';
           <div style="color:#9CA3AF;font-size:12px">Memuat permission…</div>
         </div>
       </div>
+      <div id="pushEventsBox"></div>
       <button class="btn btn-primary" style="padding:12px;font-size:14px" onclick="submitForm()">
         💾 Simpan Role
       </button>
@@ -357,6 +388,22 @@ require __DIR__ . '/_layout_open.php';
 <script>
 const csrf = document.querySelector('meta[name="csrf-token"]').content;
 let permsCache = null;
+
+// muat katalog push event sekali
+let PUSH_EVENTS = [];
+fetch('?action=push_events_list').then(r=>r.json()).then(d=>{ PUSH_EVENTS = d.events || []; });
+
+function renderPushEvents(selected){
+  selected = selected || [];
+  const box = document.getElementById('pushEventsBox');
+  if (!box) return;
+  box.innerHTML = '<div style="font-weight:700;margin:12px 0 6px">🔔 Notifikasi Push</div>' +
+    PUSH_EVENTS.map(e =>
+      `<label style="display:flex;gap:8px;align-items:center;padding:4px 0">
+         <input type="checkbox" name="push_events[]" value="${escapeHtml(e.kode)}" ${selected.includes(e.kode)?'checked':''}>
+         <span>${escapeHtml(e.label)}</span>
+       </label>`).join('');
+}
 
 function escapeHtml(s){return String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
 
@@ -438,6 +485,7 @@ async function openCreate(){
   document.getElementById('formAlert').innerHTML = '';
   const grouped = await loadPermsCache();
   renderPermList(grouped, []);
+  renderPushEvents([]);
   openModal('formModal');
 }
 
@@ -457,6 +505,7 @@ async function openEdit(id){
     : '';
   const grouped = await loadPermsCache();
   renderPermList(grouped, d.permissions);
+  renderPushEvents(d.push_events);
   openModal('formModal');
 }
 
@@ -517,6 +566,7 @@ async function submitForm(){
     deskripsi: document.getElementById('fDesk').value.trim(),
     is_active: document.getElementById('fActive').checked ? 1 : 0,
     permissions: Array.from(document.querySelectorAll('.perm-cb:checked')).map(c => parseInt(c.value)),
+    push_events: Array.from(document.querySelectorAll('input[name="push_events[]"]:checked')).map(c => c.value),
   };
   if (!data.nama && !data.id) { alertEl.innerHTML = '<div class="alert error">Nama wajib diisi</div>'; return; }
 
