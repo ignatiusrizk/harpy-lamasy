@@ -13,8 +13,8 @@ if (!empty($_SESSION['user_id']) && !empty($_SESSION['tenant_id'])) {
         require_once ROOT . '/core/Database.php';
         $db = Database::get();
         $stmt = $db->prepare(
-            "INSERT INTO hl_audit_log (tenant_id, user_id, action, target_type, ip_address, created_at)
-             VALUES (?, ?, 'logout', 'session', ?, NOW())"
+            "INSERT INTO hl_audit_log (tenant_id, user_id, modul, aksi, keterangan, ip_address, created_at)
+             VALUES (?, ?, 'auth', 'logout', 'Logout', ?, NOW())"
         );
         $stmt->execute([
             $_SESSION['tenant_id'],

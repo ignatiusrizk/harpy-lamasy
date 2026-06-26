@@ -147,8 +147,8 @@ if ($action) {
             try {
                 $db->prepare("
                     INSERT INTO saas_manual_payments
-                        (tenant_id, type, amount, status, notes, recorded_by, created_at)
-                    VALUES (?, 'outlet_activation', 0, 'confirmed', ?, ?, NOW())
+                        (tenant_id, type, nominal_dibayar, status, catatan, superadmin_id, created_at)
+                    VALUES (?, 'setup_fee', 0, 'confirmed', ?, ?, NOW())
                 ")->execute([
                     (int)$reg['tenant_id'],
                     $notes ?: 'Konfirmasi aktivasi outlet: ' . ($reg['nama_outlet'] ?? ''),
