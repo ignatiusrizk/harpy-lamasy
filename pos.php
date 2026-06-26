@@ -1438,14 +1438,14 @@ window.outletQris = <?= json_encode([
         ⏳ Memuat struk…
       </div>
     </div>
-    <div class="modal-footer" style="gap:6px;flex-wrap:wrap">
-      <button class="btn btn-outline" onclick="closeModal()">Tutup</button>
-      <button class="btn btn-green" onclick="printStruk()">🖨️ Print Struk</button>
+    <div class="modal-footer" style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <button class="btn btn-green" style="grid-column:1/-1" onclick="printStruk()">🖨️ Print Struk</button>
       <button id="btnPrinterSetting" class="btn btn-teal-sm" style="display:none" onclick="posOpenPrinterModal()">⚙️ Printer</button>
       <button class="btn btn-teal-sm" onclick="printLabel()" title="Cetak label stiker (ukuran diatur di Outlet Settings)">🏷 Label</button>
       <button class="btn btn-teal-sm" onclick="kirimNotaWA()" title="Kirim nota via WhatsApp (150 koin)">📲 Kirim WA</button>
-      <a id="openStrukBtn" href="#" target="_blank" class="btn btn-teal-sm">↗ Buka Penuh</a>
+      <a id="openStrukBtn" href="#" target="_blank" class="btn btn-teal-sm" style="text-align:center">↗ Buka Penuh</a>
       <button class="btn btn-teal-sm" onclick="window.location.href='/orders'">📋 Orders</button>
+      <button class="btn btn-outline" style="grid-column:1/-1" onclick="closeModal()">Tutup</button>
     </div>
   </div>
 </div>

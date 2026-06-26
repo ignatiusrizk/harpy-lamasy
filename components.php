@@ -190,6 +190,19 @@ function renderGlobalJsHelpers(): void { ?>
         var url = a && a.notification && a.notification.data && a.notification.data.url;
         if (url) location.href = url;
       });
+      // App foreground: Android tak tampilkan banner sistem → tampilkan in-app
+      PN.addListener('pushNotificationReceived', function(n){
+        if (!n) return;
+        var msg = (n.title ? n.title + ': ' : '') + (n.body || '');
+        var url = n.data && n.data.url;
+        if (typeof showToast === 'function') {
+          showToast(msg || 'Notifikasi baru', 'success');
+        } else {
+          try { alert(msg || 'Notifikasi baru'); } catch(e){}
+        }
+        // simpan url terakhir agar bisa di-tap dari bell (opsional)
+        if (url) window.__lastPushUrl = url;
+      });
     })();
 
     // ══════════════════════════════════════════════════════
