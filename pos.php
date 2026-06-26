@@ -1167,8 +1167,14 @@ function posSelectPrinter(p) {
                   <input type="number" id="lyn_q_harga" class="input" placeholder="7000" min="0" step="500"/>
                 </div>
                 <div class="form-group">
-                  <label>Estimasi Jam *</label>
-                  <input type="number" id="lyn_q_jam" class="input" value="24" min="1" max="168" placeholder="24"/>
+                  <label>Estimasi *</label>
+                  <div style="display:flex;gap:6px">
+                    <input type="number" id="lyn_q_jam" class="input" value="24" min="1" placeholder="24" style="flex:1"/>
+                    <select id="lyn_q_unit" class="input" style="width:84px">
+                      <option value="jam">Jam</option>
+                      <option value="hari">Hari</option>
+                    </select>
+                  </div>
                 </div>
               </div>
               <div class="form-group" style="margin-bottom:14px">
@@ -1650,6 +1656,7 @@ function closeLayananQuick(){
   if (m) m.style.display = 'none';
   ['lyn_q_nama','lyn_q_kategori','lyn_q_harga','lyn_q_min'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
   document.getElementById('lyn_q_jam').value = '24';
+  const _u = document.getElementById('lyn_q_unit'); if (_u) _u.value = 'jam';
   document.getElementById('lyn_q_satuan').value = 'kg';
 }
 async function saveLayananQuick(){
@@ -1660,7 +1667,10 @@ async function saveLayananQuick(){
     kategori: document.getElementById('lyn_q_kategori').value.trim() || 'Reguler',
     satuan:   document.getElementById('lyn_q_satuan').value,
     harga:    parseFloat(document.getElementById('lyn_q_harga').value) || 0,
-    estimasi_jam: parseInt(document.getElementById('lyn_q_jam').value) || 24,
+    estimasi_jam: (function(){
+      const n = parseInt(document.getElementById('lyn_q_jam').value) || 24;
+      return document.getElementById('lyn_q_unit').value === 'hari' ? n * 24 : n;
+    })(),
     qty_minimum:  parseFloat(document.getElementById('lyn_q_min').value) || 0,
   };
   try {
