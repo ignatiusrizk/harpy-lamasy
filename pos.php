@@ -2316,6 +2316,7 @@ async function showStruk(id) {
   loading.style.display = 'block';
   frame.style.display   = 'none';
   document.getElementById('modalStruk').classList.add('open');
+  { var _aifab = document.getElementById('aiBubbleBtn'); if (_aifab) _aifab.style.display = 'none'; }
 
   frame.onload = () => {
     loading.style.display = 'none';
@@ -2391,6 +2392,7 @@ async function showStruk(id) {
     qrEl.innerHTML = `<img src="${qrUrl}" width="80" height="80" style="display:block"/>`;
   }
   document.getElementById('modalStruk').classList.add('open');
+  { var _aifab = document.getElementById('aiBubbleBtn'); if (_aifab) _aifab.style.display = 'none'; }
 }
 
 // Node struk di dalam iframe (same-origin). Return .struk element atau body.
@@ -2448,7 +2450,7 @@ function printLabel() {
   if (!id) { showToast('❌ Order belum tersimpan', 'error'); return; }
   window.open('/api/label.php?id=' + id, '_blank', 'width=380,height=520');
 }
-function closeModal()  { document.getElementById('modalStruk').classList.remove('open'); }
+function closeModal()  { document.getElementById('modalStruk').classList.remove('open'); var _aifab = document.getElementById('aiBubbleBtn'); if (_aifab) _aifab.style.display = ''; }
 
 // ── Kirim Nota via WA (150 koin) ──
 async function kirimNotaWA() {
