@@ -1048,10 +1048,14 @@ textarea{resize:vertical;min-height:64px}
         <option value="walkin">🏪 Walk-in</option>
         <option value="drop">📦 Drop Point</option>
       </select>
-      <input type="date" id="filterDari" onchange="loadOrders(1)" title="Dari tanggal"
-        style="width:auto;padding:9px 10px;border:1.5px solid rgba(27,45,90,.14);border-radius:var(--r);font-family:var(--font);font-size:13px;background:var(--white);outline:none"/>
-      <input type="date" id="filterSampai" onchange="loadOrders(1)" title="Sampai tanggal"
-        style="width:auto;padding:9px 10px;border:1.5px solid rgba(27,45,90,.14);border-radius:var(--r);font-family:var(--font);font-size:13px;background:var(--white);outline:none"/>
+      <label style="display:flex;flex-direction:column;gap:3px;font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.04em">Dari tgl
+        <input type="date" id="filterDari" onchange="loadOrders(1)" title="Dari tanggal"
+          style="padding:9px 10px;border:1.5px solid rgba(27,45,90,.14);border-radius:var(--r);font-family:var(--font);font-size:13px;background:var(--white);outline:none"/>
+      </label>
+      <label style="display:flex;flex-direction:column;gap:3px;font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.04em">Sampai tgl
+        <input type="date" id="filterSampai" onchange="loadOrders(1)" title="Sampai tanggal"
+          style="padding:9px 10px;border:1.5px solid rgba(27,45,90,.14);border-radius:var(--r);font-family:var(--font);font-size:13px;background:var(--white);outline:none"/>
+      </label>
       <button class="btn btn-outline btn-sm" onclick="resetFilter()" title="Reset filter">✕ Reset</button>
       <button class="btn btn-teal-sm" onclick="loadOrders(1)">↻</button>
       <?php if (hasPermission('pos.view')): ?>
