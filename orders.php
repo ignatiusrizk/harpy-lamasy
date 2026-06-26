@@ -797,7 +797,7 @@ body{font-family:var(--font);background:var(--off);color:var(--dark);min-height:
 
 /* STATS */
 .stats{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:24px}
-.stat-card{background:var(--white);border-radius:var(--r-lg);padding:14px 16px;border:1px solid rgba(27,45,90,.07);box-shadow:var(--shadow);cursor:pointer;transition:all .2s}
+.stat-card{background:var(--white);border-radius:var(--r-lg);padding:14px 16px;border:1px solid rgba(27,45,90,.07);box-shadow:var(--shadow);cursor:pointer;transition:all .2s;text-align:center}
 .stat-card:hover,.stat-card.active{border-color:var(--teal);box-shadow:0 4px 16px rgba(53,232,213,.15)}
 .stat-card.active{background:var(--teal-bg)}
 .stat-num{font-size:1.5rem;font-weight:800;color:var(--navy);line-height:1;font-family:var(--mono)}
@@ -1064,11 +1064,13 @@ textarea{resize:vertical;min-height:64px}
         <input type="date" id="filterSampai" onchange="loadOrders(1)" title="Sampai tanggal"
           style="padding:9px 10px;border:1.5px solid rgba(27,45,90,.14);border-radius:var(--r);font-family:var(--font);font-size:13px;background:var(--white);outline:none"/>
       </label>
-      <button class="btn btn-outline btn-sm" onclick="resetFilter()" title="Reset filter">✕ Reset</button>
-      <button class="btn btn-teal-sm" onclick="loadOrders(1)">↻</button>
-      <?php if (hasPermission('pos.view')): ?>
-      <a href="/pos" class="btn btn-teal-sm">+ Order Baru</a>
-      <?php endif; ?>
+      <div style="display:flex;gap:8px;align-items:center;width:100%;margin-top:6px">
+        <button class="btn btn-outline btn-sm" onclick="resetFilter()" title="Reset filter">✕ Reset</button>
+        <button class="btn btn-teal-sm" onclick="loadOrders(1)" title="Muat ulang">↻</button>
+        <?php if (hasPermission('pos.view')): ?>
+        <a href="/pos" class="btn btn-teal-sm" style="margin-left:auto">+ Order Baru</a>
+        <?php endif; ?>
+      </div>
     </div>
   </div>
 
