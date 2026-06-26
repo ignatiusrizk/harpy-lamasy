@@ -15,6 +15,7 @@
 $activePage = 'mesin';
 define('ROOT', __DIR__);
 require_once ROOT . '/middleware/tenant_guard.php';
+require_once ROOT . '/core/PushSender.php';
 require_once __DIR__ . '/components.php';
 
 $user = currentUser();
@@ -270,6 +271,13 @@ if ($action) {
         $db->prepare("UPDATE hl_mesin_sesi SET status='done', done_at=NOW() WHERE id=?")->execute([$sesiId]);
         $db->prepare("UPDATE hl_mesin SET status='idle' WHERE id=?")->execute([(int)$sesi['mesin_id']]);
         logAudit('update','mesin',"Sesi selesai: sesi ID $sesiId");
+        $mesinRow = TenantQuery::rawOne("SELECT nama FROM hl_mesin WHERE id=? AND tenant_id=? AND outlet_id=?", [(int)$sesi['mesin_id'], $tid, $oid]);
+        $namaMesin = $mesinRow['nama'] ?? ('Mesin #' . $sesi['mesin_id']);
+        PushSender::send('mesin_selesai', (int)$tid, (int)$oid, [
+            'title' => 'Mesin selesai',
+            'body'  => $namaMesin . ' selesai',
+            'url'   => '/mesin',
+        ]);
         echo json_encode(['success'=>true]);
         exit;
     }

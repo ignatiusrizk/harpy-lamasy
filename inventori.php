@@ -10,6 +10,7 @@
 $activePage = 'inventori';
 define('ROOT', __DIR__);
 require_once ROOT . '/middleware/tenant_guard.php';
+require_once ROOT . '/core/PushSender.php';
 require_once __DIR__ . '/components.php';
 
 $user = currentUser();
@@ -155,7 +156,7 @@ if ($action) {
 
         // Ambil stok terkini dari VIEW
         $stokRow = TenantQuery::rawOne(
-            "SELECT stok_terkini, nama FROM hl_bahan_stok WHERE id = ? AND tenant_id = ? AND outlet_id = ?",
+            "SELECT stok_terkini, nama, stok_minimum FROM hl_bahan_stok WHERE id = ? AND tenant_id = ? AND outlet_id = ?",
             [$bahanId, $tid, $oid]
         );
         if (!$stokRow) { echo json_encode(['error' => 'Bahan tidak ditemukan']); exit; }
@@ -213,6 +214,14 @@ if ($action) {
         );
 
         logAudit('create','inventori',"Mutasi $tipe: {$stokRow['nama']} ({$row['jumlah']}) → stok: {$stokSesudah}");
+        $minimumStok = intval($stokRow['stok_minimum'] ?? 0);
+        if (in_array($tipe, ['keluar','adjust'], true) && $stokSesudah <= $minimumStok) {
+            PushSender::send('stok_kritis', (int)$tid, (int)$oid, [
+                'title' => 'Stok bahan kritis',
+                'body'  => $stokRow['nama'] . ' sisa ' . $stokSesudah,
+                'url'   => '/inventori',
+            ]);
+        }
         echo json_encode(['success' => true, 'stok_baru' => $stokSesudah]);
         exit;
     }

@@ -4,6 +4,7 @@ define('ROOT', __DIR__);
 require_once ROOT . '/middleware/tenant_guard.php';
 require_once ROOT . '/core/TenantQuery.php';
 require_once ROOT . '/core/TenantResolver.php';
+require_once ROOT . '/core/PushSender.php';
 require_once __DIR__ . '/components.php';
 
 requirePermission('antar.view');
@@ -135,13 +136,24 @@ if ($action) {
             if ($current !== 'pending') { throw new Exception('Sudah diassign worker lain'); }
 
             // Verify kurir milik outlet aktif
-            $k = TenantQuery::rawOne("SELECT id FROM hl_kurir WHERE id=? AND tenant_id=? AND outlet_id=? AND aktif=1", [$kurirId, $tid, $oid]);
+            $k = TenantQuery::rawOne("SELECT id, user_id FROM hl_kurir WHERE id=? AND tenant_id=? AND outlet_id=? AND aktif=1", [$kurirId, $tid, $oid]);
             if (!$k) { throw new Exception('Kurir tidak valid'); }
+
+            $antarRow = TenantQuery::rawOne("SELECT alamat, catatan FROM hl_antar_jemput WHERE id=? AND tenant_id=? AND outlet_id=?", [$id, $tid, $oid]);
+            $alamat = $antarRow['alamat'] ?? $antarRow['catatan'] ?? '';
 
             $upd = $db->prepare("UPDATE hl_antar_jemput SET kurir_id=?, status='assigned', updated_at=NOW() WHERE id=? AND tenant_id=? AND outlet_id=?");
             $upd->execute([$kurirId, $id, $tid, $oid]);
             logAudit('antar_assign', 'antar_jemput', "id=$id kurir=$kurirId");
             $db->commit();
+            $kurirUserId = (int)($k['user_id'] ?? 0);
+            if ($kurirUserId > 0) {
+                PushSender::send('antar_baru', (int)$tid, (int)$oid, [
+                    'title' => 'Tugas antar-jemput baru',
+                    'body'  => (string)$alamat,
+                    'url'   => '/kurir',
+                ], [$kurirUserId]);
+            }
             echo json_encode(['ok'=>true]);
         } catch (Throwable $e) {
             if ($db->inTransaction()) $db->rollBack();

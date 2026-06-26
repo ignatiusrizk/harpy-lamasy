@@ -7,6 +7,7 @@ require_once ROOT . '/core/ExpressTier.php';
 require_once ROOT . '/core/MemberTier.php';
 require_once ROOT . '/core/NotaFormatter.php';
 require_once ROOT . '/core/DepositManager.php';
+require_once ROOT . '/core/PushSender.php';
 require_once __DIR__ . '/components.php';
 $user = currentUser();
 requirePermission('pos.view');
@@ -602,6 +603,11 @@ if ($action) {
 
             $db->commit();
             logAudit('create', 'orders', 'Buat order baru: ' . $no . ' - ' . $nama_pel, $no);
+            PushSender::send('order_baru', (int)$tid, (int)$oid, [
+                'title' => 'Order baru masuk',
+                'body'  => '#' . $no . ' • ' . $nama_pel,
+                'url'   => '/orders?q=' . urlencode($no),
+            ]);
 
             // Loyalty: earn poin TIDAK lagi di sini — sekarang triggered saat
             // status_proses berubah ke 'siap' (di orders.php / kanban.php).

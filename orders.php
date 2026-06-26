@@ -4,6 +4,7 @@ define('ROOT', __DIR__);
 require_once ROOT . '/middleware/tenant_guard.php';
 require_once ROOT . '/core/Loyalty.php';
 require_once ROOT . '/core/ErrorLogger.php';
+require_once ROOT . '/core/PushSender.php';
 require_once ROOT . '/core/WaLogger.php';
 require_once __DIR__ . '/components.php';
 $user = currentUser();
@@ -332,12 +333,19 @@ if ($action) {
             $poinEarned = 0;
             if ($data['status_proses'] === 'siap' && $oldRow['status_proses'] !== 'siap') {
                 try {
-                    $prow = TenantQuery::rawOne("SELECT pelanggan_id,total FROM hl_transaksi WHERE tenant_id=? AND outlet_id=? AND id=?", [$tid,$oid,$id]);
+                    $prow = TenantQuery::rawOne("SELECT pelanggan_id,total,no_order FROM hl_transaksi WHERE tenant_id=? AND outlet_id=? AND id=?", [$tid,$oid,$id]);
                     if ($prow && $prow['pelanggan_id'])
                         $poinEarned = Loyalty::earnForTransaction($tid, $oid, (int)$id, (int)$prow['pelanggan_id'], (float)$prow['total']);
+                    $noOrder = $prow['no_order'] ?? '';
                 } catch (Throwable $e) {
                     ErrorLogger::logException('loyalty_error', $e, $tid, $oid);
+                    $noOrder = '';
                 }
+                PushSender::send('order_siap', (int)$tid, (int)$oid, [
+                    'title' => 'Order siap diambil',
+                    'body'  => '#' . $noOrder . ' siap diambil',
+                    'url'   => '/orders?q=' . urlencode($noOrder),
+                ]);
             }
 
             echo json_encode(['success' => true, 'poin_earned' => $poinEarned]);
