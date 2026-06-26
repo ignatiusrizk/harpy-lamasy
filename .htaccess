@@ -55,6 +55,11 @@ RewriteRule ^(pending-verify|resend-verify|select-outlet|switch-outlet|no-assign
   Require all denied
 </FilesMatch>
 
+# ── Block FCM service-account key from web access (defense-in-depth) ──
+<FilesMatch "(fcm-service-account|.*firebase-adminsdk.*)\.json$">
+  Require all denied
+</FilesMatch>
+
 # ── Block sensitive directories entirely ────────────
 RedirectMatch 403 ^/storage/
 RedirectMatch 403 ^/master/(config|sql)/
