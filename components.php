@@ -171,6 +171,27 @@ function renderGlobalJsHelpers(): void { ?>
       } catch(e) {}
     })();
 
+    // ── Push notification (hanya di native app) ──
+    (function(){
+      var PN = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.PushNotifications;
+      if (!PN) return;
+      PN.requestPermissions().then(function(r){
+        if (r && r.receive === 'granted') PN.register();
+      }).catch(function(){});
+      PN.addListener('registration', function(t){
+        if (!t || !t.value) return;
+        fetch('/api/push_register.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: t.value, platform: 'android' })
+        }).catch(function(){});
+      });
+      PN.addListener('pushNotificationActionPerformed', function(a){
+        var url = a && a.notification && a.notification.data && a.notification.data.url;
+        if (url) location.href = url;
+      });
+    })();
+
     // ══════════════════════════════════════════════════════
     // PRODUCT TOUR — sidebar walkthrough untuk first-time user
     // Activates after outlet ready. Targets data-tour="<key>" elements.
