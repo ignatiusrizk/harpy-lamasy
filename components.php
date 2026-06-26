@@ -916,6 +916,25 @@ function renderToast(): void { ?>
     <?php endif; ?>
     <script>
     function csrfToken(){return document.querySelector('meta[name="csrf-token"]')?.content||'';}
+    // ── CSRF: auto-inject token ke semua POST/PUT/DELETE same-origin (defense-in-depth, selain SameSite) ──
+    (function(){
+      if (window.__csrfFetchPatched) return; window.__csrfFetchPatched = 1;
+      var _fetch = window.fetch;
+      window.fetch = function(url, opts){
+        opts = opts || {};
+        var m = (opts.method || 'GET').toUpperCase();
+        var u = (typeof url === 'string') ? url : (url && url.url) || '';
+        var sameOrigin = u.indexOf('//') === -1 || u.indexOf(location.origin) === 0; // relatif atau origin sama
+        if ((m === 'POST' || m === 'PUT' || m === 'DELETE') && sameOrigin) {
+          var t = csrfToken();
+          if (t) {
+            if (opts.headers instanceof Headers) { if (!opts.headers.has('X-CSRF-Token')) opts.headers.set('X-CSRF-Token', t); }
+            else { opts.headers = opts.headers || {}; if (!opts.headers['X-CSRF-Token']) opts.headers['X-CSRF-Token'] = t; }
+          }
+        }
+        return _fetch.call(this, url, opts);
+      };
+    })();
     // ── Notification bell ──
     (function(){
       function init(){

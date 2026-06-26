@@ -19,6 +19,7 @@ $canSend = !empty($hqIsOwner) || !empty($hqIsManager);
 // ── API: preview recipients ──────────────────────────
 if ($action === 'preview' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     header('Content-Type: application/json');
+    verifyCsrf();
     $d = json_decode(file_get_contents('php://input'), true) ?: [];
     $outletIds = array_map('intval', $d['outlet_ids'] ?? []);
     try {
@@ -30,6 +31,7 @@ if ($action === 'preview' && $_SERVER['REQUEST_METHOD'] === 'POST') {
 // ── API: create broadcast ────────────────────────────
 if ($action === 'create' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     header('Content-Type: application/json');
+    verifyCsrf();
     if (!$canSend) { echo json_encode(['error'=>'Akses ditolak']); exit; }
     $coin = new CoinLedger();
     if (!$coin->canAfford('wa_blast')) {
@@ -72,6 +74,7 @@ if ($action === 'history') {
 // ── API: mark sent ───────────────────────────────────
 if ($action === 'mark_sent' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     header('Content-Type: application/json');
+    verifyCsrf();
     $d = json_decode(file_get_contents('php://input'), true) ?: [];
     echo json_encode(['ok'=>Broadcast::markSent($tid, (int)($d['recipient_id'] ?? 0))]);
     exit;

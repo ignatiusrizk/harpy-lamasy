@@ -52,6 +52,7 @@ if ($action === 'coverage') {
 // ── API: save master ─────────────────────────────────
 if ($action === 'save' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     header('Content-Type: application/json');
+    verifyCsrf();
     if (empty($hqIsOwner) && empty($hqIsManager)) {
         echo json_encode(['error'=>'Akses ditolak']); exit;
     }
@@ -69,6 +70,7 @@ if ($action === 'save' && $_SERVER['REQUEST_METHOD'] === 'POST') {
 // ── API: delete master ───────────────────────────────
 if ($action === 'delete' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     header('Content-Type: application/json');
+    verifyCsrf();
     if (empty($hqIsOwner) && empty($hqIsManager)) {
         echo json_encode(['error'=>'Akses ditolak']); exit;
     }
@@ -87,6 +89,7 @@ if ($action === 'delete' && $_SERVER['REQUEST_METHOD'] === 'POST') {
 // ── API: push ke outlet ──────────────────────────────
 if ($action === 'push' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     header('Content-Type: application/json');
+    verifyCsrf();
     if (empty($hqIsOwner) && empty($hqIsManager)) {
         echo json_encode(['error'=>'Akses ditolak']); exit;
     }
@@ -109,6 +112,7 @@ if ($action === 'push' && $_SERVER['REQUEST_METHOD'] === 'POST') {
 // ── API: bulk push (banyak master → banyak outlet) ───
 if ($action === 'push_many' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     header('Content-Type: application/json');
+    verifyCsrf();
     if (empty($hqIsOwner) && empty($hqIsManager)) { echo json_encode(['error'=>'Akses ditolak']); exit; }
     $d = json_decode(file_get_contents('php://input'), true) ?: [];
     $masterIds = array_map('intval', (array)($d['master_ids'] ?? []));
@@ -126,6 +130,7 @@ if ($action === 'push_many' && $_SERVER['REQUEST_METHOD'] === 'POST') {
 // ── API: import massal dari Excel/CSV ────────────────
 if ($action === 'import' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     header('Content-Type: application/json');
+    verifyCsrf();
     if (empty($hqIsOwner) && empty($hqIsManager)) { echo json_encode(['error'=>'Akses ditolak']); exit; }
     if (empty($_FILES['file']['tmp_name'])) { echo json_encode(['error'=>'File tidak ada.']); exit; }
 

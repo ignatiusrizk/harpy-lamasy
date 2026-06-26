@@ -65,6 +65,7 @@ if ($action === 'list') {
 // ── API: generate message ────────────────────────────
 if ($action === 'generate' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     header('Content-Type: application/json');
+    verifyCsrf();
 
     if (!AIRateLimiter::canCall('ai_churn_message')) {
         echo json_encode(AIRateLimiter::errorResponse('ai_churn_message'));
@@ -133,6 +134,7 @@ if ($action === 'generate' && $_SERVER['REQUEST_METHOD'] === 'POST') {
 // ── API: mark status ─────────────────────────────────
 if ($action === 'mark' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     header('Content-Type: application/json');
+    verifyCsrf();
     $logId = (int)($_POST['log_id'] ?? 0);
     $status = $_POST['status'] ?? '';
     $user = currentUser();

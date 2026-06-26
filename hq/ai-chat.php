@@ -23,6 +23,7 @@ $action = $_GET['action'] ?? '';
 // ── API: ask question ────────────────────────────────
 if ($action === 'ask' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     header('Content-Type: application/json');
+    verifyCsrf();
 
     if (!AIRateLimiter::canCall('ai_chat_data')) {
         echo json_encode(AIRateLimiter::errorResponse('ai_chat_data'));
@@ -251,6 +252,7 @@ async function submitQ() {
   try {
     const fd = new FormData();
     fd.append('question', q);
+    fd.append('_csrf', csrfToken());
     const r = await fetch('/hq/ai-chat.php?action=ask', { method: 'POST', body: fd });
     const d = await r.json();
     removeTyping();
