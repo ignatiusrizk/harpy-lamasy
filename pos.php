@@ -752,7 +752,7 @@ if (!$activeMethods) {
 <style>
 /* LAYOUT */
 .main{max-width:1100px;width:100%;margin:0 auto;padding:24px 20px}
-.grid-2{display:grid;grid-template-columns:1.1fr .9fr;gap:20px;align-items:start}
+.grid-2{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(300px,.9fr);gap:20px;align-items:start}
 
 /* CARD */
 .card{background:var(--white);border-radius:var(--r-lg);border:1px solid rgba(27,45,90,.07);box-shadow:var(--shadow);overflow:hidden;margin-bottom:20px}
@@ -797,7 +797,7 @@ textarea{resize:vertical;min-height:64px}
 .sum-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;font-size:14px}
 .sum-row.total{border-top:1px solid rgba(255,255,255,.15);margin-top:8px;padding-top:12px}
 .sum-label{color:rgba(255,255,255,.6)}
-.sum-value{font-family:var(--mono);font-weight:700}
+.sum-value{font-family:var(--mono);font-weight:700;white-space:nowrap}
 .sum-value.big{font-size:1.4rem;color:var(--teal)}
 .sum-value.sisa{color:#FCA5A5}
 
