@@ -503,7 +503,7 @@ body {
         if (!empty($tmpl['show_alamat'])) {
             $alamat = $tmpl['alamat_override'] ?: (($outlet['alamat'] ?? '') . ($outlet['kota'] ? ', ' . $outlet['kota'] : ''));
             if ($alamat) {
-                foreach (str_split(trim($alamat), $maxChar) as $line) {
+                foreach (explode("\n", wordwrap(trim($alamat), $maxChar, "\n", true)) as $line) {
                     $h .= "<div class='c sm'>" . self::esc($line) . "</div>\n";
                 }
             }
@@ -633,7 +633,7 @@ body {
         // ── FOOTER ────────────────────────────────────
         $h .= "<hr class='sep'>\n";
         if (!empty($tmpl['show_footer_ucapan']) && !empty($tmpl['footer_ucapan'])) {
-            foreach (str_split($tmpl['footer_ucapan'], $maxChar) as $line) {
+            foreach (explode("\n", wordwrap($tmpl['footer_ucapan'], $maxChar, "\n", true)) as $line) {
                 $h .= "<div class='c'>" . self::esc($line) . "</div>\n";
             }
         }
