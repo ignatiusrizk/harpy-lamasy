@@ -148,6 +148,10 @@ if ($action) {
     if ($action === 'save' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         $d = json_decode(file_get_contents('php://input'), true);
         verifyCsrf();
+        if (empty($hqCanManageRole)) {
+            echo json_encode(['error' => 'Akses ditolak — hanya Owner yang boleh kelola role.']);
+            exit;
+        }
         $rid  = (int)($d['id'] ?? 0);
         $nama = substr(trim(strip_tags($d['nama'] ?? '')), 0, 100);
         $desk = substr(trim(strip_tags($d['deskripsi'] ?? '')), 0, 300);
@@ -213,6 +217,10 @@ if ($action) {
     if ($action === 'delete' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         $d = json_decode(file_get_contents('php://input'), true);
         verifyCsrf();
+        if (empty($hqCanManageRole)) {
+            echo json_encode(['error' => 'Akses ditolak — hanya Owner yang boleh kelola role.']);
+            exit;
+        }
         $rid = (int)($d['id'] ?? 0);
         if (!$rid) { echo json_encode(['error'=>'ID invalid']); exit; }
 
