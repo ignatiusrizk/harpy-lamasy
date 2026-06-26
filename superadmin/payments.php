@@ -247,8 +247,9 @@ if ($action) {
             if ($coin > 0) {
                 // Inline topup (tidak butuh TenantResolver context)
                 $db->prepare("SELECT coin_balance FROM tenants WHERE id=? FOR UPDATE")->execute([$tenantId]);
-                $cur = (int)$db->prepare("SELECT coin_balance FROM tenants WHERE id=?")->execute([$tenantId]) ?
-                    (int)$db->query("SELECT coin_balance FROM tenants WHERE id=$tenantId")->fetchColumn() : 0;
+                $_csStmt = $db->prepare("SELECT coin_balance FROM tenants WHERE id=?");
+                $_csStmt->execute([$tenantId]);
+                $cur = (int)$_csStmt->fetchColumn();
 
                 // Fresh query after lock
                 $lockStmt = $db->prepare("SELECT coin_balance FROM tenants WHERE id=? FOR UPDATE");

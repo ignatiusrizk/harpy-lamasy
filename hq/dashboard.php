@@ -355,7 +355,9 @@ try {
 
 $karyawanCnt = 0;
 try {
-    $karyawanCnt = (int)$db->query("SELECT COUNT(DISTINCT karyawan_id) FROM hl_karyawan_outlet WHERE tenant_id=$tid AND is_active=1")->fetchColumn();
+    $_kcStmt = $db->prepare("SELECT COUNT(DISTINCT karyawan_id) FROM hl_karyawan_outlet WHERE tenant_id=? AND is_active=1");
+    $_kcStmt->execute([$tid]);
+    $karyawanCnt = (int)$_kcStmt->fetchColumn();
 } catch (Throwable) {
     try { $karyawanCnt = (int)$db->query("SELECT COUNT(*) FROM hl_users WHERE tenant_id=$tid AND is_active=1")->fetchColumn(); } catch (Throwable) {}
 }
