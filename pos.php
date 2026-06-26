@@ -2407,10 +2407,18 @@ function printStruk() {
   // Di app + printer terpilih → cetak BT langsung; else dialog iframe/web (fallback)
   if (window.ThermalPrint && ThermalPrint.isAvailable()) {
     if (ThermalPrint.getPrinter()) { posPrintStrukBT(); return; }
-    showToast('Pilih printer dulu (🖨 Printer)', 'error');
+    showToast('Pilih printer dulu (⚙️ Printer)', 'error');
     if (typeof posOpenPrinterModal === 'function') posOpenPrinterModal();
     return;
   }
+  // Di dalam app tapi plugin printer belum ada → APK lama / belum ke-build dgn plugin.
+  // Beri feedback jelas (jangan diam-diam window.print() yg no-op di webview).
+  var inApp = !!(window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform());
+  if (inApp) {
+    showToast('Printer thermal belum aktif di app ini. Install APK versi terbaru.', 'error');
+    return;
+  }
+  // Browser (desktop) → dialog cetak biasa
   const frame = document.getElementById('strukFrame');
   if (frame && frame.contentWindow) {
     frame.contentWindow.focus();
