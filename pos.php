@@ -1066,6 +1066,10 @@ function posSelectPrinter(p) {
                   autocomplete="off" oninput="searchPelanggan(this.value)"/>
                 <div class="autocomplete-list" id="acList"></div>
               </div>
+              <style>
+                #voiceOrderBtn.voice-rec{background:#EF4444!important;border-color:#EF4444!important;color:#fff!important;animation:voicePulse 1s ease-in-out infinite}
+                @keyframes voicePulse{0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,.5)}50%{box-shadow:0 0 0 8px rgba(239,68,68,0)}}
+              </style>
               <button type="button" id="voiceOrderBtn" class="btn btn-teal-sm" style="display:none;margin-top:6px" onclick="voiceOrderStart()" title="Input order dengan suara">🎤 Voice Order</button>
             </div>
           </div>
@@ -2585,6 +2589,8 @@ async function voiceOrderStart() {
     var avail = await SR.available();
     if (avail && avail.available === false) { showToast('STT tak tersedia di perangkat ini', 'error'); return; }
   } catch (e) {}
+  var vbtn = document.getElementById('voiceOrderBtn');
+  voiceRecState(vbtn, true);
   showToast('🔴 Mendengarkan… ucapkan order', 'info');
   try {
     var res = await SR.start({ language: 'id-ID', maxResults: 1, partialResults: false, popup: false });
@@ -2595,6 +2601,22 @@ async function voiceOrderStart() {
     voiceOrderParse(text.trim());
   } catch (e) {
     showToast('Gagal merekam: ' + (e && e.message ? e.message : 'mic error'), 'error');
+  } finally {
+    voiceRecState(vbtn, false);
+  }
+}
+// Ubah tampilan tombol voice saat merekam (berdenyut merah) → balik normal saat selesai
+function voiceRecState(btn, on) {
+  if (!btn) return;
+  if (on) {
+    btn.dataset.orig = btn.innerHTML;
+    btn.innerHTML = '🔴 Mendengarkan…';
+    btn.classList.add('voice-rec');
+    btn.disabled = true;
+  } else {
+    btn.innerHTML = btn.dataset.orig || '🎤 Voice Order';
+    btn.classList.remove('voice-rec');
+    btn.disabled = false;
   }
 }
 
