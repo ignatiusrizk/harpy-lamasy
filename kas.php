@@ -49,7 +49,7 @@ if ($action) {
         // bukti_foto: hanya terima path di folder bukti milik tenant+outlet ini (anti XSS/path injeksi)
         $buktiFoto = null;
         $bf = trim((string)($d['bukti_foto'] ?? ''));
-        $bfPrefix = 'uploads/kas_bukti/t' . $tid . '_o' . $oid;
+        $bfPrefix = 'uploads/kas_bukti/t' . $tid . '_o' . $oid . '_'; // trailing _ cegah cross-outlet (o1 vs o10)
         if ($bf !== '' && strpos($bf, '..') === false && strpos($bf, $bfPrefix) === 0) {
             $buktiFoto = substr($bf, 0, 255);
         }

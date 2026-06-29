@@ -17,7 +17,7 @@ $data = json_decode(file_get_contents('php://input'), true) ?: [];
 $fotoPath = (string)($data['foto_path'] ?? '');
 
 // Validasi path: harus di folder bukti kas + prefix tenant ini (anti traversal/cross-tenant)
-$prefix = 'uploads/kas_bukti/t' . $tid . '_o' . $oid;
+$prefix = 'uploads/kas_bukti/t' . $tid . '_o' . $oid . '_'; // trailing _ cegah cross-outlet (o1 vs o10)
 $norm   = str_replace('\\', '/', $fotoPath);
 if (strpos($norm, '..') !== false || strpos($norm, $prefix) !== 0) {
     echo json_encode(['ok'=>false,'reason'=>'bad_path']); exit;

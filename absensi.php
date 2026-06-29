@@ -66,7 +66,7 @@ if ($action) {
         $selfie = null;
         if (!empty($cfg['absensi_selfie_wajib'])) {
             $sp = trim((string)($d['selfie_path'] ?? ''));
-            $pre = 'uploads/absensi_selfie/t' . $tid . '_o' . $oid;
+            $pre = 'uploads/absensi_selfie/t' . $tid . '_o' . $oid . '_'; // trailing _ cegah cross-outlet (o1 vs o10)
             if ($sp === '' || strpos($sp, '..') !== false || strpos($sp, $pre) !== 0) {
                 echo json_encode(['error' => 'Selfie wajib untuk clock-in.']); exit;
             }
