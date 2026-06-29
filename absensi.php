@@ -569,7 +569,7 @@ if ($action) {
   .btn-clock-in,.btn-clock-out{padding:12px 24px;font-size:14px}
   .jam-info{gap:10px}
   .tipe-izin-grid{grid-template-columns:1fr 1fr 1fr}
-  #calStats{grid-template-columns:repeat(2,1fr) !important;gap:6px !important}
+  #calStats{grid-template-columns:repeat(3,1fr) !important;gap:6px !important}
   .hl-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
   .hl-table thead th{font-size:11px;padding:8px 8px}
   .hl-table tbody td{font-size:12px;padding:8px 8px}
@@ -578,7 +578,7 @@ if ($action) {
   .clock-time{font-size:1.9rem}
   .clock-btns{gap:8px}
   .btn-clock-in,.btn-clock-out{padding:10px 18px;font-size:13px}
-  #calStats{grid-template-columns:repeat(2,1fr) !important}
+  #calStats{grid-template-columns:repeat(3,1fr) !important}
 }
 </style>
 </head>
@@ -721,7 +721,7 @@ if ($action) {
         </div>
         <div class="hl-card-body">
           <!-- Stat mini -->
-          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px" id="calStats">
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px" id="calStats">
             <div style="text-align:center;padding:10px;background:#D1FAE5;border-radius:10px">
               <div style="font-size:1.3rem;font-weight:800;color:#065F46" id="cHadir">-</div>
               <div style="font-size:11px;color:#065F46">Hadir</div>
@@ -737,6 +737,14 @@ if ($action) {
             <div style="text-align:center;padding:10px;background:#FEE2E2;border-radius:10px">
               <div style="font-size:1.3rem;font-weight:800;color:#991B1B" id="cAlpha">-</div>
               <div style="font-size:11px;color:#991B1B">Alpha</div>
+            </div>
+            <div style="text-align:center;padding:10px;background:#FEF3C7;border-radius:10px">
+              <div style="font-size:1.1rem;font-weight:800;color:#92400E" id="cTelat">-</div>
+              <div style="font-size:11px;color:#92400E">Total Telat</div>
+            </div>
+            <div style="text-align:center;padding:10px;background:#DBEAFE;border-radius:10px">
+              <div style="font-size:1.1rem;font-weight:800;color:#1E40AF" id="cLembur">-</div>
+              <div style="font-size:11px;color:#1E40AF">Total Lembur</div>
             </div>
           </div>
           <!-- Calendar grid -->
@@ -759,6 +767,9 @@ if ($action) {
   <div class="hl-tabs">
     <button class="hl-tab active" onclick="switchTab('rekap',this)">📊 Rekap Semua Karyawan</button>
     <button class="hl-tab" onclick="switchTab('izin',this)">📋 Pengajuan Izin</button>
+    <?php if (hasPermission('absensi.view')): ?>
+    <button class="hl-tab" onclick="switchTab('jadwal',this)">📅 Jadwal</button>
+    <?php endif; ?>
   </div>
 
   <!-- REKAP ALL -->
@@ -828,6 +839,75 @@ if ($action) {
       </div>
     </div>
   </div>
+
+  <!-- JADWAL TAB -->
+  <?php if (hasPermission('absensi.view')): ?>
+  <div id="tabJadwal" style="display:none">
+
+    <!-- Kartu: Kelola Shift -->
+    <div class="hl-card" style="margin-bottom:16px">
+      <div class="hl-card-header">
+        <div class="hl-card-title">⏱️ Kelola Shift</div>
+        <button class="hl-btn hl-btn-teal hl-btn-sm" onclick="openShiftForm()">+ Tambah Shift</button>
+      </div>
+      <div class="hl-card-body">
+        <div id="shiftList"><p style="color:var(--gray)">⏳ Memuat...</p></div>
+      </div>
+    </div>
+
+    <!-- Kartu: Jadwal Mingguan -->
+    <div class="hl-card">
+      <div class="hl-card-header">
+        <div class="hl-card-title">📆 Jadwal Mingguan Karyawan</div>
+      </div>
+      <div class="hl-card-body">
+        <div class="hl-table-wrap">
+          <div id="jadwalGrid"><p style="color:var(--gray)">⏳ Memuat grid jadwal...</p></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Modal Form Shift -->
+  <div id="shiftFormModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;align-items:center;justify-content:center">
+    <div class="hl-card" style="width:100%;max-width:420px;margin:16px;max-height:90vh;overflow-y:auto">
+      <div class="hl-card-header">
+        <div class="hl-card-title">✏️ Form Shift</div>
+        <button class="hl-btn hl-btn-outline hl-btn-sm" onclick="document.getElementById('shiftFormModal').style.display='none'">✕ Tutup</button>
+      </div>
+      <div class="hl-card-body">
+        <input type="hidden" id="sf_id"/>
+        <div class="hl-form-group" style="margin-bottom:12px">
+          <label class="hl-label">Nama Shift</label>
+          <input type="text" id="sf_nama" class="hl-input" placeholder="misal: Pagi, Sore, Full" maxlength="50"/>
+        </div>
+        <div class="hl-form-row" style="margin-bottom:12px">
+          <div class="hl-form-group">
+            <label class="hl-label">Jam Mulai</label>
+            <input type="time" id="sf_mulai" class="hl-input"/>
+          </div>
+          <div class="hl-form-group">
+            <label class="hl-label">Jam Selesai</label>
+            <input type="time" id="sf_selesai" class="hl-input"/>
+          </div>
+        </div>
+        <div class="hl-form-row" style="margin-bottom:16px">
+          <div class="hl-form-group">
+            <label class="hl-label">Toleransi Telat (menit)</label>
+            <input type="number" id="sf_tol" class="hl-input" value="15" min="0" max="120"/>
+          </div>
+          <div class="hl-form-group">
+            <label class="hl-label">Lembur setelah (menit)</label>
+            <input type="number" id="sf_lembur" class="hl-input" value="30" min="0" max="240"/>
+          </div>
+        </div>
+        <button class="hl-btn hl-btn-primary hl-btn-full" onclick="saveShift()">💾 Simpan Shift</button>
+      </div>
+    </div>
+  </div>
+  <?php endif; ?>
+
   <?php endif; ?>
 
 </div>
@@ -1127,6 +1207,14 @@ async function loadKalender() {
   document.getElementById('cSakit').textContent = d.summary.sakit;
   document.getElementById('cAlpha').textContent = d.summary.alpha;
 
+  // Telat/lembur totals
+  let totalTelat = 0, totalLembur = 0;
+  d.data.forEach(row => { totalTelat += parseInt(row.telat_menit)||0; totalLembur += parseInt(row.lembur_menit)||0; });
+  const elTelat = document.getElementById('cTelat');
+  const elLembur = document.getElementById('cLembur');
+  if (elTelat)  elTelat.textContent  = totalTelat  ? totalTelat  + 'm' : '0m';
+  if (elLembur) elLembur.textContent = totalLembur ? totalLembur + 'm' : '0m';
+
   const [y,m] = bulan.split('-').map(Number);
   const firstDay = new Date(y, m-1, 1).getDay();
   const daysInMonth = new Date(y, m, 0).getDate();
@@ -1134,7 +1222,14 @@ async function loadKalender() {
 
   const statusMap = {};
   const selfieMap = {};
-  d.data.forEach(row => { statusMap[row.tanggal] = row.status; if (row.selfie_masuk) selfieMap[row.tanggal] = row.selfie_masuk; });
+  const telatMap  = {};
+  const lemburMap = {};
+  d.data.forEach(row => {
+    statusMap[row.tanggal] = row.status;
+    if (row.selfie_masuk) selfieMap[row.tanggal] = row.selfie_masuk;
+    if (parseInt(row.telat_menit)  > 0) telatMap[row.tanggal]  = parseInt(row.telat_menit);
+    if (parseInt(row.lembur_menit) > 0) lemburMap[row.tanggal] = parseInt(row.lembur_menit);
+  });
 
   const cal = document.getElementById('calGrid');
   while (cal.children.length > 7) cal.removeChild(cal.lastChild);
@@ -1150,11 +1245,13 @@ async function loadKalender() {
     const status  = statusMap[dateStr];
     const isToday = dateStr === today;
     const isSun   = new Date(dateStr).getDay() === 0;
+    const selfie  = selfieMap[dateStr];
+    const telat   = telatMap[dateStr]  || 0;
+    const lembur  = lemburMap[dateStr] || 0;
 
     const el = document.createElement('div');
-    const selfie = selfieMap[dateStr];
     el.className = 'cal-day ' + (status || (isSun ? 'libur' : '')) + (isToday ? ' today' : '');
-    el.innerHTML = `<span>${day}</span>${status ? '<div class="cal-dot"></div>' : ''}${selfie ? `<a href="/${esc(selfie)}" target="_blank" title="Lihat selfie" style="font-size:10px;line-height:1;text-decoration:none">🤳</a>` : ''}`;
+    el.innerHTML = `<span>${day}</span>${status ? '<div class="cal-dot"></div>' : ''}${selfie ? `<a href="/${esc(selfie)}" target="_blank" title="Lihat selfie" style="font-size:10px;line-height:1;text-decoration:none">🤳</a>` : ''}${telat>0?`<span style="background:#FEF3C7;color:#92400E;font-size:9px;padding:1px 4px;border-radius:6px">telat ${telat}m</span>`:''}${lembur>0?`<span style="background:#DBEAFE;color:#1E40AF;font-size:9px;padding:1px 4px;border-radius:6px">+${lembur}m</span>`:''}`;
     el.title     = status ? statusLabel(status) : dateStr;
     cal.appendChild(el);
   }
@@ -1283,12 +1380,132 @@ async function approveIzin(id, status) {
 
 // ── TABS ──────────────────────────────────────────────
 function switchTab(name, el) {
-  document.getElementById('tabRekap').style.display = name==='rekap' ? 'block' : 'none';
-  document.getElementById('tabIzin').style.display  = name==='izin'  ? 'block' : 'none';
+  document.getElementById('tabRekap').style.display   = name==='rekap'   ? 'block' : 'none';
+  document.getElementById('tabIzin').style.display    = name==='izin'    ? 'block' : 'none';
+  const tabJadwal = document.getElementById('tabJadwal');
+  if (tabJadwal) tabJadwal.style.display = name==='jadwal' ? 'block' : 'none';
   document.querySelectorAll('.hl-tab').forEach(b => b.classList.remove('active'));
   el.classList.add('active');
-  if (name==='rekap') loadRekapAll();
-  if (name==='izin')  loadIzinList();
+  if (name==='rekap')  loadRekapAll();
+  if (name==='izin')   loadIzinList();
+  if (name==='jadwal') loadShifts();
+}
+
+// ── KELOLA SHIFT ──────────────────────────────────────
+const HARI = {1:'Sen',2:'Sel',3:'Rab',4:'Kam',5:'Jum',6:'Sab',7:'Min'};
+
+async function loadShifts() {
+  const r = await fetch('absensi.php?action=shift_list');
+  const list = await r.json();
+  const box = document.getElementById('shiftList');
+  if (!list.length) {
+    box.innerHTML = '<p style="color:var(--gray)">Belum ada shift. <button class="hl-btn hl-btn-teal-sm" onclick="seedTemplate()">Buat template (Pagi/Sore/Full)</button></p>';
+    window._shifts = [];
+    return;
+  }
+  window._shifts = list;
+  box.innerHTML = list.map(s => `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px;border-bottom:1px solid var(--light)">
+    <span><b>${esc(s.nama)}</b> ${s.jam_mulai.substring(0,5)}–${s.jam_selesai.substring(0,5)} · tol ${s.toleransi_telat_menit}m · lembur >${s.lembur_after_menit}m</span>
+    <span><button class="hl-btn hl-btn-outline hl-btn-sm" onclick='editShift(${JSON.stringify(s)})'>Edit</button>
+    <button class="hl-btn hl-btn-outline hl-btn-sm" onclick="deleteShift(${s.id})">Hapus</button></span></div>`).join('');
+  renderJadwalGrid();
+}
+
+async function seedTemplate() {
+  const r = await fetch('absensi.php?action=shift_seed_template', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json','X-CSRF-Token':csrfToken()},
+    body: '{}'
+  });
+  const d = await r.json();
+  if (d.success) { showToast('Template dibuat', 'success'); loadShifts(); }
+  else showToast(d.error || 'Gagal', 'error');
+}
+
+function editShift(s) { openShiftForm(s); }
+
+function openShiftForm(s) {
+  s = s || {};
+  document.getElementById('sf_id').value      = s.id || '';
+  document.getElementById('sf_nama').value    = s.nama || '';
+  document.getElementById('sf_mulai').value   = (s.jam_mulai || '').substring(0,5);
+  document.getElementById('sf_selesai').value = (s.jam_selesai || '').substring(0,5);
+  document.getElementById('sf_tol').value     = s.toleransi_telat_menit ?? 15;
+  document.getElementById('sf_lembur').value  = s.lembur_after_menit ?? 30;
+  document.getElementById('shiftFormModal').style.display = 'flex';
+}
+
+async function saveShift() {
+  const body = {
+    id:                     document.getElementById('sf_id').value || null,
+    nama:                   document.getElementById('sf_nama').value,
+    jam_mulai:              document.getElementById('sf_mulai').value,
+    jam_selesai:            document.getElementById('sf_selesai').value,
+    toleransi_telat_menit:  +document.getElementById('sf_tol').value,
+    lembur_after_menit:     +document.getElementById('sf_lembur').value,
+  };
+  const r = await fetch('absensi.php?action=shift_save', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json','X-CSRF-Token':csrfToken()},
+    body: JSON.stringify(body)
+  });
+  const d = await r.json();
+  if (d.success) {
+    showToast('Shift tersimpan', 'success');
+    document.getElementById('shiftFormModal').style.display = 'none';
+    loadShifts();
+  } else showToast(d.error || 'Gagal', 'error');
+}
+
+async function deleteShift(id) {
+  if (!confirm('Hapus shift ini?')) return;
+  const r = await fetch('absensi.php?action=shift_delete', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json','X-CSRF-Token':csrfToken()},
+    body: JSON.stringify({id})
+  });
+  const d = await r.json();
+  if (d.success) { showToast('Dihapus', 'success'); loadShifts(); }
+  else showToast(d.error || 'Gagal', 'error');
+}
+
+// ── GRID JADWAL MINGGUAN ──────────────────────────────
+async function renderJadwalGrid() {
+  const [uRes, jRes] = await Promise.all([
+    fetch('absensi.php?action=list_users'),
+    fetch('absensi.php?action=jadwal_get')
+  ]);
+  const users = await uRes.json();
+  const jad   = await jRes.json();
+  const map   = {};
+  jad.forEach(j => { map[j.user_id + '_' + j.hari] = j.shift_id; });
+  const shifts = window._shifts || [];
+  const opts = sel => '<option value="0">Libur</option>' +
+    shifts.map(s => `<option value="${s.id}" ${s.id==sel?'selected':''}>${esc(s.nama)}</option>`).join('');
+  let html = '<table class="hl-table"><thead><tr><th>Karyawan</th>' +
+    [1,2,3,4,5,6,7].map(h => `<th>${HARI[h]}</th>`).join('') +
+    '</tr></thead><tbody>';
+  html += users.map(u =>
+    `<tr><td>${esc(u.nama)}</td>` +
+    [1,2,3,4,5,6,7].map(h =>
+      `<td><select onchange="saveJadwal(${u.id},${h},this.value)">${opts(map[u.id+'_'+h]||0)}</select></td>`
+    ).join('') + '</tr>'
+  ).join('');
+  html += '</tbody></table>';
+  document.getElementById('jadwalGrid').innerHTML = users.length
+    ? html
+    : '<p style="color:var(--gray)">Belum ada karyawan di outlet ini.</p>';
+}
+
+async function saveJadwal(uid, hari, shiftId) {
+  const r = await fetch('absensi.php?action=jadwal_save', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json','X-CSRF-Token':csrfToken()},
+    body: JSON.stringify({user_id: uid, hari: hari, shift_id: +shiftId})
+  });
+  const d = await r.json();
+  if (d.success) showToast('Jadwal disimpan', 'success');
+  else showToast(d.error || 'Gagal', 'error');
 }
 
 function statusLabel(s){return{hadir:'✅ Hadir',izin:'📋 Izin',sakit:'🤒 Sakit',alpha:'❌ Alpha'}[s]||s}
