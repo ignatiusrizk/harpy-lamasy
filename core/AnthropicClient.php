@@ -159,4 +159,72 @@ class AnthropicClient
         $result['json'] = $parsed;
         return $result;
     }
+
+    /**
+     * Vision: kirim 1 gambar (base64) + prompt, minta JSON. Kembalikan parsed JSON array langsung.
+     * @param string $mediaType image/jpeg|image/png|image/webp|image/gif
+     */
+    public static function askJsonWithImage(string $prompt, string $base64, string $mediaType, array $opts = []): array
+    {
+        if (!defined('ANTHROPIC_API_KEY') || empty(ANTHROPIC_API_KEY)) {
+            throw new RuntimeException('ANTHROPIC_API_KEY belum di-set di config.');
+        }
+        $model     = $opts['model']      ?? self::DEFAULT_MODEL;
+        $maxTokens = (int)($opts['max_tokens'] ?? 1024);
+        $timeout   = (int)($opts['timeout']    ?? 40);
+        $system    = trim(($opts['system'] ?? '') . "\n\nIMPORTANT: Respond ONLY with valid JSON. No markdown fences, no explanation. Start with {.");
+
+        $payload = [
+            'model'      => $model,
+            'max_tokens' => $maxTokens,
+            'temperature'=> 0,
+            'system'     => $system,
+            'messages'   => [[
+                'role' => 'user',
+                'content' => [
+                    ['type' => 'image', 'source' => ['type' => 'base64', 'media_type' => $mediaType, 'data' => $base64]],
+                    ['type' => 'text',  'text' => $prompt],
+                ],
+            ]],
+        ];
+
+        $ch = curl_init(self::API_URL);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT        => $timeout,
+            CURLOPT_POST           => true,
+            CURLOPT_POSTFIELDS     => json_encode($payload, JSON_UNESCAPED_UNICODE),
+            CURLOPT_HTTPHEADER     => [
+                'x-api-key: ' . ANTHROPIC_API_KEY,
+                'anthropic-version: ' . self::API_VERSION,
+                'content-type: application/json',
+            ],
+        ]);
+        $raw  = curl_exec($ch);
+        $http = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $err  = curl_error($ch);
+        curl_close($ch);
+
+        if ($raw === false) {
+            if (class_exists('ErrorLogger')) ErrorLogger::log('ai_error', "Anthropic vision cURL: $err");
+            throw new RuntimeException("Anthropic vision cURL error: $err");
+        }
+        if ($http !== 200) {
+            $eb = json_decode($raw, true);
+            $em = $eb['error']['message'] ?? "HTTP $http";
+            if (class_exists('ErrorLogger')) ErrorLogger::log('ai_error', "Anthropic vision ($http): $em", null, null, null, null, (string)$http);
+            throw new RuntimeException("Anthropic vision error ($http): $em");
+        }
+        $data = json_decode($raw, true);
+        $text = '';
+        foreach (($data['content'] ?? []) as $block) {
+            if (($block['type'] ?? '') === 'text') $text .= $block['text'];
+        }
+        $text = preg_replace('/^```(?:json)?\s*|\s*```$/m', '', trim($text));
+        $parsed = json_decode(trim($text), true);
+        if (!is_array($parsed)) {
+            throw new RuntimeException('Vision response bukan JSON valid: ' . substr($text, 0, 200));
+        }
+        return $parsed;
+    }
 }
