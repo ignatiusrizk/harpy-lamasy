@@ -386,7 +386,7 @@ if ($action) {
 
 /* STAT CARDS */
 .stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
-.stat-card{background:var(--white);border-radius:var(--r-lg);padding:18px 20px;border:1px solid rgba(27,45,90,.07);box-shadow:var(--shadow);position:relative;overflow:hidden}
+.stat-card{background:var(--white);border-radius:var(--r-lg);padding:18px 20px;border:1px solid rgba(27,45,90,.07);box-shadow:var(--shadow);position:relative;overflow:hidden;text-align:center}
 .stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
 .sc-green::before{background:linear-gradient(90deg,var(--green),#34D399)}
 .sc-teal::before{background:linear-gradient(90deg,var(--teal),var(--teal-d))}
@@ -475,18 +475,15 @@ tfoot td{padding:9px 12px;font-weight:700;font-size:13px}
 <div class="hl-main">
 
   <!-- PAGE TABS -->
-  <div class="page-tabs">
+  <label style="display:block;font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px">Jenis Laporan</label>
+  <select id="reportSelect" onchange="switchTab(this.value, null)" style="width:100%;padding:12px 14px;border:1.5px solid rgba(27,45,90,.14);border-radius:10px;font-size:15px;font-weight:600;background:#fff;color:var(--navy);font-family:var(--font);margin-bottom:22px;cursor:pointer">
     <?php if (hasPermission('laporan.view')): ?>
-    <button class="ptab active" onclick="switchTab('harian',this)">📅 Harian</button>
+    <option value="harian">📅 Harian</option>
+    <option value="bulanan">📆 Bulanan</option>
+    <option value="lr">📈 Laba / Rugi</option>
     <?php endif; ?>
-    <?php if (hasPermission('laporan.view')): ?>
-    <button class="ptab" onclick="switchTab('bulanan',this)">📆 Bulanan</button>
-    <?php endif; ?>
-    <?php if (hasPermission('laporan.view')): ?>
-    <button class="ptab" onclick="switchTab('lr',this)">📈 Laba / Rugi</button>
-    <?php endif; ?>
-    <button class="ptab" onclick="switchTab('produktivitas',this)">👥 Produktivitas Karyawan</button>
-  </div>
+    <option value="produktivitas">👥 Produktivitas Karyawan</option>
+  </select>
 
   <!-- ══ TAB HARIAN ═══════════════════════════════════ -->
   <?php if (hasPermission('laporan.view')): ?>
@@ -809,7 +806,8 @@ function switchTab(name, el) {
   const target = document.getElementById(tabMap[name]);
   if (target) target.style.display = 'block';
   document.querySelectorAll('.ptab').forEach(b => b.classList.remove('active'));
-  el.classList.add('active');
+  if (el && el.classList) el.classList.add('active');
+  var rsel = document.getElementById('reportSelect'); if (rsel && rsel.value !== name) rsel.value = name;
   if (name==='bulanan' && !bulananData) loadBulanan();
   if (name==='produktivitas') loadProd();
 }
