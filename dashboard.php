@@ -424,7 +424,7 @@ if ($action) {
 .dash-card {
   background: var(--white); border-radius: var(--r-lg);
   border: 1px solid rgba(27,45,90,.07); box-shadow: var(--shadow);
-  padding: 20px; position: relative; overflow: hidden;
+  padding: 20px; position: relative; overflow: hidden; text-align: center;
 }
 .dash-card::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; }
 .dash-card.teal::before   { background: linear-gradient(90deg,var(--teal),var(--teal-d)); }
@@ -466,6 +466,7 @@ if ($action) {
 }
 @media(max-width:680px) {
   .dash-grid { grid-template-columns: repeat(2,1fr); gap: 10px; }
+  #extrasGrid { grid-template-columns: 1fr !important; }
   .dash-card { padding: 12px; }
   .dash-num  { font-size: 1.1rem; }
   .dash-sub  { font-size: 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
