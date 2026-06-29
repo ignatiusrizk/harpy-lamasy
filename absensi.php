@@ -4,6 +4,7 @@ define('ROOT', __DIR__);
 require_once ROOT . '/middleware/tenant_guard.php';
 require_once __DIR__ . '/components.php';
 require_once ROOT . '/core/Geo.php';
+require_once ROOT . '/core/ShiftCalc.php';
 $user = currentUser();
 // Akses absensi: butuh minimal absensi.view (manajer) ATAU absensi.clock (karyawan)
 if (!hasPermission('absensi.view') && !hasPermission('absensi.clock')) {
@@ -73,6 +74,20 @@ if ($action) {
             $selfie = substr($sp, 0, 255);
         }
 
+        // Jadwal shift hari ini → telat
+        $shiftId = null; $telatMenit = 0;
+        $hari = (int)date('N'); // 1=Senin..7=Minggu
+        $jd = TenantQuery::rawOne(
+            "SELECT s.id, s.jam_mulai, s.toleransi_telat_menit
+               FROM hl_jadwal_shift j JOIN hl_shift s ON s.id=j.shift_id AND s.tenant_id=j.tenant_id
+              WHERE j.tenant_id=? AND j.outlet_id=? AND j.user_id=? AND j.hari=? LIMIT 1",
+            [$tid, $oid, $user['id'], $hari]
+        );
+        if ($jd) {
+            $shiftId = (int)$jd['id'];
+            $telatMenit = ShiftCalc::hitungTelat($jam, $jd['jam_mulai'], (int)$jd['toleransi_telat_menit']);
+        }
+
         TenantQuery::insert('hl_absensi', [
             'user_id'      => $user['id'],
             'tanggal'      => $tgl,
@@ -80,6 +95,8 @@ if ($action) {
             'lokasi_masuk' => $lokasi,
             'selfie_masuk' => $selfie,
             'status'       => 'hadir',
+            'shift_id'     => $shiftId,
+            'telat_menit'  => $telatMenit,
         ]);
 
         logAudit('clock_in', 'absensi', 'Tanggal: ' . $tgl);
@@ -121,9 +138,16 @@ if ($action) {
         $keluar = strtotime($tgl . ' ' . $jam);
         $durasi = round(($keluar - $masuk) / 60);
 
+        $lemburMenit = 0;
+        if (!empty($row['shift_id'])) {
+            $sh = TenantQuery::rawOne("SELECT jam_selesai, lembur_after_menit FROM hl_shift WHERE id=? AND tenant_id=? LIMIT 1", [(int)$row['shift_id'], $tid]);
+            if ($sh) $lemburMenit = ShiftCalc::hitungLembur($jam, $sh['jam_selesai'], (int)$sh['lembur_after_menit']);
+        }
+
         TenantQuery::update('hl_absensi',
             ['jam_keluar' => $jam, 'durasi_menit' => $durasi,
-             'lokasi_keluar' => substr(trim(strip_tags($d['lokasi'] ?? '')), 0, 255) ?: null],
+             'lokasi_keluar' => substr(trim(strip_tags($d['lokasi'] ?? '')), 0, 255) ?: null,
+             'lembur_menit' => $lemburMenit],
             'id = ?', [$row['id']]
         );
 
