@@ -496,6 +496,7 @@ if ($action) {
         <div class="clock-time" id="clockTime">--:--:--</div>
         <div class="clock-date" id="clockDate">--</div>
         <div class="clock-status belum" id="clockStatus">⏳ Memuat status...</div>
+        <input type="file" id="selfieFile" accept="image/*" capture="user" style="display:none">
         <div class="clock-btns">
           <button class="btn-clock-in btn-clock" id="btnClockIn" onclick="clockIn()" disabled>
             ▶ Clock In
@@ -733,7 +734,15 @@ if ($action) {
 
 <?php renderToast(); ?>
 
+<?php
+$abCfgRow = TenantQuery::rawOne("SELECT absensi_selfie_wajib, absensi_geofence_aktif, absensi_radius_m FROM outlets WHERE id=? AND tenant_id=? LIMIT 1", [TenantResolver::outletId(), TenantResolver::id()]) ?: [];
+?>
 <script>
+window.ABSENSI_CFG = {
+  selfie_wajib: <?= !empty($abCfgRow['absensi_selfie_wajib']) ? 'true' : 'false' ?>,
+  geofence:     <?= !empty($abCfgRow['absensi_geofence_aktif']) ? 'true' : 'false' ?>,
+  radius:       <?= (int)($abCfgRow['absensi_radius_m'] ?? 100) ?>
+};
 const IS_ADMIN = <?= (hasPermission('absensi.view') || hasPermission('absensi.approve')) ? 'true' : 'false' ?>;
 
 // ── LIVE CLOCK ────────────────────────────────────────
@@ -918,22 +927,55 @@ function updateClockUI(d) {
   }
 }
 
+// ── GPS + SELFIE HELPERS ──────────────────────────────
+function getGPS() {
+  return new Promise((res, rej) => {
+    if (!navigator.geolocation) return rej(new Error('no-geo'));
+    navigator.geolocation.getCurrentPosition(res, rej, { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 });
+  });
+}
+function captureSelfie() {
+  return new Promise((resolve, reject) => {
+    const inp = document.getElementById('selfieFile');
+    inp.value = '';
+    inp.onchange = async () => {
+      const f = inp.files && inp.files[0];
+      if (!f) return reject(new Error('no-file'));
+      const fd = new FormData(); fd.append('foto', f);
+      const r = await fetch('absensi.php?action=upload_selfie', { method:'POST', headers:{'X-CSRF-Token':csrfToken()}, body: fd });
+      const d = await r.json();
+      if (d.path) resolve(d.path); else reject(new Error(d.error || 'upload gagal'));
+    };
+    inp.click();
+  });
+}
+
 // ── CLOCK IN/OUT ──────────────────────────────────────
 async function clockIn() {
+  const cfg = window.ABSENSI_CFG || {};
   const btn = document.getElementById('btnClockIn');
-  btn.disabled = true; btn.textContent = '⏳...';
+  let lat = null, lng = null, selfiePath = null;
 
+  if (cfg.geofence) {
+    try { const pos = await getGPS(); lat = pos.coords.latitude; lng = pos.coords.longitude; }
+    catch (e) { showToast('Aktifkan izin lokasi (GPS) untuk clock-in', 'error'); return; }
+  }
+  if (cfg.selfie_wajib) {
+    try { showToast('📸 Ambil selfie…', 'info'); selfiePath = await captureSelfie(); }
+    catch (e) { showToast('Selfie wajib untuk clock-in' + (e.message ? ': ' + e.message : ''), 'error'); return; }
+  }
+
+  btn.disabled = true; btn.textContent = '⏳...';
   const r = await fetch('absensi.php?action=clock_in', {
-    method:'POST', headers:{'Content-Type':'application/json','X-CSRF-Token':csrfToken()},
-    body: JSON.stringify({})
+    method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken() },
+    body: JSON.stringify({ lat: lat, lng: lng, selfie_path: selfiePath })
   });
   const d = await r.json();
   if (d.success) {
     showToast('✅ Clock In berhasil! Jam ' + d.jam, 'success');
-    loadStatusHariIni();
-    loadKalender();
+    loadStatusHariIni(); loadKalender();
   } else {
-    showToast('❌ ' + (d.error||'Gagal'), 'error');
+    showToast('❌ ' + (d.error || 'Gagal'), 'error');
     btn.disabled = false;
   }
   btn.textContent = '▶ Clock In';
@@ -979,7 +1021,8 @@ async function loadKalender() {
   const today = localDateStr();
 
   const statusMap = {};
-  d.data.forEach(row => { statusMap[row.tanggal] = row.status; });
+  const selfieMap = {};
+  d.data.forEach(row => { statusMap[row.tanggal] = row.status; if (row.selfie_masuk) selfieMap[row.tanggal] = row.selfie_masuk; });
 
   const cal = document.getElementById('calGrid');
   while (cal.children.length > 7) cal.removeChild(cal.lastChild);
@@ -997,8 +1040,9 @@ async function loadKalender() {
     const isSun   = new Date(dateStr).getDay() === 0;
 
     const el = document.createElement('div');
+    const selfie = selfieMap[dateStr];
     el.className = 'cal-day ' + (status || (isSun ? 'libur' : '')) + (isToday ? ' today' : '');
-    el.innerHTML = `<span>${day}</span>${status ? '<div class="cal-dot"></div>' : ''}`;
+    el.innerHTML = `<span>${day}</span>${status ? '<div class="cal-dot"></div>' : ''}${selfie ? `<a href="/${esc(selfie)}" target="_blank" title="Lihat selfie" style="font-size:10px;line-height:1;text-decoration:none">🤳</a>` : ''}`;
     el.title     = status ? statusLabel(status) : dateStr;
     cal.appendChild(el);
   }
