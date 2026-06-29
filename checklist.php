@@ -38,12 +38,31 @@ if ($action) {
         exit;
     }
 
+    if ($action === 'upload_foto' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+        header('Content-Type: application/json');
+        verifyCsrf();
+        require_once ROOT . '/core/FileUpload.php';
+        $f = $_FILES['foto'] ?? null;
+        if (!$f) { echo json_encode(['error'=>'File foto tidak ditemukan']); exit; }
+        $res = FileUpload::uploadImage($f, 'uploads/foto_checklist', 't' . $tid . '_o' . $oid);
+        if (!empty($res['error'])) { echo json_encode(['error'=>$res['error']]); exit; }
+        echo json_encode(['ok'=>true, 'path'=>$res['path']]);
+        exit;
+    }
+
     // Submit isian
     if ($action === 'submit' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         verifyCsrf();
         $d = json_decode(file_get_contents('php://input'), true) ?: [];
         $templateId = (int)($d['template_id'] ?? 0);
         $answers    = $d['answers'] ?? [];
+        foreach ($answers as $i => &$a) {
+            if (isset($a['foto_url'])) {
+                $p = (string)$a['foto_url'];
+                $a['foto_url'] = (strpos($p, 'uploads/foto_checklist/') !== false) ? $p : '';
+            }
+        }
+        unset($a);
         $tgl        = date('Y-m-d');
         try {
             Checklist::submit($tid, $oid, $templateId, $tgl, $answers,
@@ -77,6 +96,7 @@ if ($action) {
 .ck-item-text{font-size:14px;color:var(--dark);font-weight:600}
 .ck-item-text .req{color:#EF4444;font-size:11px;margin-left:4px}
 .ck-item-note{width:100%;margin-top:6px;padding:6px 9px;border:1px solid #E5E9F2;border-radius:6px;font-family:inherit;font-size:12px}
+.ck-photo{margin-top:2px}
 .ck-submit{margin-top:12px}
 .ck-meta{font-size:11px;color:var(--gray);margin-top:8px}
 .empty{text-align:center;padding:50px 20px;color:var(--gray)}
@@ -117,16 +137,28 @@ function renderCard(t){
     const full = sub.checked_items >= sub.total_items;
     statusHtml = `<span class="ck-status ${full?'done':'partial'}">${full?'✓ Lengkap':'◐ Sebagian'} ${sub.checked_items}/${sub.total_items}</span>`;
   }
+  window.__ckTemplates = window.__ckTemplates || {};
+  window.__ckTemplates[t.id] = t;
   const items = t.items.map((it,i) => {
     const ans = sub && sub.answers ? (sub.answers[i] || sub.answers[String(i)] || {}) : {};
     const checked = ans.checked ? 'checked' : '';
     const note = ans.note ? esc(ans.note) : '';
+    const fotoUrl = ans.foto_url || '';
+    const photoCtrl = it.photo ? `
+      <div class="ck-photo" id="photowrap_${t.id}_${i}">
+        <input type="hidden" id="foto_${t.id}_${i}" value="${esc(fotoUrl)}">
+        <img id="fotoimg_${t.id}_${i}" src="${esc(fotoUrl)}" style="${fotoUrl?'':'display:none;'}max-width:90px;max-height:90px;border-radius:8px;border:1px solid #E5E9F2;margin-top:6px">
+        <label class="hl-btn hl-btn-light btn-sm" style="margin-top:6px;display:inline-flex;cursor:pointer">📷 ${fotoUrl?'Ganti':'Ambil'} Foto
+          <input type="file" accept="image/*" capture="environment" style="display:none" onchange="ckUploadFoto(${t.id},${i},this)">
+        </label>
+      </div>` : '';
     return `
       <div class="ck-item">
         <input type="checkbox" id="ck_${t.id}_${i}" ${checked}>
         <div class="ck-item-body">
-          <div class="ck-item-text">${esc(it.text)}${it.required?'<span class="req">*wajib</span>':''}</div>
+          <div class="ck-item-text">${esc(it.text)}${it.required?'<span class="req">*wajib</span>':''}${it.photo?'<span class="req" style="background:#DBEAFE;color:#1E40AF">📷 wajib foto</span>':''}</div>
           <input type="text" class="ck-item-note" id="note_${t.id}_${i}" placeholder="Catatan (opsional)…" value="${note}">
+          ${photoCtrl}
         </div>
       </div>`;
   }).join('');
@@ -143,13 +175,35 @@ function renderCard(t){
     </div>`;
 }
 
+async function ckUploadFoto(tid, i, input){
+  const file = input.files && input.files[0];
+  if (!file) return;
+  const fd = new FormData(); fd.append('foto', file);
+  showToast('📤 Mengupload foto…','info');
+  try {
+    const r = await fetch('checklist.php?action=upload_foto', { method:'POST', body: fd });
+    const d = await r.json();
+    if (d.error){ showToast('❌ '+d.error,'error'); return; }
+    document.getElementById(`foto_${tid}_${i}`).value = d.path;
+    const img = document.getElementById(`fotoimg_${tid}_${i}`);
+    img.src = '/' + d.path.replace(/^\//,''); img.style.display = '';
+    showToast('✅ Foto terlampir','success');
+  } catch(e){ showToast('❌ Gagal upload: '+e.message,'error'); }
+}
+
 async function submitCk(tid, itemCount){
   const answers = {};
+  const items = (window.__ckTemplates && window.__ckTemplates[tid]) ? window.__ckTemplates[tid].items : [];
   for (let i=0;i<itemCount;i++){
-    answers[i] = {
-      checked: document.getElementById(`ck_${tid}_${i}`).checked ? 1 : 0,
-      note: document.getElementById(`note_${tid}_${i}`).value.trim(),
-    };
+    const checked = document.getElementById(`ck_${tid}_${i}`).checked ? 1 : 0;
+    const fotoEl = document.getElementById(`foto_${tid}_${i}`);
+    const foto_url = fotoEl ? fotoEl.value : '';
+    // enforce klien: item wajib-foto yg dicentang harus ada foto
+    if (checked && items[i] && items[i].photo && !foto_url){
+      showToast(`❌ Item "${items[i].text}" wajib lampirkan foto`,'error');
+      return;
+    }
+    answers[i] = { checked, note: document.getElementById(`note_${tid}_${i}`).value.trim(), foto_url };
   }
   try {
     const r = await fetch('checklist.php?action=submit', {
