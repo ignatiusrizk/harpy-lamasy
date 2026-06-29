@@ -426,7 +426,7 @@ if ($action) {
 <style>
 /* SUMMARY CARDS */
 .inv-summary{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px}
-.inv-card{background:var(--white);border-radius:var(--r-lg);padding:14px 16px;border:1px solid rgba(27,45,90,.07);box-shadow:var(--shadow);position:relative;overflow:hidden}
+.inv-card{background:var(--white);border-radius:var(--r-lg);padding:14px 16px;border:1px solid rgba(27,45,90,.07);box-shadow:var(--shadow);position:relative;overflow:hidden;text-align:center}
 .inv-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
 .inv-card.total::before  {background:linear-gradient(90deg,var(--teal),var(--teal-d))}
 .inv-card.aman::before   {background:linear-gradient(90deg,var(--green),#34D399)}

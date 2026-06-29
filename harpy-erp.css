@@ -193,6 +193,7 @@ body { font-family: var(--font); background: var(--off); color: var(--dark); min
   box-shadow: var(--shadow);
   position: relative; overflow: hidden;
   cursor: pointer; transition: all .2s;
+  text-align: center;
 }
 .hl-stat-card:hover { box-shadow: var(--shadow-lg); transform: translateY(-1px); }
 .hl-stat-card::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; }

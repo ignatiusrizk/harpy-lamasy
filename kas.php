@@ -136,7 +136,7 @@ if ($action) {
 <style>
 /* SUMMARY CARDS */
 .summary-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px}
-.sum-card{background:var(--white);border-radius:var(--r-lg);padding:18px 20px;border:1px solid rgba(27,45,90,.07);box-shadow:var(--shadow);position:relative;overflow:hidden}
+.sum-card{background:var(--white);border-radius:var(--r-lg);padding:18px 20px;border:1px solid rgba(27,45,90,.07);box-shadow:var(--shadow);position:relative;overflow:hidden;text-align:center}
 .sum-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
 .sum-card.masuk::before{background:linear-gradient(90deg,var(--green),#34D399)}
 .sum-card.keluar::before{background:linear-gradient(90deg,#EF4444,#F87171)}
