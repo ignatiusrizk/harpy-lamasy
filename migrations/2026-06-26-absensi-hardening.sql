@@ -1,0 +1,9 @@
+ALTER TABLE outlets
+  ADD COLUMN IF NOT EXISTS absensi_selfie_wajib   TINYINT(1) NOT NULL DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS absensi_geofence_aktif TINYINT(1) NOT NULL DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS absensi_lat            DECIMAL(10,7) NULL,
+  ADD COLUMN IF NOT EXISTS absensi_lng            DECIMAL(10,7) NULL,
+  ADD COLUMN IF NOT EXISTS absensi_radius_m       INT NOT NULL DEFAULT 100;
+
+ALTER TABLE hl_absensi
+  ADD COLUMN IF NOT EXISTS selfie_masuk VARCHAR(255) NULL AFTER lokasi_masuk;
