@@ -74,10 +74,12 @@ class VoiceOrderParser
         if ($aiFn !== null) {
             $raw = $aiFn($prompt);
         } else {
-            $raw = AnthropicClient::askJson($prompt, [
+            // askJson() membungkus parsed JSON di key 'json' → ambil itu, bukan wrapper-nya
+            $resp = AnthropicClient::askJson($prompt, [
                 'temperature' => 0,
                 'max_tokens'  => 800,
             ]);
+            $raw = $resp['json'] ?? $resp;
         }
         if (!is_array($raw)) throw new RuntimeException('AI response bukan JSON object');
         return self::validate($raw, $catalog);
