@@ -319,7 +319,7 @@ $baseUrl = $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'lamasy.harpy.id');
 <style>
 /* Summary */
 .ms-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
-.ms-card{background:var(--white);border-radius:14px;padding:14px 16px;border:1px solid rgba(27,45,90,.07);position:relative;overflow:hidden}
+.ms-card{background:var(--white);border-radius:14px;padding:14px 16px;border:1px solid rgba(27,45,90,.07);position:relative;overflow:hidden;text-align:center}
 .ms-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
 .ms-card.idle::before{background:linear-gradient(90deg,#9CA3AF,#D1D5DB)}
 .ms-card.running::before{background:linear-gradient(90deg,#3B82F6,#60A5FA)}
@@ -374,14 +374,14 @@ $baseUrl = $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'lamasy.harpy.id');
 
   <div style="margin-bottom:16px">
     <h1 style="font-size:22px;font-weight:800;color:var(--navy);margin:0 0 4px">🪙 Mesin Self-Service</h1>
-    <p style="color:var(--gray);font-size:13px;margin:0">Laundry koin / self-service. Customer scan QR di mesin → book → staff konfirmasi → mesin nyala manual.</p>
+    <p style="color:var(--gray);font-size:13px;margin:0">Laundry koin / self-service. Pelanggan scan QR di mesin → pesan → staf konfirmasi → mesin dinyalakan manual.</p>
   </div>
 
   <div class="ms-summary">
-    <div class="ms-card idle"><div class="ms-num" id="sumIdle">-</div><div class="ms-label">⚪ Mesin Idle</div></div>
-    <div class="ms-card running"><div class="ms-num blue" id="sumRunning">-</div><div class="ms-label">🔵 Running</div></div>
-    <div class="ms-card booked"><div class="ms-num amber" id="sumBooked">-</div><div class="ms-label">🟡 Booked (perlu konfirmasi)</div></div>
-    <div class="ms-card rev"><div class="ms-num green" id="sumRevToday">Rp 0</div><div class="ms-label">💰 Revenue Hari Ini</div></div>
+    <div class="ms-card idle"><div class="ms-num" id="sumIdle">-</div><div class="ms-label">⚪ Mesin Siap</div></div>
+    <div class="ms-card running"><div class="ms-num blue" id="sumRunning">-</div><div class="ms-label">🔵 Berjalan</div></div>
+    <div class="ms-card booked"><div class="ms-num amber" id="sumBooked">-</div><div class="ms-label">🟡 Perlu Konfirmasi</div></div>
+    <div class="ms-card rev"><div class="ms-num green" id="sumRevToday">Rp 0</div><div class="ms-label">💰 Pendapatan Hari Ini</div></div>
   </div>
 
   <div class="ms-tabs">
@@ -393,7 +393,7 @@ $baseUrl = $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'lamasy.harpy.id');
   <!-- ═════ TAB: LIVE ═════ -->
   <div id="ms-tab-live" class="ms-tab-content">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-      <p style="margin:0;color:var(--gray);font-size:13px">Auto-refresh tiap 10 detik. Klik "Konfirmasi Mulai" setelah customer bayar di counter.</p>
+      <p style="margin:0;color:var(--gray);font-size:13px">Auto-refresh tiap 10 detik. Klik "Konfirmasi Mulai" setelah pelanggan bayar di kasir.</p>
       <button class="hl-btn hl-btn-outline hl-btn-sm" onclick="loadLive()">🔄 Refresh</button>
     </div>
     <div class="mesin-grid" id="liveGrid">
