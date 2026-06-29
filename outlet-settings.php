@@ -685,7 +685,7 @@ async function saveAbsensiConfig(){
     geofence_aktif: document.getElementById('abGeofence').checked,
     lat: abLat, lng: abLng, radius_m: +document.getElementById('abRadius').value
   };
-  const r = await fetch('outlet-settings.php?action=save_absensi', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
+  const r = await fetch('outlet-settings.php?action=save_absensi', { method:'POST', headers:{'Content-Type':'application/json','X-CSRF-Token':csrfToken()}, body: JSON.stringify(body) });
   const d = await r.json();
   if (d.success) showToast('Setting absensi tersimpan','success'); else showToast(d.error||'Gagal','error');
 }
