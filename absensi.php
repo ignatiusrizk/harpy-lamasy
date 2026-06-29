@@ -3,6 +3,7 @@ $activePage = 'absensi';
 define('ROOT', __DIR__);
 require_once ROOT . '/middleware/tenant_guard.php';
 require_once __DIR__ . '/components.php';
+require_once ROOT . '/core/Geo.php';
 $user = currentUser();
 // Akses absensi: butuh minimal absensi.view (manajer) ATAU absensi.clock (karyawan)
 if (!hasPermission('absensi.view') && !hasPermission('absensi.clock')) {
@@ -38,17 +39,62 @@ if ($action) {
             exit;
         }
 
+        // Baca config absensi outlet ini
+        $cfg = TenantQuery::rawOne(
+            "SELECT absensi_selfie_wajib, absensi_geofence_aktif, absensi_lat, absensi_lng, absensi_radius_m
+               FROM outlets WHERE id=? AND tenant_id=? LIMIT 1",
+            [$oid, $tid]
+        ) ?: [];
+
+        $lokasi = substr(trim(strip_tags($d['lokasi'] ?? '')), 0, 255) ?: null;
+
+        // Geofence (strict)
+        if (!empty($cfg['absensi_geofence_aktif'])) {
+            $lat = isset($d['lat']) && $d['lat'] !== '' ? (float)$d['lat'] : null;
+            $lng = isset($d['lng']) && $d['lng'] !== '' ? (float)$d['lng'] : null;
+            if ($lat === null || $lng === null || ($cfg['absensi_lat'] === null || $cfg['absensi_lng'] === null)) {
+                echo json_encode(['error' => 'Lokasi tak terdeteksi. Aktifkan izin lokasi untuk clock-in.']); exit;
+            }
+            $dist = Geo::haversineMeters($lat, $lng, (float)$cfg['absensi_lat'], (float)$cfg['absensi_lng']);
+            if ($dist > (int)$cfg['absensi_radius_m']) {
+                echo json_encode(['error' => 'Kamu di luar area outlet (' . round($dist) . ' m > ' . (int)$cfg['absensi_radius_m'] . ' m).']); exit;
+            }
+            $lokasi = round($lat, 7) . ',' . round($lng, 7);
+        }
+
+        // Selfie wajib
+        $selfie = null;
+        if (!empty($cfg['absensi_selfie_wajib'])) {
+            $sp = trim((string)($d['selfie_path'] ?? ''));
+            $pre = 'uploads/absensi_selfie/t' . $tid . '_o' . $oid;
+            if ($sp === '' || strpos($sp, '..') !== false || strpos($sp, $pre) !== 0) {
+                echo json_encode(['error' => 'Selfie wajib untuk clock-in.']); exit;
+            }
+            $selfie = substr($sp, 0, 255);
+        }
+
         TenantQuery::insert('hl_absensi', [
-            'user_id'     => $user['id'],
-            'tanggal'     => $tgl,
-            'jam_masuk'   => $jam,
-            'lokasi_masuk'=> substr(trim(strip_tags($d['lokasi'] ?? '')), 0, 255) ?: null,
-            'status'      => 'hadir',
+            'user_id'      => $user['id'],
+            'tanggal'      => $tgl,
+            'jam_masuk'    => $jam,
+            'lokasi_masuk' => $lokasi,
+            'selfie_masuk' => $selfie,
+            'status'       => 'hadir',
         ]);
 
         logAudit('clock_in', 'absensi', 'Tanggal: ' . $tgl);
-        echo json_encode(['success' => true, 'jam' => substr($jam,0,5), 'tanggal' => $tgl]);
+        echo json_encode(['success' => true, 'jam' => substr($jam, 0, 5), 'tanggal' => $tgl]);
         exit;
+    }
+
+    // UPLOAD SELFIE
+    if ($action === 'upload_selfie' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+        if (!hasPermission('absensi.clock')) { echo json_encode(['error'=>'Akses ditolak']); exit; }
+        verifyCsrf();
+        require_once ROOT . '/core/FileUpload.php';
+        $up = FileUpload::uploadImage($_FILES['foto'] ?? [], 'uploads/absensi_selfie', 't'.$tid.'_o'.$oid);
+        if ($up['error']) { echo json_encode(['error'=>$up['error']]); exit; }
+        echo json_encode(['path'=>$up['path']]); exit;
     }
 
     // CLOCK OUT
