@@ -47,12 +47,13 @@ class Checklist
         foreach ((array)$rawItems as $it) {
             if (is_string($it)) {
                 $text = trim($it);
-                $req = 0;
+                $req = 0; $photo = 0;
             } else {
-                $text = trim($it['text'] ?? '');
-                $req  = !empty($it['required']) ? 1 : 0;
+                $text  = trim($it['text'] ?? '');
+                $req   = !empty($it['required']) ? 1 : 0;
+                $photo = !empty($it['photo']) ? 1 : 0;
             }
-            if ($text !== '') $items[] = ['text'=>$text, 'required'=>$req];
+            if ($text !== '') $items[] = ['text'=>$text, 'required'=>$req, 'photo'=>$photo];
         }
         if (!$items) throw new RuntimeException('Minimal 1 item checklist.');
 
@@ -98,6 +99,24 @@ class Checklist
         return $r;
     }
 
+    /** Validasi jawaban vs item template. Throw kalau required tak dicentang / wajib-foto tanpa foto. Return jumlah checked. */
+    public static function validateAnswers(array $items, array $answers): int
+    {
+        $checked = 0;
+        foreach ($items as $idx => $item) {
+            $ans = $answers[$idx] ?? $answers[(string)$idx] ?? null;
+            $isChecked = !empty($ans['checked']);
+            if ($isChecked) $checked++;
+            if (!empty($item['required']) && !$isChecked) {
+                throw new RuntimeException('Item wajib belum dicentang: "' . $item['text'] . '"');
+            }
+            if (!empty($item['photo']) && $isChecked && trim((string)($ans['foto_url'] ?? '')) === '') {
+                throw new RuntimeException('Item wajib lampirkan foto: "' . $item['text'] . '"');
+            }
+        }
+        return $checked;
+    }
+
     /**
      * Submit/update isian checklist (upsert).
      * @param array $answers  {index: {checked: 0|1, note: ''}}
@@ -110,16 +129,7 @@ class Checklist
         if (!$tpl) throw new RuntimeException('Template tidak ditemukan.');
         $totalItems = count($tpl['items']);
 
-        // Validasi required + hitung checked
-        $checked = 0;
-        foreach ($tpl['items'] as $idx => $item) {
-            $ans = $answers[$idx] ?? $answers[(string)$idx] ?? null;
-            $isChecked = !empty($ans['checked']);
-            if ($isChecked) $checked++;
-            if (!empty($item['required']) && !$isChecked) {
-                throw new RuntimeException('Item wajib belum dicentang: "' . $item['text'] . '"');
-            }
-        }
+        $checked = self::validateAnswers($tpl['items'], $answers);
 
         $answersJson = json_encode($answers, JSON_UNESCAPED_UNICODE);
         $db = Database::get();
