@@ -45,6 +45,6 @@ try {
     }
     echo json_encode(['ok'=>true, 'heard'=>$transcript, 'parsed'=>$parsed, 'unmatched'=>$parsed['unmatched']]);
 } catch (Throwable $e) {
-    error_log('voice_order_parse error: ' . $e->getMessage());
+    ErrorLogger::log('voice', 'parse error: ' . $e->getMessage(), $tid ?? null, $oid ?? null);
     echo json_encode(['ok'=>false,'reason'=>'ai_error']);
 }
