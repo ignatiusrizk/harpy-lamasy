@@ -270,19 +270,18 @@ input:checked + .toggle-slider::before{transform:translateX(18px)}
     </div>
   </div>
 
-  <div class="hl-stat-grid-4" style="margin-bottom:20px">
+  <div class="hl-stat-grid-4" style="grid-template-columns:repeat(3,1fr);margin-bottom:14px">
     <div class="hl-stat-card teal"><div class="hl-stat-num" id="sTotal">-</div><div class="hl-stat-label">🧺 Layanan Aktif</div></div>
     <div class="hl-stat-card navy"><div class="hl-stat-num" id="sKat">-</div><div class="hl-stat-label">📂 Kategori</div></div>
     <div class="hl-stat-card green"><div class="hl-stat-num" id="sTerlaris" style="font-size:1rem">-</div><div class="hl-stat-label">🏆 Terlaris</div></div>
-    <div class="hl-stat-card purple">
-      <?php if (hasPermission('layanan.create')): ?>
-      <button class="hl-btn hl-btn-primary hl-btn-full" onclick="openModal()" style="margin-top:4px">+ Tambah Layanan</button>
-      <button class="hl-btn hl-btn-full" onclick="openTierModal()" style="margin-top:6px;background:#F59E0B;color:#fff;border:none;" title="Atur tier express: 12 jam, 6 jam, kilat, dll">⚡ Kelola Tier Express</button>
-      <?php else: ?>
-      <span style="font-size:12px;color:rgba(255,255,255,.55)">View Only</span>
-      <?php endif; ?>
-    </div>
   </div>
+
+  <?php if (hasPermission('layanan.create')): ?>
+  <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px">
+    <button class="hl-btn hl-btn-primary" onclick="openModal()" style="flex:1;min-width:150px">+ Tambah Layanan</button>
+    <button class="hl-btn" onclick="openTierModal()" style="flex:1;min-width:150px;background:#F59E0B;color:#fff;border:none" title="Atur tier express: 12 jam, 6 jam, kilat, dll">⚡ Kelola Tier Express</button>
+  </div>
+  <?php endif; ?>
 
   <div class="hl-filter-collapsible">
     <button class="hl-filter-toggle-btn" id="layananFilterBtn" onclick="toggleFilter('layananFilter')">
