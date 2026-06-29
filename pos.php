@@ -2668,6 +2668,7 @@ function voiceOrderApply() {
   }
   // Note: status_bayar (lunas/dp/belum_bayar) is computed automatically by recalc() from f_dp vs total.
   // There is no status_bayar input field — skip setting it.
+  if (typeof renderItems === 'function') renderItems(); // re-render qty inputs after jumlah mutation
   if (typeof recalc === 'function') recalc();
   document.getElementById('voiceModal').style.display = 'none';
   showToast('Order terisi dari suara — cek & Simpan', 'success');

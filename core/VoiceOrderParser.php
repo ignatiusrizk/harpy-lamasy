@@ -5,7 +5,7 @@ require_once __DIR__ . '/AnthropicClient.php';
 class VoiceOrderParser
 {
     private const STATUS = ['belum_bayar', 'dp', 'lunas'];
-    private const METODE = ['tunai', 'transfer', 'qris'];
+    private const METODE = ['cash', 'transfer', 'qris'];
 
     public static function buildPrompt(string $transcript, array $catalog): string
     {
@@ -47,6 +47,7 @@ class VoiceOrderParser
         if (!in_array($status, self::STATUS, true)) $status = null;
         $metode = $raw['bayar']['metode'] ?? null;
         if (is_string($metode)) $metode = strtolower(trim($metode));
+        if ($metode === 'tunai') $metode = 'cash'; // normalize Indonesian synonym → POS canonical
         if (!in_array($metode, self::METODE, true)) $metode = null;
 
         $nama = $raw['nama'] ?? null;

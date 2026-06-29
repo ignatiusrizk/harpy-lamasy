@@ -20,8 +20,15 @@ eqv($r['items'][0]['layanan_id'], 12, 'id 12 dipertahankan');
 eqv($r['items'][0]['nama_katalog'], 'Cuci Setrika Reguler', 'nama_katalog dari katalog');
 eqv($r['items'][0]['qty'], 3, 'qty string "3" → int 3');
 eqv($r['bayar']['status'], 'lunas', 'status lolos');
-eqv($r['bayar']['metode'], 'tunai', 'metode lolos');
+eqv($r['bayar']['metode'], 'cash', 'metode tunai → cash (normalize ke POS canonical)');
 eqv($r['unmatched'], ['pewangi premium'], 'unmatched passthrough');
+
+// 1b. input 'cash' langsung juga lolos sebagai 'cash'
+$r1b = VoiceOrderParser::validate([
+    'items' => [['layanan_id' => 12, 'qty' => 1]],
+    'bayar' => ['status' => 'lunas', 'metode' => 'cash'],
+], $catalog);
+eqv($r1b['bayar']['metode'], 'cash', 'metode cash langsung → cash');
 
 // 2. item dengan id di luar katalog dibuang
 $r2 = VoiceOrderParser::validate([
