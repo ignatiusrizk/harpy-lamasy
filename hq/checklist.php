@@ -193,15 +193,16 @@ function openTpl(t){
   const wrap = document.getElementById('itemsWrap');
   wrap.innerHTML = '';
   const items = t && t.items.length ? t.items : [{text:'',required:0}];
-  items.forEach(it => addItem(it.text, it.required));
+  items.forEach(it => addItem(it.text, it.required, it.photo));
   document.getElementById('tplModal').classList.add('open');
 }
-function addItem(text='', required=0){
+function addItem(text='', required=0, photo=0){
   const div = document.createElement('div');
   div.className = 'item-row';
   div.innerHTML = `
     <input type="text" class="item-text" placeholder="Item checklist…" value="${esc(text)}">
     <label><input type="checkbox" class="item-req" ${required?'checked':''}> wajib</label>
+    <label><input type="checkbox" class="item-photo" ${photo?'checked':''}> 📷 foto</label>
     <button class="btn btn-light btn-sm" onclick="this.parentElement.remove()">✕</button>`;
   document.getElementById('itemsWrap').appendChild(div);
 }
@@ -211,6 +212,7 @@ async function saveTpl(){
   const items = [...document.querySelectorAll('#itemsWrap .item-row')].map(row => ({
     text: row.querySelector('.item-text').value.trim(),
     required: row.querySelector('.item-req').checked ? 1 : 0,
+    photo: row.querySelector('.item-photo').checked ? 1 : 0,
   })).filter(it => it.text);
   if (!items.length){ alert('Minimal 1 item'); return; }
   const body = {
