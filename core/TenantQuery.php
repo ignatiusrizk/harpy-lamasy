@@ -44,6 +44,7 @@ class TenantQuery
         'hl_aset_tetap', 'hl_liabilitas', 'hl_jurnal_manual', 'hl_kas_bank', 'hl_kas_bank_mutasi',
         'hl_bahan', 'hl_bahan_mutasi',
         'hl_mesin', 'hl_mesin_sesi',
+        'hl_shift', 'hl_jadwal_shift',
     ];
 
     private static function hasOutletScope(string $table): bool

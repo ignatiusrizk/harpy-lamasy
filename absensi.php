@@ -407,6 +407,82 @@ if ($action) {
         exit;
     }
 
+    // ── SHIFT CRUD ────────────────────────────────────
+    if ($action === 'shift_list') {
+        if (!hasPermission('absensi.view')) { echo json_encode([]); exit; }
+        echo json_encode(TenantQuery::raw(
+            "SELECT * FROM hl_shift WHERE tenant_id=? AND outlet_id=? ORDER BY urutan, jam_mulai", [$tid,$oid]
+        )); exit;
+    }
+    if ($action === 'shift_save' && $_SERVER['REQUEST_METHOD']==='POST') {
+        if (!hasPermission('absensi.view')) { echo json_encode(['error'=>'Akses ditolak']); exit; }
+        verifyCsrf();
+        $d = json_decode(file_get_contents('php://input'), true);
+        $nama = substr(trim(strip_tags($d['nama'] ?? '')), 0, 50);
+        $jm = $d['jam_mulai'] ?? ''; $js = $d['jam_selesai'] ?? '';
+        if (!$nama || !preg_match('/^\d{2}:\d{2}/', $jm) || !preg_match('/^\d{2}:\d{2}/', $js)) { echo json_encode(['error'=>'Nama & jam wajib (HH:MM)']); exit; }
+        if (strtotime($js) <= strtotime($jm)) { echo json_encode(['error'=>'Jam selesai harus setelah jam mulai (shift lintas malam belum didukung)']); exit; }
+        $data = [
+            'nama'=>$nama,
+            'jam_mulai'=>substr($jm,0,8) ?: $jm.':00',
+            'jam_selesai'=>substr($js,0,8) ?: $js.':00',
+            'toleransi_telat_menit'=>max(0,(int)($d['toleransi_telat_menit'] ?? 15)),
+            'lembur_after_menit'=>max(0,(int)($d['lembur_after_menit'] ?? 30)),
+            'is_active'=>!empty($d['is_active'])?1:1,
+            'urutan'=>(int)($d['urutan'] ?? 0),
+        ];
+        if (!empty($d['id'])) TenantQuery::update('hl_shift', $data, 'id=?', [(int)$d['id']]);
+        else TenantQuery::insert('hl_shift', $data);
+        echo json_encode(['success'=>true]); exit;
+    }
+    if ($action === 'shift_delete' && $_SERVER['REQUEST_METHOD']==='POST') {
+        if (!hasPermission('absensi.view')) { echo json_encode(['error'=>'Akses ditolak']); exit; }
+        verifyCsrf();
+        $d = json_decode(file_get_contents('php://input'), true);
+        $sid = (int)($d['id'] ?? 0);
+        $used = TenantQuery::rawOne("SELECT COUNT(*) c FROM hl_jadwal_shift WHERE tenant_id=? AND outlet_id=? AND shift_id=?", [$tid,$oid,$sid]);
+        if (($used['c'] ?? 0) > 0) { echo json_encode(['error'=>'Shift masih dipakai di jadwal. Hapus dari jadwal dulu.']); exit; }
+        TenantQuery::delete('hl_shift', 'id=?', [$sid]);
+        echo json_encode(['success'=>true]); exit;
+    }
+    if ($action === 'shift_seed_template' && $_SERVER['REQUEST_METHOD']==='POST') {
+        if (!hasPermission('absensi.view')) { echo json_encode(['error'=>'Akses ditolak']); exit; }
+        verifyCsrf();
+        $ada = TenantQuery::rawOne("SELECT COUNT(*) c FROM hl_shift WHERE tenant_id=? AND outlet_id=?", [$tid,$oid]);
+        if (($ada['c'] ?? 0) > 0) { echo json_encode(['error'=>'Sudah ada shift, template tidak dibuat']); exit; }
+        foreach ([['Pagi','08:00:00','16:00:00',1],['Sore','14:00:00','22:00:00',2],['Full','08:00:00','20:00:00',3]] as $t) {
+            TenantQuery::insert('hl_shift', ['nama'=>$t[0],'jam_mulai'=>$t[1],'jam_selesai'=>$t[2],'toleransi_telat_menit'=>15,'lembur_after_menit'=>30,'is_active'=>1,'urutan'=>$t[3]]);
+        }
+        echo json_encode(['success'=>true]); exit;
+    }
+
+    // ── JADWAL SHIFT ──────────────────────────────────
+    if ($action === 'jadwal_get') {
+        if (!hasPermission('absensi.view')) { echo json_encode([]); exit; }
+        echo json_encode(TenantQuery::raw(
+            "SELECT user_id, hari, shift_id FROM hl_jadwal_shift WHERE tenant_id=? AND outlet_id=?", [$tid,$oid]
+        )); exit;
+    }
+    if ($action === 'jadwal_save' && $_SERVER['REQUEST_METHOD']==='POST') {
+        if (!hasPermission('absensi.view')) { echo json_encode(['error'=>'Akses ditolak']); exit; }
+        verifyCsrf();
+        $d = json_decode(file_get_contents('php://input'), true);
+        $uid = (int)($d['user_id'] ?? 0); $hari = (int)($d['hari'] ?? 0); $sid = (int)($d['shift_id'] ?? 0);
+        if ($uid < 1 || $hari < 1 || $hari > 7) { echo json_encode(['error'=>'Data tidak valid']); exit; }
+        if ($sid < 1) {
+            // libur → hapus baris
+            TenantQuery::delete('hl_jadwal_shift', 'user_id=? AND hari=?', [$uid,$hari]);
+        } else {
+            // validasi shift_id milik outlet ini
+            $shiftOk = TenantQuery::rawOne("SELECT id FROM hl_shift WHERE tenant_id=? AND outlet_id=? AND id=?", [$tid,$oid,$sid]);
+            if (!$shiftOk) { echo json_encode(['error'=>'Shift tidak ditemukan di outlet ini']); exit; }
+            // upsert (UNIQUE user+hari) — hapus lalu insert (sederhana & tenant+outlet-scoped)
+            TenantQuery::delete('hl_jadwal_shift', 'user_id=? AND hari=?', [$uid,$hari]);
+            TenantQuery::insert('hl_jadwal_shift', ['user_id'=>$uid,'hari'=>$hari,'shift_id'=>$sid]);
+        }
+        echo json_encode(['success'=>true]); exit;
+    }
+
     echo json_encode(['error'=>'Unknown']); exit;
 }
 ?>
