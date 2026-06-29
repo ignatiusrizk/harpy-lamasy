@@ -347,7 +347,7 @@ function logAuditLogin(array $user, string $aksi, string $modul, string $ket): v
   --r:      12px;
 }
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html, body { height: 100%; font-family: var(--font); }
+html, body { height: 100%; font-family: var(--font); overflow-x: hidden; max-width: 100%; }
 body {
   background: var(--navy-d);
   display: flex; align-items: center; justify-content: center;
@@ -477,7 +477,7 @@ input[type="password"]:focus {
 
 <div class="login-card">
   <div class="login-logo">
-    <div style="margin-bottom:14px;"><img src="/assets/logo.png" alt="LAMASY" style="height:60px;"></div>
+    <div style="margin-bottom:14px;"><img src="/assets/icon-512.png" alt="LAMASY" style="height:72px;width:72px;border-radius:18px;"></div>
     <h1>LAMASY</h1>
     <p>Laundry Management System</p>
   </div>
