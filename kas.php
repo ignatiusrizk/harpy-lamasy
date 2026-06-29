@@ -522,6 +522,7 @@ async function editKas(id) {
   document.getElementById('f_keterangan').value = row.keterangan;
   document.getElementById('f_kategori').value   = row.kategori;
   document.getElementById('f_ref_order').value  = row.ref_order||'';
+  document.getElementById('f_bukti_foto').value = row.bukti_foto||'';
   setTipe(row.tipe); updateJumlahPreview();
   document.getElementById('formTitle').textContent = '✏️ Edit Kas #'+row.id;
   document.getElementById('btnSave').textContent = '💾 Update';
