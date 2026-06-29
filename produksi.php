@@ -322,14 +322,15 @@ $pageTitle  = '🧺 Produksi';
     <h1 style="margin:0 0 16px">🧺 Produksi</h1>
 
     <!-- Stage tabs -->
-    <div id="stageTabs" style="display:flex;gap:6px;overflow-x:auto;padding-bottom:8px;margin-bottom:12px;-webkit-overflow-scrolling:touch;max-width:100%;min-width:0">
-      <button class="stage-tab active" data-stage="terima"  onclick="switchStage('terima')">📥 Terima <span class="cnt"></span></button>
-      <button class="stage-tab"        data-stage="cuci"    onclick="switchStage('cuci')">🫧 Cuci <span class="cnt"></span></button>
-      <button class="stage-tab"        data-stage="kering"  onclick="switchStage('kering')">💨 Kering <span class="cnt"></span></button>
-      <button class="stage-tab"        data-stage="setrika" onclick="switchStage('setrika')">👔 Setrika <span class="cnt"></span></button>
-      <button class="stage-tab"        data-stage="siap"    onclick="switchStage('siap')">✅ Siap <span class="cnt"></span></button>
-      <button class="stage-tab"        data-stage="diambil" onclick="switchStage('diambil')">📦 Diambil/Diantar <span class="cnt"></span></button>
-    </div>
+    <label style="display:block;font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px">Tahap Produksi</label>
+    <select id="stageSelect" onchange="switchStage(this.value)" style="width:100%;padding:12px 14px;border:1.5px solid var(--off);border-radius:10px;font-size:15px;font-weight:600;background:#fff;color:var(--navy);font-family:var(--font);margin-bottom:14px;cursor:pointer">
+      <option value="terima">📥 Terima</option>
+      <option value="cuci">🫧 Cuci</option>
+      <option value="kering">💨 Kering</option>
+      <option value="setrika">👔 Setrika</option>
+      <option value="siap">✅ Siap</option>
+      <option value="diambil">📦 Diambil / Diantar</option>
+    </select>
 
     <!-- Card list -->
     <div id="cardList" style="display:grid;gap:10px;grid-template-columns:1fr">
@@ -368,7 +369,8 @@ const CSRF = document.querySelector('meta[name=csrf-token]')?.content || '';
 
 function switchStage(stage) {
   currentStage = stage;
-  document.querySelectorAll('.stage-tab').forEach(b => b.classList.toggle('active', b.dataset.stage === stage));
+  var sel = document.getElementById('stageSelect');
+  if (sel && sel.value !== stage) sel.value = stage;
   loadCards();
 }
 
@@ -385,7 +387,7 @@ async function loadCards() {
     }
     list.innerHTML = d.rows.map(r => `
       <div class="order-card" onclick="openStageModal(${r.id})">
-        <div style="font-weight:700;font-size:15px">#${r.no_order} · ${esc(r.nama_pelanggan||'(no name)')}</div>
+        <div style="font-weight:700;font-size:15px;word-break:break-word">#${r.no_order} · ${esc(r.nama_pelanggan||'(no name)')}</div>
         <div style="color:var(--gray);font-size:13px;margin-top:3px">${r.jml_item} item · Rp ${Number(r.total||0).toLocaleString('id-ID')}</div>
         <div style="margin-top:8px"><span class="badge b-${r.status_proses}">${r.status_proses}</span></div>
       </div>`).join('');
