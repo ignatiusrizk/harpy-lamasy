@@ -27,6 +27,7 @@ class CoinLedger
         'ai_review'          => 300,
         'ai_insight_laporan' => 100,
         'ai_chat_data'       =>  50,
+        'ai_voice_order'     =>  50,
         'ai_churn_message'   =>  30,
         'ai_briefing_hq'     =>  80,
         'daily_report'       => 100,
