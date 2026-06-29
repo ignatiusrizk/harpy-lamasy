@@ -46,6 +46,14 @@ if ($action) {
         if (!$keterangan) { echo json_encode(['error'=>'Keterangan wajib diisi']); exit; }
         if (floatval($d['jumlah'] ?? 0) <= 0) { echo json_encode(['error'=>'Jumlah harus lebih dari 0']); exit; }
 
+        // bukti_foto: hanya terima path di folder bukti milik tenant+outlet ini (anti XSS/path injeksi)
+        $buktiFoto = null;
+        $bf = trim((string)($d['bukti_foto'] ?? ''));
+        $bfPrefix = 'uploads/kas_bukti/t' . $tid . '_o' . $oid;
+        if ($bf !== '' && strpos($bf, '..') === false && strpos($bf, $bfPrefix) === 0) {
+            $buktiFoto = substr($bf, 0, 255);
+        }
+
         $data = [
             'tanggal'    => $d['tanggal']   ?? date('Y-m-d'),
             'tipe'       => in_array($d['tipe']??'', ['masuk','keluar']) ? $d['tipe'] : 'masuk',
@@ -53,7 +61,7 @@ if ($action) {
             'keterangan' => $keterangan,
             'jumlah'     => floatval($d['jumlah']),
             'ref_order'  => $d['ref_order'] ? strtoupper(substr(trim($d['ref_order']), 0, 30)) : null,
-            'bukti_foto' => !empty($d['bukti_foto']) ? substr(trim($d['bukti_foto']), 0, 255) : null,
+            'bukti_foto' => $buktiFoto,
         ];
 
         if (!empty($d['id'])) {
@@ -452,7 +460,7 @@ async function loadKas() {
         ${row.tipe==='masuk'?'+':'-'} Rp ${parseFloat(row.jumlah).toLocaleString('id-ID')}
       </td>
       <td data-lbl="Bukti" style="text-align:center">
-        ${row.bukti_foto ? `<a href="/${row.bukti_foto}" target="_blank" title="Lihat bukti struk">🧾</a>` : ''}
+        ${row.bukti_foto ? `<a href="/${esc(row.bukti_foto)}" target="_blank" title="Lihat bukti struk">🧾</a>` : ''}
       </td>
       <td>
         <div style="display:flex;gap:4px">
