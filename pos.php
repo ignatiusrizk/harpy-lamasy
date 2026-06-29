@@ -2422,27 +2422,31 @@ async function posPrintStrukBT() {
   }
 }
 function printStruk() {
-  // Di app + printer terpilih → cetak BT langsung; else dialog iframe/web (fallback)
-  if (window.ThermalPrint && ThermalPrint.isAvailable()) {
-    if (ThermalPrint.getPrinter()) { posPrintStrukBT(); return; }
-    showToast('Pilih printer dulu (⚙️ Printer)', 'error');
-    if (typeof posOpenPrinterModal === 'function') posOpenPrinterModal();
-    return;
-  }
-  // Di dalam app tapi plugin printer belum ada → APK lama / belum ke-build dgn plugin.
-  // Beri feedback jelas (jangan diam-diam window.print() yg no-op di webview).
-  var inApp = !!(window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform());
-  if (inApp) {
-    showToast('Printer thermal belum aktif di app ini. Install APK versi terbaru.', 'error');
-    return;
-  }
-  // Browser (desktop) → dialog cetak biasa
-  const frame = document.getElementById('strukFrame');
-  if (frame && frame.contentWindow) {
-    frame.contentWindow.focus();
-    frame.contentWindow.print();
-  } else {
-    window.print();
+  try {
+    var hasTP  = !!window.ThermalPrint;
+    var avail  = hasTP && ThermalPrint.isAvailable();
+    var inApp  = !!(window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform());
+    var pr     = hasTP ? ThermalPrint.getPrinter() : null;
+
+    // Di app + plugin aktif → cetak BT (kalau printer terpilih), else buka modal scan
+    if (avail) {
+      if (pr && pr.address) { posPrintStrukBT(); return; }
+      showToast('Belum ada printer dipilih — buka ⚙️ Printer untuk scan & pilih', 'error');
+      if (typeof posOpenPrinterModal === 'function') posOpenPrinterModal();
+      return;
+    }
+    // Di app tapi plugin tak terdeteksi → APK belum punya plugin printer
+    if (inApp) {
+      showToast('Plugin printer thermal tak terdeteksi (TP=' + hasTP + '). Pakai APK terbaru / restart app.', 'error');
+      return;
+    }
+    // Browser desktop → dialog cetak biasa
+    var frame = document.getElementById('strukFrame');
+    if (frame && frame.contentWindow) { frame.contentWindow.focus(); frame.contentWindow.print(); }
+    else window.print();
+  } catch (e) {
+    try { showToast('Print error: ' + (e && e.message ? e.message : e), 'error'); }
+    catch (_) { alert('Print error: ' + e); }
   }
 }
 function printLabel() {
