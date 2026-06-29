@@ -938,14 +938,21 @@ function captureSelfie() {
   return new Promise((resolve, reject) => {
     const inp = document.getElementById('selfieFile');
     inp.value = '';
+    let settled = false;
+    const done = (fn, v) => { if (!settled) { settled = true; window.removeEventListener('focus', onCancel); fn(v); } };
+    // Deteksi batal: saat kamera/picker ditutup, window dapat focus lagi; kalau tak ada file → batal
+    function onCancel() { setTimeout(() => { if (!settled && !(inp.files && inp.files[0])) done(reject, new Error('dibatalkan')); }, 800); }
     inp.onchange = async () => {
       const f = inp.files && inp.files[0];
-      if (!f) return reject(new Error('no-file'));
-      const fd = new FormData(); fd.append('foto', f);
-      const r = await fetch('absensi.php?action=upload_selfie', { method:'POST', headers:{'X-CSRF-Token':csrfToken()}, body: fd });
-      const d = await r.json();
-      if (d.path) resolve(d.path); else reject(new Error(d.error || 'upload gagal'));
+      if (!f) return done(reject, new Error('no-file'));
+      try {
+        const fd = new FormData(); fd.append('foto', f);
+        const r = await fetch('absensi.php?action=upload_selfie', { method:'POST', headers:{'X-CSRF-Token':csrfToken()}, body: fd });
+        const d = await r.json();
+        if (d.path) done(resolve, d.path); else done(reject, new Error(d.error || 'upload gagal'));
+      } catch (e) { done(reject, new Error('koneksi')); }
     };
+    window.addEventListener('focus', onCancel);
     inp.click();
   });
 }
@@ -966,16 +973,21 @@ async function clockIn() {
   }
 
   btn.disabled = true; btn.textContent = '⏳...';
-  const r = await fetch('absensi.php?action=clock_in', {
-    method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken() },
-    body: JSON.stringify({ lat: lat, lng: lng, selfie_path: selfiePath })
-  });
-  const d = await r.json();
-  if (d.success) {
-    showToast('✅ Clock In berhasil! Jam ' + d.jam, 'success');
-    loadStatusHariIni(); loadKalender();
-  } else {
-    showToast('❌ ' + (d.error || 'Gagal'), 'error');
+  try {
+    const r = await fetch('absensi.php?action=clock_in', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken() },
+      body: JSON.stringify({ lat: lat, lng: lng, selfie_path: selfiePath })
+    });
+    const d = await r.json();
+    if (d.success) {
+      showToast('✅ Clock In berhasil! Jam ' + d.jam, 'success');
+      loadStatusHariIni(); loadKalender();
+    } else {
+      showToast('❌ ' + (d.error || 'Gagal'), 'error');
+      btn.disabled = false;
+    }
+  } catch (e) {
+    showToast('❌ Gagal koneksi, coba lagi', 'error');
     btn.disabled = false;
   }
   btn.textContent = '▶ Clock In';
