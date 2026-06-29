@@ -1066,6 +1066,7 @@ function posSelectPrinter(p) {
                   autocomplete="off" oninput="searchPelanggan(this.value)"/>
                 <div class="autocomplete-list" id="acList"></div>
               </div>
+              <button type="button" id="voiceOrderBtn" class="btn btn-teal-sm" style="display:none;margin-top:6px" onclick="voiceOrderStart()" title="Input order dengan suara">🎤 Voice Order</button>
             </div>
           </div>
           <div class="form-row">
@@ -2562,7 +2563,131 @@ function formatDate(d) {
 }
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;')}
 function showToast(msg,type='success'){const t=document.getElementById('toast');t.textContent=msg;t.className='toast '+type+' show';setTimeout(()=>t.className='toast',3500)}
+
+// ── VOICE ORDER ──
+document.addEventListener('DOMContentLoaded', function () {
+  var SR = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.SpeechRecognition;
+  var b = document.getElementById('voiceOrderBtn');
+  if (SR && b) b.style.display = '';
+});
+
+async function voiceOrderStart() {
+  var SR = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.SpeechRecognition;
+  if (!SR) { showToast('Voice order hanya di app', 'error'); return; }
+  if (!navigator.onLine) { showToast('Butuh internet untuk voice order', 'error'); return; }
+  try {
+    var perm = await SR.requestPermissions();
+    if (perm && perm.speechRecognition && perm.speechRecognition !== 'granted') {
+      // beberapa versi balas {speechRecognition:'granted'}; kalau ditolak lanjut saja dan biarkan start() gagal
+    }
+  } catch (e) {}
+  try {
+    var avail = await SR.available();
+    if (avail && avail.available === false) { showToast('STT tak tersedia di perangkat ini', 'error'); return; }
+  } catch (e) {}
+  showToast('🔴 Mendengarkan… ucapkan order', 'info');
+  try {
+    var res = await SR.start({ language: 'id-ID', maxResults: 1, partialResults: false, popup: false });
+    var text = '';
+    if (res && res.matches && res.matches.length) text = res.matches[0];
+    else if (Array.isArray(res) && res.length) text = res[0];
+    if (!text || !text.trim()) { showToast('Tak terdengar, coba lagi', 'error'); return; }
+    voiceOrderParse(text.trim());
+  } catch (e) {
+    showToast('Gagal merekam: ' + (e && e.message ? e.message : 'mic error'), 'error');
+  }
+}
+
+async function voiceOrderParse(transcript) {
+  showToast('🧠 Memproses…', 'info');
+  try {
+    var r = await fetch('/api/voice_order_parse.php', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ transcript: transcript })
+    });
+    var d = await r.json();
+    if (!d.ok) {
+      var msg = ({
+        no_speech: 'Tak terdengar, coba lagi',
+        rate_limited: 'Limit AI harian tercapai',
+        insufficient_coin: 'Coin tak cukup untuk fitur AI',
+        ai_error: 'Gagal memproses suara, coba ucapkan lebih jelas',
+        no_match: 'Layanan tak dikenali dari ucapan',
+        no_catalog: 'Belum ada layanan di katalog'
+      })[d.reason] || 'Gagal voice order';
+      if (d.reason === 'no_match') voiceOrderShowModal({ heard: d.heard, parsed: { nama:null, items:[], bayar:{} }, unmatched: d.unmatched || [] }, true);
+      else showToast(msg, 'error');
+      return;
+    }
+    voiceOrderShowModal(d, false);
+  } catch (e) {
+    showToast('Gagal koneksi voice: ' + (e.message || e), 'error');
+  }
+}
+
+var _voiceData = null;
+function voiceOrderShowModal(d, noMatch) {
+  _voiceData = d;
+  document.getElementById('voiceHeard').textContent = '"' + (d.heard || '') + '"';
+  var p = d.parsed || {};
+  var html = '';
+  if (p.nama) html += '<div>👤 Nama: <b>' + esc(p.nama) + '</b></div>';
+  (p.items || []).forEach(function (it) {
+    html += '<div>🧺 ' + esc(it.nama_katalog) + ' × <b>' + it.qty + '</b></div>';
+  });
+  if (p.bayar && (p.bayar.status || p.bayar.metode))
+    html += '<div>💳 ' + esc((p.bayar.status||'') + (p.bayar.metode ? ' / ' + p.bayar.metode : '')) + '</div>';
+  if (!html) html = '<div style="color:#9CA3AF">Tak ada field terdeteksi</div>';
+  document.getElementById('voiceFields').innerHTML = html;
+  var um = document.getElementById('voiceUnmatched');
+  if (d.unmatched && d.unmatched.length) { um.style.display = ''; um.textContent = '⚠️ Tak ada di katalog: ' + d.unmatched.join(', ') + '. Tambah manual.'; }
+  else um.style.display = 'none';
+  document.getElementById('voiceApplyBtn').style.display = (p.items && p.items.length) ? '' : 'none';
+  document.getElementById('voiceModal').style.display = 'flex';
+}
+function voiceOrderRetry() { document.getElementById('voiceModal').style.display = 'none'; voiceOrderStart(); }
+function voiceOrderApply() {
+  var p = _voiceData && _voiceData.parsed; if (!p) return;
+  // Set nama pelanggan
+  if (p.nama) { var n = document.getElementById('f_nama'); if (n) n.value = p.nama; }
+  // Add layanan items — addLayananItem adds with qty_minimum/1 as default; for qty>1 we set jumlah directly after.
+  (p.items || []).forEach(function (it) {
+    var lyn = (layananAll || []).find(function (l) { return l.id == it.layanan_id; });
+    if (!lyn) return;
+    var beforeLen = items.length;
+    addLayananItem(lyn.id, lyn.nama, lyn.satuan, lyn.harga);
+    // If a new row was added (not an existing increment), set qty to what AI parsed
+    if (items.length > beforeLen && it.qty > 1) {
+      items[items.length - 1].jumlah = it.qty;
+    }
+  });
+  // Set metode bayar — #f_metode is a <select> with option values matching payment method codes
+  if (p.bayar && p.bayar.metode) {
+    var m = document.getElementById('f_metode');
+    if (m) m.value = p.bayar.metode;
+  }
+  // Note: status_bayar (lunas/dp/belum_bayar) is computed automatically by recalc() from f_dp vs total.
+  // There is no status_bayar input field — skip setting it.
+  if (typeof recalc === 'function') recalc();
+  document.getElementById('voiceModal').style.display = 'none';
+  showToast('Order terisi dari suara — cek & Simpan', 'success');
+}
 </script>
+<!-- VOICE ORDER MODAL -->
+<div id="voiceModal" style="display:none;position:fixed;inset:0;background:rgba(15,28,58,.55);z-index:2001;align-items:center;justify-content:center;padding:20px">
+  <div style="background:#fff;border-radius:14px;padding:20px 22px;max-width:420px;width:100%;box-shadow:0 12px 40px rgba(15,28,58,.25)">
+    <h3 style="margin:0 0 8px;font-size:16px;font-weight:800;color:var(--navy)">🎤 Yang Saya Dengar</h3>
+    <div id="voiceHeard" style="font-size:12px;color:#6B7280;font-style:italic;margin-bottom:10px"></div>
+    <div id="voiceFields" style="font-size:14px"></div>
+    <div id="voiceUnmatched" style="display:none;background:#FEF3C7;color:#92400E;padding:8px;border-radius:8px;font-size:12px;margin-top:8px"></div>
+    <div style="display:flex;gap:8px;margin-top:14px">
+      <button class="btn btn-outline" style="flex:1" onclick="voiceOrderRetry()">🔄 Ulangi</button>
+      <button class="btn btn-outline" onclick="document.getElementById('voiceModal').style.display='none'">✕</button>
+      <button id="voiceApplyBtn" class="btn btn-green" style="flex:2" onclick="voiceOrderApply()">✓ Terapkan</button>
+    </div>
+  </div>
+</div>
+
 <!-- KONFIRMASI MODAL -->
 <div id="confirmSaveModal" style="display:none;position:fixed;inset:0;background:rgba(15,28,58,.55);z-index:2000;align-items:center;justify-content:center">
   <div style="background:#fff;border-radius:14px;padding:20px 22px;max-width:380px;width:90%;box-shadow:0 12px 40px rgba(15,28,58,.25)">
