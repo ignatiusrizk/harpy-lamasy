@@ -53,6 +53,7 @@ if ($action) {
             'keterangan' => $keterangan,
             'jumlah'     => floatval($d['jumlah']),
             'ref_order'  => $d['ref_order'] ? strtoupper(substr(trim($d['ref_order']), 0, 30)) : null,
+            'bukti_foto' => !empty($d['bukti_foto']) ? substr(trim($d['bukti_foto']), 0, 255) : null,
         ];
 
         if (!empty($d['id'])) {
@@ -99,6 +100,16 @@ if ($action) {
             [$tid, $oid, $tgl]
         );
         echo json_encode(array_merge($kasData[0] ?? [], $orderData[0] ?? [])); exit;
+    }
+
+    // UPLOAD BUKTI STRUK
+    if ($action === 'upload_bukti' && $_SERVER['REQUEST_METHOD']==='POST') {
+        if (!hasPermission('kas.create')) { echo json_encode(['error'=>'Akses ditolak']); exit; }
+        verifyCsrf();
+        require_once ROOT . '/core/FileUpload.php';
+        $up = FileUpload::uploadImage($_FILES['foto'] ?? [], 'uploads/kas_bukti', 't'.$tid.'_o'.$oid);
+        if ($up['error']) { echo json_encode(['error'=>$up['error']]); exit; }
+        echo json_encode(['path'=>$up['path']]); exit;
     }
 
     // KATEGORI LIST
@@ -210,6 +221,8 @@ tfoot td.td-jumlah{font-family:var(--mono)}
       <div class="hl-card">
         <div class="hl-card-header">
           <div class="hl-card-title" id="formTitle">➕ Input Kas</div>
+          <button type="button" class="hl-btn hl-btn-outline hl-btn-sm" onclick="document.getElementById('strukFile').click()">📸 Scan Struk</button>
+          <input type="file" id="strukFile" accept="image/*" capture="environment" style="display:none" onchange="kasStrukUpload(this)">
         </div>
         <div style="padding:18px">
           <div class="tipe-toggle">
@@ -218,6 +231,7 @@ tfoot td.td-jumlah{font-family:var(--mono)}
           </div>
           <input type="hidden" id="f_tipe" value="masuk"/>
           <input type="hidden" id="f_id" value=""/>
+          <input type="hidden" id="f_bukti_foto" value=""/>
 
           <div class="hl-form-row">
             <div class="hl-form-group">
@@ -299,7 +313,7 @@ tfoot td.td-jumlah{font-family:var(--mono)}
             <thead>
               <tr>
                 <th>Tanggal</th><th>Tipe</th><th>Kategori</th><th>Keterangan</th>
-                <th>Ref Order</th><th style="text-align:right">Jumlah</th><th></th>
+                <th>Ref Order</th><th style="text-align:right">Jumlah</th><th>Bukti</th><th></th>
               </tr>
             </thead>
             <tbody id="tableBody">
@@ -310,6 +324,7 @@ tfoot td.td-jumlah{font-family:var(--mono)}
                 <td colspan="4" style="color:rgba(255,255,255,.6)">Total Periode</td>
                 <td></td>
                 <td class="td-jumlah" id="footTotal"></td>
+                <td></td>
                 <td></td>
               </tr>
             </tfoot>
@@ -322,6 +337,28 @@ tfoot td.td-jumlah{font-family:var(--mono)}
 </div>
 
 <?php renderToast(); ?>
+
+<!-- MODAL KONFIRMASI HASIL SCAN STRUK -->
+<div id="kasStrukModal" class="hl-modal" style="display:none">
+  <div class="hl-modal-box" style="max-width:440px">
+    <h3 style="margin:0 0 10px">🧾 Hasil Baca Struk</h3>
+    <img id="ksImg" style="max-width:100%;max-height:180px;border-radius:8px;display:block;margin:0 auto 10px" src="" alt="Struk"/>
+    <label class="hl-label">Jumlah (Rp)</label>
+    <input type="number" id="ksJumlah" class="hl-input" min="1" style="margin-bottom:8px">
+    <label class="hl-label">Tanggal</label>
+    <input type="date" id="ksTanggal" class="hl-input" style="margin-bottom:8px">
+    <label class="hl-label">Keterangan</label>
+    <input type="text" id="ksKeterangan" class="hl-input" maxlength="500" style="margin-bottom:8px">
+    <label class="hl-label">Kategori</label>
+    <input type="text" id="ksKategori" class="hl-input" maxlength="50" style="margin-bottom:14px">
+    <div style="display:flex;gap:8px">
+      <button class="hl-btn hl-btn-outline" style="flex:1" onclick="document.getElementById('kasStrukModal').style.display='none';document.getElementById('strukFile').click()">🔄 Scan Ulang</button>
+      <button class="hl-btn hl-btn-outline" onclick="document.getElementById('kasStrukModal').style.display='none'">✕</button>
+      <button class="hl-btn hl-btn-primary" style="flex:2" onclick="kasStrukApply()">✓ Terapkan ke Form</button>
+    </div>
+  </div>
+</div>
+
 <script>
 const CAN_CREATE_KAS = <?= hasPermission('kas.create') ? 'true' : 'false' ?>;
 const CAN_DEL_KAS    = <?= hasPermission('kas.delete') ? 'true' : 'false' ?>;
@@ -377,7 +414,7 @@ async function loadKas() {
   const sampai = document.getElementById('fSampai').value;
   const tipe   = document.getElementById('fTipe').value;
   document.getElementById('tableBody').innerHTML = Array.from({length:5}).map(()=>
-    `<tr><td colspan="7" style="padding:0;border-bottom:1px solid var(--light)">
+    `<tr><td colspan="8" style="padding:0;border-bottom:1px solid var(--light)">
       <div class="hl-skel-row" style="padding:12px 14px">
         <span class="hl-skel" style="width:80px"></span>
         <span class="hl-skel" style="width:140px"></span>
@@ -398,7 +435,7 @@ async function loadKas() {
   document.getElementById('sumSaldo').style.color  = saldo>=0?'var(--green)':'#EF4444';
 
   if (!d.data?.length) {
-    document.getElementById('tableBody').innerHTML = '<tr><td colspan="7" class="hl-empty">📭 Belum ada data kas untuk periode ini.</td></tr>';
+    document.getElementById('tableBody').innerHTML = '<tr><td colspan="8" class="hl-empty">📭 Belum ada data kas untuk periode ini.</td></tr>';
     document.getElementById('tableFoot').style.display = 'none';
     document.getElementById('tableInfo').textContent = '';
     return;
@@ -413,6 +450,9 @@ async function loadKas() {
       <td data-lbl="Ref Order" style="font-family:var(--mono);font-size:12px;color:var(--teal-d)">${row.ref_order||'-'}</td>
       <td data-lbl="Jumlah" class="td-jumlah ${row.tipe==='masuk'?'td-masuk':'td-keluar'}">
         ${row.tipe==='masuk'?'+':'-'} Rp ${parseFloat(row.jumlah).toLocaleString('id-ID')}
+      </td>
+      <td data-lbl="Bukti" style="text-align:center">
+        ${row.bukti_foto ? `<a href="/${row.bukti_foto}" target="_blank" title="Lihat bukti struk">🧾</a>` : ''}
       </td>
       <td>
         <div style="display:flex;gap:4px">
@@ -462,6 +502,7 @@ async function saveKas() {
       tipe: document.getElementById('f_tipe').value,
       kategori, keterangan:ket, jumlah,
       ref_order: document.getElementById('f_ref_order').value||null,
+      bukti_foto: document.getElementById('f_bukti_foto').value||null,
     })
   });
   const d = await r.json();
@@ -506,6 +547,7 @@ function resetForm() {
   document.getElementById('f_kategori').value='';
   document.getElementById('f_ref_order').value='';
   document.getElementById('f_tanggal').value=localDateStr();
+  document.getElementById('f_bukti_foto').value='';
   document.getElementById('jumlahPreview').style.display='none';
   document.getElementById('formTitle').textContent='➕ Input Kas';
   document.getElementById('btnSave').textContent='💾 Simpan';
@@ -514,6 +556,73 @@ function resetForm() {
 
 function fmtDate(d){if(!d)return'-';return new Date(d).toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'})}
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+// ===== SCAN STRUK =====
+let _strukParsed = null, _strukPath = null;
+
+async function kasStrukUpload(input) {
+  const f = input.files && input.files[0];
+  input.value = '';
+  if (!f) return;
+  showToast('📤 Mengunggah…', 'info');
+  try {
+    const fd = new FormData();
+    fd.append('foto', f);
+    const up = await fetch('kas.php?action=upload_bukti', { method: 'POST', body: fd });
+    const ud = await up.json();
+    if (ud.error) { showToast(ud.error, 'error'); return; }
+    showToast('🧠 Membaca struk…', 'info');
+    const r = await fetch('/api/kas_struk_scan.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ foto_path: ud.path })
+    });
+    const d = await r.json();
+    if (!d.ok) {
+      const msg = ({
+        rate_limited: 'Limit AI harian tercapai',
+        insufficient_coin: 'Coin tak cukup',
+        ai_error: 'Gagal membaca struk, coba foto lebih jelas',
+        not_receipt: 'Bukan struk / total tak terbaca',
+        bad_path: 'File tidak valid',
+        forbidden: 'Akses ditolak'
+      })[d.reason] || 'Gagal scan struk';
+      showToast(msg, 'error'); return;
+    }
+    _strukParsed = d.parsed; _strukPath = d.foto_path;
+    kasStrukShowModal(d.parsed, d.foto_path);
+  } catch (e) { showToast('Gagal koneksi: ' + (e.message || e), 'error'); }
+}
+
+function kasStrukShowModal(p, path) {
+  document.getElementById('ksImg').src = '/' + path;
+  document.getElementById('ksJumlah').value     = p.jumlah || '';
+  document.getElementById('ksTanggal').value    = p.tanggal || new Date().toISOString().slice(0, 10);
+  document.getElementById('ksKeterangan').value = p.keterangan || '';
+  document.getElementById('ksKategori').value   = p.kategori || '';
+  document.getElementById('kasStrukModal').style.display = 'flex';
+}
+
+function kasStrukApply() {
+  // Isi form kas (real field ids: f_tanggal, f_jumlah, f_keterangan, f_kategori, f_tipe, f_bukti_foto)
+  // Set tipe keluar via setTipe(), TIDAK auto-submit
+  setTipe('keluar');
+  document.getElementById('f_tanggal').value    = document.getElementById('ksTanggal').value;
+  document.getElementById('f_jumlah').value     = document.getElementById('ksJumlah').value;
+  document.getElementById('f_keterangan').value = document.getElementById('ksKeterangan').value;
+  // Kategori: coba set select; jika tidak match, biarkan user memilih
+  const katEl = document.getElementById('f_kategori');
+  const katVal = document.getElementById('ksKategori').value;
+  let katFound = false;
+  for (let i = 0; i < katEl.options.length; i++) {
+    if (katEl.options[i].value === katVal) { katEl.value = katVal; katFound = true; break; }
+  }
+  if (!katFound) katEl.value = '';
+  document.getElementById('f_bukti_foto').value = _strukPath || '';
+  updateJumlahPreview();
+  document.getElementById('kasStrukModal').style.display = 'none';
+  showToast('Form terisi dari struk' + (katFound ? '' : ' — pilih kategori') + ' — cek & Simpan', 'success');
+}
 </script>
 </body>
 </html>
