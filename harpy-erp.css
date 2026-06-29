@@ -1127,6 +1127,18 @@ html, body { overflow-x: hidden; }
     border-top: 1px dashed rgba(27,45,90,.08) !important;
     margin-top: 6px;
   }
+  /* Empty/loading state cell — full width centered (jangan ikut aturan cell-action di atas) */
+  .hl-stack-mobile tbody td.empty,
+  .hl-stack-mobile tbody td.loading {
+    display: block !important;
+    text-align: center !important;
+    justify-content: center !important;
+    border-top: none !important;
+    margin-top: 0 !important;
+    padding: 24px 8px !important;
+  }
+  .hl-stack-mobile tbody td.empty::before,
+  .hl-stack-mobile tbody td.loading::before { content: none !important; }
 }
 
 /* ══════════════════════════════════════════════════════
