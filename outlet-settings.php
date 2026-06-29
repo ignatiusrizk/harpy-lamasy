@@ -25,7 +25,7 @@ if ($action) {
         catch (Throwable) { $hasNotaCols = false; }
 
         $cols = "id, tenant_id, nama_outlet, slug, kota, telepon, status, is_main";
-        if ($hasNotaCols) $cols .= ", nota_prefix, nota_format, label_size, antar_mode";
+        if ($hasNotaCols) $cols .= ", nota_prefix, nota_format, label_size, antar_mode, absensi_selfie_wajib, absensi_geofence_aktif, absensi_lat, absensi_lng, absensi_radius_m";
         $st = $db->prepare("SELECT $cols FROM outlets WHERE tenant_id=? ORDER BY is_main DESC, id ASC");
         $st->execute([$tid]);
         $rows = $st->fetchAll(PDO::FETCH_ASSOC);
@@ -175,6 +175,27 @@ if ($action) {
         exit;
     }
 
+    if ($action === 'save_absensi' && $_SERVER['REQUEST_METHOD']==='POST') {
+        verifyCsrf();
+        $d  = json_decode(file_get_contents('php://input'), true);
+        $id = (int)($d['id'] ?? 0);
+        $selfie   = !empty($d['selfie_wajib']) ? 1 : 0;
+        $geofence = !empty($d['geofence_aktif']) ? 1 : 0;
+        $lat = isset($d['lat']) && $d['lat'] !== '' ? (float)$d['lat'] : null;
+        $lng = isset($d['lng']) && $d['lng'] !== '' ? (float)$d['lng'] : null;
+        $radius = max(20, min(5000, (int)($d['radius_m'] ?? 100)));
+        if ($geofence && ($lat === null || $lng === null)) {
+            echo json_encode(['error'=>'Set titik lokasi outlet di peta dulu']); exit;
+        }
+        try {
+            $st = $db->prepare("UPDATE outlets SET absensi_selfie_wajib=?, absensi_geofence_aktif=?, absensi_lat=?, absensi_lng=?, absensi_radius_m=? WHERE id=? AND tenant_id=?");
+            $st->execute([$selfie, $geofence, $lat, $lng, $radius, $id, $tid]);
+            logAudit('update', 'outlet', "Absensi config #$id: selfie=$selfie geofence=$geofence r=$radius");
+            echo json_encode(['success'=>true]);
+        } catch (Throwable $e) { echo json_encode(['error'=>'Gagal: '.$e->getMessage()]); }
+        exit;
+    }
+
     exit;
 }
 
@@ -183,6 +204,8 @@ if ($action) {
 <html lang="id">
 <head>
 <?php renderHead('Outlet & Nota Settings'); ?>
+<link rel="stylesheet" href="/assets/vendor/leaflet.css">
+<script src="/assets/vendor/leaflet.js"></script>
 </head>
 <body>
 <?php renderTopbar('outlet-settings'); ?>
@@ -315,6 +338,28 @@ if ($action) {
         </div>
       </div>
 
+      <!-- Absensi & Geofence -->
+      <div style="margin:8px 0 14px;padding:14px;background:#F9FAFB;border:1px solid #E5E7EB;border-radius:8px">
+        <div style="font-weight:700;font-size:14px;color:#0F1C3A;margin-bottom:10px">📍 Absensi & Geofence</div>
+        <label style="display:flex;gap:8px;align-items:center;margin:10px 0">
+          <input type="checkbox" id="abSelfie"> Wajib selfie saat clock-in
+        </label>
+        <label style="display:flex;gap:8px;align-items:center;margin:10px 0">
+          <input type="checkbox" id="abGeofence" onchange="abToggleGeofence()"> Aktifkan geofence (batasi clock-in dalam radius)
+        </label>
+        <div id="abGeoBox" style="display:none">
+          <div id="abMap" style="height:280px;border-radius:10px;margin:10px 0"></div>
+          <button type="button" class="hl-btn hl-btn-outline hl-btn-sm" onclick="abUseMyLocation()">📍 Pakai lokasi saya</button>
+          <div style="display:flex;gap:10px;margin-top:10px;align-items:center">
+            <span>Radius:</span>
+            <input type="range" id="abRadius" min="20" max="1000" step="10" value="100" oninput="abRadiusChanged()">
+            <span id="abRadiusLbl">100 m</span>
+          </div>
+          <div style="font-size:12px;color:var(--gray);margin-top:6px">Titik: <span id="abLatLng">—</span></div>
+        </div>
+        <button class="hl-btn hl-btn-primary hl-btn-sm" style="margin-top:14px" onclick="saveAbsensiConfig()">💾 Simpan Absensi</button>
+      </div>
+
       <!-- Quick templates -->
       <div style="font-size:12px;color:#6B7280;margin-bottom:6px;font-weight:600">⚡ Quick Template:</div>
       <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px">
@@ -400,10 +445,28 @@ function openEdit(r) {
   const am = (r.antar_mode === 'zona') ? 'zona' : 'free';
   document.querySelectorAll('input[name=ed_antar_mode]').forEach(el => el.checked = (el.value === am));
   toggleZonaSection();
+
+  // ── Absensi state init ──
+  abResetMap();
+  document.getElementById('abSelfie').checked   = !!r.absensi_selfie_wajib;
+  document.getElementById('abGeofence').checked = !!r.absensi_geofence_aktif;
+  const savedRadius = r.absensi_radius_m ? Math.max(20, Math.min(1000, parseInt(r.absensi_radius_m))) : 100;
+  document.getElementById('abRadius').value   = savedRadius;
+  document.getElementById('abRadiusLbl').textContent = savedRadius + ' m';
+  abLat = r.absensi_lat ? parseFloat(r.absensi_lat) : null;
+  abLng = r.absensi_lng ? parseFloat(r.absensi_lng) : null;
+  if (r.absensi_geofence_aktif) {
+    document.getElementById('abGeoBox').style.display = 'block';
+    // Defer map init until modal is visible
+    setTimeout(() => abInitMap(abLat, abLng, savedRadius), 100);
+  } else {
+    document.getElementById('abGeoBox').style.display = 'none';
+  }
+
   document.getElementById('modalEdit').classList.add('open');
   livePreview();
 }
-function closeModal() { document.getElementById('modalEdit').classList.remove('open'); }
+function closeModal() { document.getElementById('modalEdit').classList.remove('open'); abResetMap(); }
 
 function applyTemplate(format) {
   document.getElementById('ed_format').value = format;
@@ -588,6 +651,43 @@ async function deleteParfum(id) {
   if (d.error) { showToast(d.error,'error'); return; }
   showToast('Parfum dihapus','success');
   loadParfum();
+}
+
+// ── Absensi & Geofence ──
+let abMap=null, abMarker=null, abCircle=null, abLat=null, abLng=null;
+
+function abResetMap() {
+  if (abMap) { abMap.remove(); abMap=null; }
+  abMarker=null; abCircle=null; abLat=null; abLng=null;
+}
+
+function abInitMap(lat, lng, radius) {
+  if (abMap) { abMap.remove(); abMap=null; }
+  const c = [lat ?? -6.2, lng ?? 106.816]; // default Jakarta
+  abMap = L.map('abMap').setView(c, lat ? 17 : 12);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' }).addTo(abMap);
+  abCircle = L.circle(c, { radius: radius||100, color:'#35E8D5', fillOpacity:.15 }).addTo(abMap);
+  abMarker = L.circleMarker(c, { radius:8, color:'#0F1C3A', fillColor:'#35E8D5', fillOpacity:1 }).addTo(abMap);
+  if (lat) { abLat=lat; abLng=lng; abUpdateLbl(); }
+  abMap.on('click', e => abSetPoint(e.latlng.lat, e.latlng.lng));
+  setTimeout(()=>abMap.invalidateSize(), 200);
+}
+function abSetPoint(lat,lng){ abLat=lat; abLng=lng; const ll=[lat,lng]; abMarker.setLatLng(ll); abCircle.setLatLng(ll); abUpdateLbl(); }
+function abUpdateLbl(){ document.getElementById('abLatLng').textContent = abLat.toFixed(6)+', '+abLng.toFixed(6); }
+function abRadiusChanged(){ const r=+document.getElementById('abRadius').value; document.getElementById('abRadiusLbl').textContent=r+' m'; if(abCircle) abCircle.setRadius(r); }
+function abToggleGeofence(){ const on=document.getElementById('abGeofence').checked; document.getElementById('abGeoBox').style.display=on?'block':'none'; if(on && !abMap) abInitMap(abLat,abLng,+document.getElementById('abRadius').value); else if(on) setTimeout(()=>abMap.invalidateSize(),200); }
+function abUseMyLocation(){ if(!navigator.geolocation){showToast('GPS tak tersedia','error');return;} navigator.geolocation.getCurrentPosition(p=>{ abMap.setView([p.coords.latitude,p.coords.longitude],17); abSetPoint(p.coords.latitude,p.coords.longitude); },()=>showToast('Gagal ambil lokasi','error'),{enableHighAccuracy:true}); }
+async function saveAbsensiConfig(){
+  const id = document.getElementById('ed_id').value;
+  const body = {
+    id: parseInt(id),
+    selfie_wajib: document.getElementById('abSelfie').checked,
+    geofence_aktif: document.getElementById('abGeofence').checked,
+    lat: abLat, lng: abLng, radius_m: +document.getElementById('abRadius').value
+  };
+  const r = await fetch('outlet-settings.php?action=save_absensi', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
+  const d = await r.json();
+  if (d.success) showToast('Setting absensi tersimpan','success'); else showToast(d.error||'Gagal','error');
 }
 
 document.addEventListener('DOMContentLoaded', () => {
