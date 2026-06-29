@@ -319,6 +319,7 @@ $baseUrl = $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'lamasy.harpy.id');
 <style>
 /* Summary */
 .ms-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+@media(max-width:680px){.ms-summary{grid-template-columns:repeat(2,1fr);gap:10px}}
 .ms-card{background:var(--white);border-radius:14px;padding:14px 16px;border:1px solid rgba(27,45,90,.07);position:relative;overflow:hidden;text-align:center}
 .ms-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
 .ms-card.idle::before{background:linear-gradient(90deg,#9CA3AF,#D1D5DB)}
