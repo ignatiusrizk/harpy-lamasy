@@ -2578,6 +2578,8 @@ document.addEventListener('DOMContentLoaded', function () {
 async function voiceOrderStart() {
   var SR = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.SpeechRecognition;
   if (!SR) { showToast('Voice order hanya di app', 'error'); return; }
+  // Lagi merekam? tap lagi = STOP manual (start() di bawah akan resolve dgn hasil sejauh ini)
+  if (window.__voiceRecording) { try { await SR.stop(); } catch (e) {} return; }
   if (!navigator.onLine) { showToast('Butuh internet untuk voice order', 'error'); return; }
   try {
     var perm = await SR.requestPermissions();
@@ -2590,8 +2592,9 @@ async function voiceOrderStart() {
     if (avail && avail.available === false) { showToast('STT tak tersedia di perangkat ini', 'error'); return; }
   } catch (e) {}
   var vbtn = document.getElementById('voiceOrderBtn');
+  window.__voiceRecording = true;
   voiceRecState(vbtn, true);
-  showToast('🔴 Mendengarkan… ucapkan order', 'info');
+  showToast('🔴 Mendengarkan… tap lagi untuk stop', 'info');
   try {
     var res = await SR.start({ language: 'id-ID', maxResults: 1, partialResults: false, popup: false });
     var text = '';
@@ -2602,6 +2605,7 @@ async function voiceOrderStart() {
   } catch (e) {
     showToast('Gagal merekam: ' + (e && e.message ? e.message : 'mic error'), 'error');
   } finally {
+    window.__voiceRecording = false;
     voiceRecState(vbtn, false);
   }
 }
@@ -2610,13 +2614,12 @@ function voiceRecState(btn, on) {
   if (!btn) return;
   if (on) {
     btn.dataset.orig = btn.innerHTML;
-    btn.innerHTML = '🔴 Mendengarkan…';
+    btn.innerHTML = '⏹ Stop (mendengarkan…)';
     btn.classList.add('voice-rec');
-    btn.disabled = true;
+    // JANGAN disable — tap lagi untuk stop manual
   } else {
     btn.innerHTML = btn.dataset.orig || '🎤 Voice Order';
     btn.classList.remove('voice-rec');
-    btn.disabled = false;
   }
 }
 
