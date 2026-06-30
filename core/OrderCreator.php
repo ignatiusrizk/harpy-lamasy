@@ -9,7 +9,7 @@ class OrderCreator
     private const ONLINE_ONLY_FIELDS = ['redeem_poin','voucher_id','promo_id','reward_id','pakai_deposit'];
 
     /** @return string[] daftar error (kosong = valid) */
-    public static function validateOfflinePayload(array $p, array $validLayananIds, array $validTierIds): array
+    public static function validateOfflinePayload(array $p, array $validLayananIds, array $validTierNames = []): array
     {
         $errs = [];
         $items = $p['items'] ?? [];
@@ -22,12 +22,13 @@ class OrderCreator
             if (!in_array($lid, $validLayananIds, true)) {
                 $errs[] = "Layanan tidak dikenal (item ".($i+1).")";
             }
-            $tid = (int)($it['tier_id'] ?? 0);
-            if ($tid > 0 && !in_array($tid, $validTierIds, true)) {
-                $errs[] = "Tier tidak dikenal (item ".($i+1).")";
-            }
-            if ((float)($it['qty'] ?? 0) <= 0) {
+            $qty = (float)($it['jumlah'] ?? $it['qty'] ?? 0);
+            if ($qty <= 0) {
                 $errs[] = "Qty tidak valid (item ".($i+1).")";
+            }
+            $tn = trim((string)($it['express_tier_nama'] ?? ''));
+            if ($tn !== '' && $validTierNames !== [] && !in_array($tn, $validTierNames, true)) {
+                $errs[] = "Tier tidak dikenal (item ".($i+1).")";
             }
         }
         $total = (float)($p['total'] ?? 0);
@@ -57,24 +58,15 @@ class OrderCreator
             return ['ok'=>true, 'no_order'=>$row['no_order'], 'id'=>(int)$row['id'], 'offline_ref'=>$tempCode, 'dedup'=>true];
         }
 
-        // Validasi terhadap katalog terkini (layanan IDs; tier di-skip via validTierIds=[])
+        // Validasi terhadap katalog terkini
         $validL = array_map('intval', $db->query(
             "SELECT id FROM hl_layanan WHERE tenant_id=".(int)$tid
         )->fetchAll(PDO::FETCH_COLUMN));
-        // Tier divalidasi by name; pass [] agar loop tier_id di validateOfflinePayload tidak memblokir
-        $errs = self::validateOfflinePayload($payload, $validL, []);
+        $stmt = $db->prepare("SELECT nama_tier FROM hl_express_tier WHERE tenant_id=? AND outlet_id=?");
+        $stmt->execute([$tid, $oid]);
+        $validTierNames = array_map('strval', $stmt->fetchAll(PDO::FETCH_COLUMN));
+        $errs = self::validateOfflinePayload($payload, $validL, $validTierNames);
         if ($errs) return ['ok'=>false, 'error'=>implode('; ', $errs)];
-
-        // Validasi express_tier_nama jika ada (by name dari hl_express_tier)
-        $validTierNames = array_map('strval', $db->query(
-            "SELECT nama_tier FROM hl_express_tier WHERE tenant_id=".(int)$tid." AND is_active=1"
-        )->fetchAll(PDO::FETCH_COLUMN));
-        foreach ($payload['items'] as $i => $it) {
-            $tn = trim((string)($it['express_tier_nama'] ?? ''));
-            if ($tn !== '' && !in_array($tn, $validTierNames, true)) {
-                return ['ok'=>false, 'error'=>"Tier tidak dikenal (item ".($i+1)."): $tn"];
-            }
-        }
 
         $tanggal = preg_match('/^\d{4}-\d{2}-\d{2}$/', (string)($payload['tanggal'] ?? ''))
             ? $payload['tanggal']

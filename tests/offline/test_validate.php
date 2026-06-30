@@ -3,28 +3,35 @@ require __DIR__ . '/../_assert.php';
 require __DIR__ . '/../../core/OrderCreator.php';
 
 $validL = [12, 13];
-$validT = [3, 4];
-$base = ['items'=>[['layanan_id'=>12,'tier_id'=>3,'qty'=>2,'harga'=>8000,'subtotal'=>16000]],
+$validTierNames = ['express', 'super_express'];
+$base = ['items'=>[['layanan_id'=>12,'jumlah'=>2,'harga_satuan'=>8000,'subtotal'=>16000]],
          'total'=>16000,'metode'=>'cash','dp'=>16000];
 
-eqv(OrderCreator::validateOfflinePayload($base, $validL, $validT), [], 'payload valid → no error');
+// (1) payload valid → no error
+eqv(OrderCreator::validateOfflinePayload($base, $validL, $validTierNames), [], 'payload valid → no error');
 
+// (2) items kosong → error
 $noItems = array_merge($base, ['items'=>[]]);
-ok(count(OrderCreator::validateOfflinePayload($noItems, $validL, $validT)) > 0, 'items kosong → error');
+ok(count(OrderCreator::validateOfflinePayload($noItems, $validL, $validTierNames)) > 0, 'items kosong → error');
 
-$badL = ['items'=>[['layanan_id'=>99,'tier_id'=>3,'qty'=>1,'harga'=>1,'subtotal'=>1]],'total'=>1,'metode'=>'cash','dp'=>0];
-ok(count(OrderCreator::validateOfflinePayload($badL, $validL, $validT)) > 0, 'layanan_id tak dikenal → error');
+// (3) layanan_id tak dikenal → error
+$badL = ['items'=>[['layanan_id'=>99,'jumlah'=>1,'harga_satuan'=>1,'subtotal'=>1]],'total'=>1,'metode'=>'cash','dp'=>0];
+ok(count(OrderCreator::validateOfflinePayload($badL, $validL, $validTierNames)) > 0, 'layanan_id tak dikenal → error');
 
-$badTier = ['items'=>[['layanan_id'=>12,'tier_id'=>77,'qty'=>1,'harga'=>1,'subtotal'=>1]],'total'=>1,'metode'=>'cash','dp'=>0];
-ok(count(OrderCreator::validateOfflinePayload($badTier, $validL, $validT)) > 0, 'tier_id tak dikenal → error');
+// (4) express_tier_nama tak dikenal (validTierNames diberikan) → error
+$badTier = ['items'=>[['layanan_id'=>12,'jumlah'=>1,'harga_satuan'=>1,'subtotal'=>1,'express_tier_nama'=>'ultra_express']],'total'=>1,'metode'=>'cash','dp'=>0];
+ok(count(OrderCreator::validateOfflinePayload($badTier, $validL, $validTierNames)) > 0, 'express_tier_nama tak dikenal → error');
 
+// (5) dp > total → error
 $dpGtTotal = array_merge($base, ['dp'=>99999]);
-ok(count(OrderCreator::validateOfflinePayload($dpGtTotal, $validL, $validT)) > 0, 'dp > total → error');
+ok(count(OrderCreator::validateOfflinePayload($dpGtTotal, $validL, $validTierNames)) > 0, 'dp > total → error');
 
+// (6) field online-only (voucher_id) → error
 $online = array_merge($base, ['voucher_id'=>5]);
-ok(count(OrderCreator::validateOfflinePayload($online, $validL, $validT)) > 0, 'field online-only → error');
+ok(count(OrderCreator::validateOfflinePayload($online, $validL, $validTierNames)) > 0, 'field online-only → error');
 
+// (7) metode non-tunai → error
 $nonCash = array_merge($base, ['metode'=>'qris']);
-ok(count(OrderCreator::validateOfflinePayload($nonCash, $validL, $validT)) > 0, 'metode non-tunai → error');
+ok(count(OrderCreator::validateOfflinePayload($nonCash, $validL, $validTierNames)) > 0, 'metode non-tunai → error');
 
 echo "OK test_validate\n";
