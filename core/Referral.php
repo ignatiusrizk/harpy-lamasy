@@ -108,4 +108,45 @@ class Referral
         }
         return ['ok'=>true, 'referrer_id'=>$referrerId];
     }
+
+    public static function payoutOnFirstLunas(int $tenantId, int $refereePelangganId, int $orderId, ?int $userId = null): void
+    {
+        $cfg = self::config($tenantId);
+        if (!$cfg['enabled']) return;
+        require_once __DIR__ . '/Loyalty.php';
+        $db = Database::get();
+
+        // Ambil referral pending utk referee ini
+        $st = $db->prepare("SELECT id, referrer_pelanggan_id, poin_pengajak, poin_teman
+                              FROM hl_referral WHERE tenant_id=? AND referee_pelanggan_id=? AND status='pending' LIMIT 1");
+        $st->execute([$tenantId, $refereePelangganId]);
+        $ref = $st->fetch(PDO::FETCH_ASSOC);
+        if (!$ref) return;
+
+        // Lock idempoten: hanya satu proses yang berhasil flip pending→paid
+        $lock = $db->prepare("UPDATE hl_referral SET status='paid', referee_first_order_id=?, paid_at=NOW()
+                               WHERE id=? AND status='pending'");
+        $lock->execute([$orderId, (int)$ref['id']]);
+        if ($lock->rowCount() === 0) return; // sudah diproses proses lain
+
+        // Cek cap pengajak (hitung paid LAIN, exclude record ini)
+        $payPengajak = (int)$ref['poin_pengajak'];
+        if ($cfg['max'] > 0) {
+            $cnt = $db->prepare("SELECT COUNT(*) FROM hl_referral WHERE tenant_id=? AND referrer_pelanggan_id=? AND status='paid' AND id<>?");
+            $cnt->execute([$tenantId, (int)$ref['referrer_pelanggan_id'], (int)$ref['id']]);
+            if ((int)$cnt->fetchColumn() >= $cfg['max']) {
+                $payPengajak = 0;
+                $db->prepare("UPDATE hl_referral SET poin_pengajak=0 WHERE id=?")->execute([(int)$ref['id']]);
+            }
+        }
+
+        try {
+            if ((int)$ref['poin_teman'] > 0)
+                Loyalty::adjust($tenantId, $refereePelangganId, (int)$ref['poin_teman'], 'Bonus referral (teman baru)', $userId);
+            if ($payPengajak > 0)
+                Loyalty::adjust($tenantId, (int)$ref['referrer_pelanggan_id'], $payPengajak, 'Bonus referral (ajak teman)', $userId);
+        } catch (Throwable $e) {
+            if (class_exists('ErrorLogger')) ErrorLogger::logException('referral_payout', $e, $tenantId);
+        }
+    }
 }
