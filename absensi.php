@@ -79,7 +79,7 @@ if ($action) {
         $hari = (int)date('N'); // 1=Senin..7=Minggu
         $jd = TenantQuery::rawOne(
             "SELECT s.id, s.jam_mulai, s.toleransi_telat_menit
-               FROM hl_jadwal_shift j JOIN hl_shift s ON s.id=j.shift_id AND s.tenant_id=j.tenant_id
+               FROM hl_jadwal_shift j JOIN hl_shift s ON s.id=j.shift_id AND s.tenant_id=j.tenant_id AND s.outlet_id=j.outlet_id
               WHERE j.tenant_id=? AND j.outlet_id=? AND j.user_id=? AND j.hari=? LIMIT 1",
             [$tid, $oid, $user['id'], $hari]
         );
@@ -217,6 +217,8 @@ if ($action) {
              COUNT(CASE WHEN a.status='sakit'  THEN 1 END) as sakit,
              COUNT(CASE WHEN a.status='alpha'  THEN 1 END) as alpha,
              COALESCE(SUM(a.durasi_menit),0) as total_menit,
+             COALESCE(SUM(a.telat_menit),0) as total_telat,
+             COALESCE(SUM(a.lembur_menit),0) as total_lembur,
              MAX(a.tanggal) as last_absen
              FROM hl_users u
              JOIN hl_karyawan_outlet ko
@@ -452,7 +454,7 @@ if ($action) {
             'jam_selesai'=>substr($js,0,8) ?: $js.':00',
             'toleransi_telat_menit'=>max(0,(int)($d['toleransi_telat_menit'] ?? 15)),
             'lembur_after_menit'=>max(0,(int)($d['lembur_after_menit'] ?? 30)),
-            'is_active'=>!empty($d['is_active'])?1:1,
+            'is_active'=>1,
             'urutan'=>(int)($d['urutan'] ?? 0),
         ];
         if (!empty($d['id'])) TenantQuery::update('hl_shift', $data, 'id=?', [(int)$d['id']]);
@@ -493,6 +495,16 @@ if ($action) {
         $d = json_decode(file_get_contents('php://input'), true);
         $uid = (int)($d['user_id'] ?? 0); $hari = (int)($d['hari'] ?? 0); $sid = (int)($d['shift_id'] ?? 0);
         if ($uid < 1 || $hari < 1 || $hari > 7) { echo json_encode(['error'=>'Data tidak valid']); exit; }
+        // Validasi user_id adalah karyawan outlet ini
+        $karOk = TenantQuery::rawOne(
+            "SELECT u.id FROM hl_users u
+             JOIN hl_karyawan_outlet ko
+               ON ko.karyawan_id=u.id AND ko.tenant_id=u.tenant_id
+              AND ko.outlet_id=? AND ko.is_active=1
+             WHERE u.tenant_id=? AND u.id=? AND u.is_active=1 LIMIT 1",
+            [$oid, $tid, $uid]
+        );
+        if (!$karOk) { echo json_encode(['error'=>'Karyawan tidak valid']); exit; }
         if ($sid < 1) {
             // libur → hapus baris
             TenantQuery::delete('hl_jadwal_shift', 'user_id=? AND hari=?', [$uid,$hari]);
@@ -801,11 +813,13 @@ if ($action) {
               <th style="text-align:center">Alpha</th>
               <th>Total Jam</th>
               <th>Rata-rata/hari</th>
+              <th style="text-align:center">Telat</th>
+              <th style="text-align:center">Lembur</th>
               <th>Terakhir</th>
             </tr>
           </thead>
           <tbody id="rekapBody">
-            <tr><td colspan="9" class="hl-loading">⏳ Pilih bulan dan klik Tampilkan</td></tr>
+            <tr><td colspan="11" class="hl-loading">⏳ Pilih bulan dan klik Tampilkan</td></tr>
           </tbody>
         </table>
       </div>
@@ -1293,13 +1307,13 @@ async function submitIzin() {
 async function loadRekapAll() {
   if (!IS_ADMIN) return;
   const bulan = document.getElementById('rekapBulan').value;
-  document.getElementById('rekapBody').innerHTML = '<tr><td colspan="9" class="hl-loading">⏳ Memuat...</td></tr>';
+  document.getElementById('rekapBody').innerHTML = '<tr><td colspan="11" class="hl-loading">⏳ Memuat...</td></tr>';
 
   const r = await fetch('absensi.php?action=rekap_all&bulan=' + bulan);
   const d = await r.json();
 
   if (!d.data?.length) {
-    document.getElementById('rekapBody').innerHTML = '<tr><td colspan="9" class="hl-empty">Belum ada data</td></tr>';
+    document.getElementById('rekapBody').innerHTML = '<tr><td colspan="11" class="hl-empty">Belum ada data</td></tr>';
     return;
   }
 
@@ -1312,6 +1326,8 @@ async function loadRekapAll() {
     const rataMin = hadir > 0 ? Math.round(menit/hadir) : 0;
     const rataStr = hadir > 0 ? Math.floor(rataMin/60) + 'j ' + (rataMin%60) + 'm' : '-';
     const pct     = Math.round((menit/maxMenit)*100);
+    const telat   = parseInt(row.total_telat)||0;
+    const lembur  = parseInt(row.total_lembur)||0;
     return `<tr>
       <td data-lbl="Nama" style="font-weight:600;color:var(--navy)">${esc(row.nama)}</td>
       <td data-lbl="Role"><span class="hl-badge hl-badge-gray" style="font-size:10px">${row.role}</span></td>
@@ -1324,6 +1340,8 @@ async function loadRekapAll() {
         <div class="durasi-bar"><div class="durasi-fill" style="width:${pct}%"></div></div>
       </td>
       <td data-lbl="Rata/hari" style="font-size:13px;color:var(--gray)">${rataStr}</td>
+      <td data-lbl="Telat" style="text-align:center">${telat > 0 ? '<span class="hl-badge" style="background:#FEE2E2;color:#991B1B;font-size:11px">' + telat + 'm</span>' : '-'}</td>
+      <td data-lbl="Lembur" style="text-align:center">${lembur > 0 ? '<span class="hl-badge" style="background:#D1FAE5;color:#065F46;font-size:11px">' + lembur + 'm</span>' : '-'}</td>
       <td data-lbl="Terakhir" style="font-size:12px;color:var(--gray)">${row.last_absen ? fmtDate(row.last_absen) : '-'}</td>
     </tr>`;
   }).join('');
