@@ -85,6 +85,15 @@ if ($action) {
                 $o['karyawan_count'] = (int)$s->fetchColumn();
             } catch (Throwable) { $o['karyawan_count'] = 0; }
 
+            // Pembayaran aktivasi pending yang belum expired → tombol "Cek Pembayaran" vs "Aktivasi"
+            try {
+                $s = $db->prepare("SELECT COUNT(*) FROM saas_payments
+                                     WHERE tenant_id=? AND type='outlet_activation' AND ref_outlet_id=?
+                                       AND status='pending' AND expires_at > NOW()");
+                $s->execute([$tid, $oid]);
+                $o['has_active_payment'] = ((int)$s->fetchColumn()) > 0;
+            } catch (Throwable) { $o['has_active_payment'] = false; }
+
             $o['switch_token'] = $mkToken($oid);
         }
         unset($o);
@@ -190,6 +199,7 @@ require __DIR__ . '/_layout_open.php';
   .btn-light{background:#F3F4F6;color:#0F1C3A;border:1px solid #E5E7EB}
   .btn-dark{background:#0F1C3A;color:#fff}
   .btn-wa{background:#25D366;color:#fff}
+  .btn-warn{background:#F59E0B;color:#fff}
   .btn-sm{padding:6px 12px;font-size:11px}
 
   .summary-bar{background:#fff;border-radius:12px;padding:14px 18px;margin-bottom:16px;
@@ -369,6 +379,7 @@ const hasJamBuka = <?= $hasJamBuka ? 'true' : 'false' ?>;
 const hasTarget  = <?= $hasTarget  ? 'true' : 'false' ?>;
 const coinMode = <?= json_encode($coinMode) ?>;
 const supportWa = <?= json_encode($supportWa) ?>;
+const canManageOutlet = <?= json_encode((bool)($hqCanManageOutlet ?? false)) ?>;
 
 function escapeHtml(s){return String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
 function fmtRp(n){return 'Rp ' + Number(n||0).toLocaleString('id-ID')}
@@ -419,6 +430,14 @@ async function loadList(){
             target="_blank" rel="noopener" class="btn btn-wa btn-sm">💳 Topup</a>`
       : '';
 
+    // Outlet belum aktif (pending/grace/suspended) → tombol aktivasi / cek pembayaran (owner saja)
+    const needsActivation = ['pending','grace','suspended'].includes(o.status);
+    const activateBtn = (canManageOutlet && needsActivation)
+      ? (o.has_active_payment
+          ? `<a href="/billing-checkout?type=outlet_activation&outlet_id=${o.id}" class="btn btn-dark btn-sm">🧾 Cek Pembayaran</a>`
+          : `<a href="/billing-checkout?type=outlet_activation&outlet_id=${o.id}" class="btn btn-warn btn-sm">⚡ Aktivasi</a>`)
+      : '';
+
     return `
       <div class="ocard s-${o.status}">
         <div>
@@ -438,6 +457,7 @@ async function loadList(){
         </div>
         <div class="ocard-coin">${coinShow}</div>
         <div class="ocard-actions">
+          ${activateBtn}
           ${canEnter ? `<a href="/switch-outlet?id=${o.id}&t=${o.switch_token}" class="btn btn-primary btn-sm">Masuk →</a>` : ''}
           ${!isClosed ? `<button class="btn btn-light btn-sm" onclick="openEdit(${o.id})">✏️ Edit</button>` : ''}
           ${topupBtn}
