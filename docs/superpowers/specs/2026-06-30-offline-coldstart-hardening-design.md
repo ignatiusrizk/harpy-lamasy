@@ -43,7 +43,7 @@ Mekanisme komposisi di Capacitor Android: webview navigasi ke `server.url`. Kala
 | File | Aksi | Tanggung jawab |
 |---|---|---|
 | `sw-tenant.js` | MODIFY | (a) Tambah `/pos` + `/pos.php` ke shell-cache **stale-while-revalidate**. (b) Tambah **navigation fallback**: request `mode === 'navigate'` yang gagal network → cached exact-match → else cached `/pos` → else `offlinePage()`. Menutup `/login` & semua route. (c) Saat `activate`/logout, pastikan entri shell POS ikut dibersihkan bersama cache versi lama. |
-| `components.php` | MODIFY (kecil) | Pastikan registrasi SW (`/sw-tenant.js`) juga jalan di halaman `/login` agar SW ter-install sejak login online pertama. (Saat ini registrasi ada di `components.php:114`; verifikasi apakah `/login` memuat `components.php` — kalau tidak, tambahkan snippet registrasi ringkas di halaman login.) |
+| `login.php` | MODIFY (kecil) | **Terkonfirmasi:** `login.php` tidak memuat `components.php` dan tidak mendaftarkan SW. Tambahkan snippet registrasi SW yang sama persis dengan `components.php:111-118` (register `/sw-tenant.js` scope `/` pada `window load`) ke `<head>` `login.php`, agar SW ter-install sejak layar login online pertama. Karena scope `/`, SW yang ter-install dari mana pun langsung mengontrol navigasi `/login` berikutnya. |
 
 Catatan: `pos.php` **tidak perlu** diubah untuk fitur ini — offline-pos.js, enqueue, struk tempCode, dan `sync_offline` sudah ada. Verifikasi saja shell HTML POS layak di-cache (tidak ada nonce per-request yang memecah cache).
 
