@@ -11,6 +11,7 @@
 // ══════════════════════════════════════════════════════
 
 require_once __DIR__ . '/Notifier.php';
+require_once __DIR__ . '/NotifPrefs.php';
 
 class AnomalyDetector
 {
@@ -18,41 +19,22 @@ class AnomalyDetector
     public static function check(int $tenantId, int $outletId): void
     {
         try {
-            // Hormati toggle owner: skip kalau Alert Anomali dimatikan (hemat coin).
-            // Default ON — hanya skip kalau di-set eksplisit wa=0 di notif_settings.
-            if (!self::isEnabled($tenantId)) return;
+            // Channel aktif utk alert anomali. Kosong → owner matikan semuanya → skip (hemat coin).
+            $channels = NotifPrefs::channelsFor(NotifPrefs::read($tenantId), 'alert_anomali');
+            if (!$channels) return;
 
-            self::checkOmsetDrop($tenantId, $outletId);
-            self::checkKasBelumDiinput($tenantId, $outletId);
-            self::checkOrderMenumpuk($tenantId, $outletId);
-            self::checkAbsensiRendah($tenantId, $outletId);
-            self::checkCoinRendah($tenantId, $outletId);
+            self::checkOmsetDrop($tenantId, $outletId, $channels);
+            self::checkKasBelumDiinput($tenantId, $outletId, $channels);
+            self::checkOrderMenumpuk($tenantId, $outletId, $channels);
+            self::checkAbsensiRendah($tenantId, $outletId, $channels);
+            self::checkCoinRendah($tenantId, $outletId, $channels);
         } catch (Throwable $e) {
             error_log('[AnomalyDetector::check] ' . $e->getMessage());
         }
     }
 
-    /** Apakah alert anomali aktif untuk tenant ini? Default true; false hanya kalau owner set wa=0. */
-    private static function isEnabled(int $tenantId): bool
-    {
-        try {
-            $db = Database::get();
-            $s = $db->prepare("SELECT notif_settings FROM tenants WHERE id=?");
-            $s->execute([$tenantId]);
-            $raw = $s->fetchColumn();
-            if ($raw) {
-                $j = json_decode($raw, true);
-                // Channel yg benar-benar jalan = email (WA belum diimplementasi).
-                if (is_array($j) && isset($j['alert_anomali'])) {
-                    return (int)($j['alert_anomali']['email'] ?? 1) === 1;
-                }
-            }
-        } catch (Throwable) {}
-        return true; // belum di-konfigurasi → default aktif (perilaku existing)
-    }
-
     // 1) Omset hari ini turun ≥30% dari rata-rata 7 hari terakhir
-    private static function checkOmsetDrop(int $tenantId, int $outletId): void
+    private static function checkOmsetDrop(int $tenantId, int $outletId, array $channels): void
     {
         $db = Database::get();
         $today = date('Y-m-d');
@@ -87,12 +69,13 @@ class AnomalyDetector
         Notifier::notifyOwner($tenantId, $outletId, [
             'type'=>'alert_omset_drop', 'subject'=>$subject,
             'body_html'=>$body, 'body_summary'=>$sum,
+            'channels'=>$channels,
             'coin_feature'=>'alert_anomali',
         ]);
     }
 
     // 2) Kas belum diinput > 1 hari kerja (padahal ada transaksi)
-    private static function checkKasBelumDiinput(int $tenantId, int $outletId): void
+    private static function checkKasBelumDiinput(int $tenantId, int $outletId, array $channels): void
     {
         $db = Database::get();
 
@@ -121,12 +104,13 @@ class AnomalyDetector
         Notifier::notifyOwner($tenantId, $outletId, [
             'type'=>'alert_kas_tidak_diinput', 'subject'=>$subject,
             'body_html'=>$body, 'body_summary'=>"Kas belum diinput {$hari} hari (last: ".($last??'-').")",
+            'channels'=>$channels,
             'coin_feature'=>'alert_anomali',
         ]);
     }
 
     // 3) Order menumpuk — ≥10 order status proses (bukan siap/diambil/selesai/batal), >24 jam lalu
-    private static function checkOrderMenumpuk(int $tenantId, int $outletId): void
+    private static function checkOrderMenumpuk(int $tenantId, int $outletId, array $channels): void
     {
         $db = Database::get();
         $s = $db->prepare("SELECT COUNT(*) FROM hl_transaksi
@@ -143,12 +127,13 @@ class AnomalyDetector
         Notifier::notifyOwner($tenantId, $outletId, [
             'type'=>'alert_order_menumpuk', 'subject'=>$subject,
             'body_html'=>$body, 'body_summary'=>"{$stuck} order stuck >24 jam",
+            'channels'=>$channels,
             'coin_feature'=>'alert_anomali',
         ]);
     }
 
     // 4) Absensi <50% dari karyawan aktif outlet (skip kalau total <2)
-    private static function checkAbsensiRendah(int $tenantId, int $outletId): void
+    private static function checkAbsensiRendah(int $tenantId, int $outletId, array $channels): void
     {
         $db = Database::get();
         if ((int)date('H') < 10) return; // skip pagi
@@ -174,12 +159,13 @@ class AnomalyDetector
         Notifier::notifyOwner($tenantId, $outletId, [
             'type'=>'alert_absensi_rendah', 'subject'=>$subject,
             'body_html'=>$body, 'body_summary'=>"Absensi {$hadir}/{$total} ({$pct}%)",
+            'channels'=>$channels,
             'coin_feature'=>'alert_anomali',
         ]);
     }
 
     // 5) Saldo coin rendah <1000 (active) atau <200 (trial)
-    private static function checkCoinRendah(int $tenantId, int $outletId): void
+    private static function checkCoinRendah(int $tenantId, int $outletId, array $channels): void
     {
         $db = Database::get();
         $s = $db->prepare("SELECT t.coin_balance, t.coin_mode, o.status outlet_status,
@@ -204,6 +190,7 @@ class AnomalyDetector
         Notifier::notifyOwner($tenantId, $outletId, [
             'type'=>'alert_coin_rendah', 'subject'=>$subject,
             'body_html'=>$body, 'body_summary'=>"Coin tinggal ".number_format($bal),
+            'channels'=>$channels,
             'coin_feature'=>'alert_anomali',
         ]);
     }
