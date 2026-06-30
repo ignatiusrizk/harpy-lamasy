@@ -241,9 +241,11 @@ if ($action) {
         $id   = (int)($_POST['tenant_id'] ?? 0);
         $mode = ($_POST['mode'] ?? '') === 'per_outlet' ? 'per_outlet' : 'shared';
         try {
-            $db->prepare("UPDATE tenants SET coin_mode=? WHERE id=?")->execute([$mode, $id]);
-            logSuperAdminAction('set_coin_mode', $id, "Coin mode diubah ke: $mode");
-            echo json_encode(['success' => true, 'mode' => $mode]);
+            require_once dirname(__DIR__) . '/core/CoinModeManager.php';
+            $res = CoinModeManager::switchMode($id, $mode, 'sa');
+            if (!$res['ok']) { echo json_encode(['error' => $res['error'] ?? 'Gagal ganti mode']); exit; }
+            logSuperAdminAction('set_coin_mode', $id, "Coin mode → {$mode} (saldo dipindah: {$res['moved']})");
+            echo json_encode(['success' => true, 'mode' => $mode, 'moved' => $res['moved']]);
         } catch (Throwable $e) {
             echo json_encode(['error' => $e->getMessage()]);
         }
