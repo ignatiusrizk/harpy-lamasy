@@ -440,6 +440,7 @@ function closeModal(id){ document.getElementById(id).classList.remove('open'); }
 
 async function saveMaster(){
   const fd = new FormData();
+  fd.append('_csrf', document.querySelector('meta[name="csrf-token"]')?.content || '');
   fd.append('id', document.getElementById('fId').value);
   fd.append('nama', document.getElementById('fNama').value);
   fd.append('kategori', document.getElementById('fKategori').value);
@@ -462,6 +463,7 @@ async function saveMaster(){
 async function delMaster(id, nama){
   if (!confirm(`Hapus layanan "${nama}" dari master?\nLayanan di outlet juga akan dinonaktifkan.`)) return;
   const fd = new FormData();
+  fd.append('_csrf', document.querySelector('meta[name="csrf-token"]')?.content || '');
   fd.append('id', id); fd.append('remove_outlets', 1);
   try {
     const r = await fetch('/hq/layanan.php?action=delete', {method:'POST', body:fd});
@@ -510,6 +512,7 @@ async function doPush(){
       alert(`✅ Push selesai!\n${res.total_push} layanan → ${ids.length} outlet\nBaru: ${res.created} · Update: ${res.updated} · Skip (override): ${res.skipped_override}`);
     } else {
       const fd = new FormData();
+      fd.append('_csrf', document.querySelector('meta[name="csrf-token"]')?.content || '');
       fd.append('master_id', document.getElementById('pushMasterId').value);
       ids.forEach(id => fd.append('outlet_ids[]', id));
       fd.append('overwrite_overrides', overwrite);
@@ -571,6 +574,7 @@ async function doImport(){
   document.getElementById('importBtn').disabled = true;
   box.innerHTML = '<div style="color:#6B7280;font-size:13px">⏳ Memproses…</div>';
   const fd = new FormData();
+  fd.append('_csrf', document.querySelector('meta[name="csrf-token"]')?.content || '');
   fd.append('file', file);
   try {
     const r = await fetch('/hq/layanan.php?action=import', {method:'POST', body:fd});
