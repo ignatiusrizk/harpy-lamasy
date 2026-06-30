@@ -86,6 +86,18 @@
     async clearScope() {
       if (!_db) return;
       for (const s of STORES) { await new Promise((res)=>{ const q = tx(s,'readwrite').clear(); q.onsuccess=()=>res(); q.onerror=()=>res(); }); }
+      // Purge shell POS dari semua cache tenant — anti bocor antar user/outlet.
+      if (typeof caches !== 'undefined' && caches.keys) {
+        try {
+          const keys = await caches.keys();
+          for (const k of keys) {
+            if (!k.startsWith('lamasy-tenant')) continue;
+            const c = await caches.open(k);
+            await c.delete('/pos');
+            await c.delete('/pos.php');
+          }
+        } catch (e) { /* cache purge best-effort */ }
+      }
     },
     _renderBanner() {
       let el = document.getElementById('offlineBanner');
