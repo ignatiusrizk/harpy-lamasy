@@ -19,6 +19,7 @@ if (empty($_SESSION['user_id']) || empty($_SESSION['tenant_id'])) {
 // TenantResolver sudah tolerate no-outlet untuk add-outlet.php
 require_once ROOT . '/middleware/tenant_guard.php';
 require_once ROOT . '/core/StrukGenerator.php';
+require_once ROOT . '/core/BillingConfig.php';
 
 $tid  = TenantResolver::id();
 $user     = currentUser() ?? [];
@@ -572,6 +573,13 @@ if ($isHqMode) {
           </div>
         </form>
 
+      <?php
+        $ao_fee  = BillingConfig::getInt('outlet_activation_fee', 800000);
+        $ao_disc = max(0, min(100, BillingConfig::getInt('outlet_activation_discount', 0)));
+        $ao_net  = (int)round($ao_fee * (1 - $ao_disc / 100));
+        $ao_coin = max(0, BillingConfig::getInt('outlet_activation_coin', 100000));
+      ?>
+
       <?php // ═══ STEP 2: Review & Confirm ════════════════
       elseif ($step === 2): ?>
 
@@ -612,11 +620,41 @@ if ($isHqMode) {
           <div class="review-row">
             <span class="rv-label">Biaya</span>
             <?php if (($d['mode'] ?? 'trial') === 'paid'): ?>
-              <span class="rv-val" style="color:#DC2626">Setup fee (sesuai paket)</span>
+              <?php if ($ao_net <= 0): ?>
+                <span class="rv-val" style="color:var(--green)">Gratis</span>
+              <?php elseif ($ao_disc > 0): ?>
+                <span class="rv-val" style="color:#DC2626">
+                  <span style="text-decoration:line-through;color:#9CA3AF;font-weight:500">Rp <?= number_format($ao_fee,0,',','.') ?></span>
+                  Rp <?= number_format($ao_net,0,',','.') ?>
+                  <span style="color:#F59E0B;font-size:12px">(−<?= $ao_disc ?>%)</span>
+                </span>
+              <?php else: ?>
+                <span class="rv-val" style="color:#DC2626">Rp <?= number_format($ao_net,0,',','.') ?></span>
+              <?php endif; ?>
             <?php else: ?>
               <span class="rv-val" style="color:var(--green)">Gratis</span>
             <?php endif; ?>
           </div>
+          <?php if (($d['mode'] ?? 'trial') === 'paid' && $ao_coin > 0): ?>
+          <div class="review-row">
+            <span class="rv-label">Bonus Coin</span>
+            <span class="rv-val" style="color:var(--teal-d)">🪙 <?= number_format($ao_coin,0,',','.') ?> coin</span>
+          </div>
+          <?php endif; ?>
+        </div>
+
+        <div style="background:#F0FDFA;border:1px solid #99F6E4;border-radius:12px;padding:14px 16px;margin-bottom:18px">
+          <div style="font-weight:700;color:#0F766E;margin-bottom:8px;font-size:13.5px">🏪 Yang kamu dapatkan</div>
+          <ul style="margin:0;padding-left:18px;color:#374151;font-size:12.5px;line-height:1.8">
+            <li>Outlet aktif penuh — semua fitur (POS, Order &amp; Kanban, Inventori, Mesin, Antar-Jemput, Laporan Keuangan, Absensi, Loyalty)</li>
+            <li>Data &amp; pengaturan terpisah per outlet (pelanggan, layanan, harga, staf sendiri)</li>
+            <li>Metode pembayaran siap pakai (Tunai, Transfer, QRIS)</li>
+            <li>Bahan/inventori default sudah ter-seed</li>
+            <li>Penomoran nota otomatis khas outlet</li>
+            <?php if (($d['mode'] ?? 'trial') === 'paid' && $ao_coin > 0): ?>
+            <li><strong><?= number_format($ao_coin,0,',','.') ?> coin bonus</strong> dikreditkan saat outlet aktif</li>
+            <?php endif; ?>
+          </ul>
         </div>
 
         <form method="POST">
