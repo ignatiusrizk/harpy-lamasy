@@ -1321,7 +1321,7 @@ function posSelectPrinter(p) {
                   style="text-transform:uppercase;letter-spacing:.08em;font-family:var(--mono)"
                   oninput="this.value=this.value.toUpperCase()"/>
               </div>
-              <button type="button" class="btn btn-teal-sm" onclick="applyVoucher()" style="margin-bottom:1px;white-space:nowrap">
+              <button type="button" id="btnApplyVoucher" class="btn btn-teal-sm" onclick="applyVoucher()" style="margin-bottom:1px;white-space:nowrap">
                 ✓ Pakai
               </button>
             </div>
@@ -2915,8 +2915,8 @@ function applyOfflineUI() {
   // f_voucher input + Pakai button
   const elVoucher = document.getElementById('f_voucher');
   if (elVoucher) elVoucher.disabled = offline;
-  const voucherBtn = elVoucher?.closest('div.form-group')?.nextElementSibling;
-  if (voucherBtn && voucherBtn.tagName === 'BUTTON') voucherBtn.disabled = offline;
+  const voucherBtn = document.getElementById('btnApplyVoucher');
+  if (voucherBtn) voucherBtn.disabled = offline;
 
   // f_metode: paksa cash + disable non-cash options
   const elMetode = document.getElementById('f_metode');
