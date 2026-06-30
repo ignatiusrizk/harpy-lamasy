@@ -41,4 +41,115 @@ class OrderCreator
         }
         return $errs;
     }
+
+    public static function createOffline(PDO $db, int $tid, int $oid, array $user, array $payload): array
+    {
+        $uuid     = (string)($payload['uuid'] ?? '');
+        $tempCode = substr((string)($payload['tempCode'] ?? ''), 0, 40);
+        if ($uuid === '' || $tempCode === '') {
+            return ['ok'=>false, 'error'=>'uuid/tempCode kosong'];
+        }
+
+        // Idempotency: sudah pernah ter-sync?
+        $chk = $db->prepare("SELECT id, no_order FROM hl_transaksi WHERE tenant_id=? AND offline_uuid=? LIMIT 1");
+        $chk->execute([$tid, $uuid]);
+        if ($row = $chk->fetch(PDO::FETCH_ASSOC)) {
+            return ['ok'=>true, 'no_order'=>$row['no_order'], 'id'=>(int)$row['id'], 'offline_ref'=>$tempCode, 'dedup'=>true];
+        }
+
+        // Validasi terhadap katalog terkini (layanan IDs; tier di-skip via validTierIds=[])
+        $validL = array_map('intval', $db->query(
+            "SELECT id FROM hl_layanan WHERE tenant_id=".(int)$tid
+        )->fetchAll(PDO::FETCH_COLUMN));
+        // Tier divalidasi by name; pass [] agar loop tier_id di validateOfflinePayload tidak memblokir
+        $errs = self::validateOfflinePayload($payload, $validL, []);
+        if ($errs) return ['ok'=>false, 'error'=>implode('; ', $errs)];
+
+        // Validasi express_tier_nama jika ada (by name dari hl_express_tier)
+        $validTierNames = array_map('strval', $db->query(
+            "SELECT nama_tier FROM hl_express_tier WHERE tenant_id=".(int)$tid." AND is_active=1"
+        )->fetchAll(PDO::FETCH_COLUMN));
+        foreach ($payload['items'] as $i => $it) {
+            $tn = trim((string)($it['express_tier_nama'] ?? ''));
+            if ($tn !== '' && !in_array($tn, $validTierNames, true)) {
+                return ['ok'=>false, 'error'=>"Tier tidak dikenal (item ".($i+1)."): $tn"];
+            }
+        }
+
+        $tanggal = preg_match('/^\d{4}-\d{2}-\d{2}$/', (string)($payload['tanggal'] ?? ''))
+            ? $payload['tanggal']
+            : date('Y-m-d');
+        $no = NotaFormatter::next($tid, $oid, $tanggal);
+
+        $own = !$db->inTransaction();
+        if ($own) $db->beginTransaction();
+        try {
+            $total   = (float)($payload['total'] ?? 0);
+            $dp      = (float)($payload['dp'] ?? 0);
+            $sisa    = max(0, $total - $dp);
+            $nama    = substr(trim((string)($payload['nama_pelanggan'] ?? '')), 0, 100);
+            $telp    = substr(trim((string)($payload['telepon'] ?? '')), 0, 20);
+            $pelId   = !empty($payload['pelanggan_id']) ? (int)$payload['pelanggan_id'] : null;
+            $catatan = substr(trim((string)($payload['catatan'] ?? '')), 0, 500);
+            $status  = $dp >= $total && $total > 0 ? 'lunas' : ($dp > 0 ? 'dp' : 'belum_bayar');
+
+            $ins = $db->prepare(
+                "INSERT INTO hl_transaksi
+                 (tenant_id, outlet_id, no_order, offline_ref, offline_uuid, tanggal,
+                  pelanggan_id, nama_pelanggan, telepon, total, dp, sisa_bayar,
+                  status_bayar, catatan, created_by, created_at)
+                 VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,NOW())"
+            );
+            $ins->execute([
+                $tid, $oid, $no, $tempCode, $uuid, $tanggal,
+                $pelId, $nama, $telp, $total, $dp, $sisa,
+                $status, $catatan, (int)$user['id']
+            ]);
+            $trxId = (int)$db->lastInsertId();
+
+            $insIt = $db->prepare(
+                "INSERT INTO hl_transaksi_item
+                 (tenant_id, outlet_id, transaksi_id, layanan_id, nama_layanan,
+                  satuan, jumlah, harga_satuan, subtotal, express_tier_nama, biaya_express)
+                 VALUES (?,?,?,?,?,?,?,?,?,?,?)"
+            );
+            foreach ($payload['items'] as $it) {
+                $tierNama   = substr(trim((string)($it['express_tier_nama'] ?? '')), 0, 50);
+                $biayaExpr  = (float)($it['biaya_express'] ?? 0);
+                $insIt->execute([
+                    $tid,
+                    $oid,
+                    $trxId,
+                    (int)$it['layanan_id'],
+                    substr(trim((string)($it['nama_layanan'] ?? '')), 0, 100),
+                    (string)($it['satuan'] ?? 'kg'),
+                    (float)($it['jumlah'] ?? $it['qty'] ?? 0),
+                    (float)($it['harga_satuan'] ?? $it['harga'] ?? 0),
+                    (float)($it['subtotal'] ?? 0),
+                    $tierNama !== '' ? $tierNama : null,
+                    $biayaExpr,
+                ]);
+            }
+
+            if ($dp > 0) {
+                $insKas = $db->prepare(
+                    "INSERT INTO hl_kas
+                     (tenant_id, outlet_id, tanggal, tipe, kategori, keterangan, jumlah, ref_order, created_by, created_at)
+                     VALUES (?,?,?,'masuk','penjualan',?,?,?,?,NOW())"
+                );
+                $insKas->execute([
+                    $tid, $oid, $tanggal,
+                    "DP/Bayar order $no (offline)",
+                    $dp, $no, (int)$user['id']
+                ]);
+            }
+
+            if ($own) $db->commit();
+        } catch (Throwable $e) {
+            if ($own && $db->inTransaction()) $db->rollBack();
+            return ['ok'=>false, 'error'=>'Gagal simpan: '.$e->getMessage()];
+        }
+
+        return ['ok'=>true, 'no_order'=>$no, 'id'=>$trxId, 'offline_ref'=>$tempCode];
+    }
 }
