@@ -1406,7 +1406,7 @@ async function loadShifts() {
   window._shifts = list;
   box.innerHTML = list.map(s => `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px;border-bottom:1px solid var(--light)">
     <span><b>${esc(s.nama)}</b> ${s.jam_mulai.substring(0,5)}–${s.jam_selesai.substring(0,5)} · tol ${s.toleransi_telat_menit}m · lembur >${s.lembur_after_menit}m</span>
-    <span><button class="hl-btn hl-btn-outline hl-btn-sm" onclick='editShift(${JSON.stringify(s)})'>Edit</button>
+    <span><button class="hl-btn hl-btn-outline hl-btn-sm" onclick="editShift(${s.id})">Edit</button>
     <button class="hl-btn hl-btn-outline hl-btn-sm" onclick="deleteShift(${s.id})">Hapus</button></span></div>`).join('');
   renderJadwalGrid();
 }
@@ -1422,7 +1422,10 @@ async function seedTemplate() {
   else showToast(d.error || 'Gagal', 'error');
 }
 
-function editShift(s) { openShiftForm(s); }
+function editShift(id) {
+  const s = (window._shifts || []).find(x => x.id == id);
+  if (s) openShiftForm(s);
+}
 
 function openShiftForm(s) {
   s = s || {};
