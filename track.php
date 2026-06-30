@@ -26,8 +26,8 @@ if ($noOrder) {
         $st = $db->prepare("SELECT t.*, o.nama_outlet, o.alamat AS outlet_alamat, o.telepon AS outlet_wa
                               FROM hl_transaksi t
                          LEFT JOIN outlets o ON o.id=t.outlet_id
-                             WHERE t.no_order=? LIMIT 1");
-        $st->execute([$noOrder]);
+                             WHERE (t.no_order=? OR t.offline_ref=?) LIMIT 1");
+        $st->execute([$noOrder, $noOrder]);
         $order = $st->fetch(PDO::FETCH_ASSOC);
         if (!$order) $err = "Order *{$noOrder}* tidak ditemukan. Cek lagi nomor order ya.";
     } catch (Throwable $e) { $err = 'Gagal mengambil data.'; }

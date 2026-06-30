@@ -64,8 +64,8 @@ if ($action) {
 
         $where = ['t.tenant_id = ?', 't.outlet_id = ?']; $params = [$tid, $oid];
         if ($q) {
-            $where[] = "(t.no_order LIKE ? OR t.nama_pelanggan LIKE ? OR t.telepon LIKE ?)";
-            $like = "%$q%"; $params = array_merge($params, [$like, $like, $like]);
+            $where[] = "(t.no_order LIKE ? OR t.offline_ref LIKE ? OR t.nama_pelanggan LIKE ? OR t.telepon LIKE ?)";
+            $like = "%$q%"; $params = array_merge($params, [$like, $like, $like, $like]);
         }
         if ($status) { $where[] = "t.status_proses=?"; $params[] = $status; }
         if ($bayar)  { $where[] = "t.status_bayar=?";  $params[] = $bayar; }
