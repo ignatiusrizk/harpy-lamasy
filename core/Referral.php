@@ -75,4 +75,37 @@ class Referral
         $r = $st->fetch(PDO::FETCH_ASSOC) ?: [];
         return ['sukses'=>(int)($r['sukses'] ?? 0), 'poin'=>(int)($r['poin'] ?? 0)];
     }
+
+    public static function attribute(int $tenantId, string $kode, int $refereePelangganId): array
+    {
+        $cfg = self::config($tenantId);
+        if (!$cfg['enabled']) return ['ok'=>false, 'error'=>'off'];
+
+        $referrerId = self::resolveCode($tenantId, $kode);
+        if (!$referrerId) return ['ok'=>false, 'error'=>'Kode referral tidak dikenal'];
+        if ($referrerId === $refereePelangganId) return ['ok'=>false, 'error'=>'Tidak bisa refer diri sendiri'];
+
+        $db = Database::get();
+        // telepon sama → anggap diri sendiri
+        $tel = $db->prepare("SELECT telepon FROM hl_pelanggan WHERE id=? AND tenant_id=?");
+        $tel->execute([$referrerId, $tenantId]); $telR = trim((string)$tel->fetchColumn());
+        $tel->execute([$refereePelangganId, $tenantId]); $telE = trim((string)$tel->fetchColumn());
+        if ($telR !== '' && $telR === $telE) return ['ok'=>false, 'error'=>'Tidak bisa refer diri sendiri'];
+
+        // teman harus BARU (belum punya transaksi)
+        $ord = $db->prepare("SELECT 1 FROM hl_transaksi WHERE tenant_id=? AND pelanggan_id=? LIMIT 1");
+        $ord->execute([$tenantId, $refereePelangganId]);
+        if ($ord->fetchColumn()) return ['ok'=>false, 'error'=>'Hanya untuk pelanggan baru'];
+
+        try {
+            $db->prepare(
+                "INSERT INTO hl_referral (tenant_id, referrer_pelanggan_id, referee_pelanggan_id, kode, status, poin_pengajak, poin_teman)
+                 VALUES (?,?,?,?, 'pending', ?, ?)"
+            )->execute([$tenantId, $referrerId, $refereePelangganId, trim($kode), $cfg['poin_pengajak'], $cfg['poin_teman']]);
+        } catch (Throwable $e) {
+            // UNIQUE(referee) → sudah pernah direferral
+            return ['ok'=>false, 'error'=>'Teman sudah pernah pakai kode referral'];
+        }
+        return ['ok'=>true, 'referrer_id'=>$referrerId];
+    }
 }
