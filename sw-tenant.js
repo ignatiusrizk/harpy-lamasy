@@ -19,6 +19,8 @@ const READ_MOSTLY_PATHS = [
   '/dashboard',
 ];
 
+const POS_PATHS = ['/pos', '/pos.php'];
+
 self.addEventListener('install', (e) => {
   e.waitUntil(
     caches.open(CACHE)
@@ -39,10 +41,8 @@ self.addEventListener('activate', (e) => {
 });
 
 self.addEventListener('fetch', (e) => {
-  const url = new URL(e.request.url);
-
-  // Skip landing page — selalu fresh dari server
-  if (url.pathname === '/' || url.pathname === '/landing.php') return;
+  const req = e.request;
+  const url = new URL(req.url);
 
   // Skip pelanggan portal (handled by /sw.js)
   if (url.pathname.startsWith('/pelanggan')) return;
@@ -52,14 +52,13 @@ self.addEventListener('fetch', (e) => {
   if (url.pathname.startsWith('/superadmin')) return;
 
   // Skip non-GET (writes harus selalu network)
-  if (e.request.method !== 'GET') return;
-
+  if (req.method !== 'GET') return;
   // Skip cross-origin
   if (url.origin !== self.location.origin) return;
 
   // Static assets: cache-first
   if (STATIC_ASSETS.includes(url.pathname) || url.pathname.startsWith('/assets/')) {
-    e.respondWith(cacheFirst(e.request));
+    e.respondWith(cacheFirst(req));
     return;
   }
 
@@ -72,16 +71,29 @@ self.addEventListener('fetch', (e) => {
     return; // default network
   }
 
-  // Read-mostly pages: network-first + cache fallback (stale-while-revalidate-like)
+  // POS shell (navigasi halaman saja, bukan fetch API): stale-while-revalidate
+  if (req.mode === 'navigate' && POS_PATHS.includes(url.pathname)) {
+    e.respondWith(staleWhileRevalidate(req));
+    return;
+  }
+
+  // Read-mostly pages: network-first + cache fallback
   if (READ_MOSTLY_PATHS.some(p =>
         url.pathname === p ||
         url.pathname.startsWith(p + '/') ||
         url.pathname.startsWith(p + '.php'))) {
-    e.respondWith(networkFirstWithCache(e.request));
+    e.respondWith(networkFirstWithCache(req));
     return;
   }
 
-  // Default: network-only
+  // Navigasi lain (/, /landing.php, /login, route apa pun): network-first,
+  // gagal offline → cached exact → POS cached → halaman offline brand.
+  if (req.mode === 'navigate') {
+    e.respondWith(navigationFallback(req));
+    return;
+  }
+
+  // Default: network-only (fetch API non-navigasi, mis. action=list)
 });
 
 function cacheFirst(req) {
@@ -99,6 +111,26 @@ function networkFirstWithCache(req) {
     }
     return resp;
   }).catch(() => caches.match(req).then(cached => cached || offlinePage()));
+}
+
+function staleWhileRevalidate(req) {
+  return caches.open(CACHE).then(cache =>
+    cache.match(req).then(cached => {
+      const network = fetch(req).then(resp => {
+        if (resp && resp.ok) cache.put(req, resp.clone());
+        return resp;
+      }).catch(() => null);
+      return cached || network.then(r => r || offlinePage());
+    })
+  );
+}
+
+function navigationFallback(req) {
+  return fetch(req).catch(() =>
+    caches.match(req).then(cached =>
+      cached || caches.match('/pos').then(pos => pos || offlinePage())
+    )
+  );
 }
 
 function offlinePage() {
