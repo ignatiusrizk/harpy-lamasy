@@ -6,6 +6,7 @@
 if (!defined('SA_ROOT')) define('SA_ROOT', __DIR__);
 require_once SA_ROOT . '/middleware/superadmin_guard.php';
 require_once SA_ROOT . '/superadmin_components.php';
+require_once SA_ROOT . '/../core/BillingConfig.php';
 
 date_default_timezone_set('Asia/Jakarta');
 
@@ -28,8 +29,32 @@ if ($action) {
         exit;
     }
 
+    // ── GET: activation defaults ──────────────────────
+    if ($action === 'get_activation_defaults') {
+        echo json_encode(['ok' => true,
+            'fee'      => BillingConfig::getInt('outlet_activation_fee', 800000),
+            'discount' => BillingConfig::getInt('outlet_activation_discount', 0),
+            'coinAwal' => BillingConfig::getInt('outlet_activation_coin', 100000),
+        ]);
+        exit;
+    }
+
     // ── POST actions — CSRF required ──────────────────
     saVerifyCsrf();
+
+    // ── SAVE ACTIVATION DEFAULTS ──────────────────────
+    if ($action === 'save_activation_defaults') {
+        $d   = json_decode(file_get_contents('php://input'), true) ?: [];
+        $fee  = max(0, (int)($d['fee'] ?? 0));
+        $disc = max(0, min(100, (int)($d['discount'] ?? 0)));
+        $coin = max(0, (int)($d['coinAwal'] ?? 0));
+        $sa   = (int)($_SESSION['superadmin_id'] ?? 0) ?: null;
+        BillingConfig::set('outlet_activation_fee', (string)$fee, $sa);
+        BillingConfig::set('outlet_activation_discount', (string)$disc, $sa);
+        BillingConfig::set('outlet_activation_coin', (string)$coin, $sa);
+        echo json_encode(['ok' => true, 'msg' => 'Default aktivasi disimpan.']);
+        exit;
+    }
 
     // ── SAVE BUNDLE (insert or update) ───────────────
     if ($action === 'save_bundle') {
@@ -330,13 +355,15 @@ function rawInt(id) {
   return parseInt((el?.dataset.raw ?? el?.value ?? '').replace(/\D/g, '') || '0') || 0;
 }
 
-// ── Defaults (stored in localStorage for now) ─────────
-const DEF_KEY = 'sa_activation_defaults';
-function loadDefaults() {
-  try { return JSON.parse(localStorage.getItem(DEF_KEY)) || {}; } catch { return {}; }
-}
-function saveDefaultsToStorage(fee, discount, coinAwal) {
-  localStorage.setItem(DEF_KEY, JSON.stringify({ fee, discount, coinAwal }));
+// ── Defaults (server config: saas_billing_config) ─────
+let _activationDefaults = { fee: 0, discount: 0, coinAwal: 0 };
+function loadDefaults() { return _activationDefaults; }
+function fetchActivationDefaults() {
+  return saFetch('packages.php?action=get_activation_defaults')
+    .then(r => r.json()).then(d => {
+      if (d && d.ok) _activationDefaults = { fee: d.fee, discount: d.discount, coinAwal: d.coinAwal };
+      return _activationDefaults;
+    });
 }
 
 function refreshActivationCard() {
@@ -384,13 +411,22 @@ function previewDiscount() {
 }
 
 function saveDefaults() {
-  const fee      = rawInt('defFee');
-  const discount = parseFloat(document.getElementById('defDiscount').value) || 0;
-  const coinA    = rawInt('defCoin');
-  saveDefaultsToStorage(fee, discount, coinA);
-  refreshActivationCard();
-  closeModal('defaultModal');
-  saShowToast('Default aktivasi disimpan.', 'success');
+  const payload = {
+    fee:      rawInt('defFee'),
+    discount: parseInt(document.getElementById('defDiscount').value) || 0,
+    coinAwal: rawInt('defCoin'),
+  };
+  saFetch('packages.php?action=save_activation_defaults', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  }).then(r => r.json()).then(d => {
+    if (d.error) { saShowToast(d.error, 'error'); return; }
+    _activationDefaults = { fee: payload.fee, discount: payload.discount, coinAwal: payload.coinAwal };
+    refreshActivationCard();
+    closeModal('defaultModal');
+    saShowToast(d.msg || 'Default aktivasi disimpan.', 'success');
+  });
 }
 
 // ── Load bundles ──────────────────────────────────────
@@ -546,7 +582,7 @@ document.addEventListener('keydown', e => {
 });
 
 // Init
-refreshActivationCard();
+fetchActivationDefaults().then(refreshActivationCard);
 loadBundles();
 </script>
 </body>
