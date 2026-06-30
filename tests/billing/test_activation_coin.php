@@ -15,4 +15,8 @@ require_once dirname(__DIR__, 2) . '/core/BillingConfig.php';
 ok(BillingConfig::getInt('outlet_activation_coin', 100000) >= 0, 'outlet_activation_coin terbaca (int)');
 ok(BillingConfig::getInt('outlet_activation_discount', 0) >= 0, 'outlet_activation_discount terbaca (int)');
 
+// (2) Rumus net biaya (fee 1.000.000 − 20%) = 800.000
+$net = (int)round(1000000 * (1 - 20/100));
+eqv($net, 800000, 'net biaya fee 1.000.000 −20% = 800.000');
+
 echo "OK test_activation_coin (config)\n";

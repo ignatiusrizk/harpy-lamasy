@@ -52,7 +52,9 @@ elseif ($type === 'outlet_activation') {
     $o->execute([$outletId, $tenantId]);
     $outlet = $o->fetch(PDO::FETCH_ASSOC);
     if (!$outlet) die('Outlet tidak valid');
-    $amount = BillingConfig::getInt('outlet_activation_fee', 800000);
+    $fee  = BillingConfig::getInt('outlet_activation_fee', 800000);
+    $disc = max(0, min(100, BillingConfig::getInt('outlet_activation_discount', 0)));
+    $amount = (int)round($fee * (1 - $disc / 100));
     $refOutletId = $outlet['id'];
     $itemName = "Aktivasi Outlet — {$outlet['nama_outlet']}";
 }
