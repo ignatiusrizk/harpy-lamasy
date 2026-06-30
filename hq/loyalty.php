@@ -102,9 +102,37 @@ if ($action) {
         exit;
     }
 
+    if ($action === 'save_referral' && $_SERVER['REQUEST_METHOD']==='POST') {
+        verifyCsrf();
+        $d = json_decode(file_get_contents('php://input'), true) ?: [];
+        $enabled    = empty($d['referral_enabled']) ? 0 : 1;
+        $poinPengajak = max(0, (int)($d['referral_poin_pengajak'] ?? 0));
+        $poinTeman    = max(0, (int)($d['referral_poin_teman'] ?? 0));
+        $maxPerPengajak = max(0, (int)($d['referral_max_per_pengajak'] ?? 0));
+        try {
+            $st = $db->prepare("UPDATE tenants SET referral_enabled=?, referral_poin_pengajak=?, referral_poin_teman=?, referral_max_per_pengajak=? WHERE id=?");
+            $st->execute([$enabled, $poinPengajak, $poinTeman, $maxPerPengajak, $tid]);
+            logAudit('referral_save', 'tenants', "enabled=$enabled poin_pengajak=$poinPengajak poin_teman=$poinTeman max=$maxPerPengajak");
+            echo json_encode(['ok' => true]);
+        } catch (Throwable $e) {
+            error_log('[hq/loyalty save_referral] ' . $e->getMessage());
+            echo json_encode(['error' => 'Gagal simpan referral']);
+        }
+        exit;
+    }
+
     echo json_encode(['error'=>'Unknown action']);
     exit;
 }
+
+// Muat config referral dari tenants
+$refRow = $db->prepare("SELECT referral_enabled, referral_poin_pengajak, referral_poin_teman, referral_max_per_pengajak FROM tenants WHERE id=?");
+$refRow->execute([$tid]);
+$refCfg = $refRow->fetch(PDO::FETCH_ASSOC) ?: [];
+$refEnabled     = (int)($refCfg['referral_enabled'] ?? 0);
+$refPoinPengajak = (int)($refCfg['referral_poin_pengajak'] ?? 0);
+$refPoinTeman   = (int)($refCfg['referral_poin_teman'] ?? 0);
+$refMaxPerPengajak = (int)($refCfg['referral_max_per_pengajak'] ?? 0);
 
 $pageTitle = '⭐ Sistem Poin (HQ)';
 require ROOT . '/hq/_layout_open.php';
@@ -277,6 +305,64 @@ async function deleteReward(id) {
 
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
 loadList();
+</script>
+
+<!-- ===================== SECTION: Referral (Ajak Teman) ===================== -->
+<div style="margin-top:32px;background:#fff;border:1px solid #E5E7EB;border-radius:12px;padding:20px 24px">
+  <h2 style="margin:0 0 4px;font-size:18px">🤝 Referral (Ajak Teman)</h2>
+  <p style="margin:0 0 16px;font-size:13px;color:#64748B">Pengaturan program referral. Poin diberikan ke kedua pihak saat order pertama teman lunas.<br>
+    <em>Catatan: Referral baru aktif jika sistem loyalty poin juga aktif di outlet.</em>
+  </p>
+
+  <label style="display:flex;align-items:center;gap:10px;cursor:pointer;margin-bottom:16px">
+    <input type="checkbox" id="ref_enabled" <?= $refEnabled ? 'checked' : '' ?> style="width:18px;height:18px">
+    <span style="font-weight:600">Aktifkan program referral</span>
+  </label>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:18px">
+    <div>
+      <label style="display:block;font-size:13px;font-weight:600;margin-bottom:4px">Poin untuk Pengajak</label>
+      <input type="number" id="ref_poin_pengajak" class="hl-input" min="0" value="<?= $refPoinPengajak ?>">
+    </div>
+    <div>
+      <label style="display:block;font-size:13px;font-weight:600;margin-bottom:4px">Poin untuk Teman Baru</label>
+      <input type="number" id="ref_poin_teman" class="hl-input" min="0" value="<?= $refPoinTeman ?>">
+    </div>
+    <div>
+      <label style="display:block;font-size:13px;font-weight:600;margin-bottom:4px">Maks Referral per Pengajak</label>
+      <input type="number" id="ref_max_per_pengajak" class="hl-input" min="0" value="<?= $refMaxPerPengajak ?>">
+      <div style="font-size:11px;color:#94A3B8;margin-top:3px">0 = tak terbatas</div>
+    </div>
+  </div>
+
+  <button class="hl-btn hl-btn-primary" onclick="saveReferral()">💾 Simpan Pengaturan Referral</button>
+  <span id="ref_status" style="margin-left:12px;font-size:13px"></span>
+</div>
+
+<script>
+async function saveReferral() {
+  const payload = {
+    referral_enabled:         document.getElementById('ref_enabled').checked ? 1 : 0,
+    referral_poin_pengajak:   parseInt(document.getElementById('ref_poin_pengajak').value) || 0,
+    referral_poin_teman:      parseInt(document.getElementById('ref_poin_teman').value) || 0,
+    referral_max_per_pengajak: parseInt(document.getElementById('ref_max_per_pengajak').value) || 0,
+  };
+  const statusEl = document.getElementById('ref_status');
+  statusEl.textContent = '⏳ Menyimpan...';
+  try {
+    const r = await fetch('?action=save_referral', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json','X-CSRF-Token':CSRF},
+      body: JSON.stringify(payload)
+    });
+    const d = await r.json();
+    if (d.error) { statusEl.textContent = '❌ ' + d.error; return; }
+    statusEl.textContent = '✅ Tersimpan';
+    setTimeout(() => { statusEl.textContent = ''; }, 3000);
+  } catch(e) {
+    statusEl.textContent = '❌ Gagal terhubung';
+  }
+}
 </script>
 
 <?php require ROOT . '/hq/_layout_close.php'; ?>
