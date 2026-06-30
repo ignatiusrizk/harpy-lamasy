@@ -9,6 +9,7 @@ require_once SA_ROOT . '/middleware/superadmin_guard.php';
 require_once SA_ROOT . '/superadmin_components.php';
 require_once SA_ROOT . '/../core/Database.php';
 require_once SA_ROOT . '/../core/StrukGenerator.php';
+require_once dirname(__DIR__) . '/core/BillingConfig.php';
 
 date_default_timezone_set('Asia/Jakarta');
 
@@ -719,6 +720,12 @@ $csrf = saGetCsrf();
 
   <!-- ══ STEP 2: BIAYA AKTIVASI ══════════════════════ -->
   <?php elseif ($step === 2): ?>
+  <?php
+    // Load server defaults for activation settings
+    $def_fee  = BillingConfig::getInt('outlet_activation_fee', 800000);
+    $def_disc = BillingConfig::getInt('outlet_activation_discount', 0);
+    $def_coin = BillingConfig::getInt('outlet_activation_coin', 100000);
+  ?>
   <div class="wiz-card">
     <h2>Biaya Aktivasi Outlet</h2>
     <div class="sub">Tentukan biaya aktivasi dan konfigurasi awal akun</div>
@@ -730,14 +737,14 @@ $csrf = saGetCsrf();
         <div class="wiz-field">
           <label class="wiz-label">Biaya Aktivasi Outlet (Rp)</label>
           <input type="text" name="setup_fee" id="wiz_fee" class="wiz-input" inputmode="numeric"
-                 value="<?= number_format((int)($wiz['setup_fee_ori'] ?? $wiz['setup_fee'] ?? 300000), 0, ',', '.') ?>"
+                 value="<?= number_format((int)($wiz['setup_fee_ori'] ?? $wiz['setup_fee'] ?? $def_fee), 0, ',', '.') ?>"
                  placeholder="300.000" oninput="wizRibuan(this);wizPreviewFee()" autocomplete="off"/>
           <div style="font-size:11px;color:var(--ash-dim);margin-top:4px;">0 = gratis / promo</div>
         </div>
         <div class="wiz-field">
           <label class="wiz-label">Diskon (%)</label>
           <input type="number" name="discount_pct" id="wiz_disc" class="wiz-input" min="0" max="100" step="1"
-                 value="<?= (float)($wiz['discount_pct'] ?? 0) ?>"
+                 value="<?= (float)($wiz['discount_pct'] ?? $def_disc) ?>"
                  placeholder="0" oninput="wizPreviewFee()"/>
           <div id="wiz_fee_preview" style="font-size:11px;color:var(--sage);margin-top:4px;min-height:16px;"></div>
         </div>
@@ -747,7 +754,7 @@ $csrf = saGetCsrf();
         <div class="wiz-field">
           <label class="wiz-label">Coin Awal Dikreditkan</label>
           <input type="text" name="coin_awal" class="wiz-input" inputmode="numeric"
-                 value="<?= number_format((int)($wiz['coin_awal'] ?? 50000), 0, ',', '.') ?>"
+                 value="<?= number_format((int)($wiz['coin_awal'] ?? $def_coin), 0, ',', '.') ?>"
                  placeholder="50.000" oninput="wizRibuan(this)" autocomplete="off"/>
           <div style="font-size:11px;color:var(--ash-dim);margin-top:4px;">Dikreditkan saat aktivasi</div>
         </div>
