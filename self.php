@@ -15,11 +15,14 @@ define('ROOT', __DIR__);
 require_once ROOT . '/master/config/db.php';
 require_once ROOT . '/core/Database.php';
 require_once ROOT . '/core/TenantQuery.php';
+require_once ROOT . '/core/Referral.php';
 
 date_default_timezone_set('Asia/Jakarta');
 
 $kode = strtoupper(preg_replace('/[^A-Z0-9]/i', '', $_GET['m'] ?? ''));
 $action = $_GET['action'] ?? '';
+// Pre-fill referral code dari query string ?ref=
+$refPrefill = substr(trim(strip_tags($_GET['ref'] ?? '')), 0, 50);
 
 function findMesinByKode(string $kode): ?array
 {
@@ -79,12 +82,16 @@ if ($action === 'book' && $_SERVER['REQUEST_METHOD']==='POST') {
     $mesin = findMesinByKode($kodeIn);
     if (!$mesin) { echo json_encode(['error'=>'Mesin tidak ditemukan']); exit; }
 
-    $cycleId = intval($d['cycle_id'] ?? 0);
-    $nama    = substr(trim(strip_tags($d['nama'] ?? '')), 0, 80);
-    $tel     = preg_replace('/[^0-9+]/', '', $d['telepon'] ?? '');
-    $tel     = substr($tel, 0, 20);
+    $cycleId      = intval($d['cycle_id'] ?? 0);
+    $nama         = substr(trim(strip_tags($d['nama'] ?? '')), 0, 80);
+    $tel          = preg_replace('/[^0-9+]/', '', $d['telepon'] ?? '');
+    $tel          = substr($tel, 0, 20);
+    $referralKode = substr(trim(strip_tags($d['referral_code'] ?? '')), 0, 50);
     if (!$cycleId) { echo json_encode(['error'=>'Pilih cycle dulu']); exit; }
     if (!$nama)    { echo json_encode(['error'=>'Nama wajib diisi']); exit; }
+
+    $tid = (int)$mesin['tenant_id'];
+    $oid = (int)$mesin['outlet_id'];
 
     // Verify cycle milik mesin ini
     $db = Database::get();
@@ -116,16 +123,45 @@ if ($action === 'book' && $_SERVER['REQUEST_METHOD']==='POST') {
              VALUES (?,?,?,?,?,?,?,?,?,'cash','belum','booked', NOW())"
         );
         $st->execute([
-            (int)$mesin['tenant_id'], (int)$mesin['outlet_id'], (int)$mesin['id'], (int)$cycle['id'],
+            $tid, $oid, (int)$mesin['id'], (int)$cycle['id'],
             $nama, $tel ?: null,
             (int)$cycle['durasi_menit'], (int)$cycle['tarif'], $cycle['label']
         ]);
         $sesiId = (int)$db->lastInsertId();
         // Defense-in-depth: scope ke tenant+outlet meski kode sudah unique
         $db->prepare("UPDATE hl_mesin SET status='booked' WHERE id=? AND tenant_id=? AND outlet_id=?")
-           ->execute([(int)$mesin['id'], (int)$mesin['tenant_id'], (int)$mesin['outlet_id']]);
+           ->execute([(int)$mesin['id'], $tid, $oid]);
+
+        // Upsert pelanggan — supaya referral bisa dikaitkan ke akun pelanggan
+        $isNewPelanggan = false;
+        $newPelangganId = null;
+        if ($tel !== '') {
+            $chk = $db->prepare("SELECT id FROM hl_pelanggan WHERE tenant_id=? AND telepon=? LIMIT 1");
+            $chk->execute([$tid, $tel]);
+            $existingId = $chk->fetchColumn();
+            if ($existingId) {
+                $newPelangganId = (int)$existingId;
+            } else {
+                try {
+                    $db->prepare(
+                        "INSERT INTO hl_pelanggan
+                          (tenant_id, outlet_id, registered_outlet_id, nama, telepon, tipe,
+                           total_order, total_visit_count, portal_token)
+                         VALUES (?,?,?,?,?,'retail',0,0,?)"
+                    )->execute([$tid, $oid, $oid, $nama, $tel, bin2hex(random_bytes(16))]);
+                    $newPelangganId = (int)$db->lastInsertId();
+                    $isNewPelanggan = true;
+                } catch (Throwable) { /* skip jika kolom belum ada atau constraint error */ }
+            }
+        }
 
         $db->commit();
+
+        // Referral attribution — best-effort, NEVER fail the booking.
+        // Hanya untuk pelanggan yang baru dibuat di booking ini.
+        if ($isNewPelanggan && $newPelangganId && $referralKode !== '' && Referral::config($tid)['enabled']) {
+            try { Referral::attribute($tid, $referralKode, $newPelangganId); } catch (Throwable) {}
+        }
 
         echo json_encode([
             'success'   => true,
@@ -145,6 +181,7 @@ if ($action === 'book' && $_SERVER['REQUEST_METHOD']==='POST') {
 $mesin = findMesinByKode($kode);
 $cycles = $mesin ? getCycles((int)$mesin['id']) : [];
 $activeSesi = $mesin ? getActiveSesi((int)$mesin['id']) : null;
+$selfReferralCfg = $mesin ? Referral::config((int)$mesin['tenant_id']) : ['enabled'=>false];
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -327,6 +364,17 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:linear-gradient(180de
           <label class="form-label">No. WhatsApp (opsional)</label>
           <input type="tel" id="f_telepon" class="form-input" placeholder="0812-xxxx-xxxx" maxlength="20"/>
         </div>
+        <?php if ($selfReferralCfg['enabled']): ?>
+        <div class="form-group" id="referralGroup">
+          <label class="form-label">Kode Referral <span style="font-size:10px;font-weight:400;text-transform:none;opacity:.7">— opsional</span></label>
+          <input type="text" id="f_referral_code" class="form-input"
+            placeholder="Masukkan kode dari teman"
+            maxlength="50"
+            value="<?= htmlspecialchars($refPrefill) ?>"
+            style="text-transform:uppercase;letter-spacing:.08em;font-family:'DM Mono',monospace"
+            oninput="this.value=this.value.toUpperCase()"/>
+        </div>
+        <?php endif; ?>
 
         <div class="summary-box" id="summaryBox" style="display:none">
           <div class="summary-row"><span>Mesin</span><span id="sumMesin"></span></div>
@@ -377,6 +425,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:linear-gradient(180de
           cycle_id: selectedCycle.id,
           nama: document.getElementById('f_nama').value,
           telepon: document.getElementById('f_telepon').value,
+          referral_code: document.getElementById('f_referral_code')?.value?.trim() || '',
         }),
       });
       const j = await r.json();

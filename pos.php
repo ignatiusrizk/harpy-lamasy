@@ -8,10 +8,12 @@ require_once ROOT . '/core/MemberTier.php';
 require_once ROOT . '/core/NotaFormatter.php';
 require_once ROOT . '/core/DepositManager.php';
 require_once ROOT . '/core/PushSender.php';
+require_once ROOT . '/core/Referral.php';
 require_once __DIR__ . '/components.php';
 $user = currentUser();
 requirePermission('pos.view');
-$loyaltyCfg = Loyalty::config((int)TenantResolver::id());
+$loyaltyCfg  = Loyalty::config((int)TenantResolver::id());
+$referralCfg = Referral::config((int)TenantResolver::id());
 
 // ── API HANDLER ───────────────────────────────────────
 $action = $_GET['action'] ?? '';
@@ -221,7 +223,8 @@ if ($action) {
         $nama_pel  = substr(trim(strip_tags($data['nama_pelanggan'] ?? '')), 0, 100);
         $telepon   = substr(preg_replace('/[^0-9+\-\s]/', '', $data['telepon'] ?? ''), 0, 20);
         $catatan   = substr(trim(strip_tags($data['catatan'] ?? '')), 0, 500);
-        $parfum    = substr(trim(strip_tags($data['parfum']  ?? '')), 0, 50);
+        $parfum       = substr(trim(strip_tags($data['parfum']  ?? '')), 0, 50);
+        $referralKode = substr(trim(strip_tags($data['referral_code'] ?? '')), 0, 50);
         $tanggal   = substr(trim($data['tanggal'] ?? date('Y-m-d')), 0, 10);
         // Estimasi selesai — terima DATE (yyyy-mm-dd) atau DATETIME, normalisasi ke DATETIME.
         // Kalau kosong, auto-compute dari antrian saat ini.
@@ -293,7 +296,8 @@ if ($action) {
 
             // Upsert pelanggan — TENANT-SCOPED (lintas outlet)
             // Lookup by tenant_id + telepon (HP unique per tenant)
-            $pel_id = null;
+            $pel_id        = null;
+            $isNewPelanggan = false;
             if ($nama_pel) {
                 $pelRow = TenantQuery::rawOne(
                     "SELECT id FROM hl_pelanggan WHERE tenant_id=? AND telepon=? LIMIT 1",
@@ -320,7 +324,8 @@ if ($action) {
                         'outlet_id'             => $oid, // legacy compat
                         'portal_token'          => bin2hex(random_bytes(16)),
                     ]);
-                    $pel_id = $db->lastInsertId();
+                    $pel_id         = $db->lastInsertId();
+                    $isNewPelanggan = true;
                 }
             }
 
@@ -656,6 +661,12 @@ if ($action) {
             $poinEarned = 0;
             if ($pel_id) {
                 try { Loyalty::touchLastTransaksi($tid, (int)$pel_id); } catch (Throwable) {}
+            }
+
+            // Referral attribution — best-effort, NEVER fail the order.
+            // Hanya untuk pelanggan yang baru dibuat di save ini.
+            if ($isNewPelanggan && $pel_id && $referralKode !== '' && Referral::config($tid)['enabled']) {
+                try { Referral::attribute($tid, $referralKode, (int)$pel_id); } catch (Throwable) {}
             }
 
             echo json_encode(['success'=>true, 'no_order'=>$no, 'id'=>$trx_id,
@@ -1129,6 +1140,16 @@ function posSelectPrinter(p) {
           <div id="memberBadgeBox" style="display:none;background:#FEF3C7;border:1px solid #FDE68A;border-radius:8px;padding:8px 14px;margin:0 0 12px;font-size:12.5px;color:#92400E;">
             <!-- isi auto by loadMemberInfo() -->
           </div>
+          <?php if ($referralCfg['enabled']): ?>
+          <div class="form-row" id="referralRow">
+            <div class="form-group full">
+              <label>Kode Referral <span style="font-size:10px;color:var(--gray);font-weight:400;">— opsional, untuk pelanggan baru</span></label>
+              <input type="text" id="f_referral_code" placeholder="Masukkan kode referral..."
+                style="text-transform:uppercase;letter-spacing:.08em;font-family:var(--mono)"
+                oninput="this.value=this.value.toUpperCase()"/>
+            </div>
+          </div>
+          <?php endif; ?>
           <div class="form-row">
             <div class="form-group full">
               <label>Catatan Order</label>
@@ -2409,6 +2430,7 @@ async function doSaveTransaksi() {
     antar_alamat:   document.getElementById('antar_alamat')?.value || '',
     antar_catatan:  document.getElementById('antar_catatan')?.value || '',
     antar_zona:     parseInt(document.getElementById('antar_zona')?.value) || 0,
+    referral_code:  document.getElementById('f_referral_code')?.value?.trim() || '',
     items
   };
 
