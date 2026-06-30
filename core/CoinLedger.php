@@ -160,6 +160,88 @@ class CoinLedger
         return TenantResolver::coinBalance() >= $cost;
     }
 
+    // ── Outlet penanggung coin HQ (per_outlet). Default outlet UTAMA. ──
+    public static function hqBillingOutletId(int $tenantId): int
+    {
+        $db = Database::get();
+        $s = $db->prepare("SELECT hq_coin_outlet_id FROM tenants WHERE id=? LIMIT 1");
+        $s->execute([$tenantId]);
+        $hq = $s->fetchColumn();
+        if ($hq !== false && $hq !== null) {
+            $chk = $db->prepare("SELECT id FROM outlets WHERE id=? AND tenant_id=? AND status<>'closed' LIMIT 1");
+            $chk->execute([(int)$hq, $tenantId]);
+            $valid = $chk->fetchColumn();
+            if ($valid) return (int)$valid;
+        }
+        $m = $db->prepare("SELECT id FROM outlets WHERE tenant_id=? AND status<>'closed' ORDER BY is_main DESC, id ASC LIMIT 1");
+        $m->execute([$tenantId]);
+        return (int)($m->fetchColumn() ?: 0);
+    }
+
+    // ── Cek saldo utk fitur HQ-level (tidak pakai trial coin) ──
+    public static function canAffordHq(string $feature): bool
+    {
+        if (!self::isFeatureActive($feature)) return false;
+        $cost = self::getHarga($feature);
+        if ($cost === 0) return true;
+        $tenantId = TenantResolver::id();
+        $db = Database::get();
+        if (TenantResolver::isSharedCoin()) {
+            $s = $db->prepare("SELECT coin_balance FROM tenants WHERE id=? LIMIT 1");
+            $s->execute([$tenantId]);
+            return ((int)$s->fetchColumn()) >= $cost;
+        }
+        $oid = self::hqBillingOutletId($tenantId);
+        if ($oid <= 0) return false;
+        $s = $db->prepare("SELECT coin_balance FROM outlets WHERE id=? AND tenant_id=? LIMIT 1");
+        $s->execute([$oid, $tenantId]);
+        return ((int)$s->fetchColumn()) >= $cost;
+    }
+
+    // ── Potong coin utk fitur HQ-level. shared→tenant pool; per_outlet→outlet penanggung. ──
+    public static function deductHq(string $feature, ?string $refId = null, ?int $overrideCost = null): bool
+    {
+        if (!self::isFeatureActive($feature)) return false;
+        $cost = $overrideCost !== null ? max(0, $overrideCost) : self::getHarga($feature);
+        if ($cost === 0) return true;
+
+        $tenantId = TenantResolver::id();
+        $shared   = TenantResolver::isSharedCoin();
+        $db = Database::get();
+        $db->beginTransaction();
+        try {
+            if ($shared) {
+                $stmt = $db->prepare("SELECT coin_balance FROM tenants WHERE id=? FOR UPDATE");
+                $stmt->execute([$tenantId]);
+                $current = (int)$stmt->fetch()['coin_balance'];
+                if ($current < $cost) { $db->rollBack(); return false; }
+                $newBalance = $current - $cost;
+                $db->prepare("UPDATE tenants SET coin_balance=? WHERE id=?")->execute([$newBalance, $tenantId]);
+                $ledgerOutlet = null;
+            } else {
+                $oid = self::hqBillingOutletId($tenantId);
+                if ($oid <= 0) { $db->rollBack(); return false; }
+                $stmt = $db->prepare("SELECT coin_balance FROM outlets WHERE id=? AND tenant_id=? FOR UPDATE");
+                $stmt->execute([$oid, $tenantId]);
+                $current = (int)$stmt->fetch()['coin_balance'];
+                if ($current < $cost) { $db->rollBack(); return false; }
+                $newBalance = $current - $cost;
+                $db->prepare("UPDATE outlets SET coin_balance=? WHERE id=? AND tenant_id=?")->execute([$newBalance, $oid, $tenantId]);
+                $ledgerOutlet = $oid;
+            }
+            $db->prepare("INSERT INTO coin_ledger
+                  (tenant_id, outlet_id, type, amount, feature_used, description, balance_after, ref_id)
+                VALUES (?,?, 'deduct', ?, ?, ?, ?, ?)")
+               ->execute([$tenantId, $ledgerOutlet, $cost, $feature, 'Fitur HQ: '.$feature, $newBalance, $refId]);
+            $db->commit();
+            if ($shared) { $_SESSION['tenant_coin_balance'] = $newBalance; TenantResolver::refresh(); }
+            return true;
+        } catch (Throwable $e) {
+            if ($db->inTransaction()) $db->rollBack();
+            return false;
+        }
+    }
+
     // ── Potong coin (atomic dengan transaction) ────────
     // Prioritas pemotongan:
     //   1. Jika outlet dalam status 'trial' → potong trial_coin_balance dulu
