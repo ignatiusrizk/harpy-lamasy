@@ -10,6 +10,7 @@
 // ══════════════════════════════════════════════════════
 
 require_once __DIR__ . '/Notifier.php';
+require_once __DIR__ . '/NotifPrefs.php';
 
 class DailyReport
 {
@@ -18,7 +19,9 @@ class DailyReport
     {
         try {
             $cfg = self::readConfig($tenantId);
-            if (!$cfg['enabled']) return ['ok'=>false, 'skipped'=>'disabled'];
+
+            // Channel off semua → senyap total (tak ada email & in-app)
+            if (empty($cfg['channels'])) return ['ok'=>false, 'skipped'=>'channel off'];
 
             // Jam check — only send setelah jam yang ditentukan
             if (date('H:i') < $cfg['jam']) return ['ok'=>false, 'skipped'=>'jam belum'];
@@ -31,16 +34,12 @@ class DailyReport
             // Build report
             $report = self::build($tenantId, $outletId, $cfg['konten']);
 
-            // Channels: email (kalau dipilih) + inapp (selalu)
-            $channels = ['inapp'];
-            if (!empty($cfg['channel_email'])) $channels[] = 'email';
-
             $res = Notifier::notifyOwner($tenantId, $outletId, [
                 'type'           => 'daily_report',
                 'subject'        => $report['subject'],
                 'body_html'      => $report['html'],
                 'body_summary'   => $report['summary'],
-                'channels'       => $channels,
+                'channels'       => $cfg['channels'],
                 'coin_feature'   => 'daily_report',
             ]);
             return $res;
@@ -53,24 +52,16 @@ class DailyReport
     /** Baca konfigurasi dari tenants.notif_settings JSON */
     private static function readConfig(int $tenantId): array
     {
-        $cfg = ['enabled'=>true, 'jam'=>'21:00', 'konten'=>['omset','order','kas','absensi','alert'], 'channel_email'=>true];
-        try {
-            $db = Database::get();
-            $s = $db->prepare("SELECT notif_settings FROM tenants WHERE id=?");
-            $s->execute([$tenantId]);
-            $raw = $s->fetchColumn();
-            if ($raw) {
-                $j = json_decode($raw, true);
-                if (is_array($j)) {
-                    if (isset($j['daily_report_jam']) && preg_match('/^\d{2}:\d{2}$/', $j['daily_report_jam']))
-                        $cfg['jam'] = $j['daily_report_jam'];
-                    if (isset($j['daily_report_konten']) && is_array($j['daily_report_konten']))
-                        $cfg['konten'] = $j['daily_report_konten'];
-                    // channel email per daily_report
-                    if (isset($j['daily_report']['email'])) $cfg['channel_email'] = (int)$j['daily_report']['email'] === 1;
-                }
-            }
-        } catch (Throwable) {}
+        $settings = NotifPrefs::read($tenantId);
+        $cfg = [
+            'jam'      => '21:00',
+            'konten'   => ['omset','order','kas','absensi','alert'],
+            'channels' => NotifPrefs::channelsFor($settings, 'daily_report'),
+        ];
+        if (isset($settings['daily_report_jam']) && preg_match('/^\d{2}:\d{2}$/', $settings['daily_report_jam']))
+            $cfg['jam'] = $settings['daily_report_jam'];
+        if (isset($settings['daily_report_konten']) && is_array($settings['daily_report_konten']))
+            $cfg['konten'] = $settings['daily_report_konten'];
         return $cfg;
     }
 
