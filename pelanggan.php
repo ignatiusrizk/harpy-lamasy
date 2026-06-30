@@ -130,6 +130,23 @@ try {
     }
 } catch (Throwable) {}
 
+// Referral (ajak teman) — load config + code + stats kalau enabled
+$referralEnabled = false;
+$referralCode    = '';
+$referralStats   = ['sukses'=>0,'poin'=>0];
+$referralShareUrl = '';
+try {
+    require_once ROOT . '/core/Referral.php';
+    $refCfg = Referral::config($pelTid);
+    if (!empty($refCfg['enabled'])) {
+        $referralEnabled  = true;
+        $referralCode     = Referral::codeFor($pelTid, (int)$pel['id']);
+        $referralStats    = Referral::statsFor($pelTid, (int)$pel['id']);
+        $appBase          = defined('APP_URL') ? rtrim(APP_URL, '/') : 'https://lamasy.harpy.id';
+        $referralShareUrl = $appBase . '/self?ref=' . urlencode($referralCode);
+    }
+} catch (Throwable) {}
+
 // Riwayat (20 terakhir done)
 $historyOrders = [];
 try {
@@ -257,6 +274,29 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
   </div>
   <?php endif; ?>
 
+  <?php if ($referralEnabled && $referralCode !== ''): ?>
+  <div class="card">
+    <h2>🤝 Ajak Teman</h2>
+    <div class="kv">
+      <span class="lbl">Kode kamu</span>
+      <span class="val" style="font-family:monospace;letter-spacing:.1em"><?= htmlspecialchars($referralCode) ?></span>
+    </div>
+    <div style="margin:10px 0 6px;display:flex;gap:8px;align-items:center">
+      <input id="refShareUrl" type="text" readonly
+             value="<?= htmlspecialchars($referralShareUrl) ?>"
+             style="flex:1;font-size:11.5px;color:#475569;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:7px;padding:6px 10px;font-family:monospace;min-width:0">
+      <button onclick="salinReferral()" id="btnSalin"
+              style="background:#14B8A6;color:#fff;border:none;padding:7px 14px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap">
+        Salin
+      </button>
+    </div>
+    <div style="font-size:12.5px;color:#64748B;margin-top:6px">
+      <?= (int)$referralStats['sukses'] ?> teman sukses &middot; <?= (int)$referralStats['poin'] ?> poin didapat
+    </div>
+    <div style="margin-top:8px;font-size:11.5px;color:#94A3B8">Bagikan link ini ke teman — poin masuk setelah order pertama mereka lunas.</div>
+  </div>
+  <?php endif; ?>
+
   <div class="card">
     <h2>🧺 Order Aktif (<?= count($activeOrders) ?>)</h2>
     <?php if (empty($activeOrders)): ?>
@@ -321,6 +361,20 @@ async function generateKupon(rewardId, btn) {
   } catch (e) {
     alert('Network error: ' + e.message);
     btn.disabled=false; btn.textContent='🎟️ Tukar Kupon';
+  }
+}
+
+async function salinReferral() {
+  const url = document.getElementById('refShareUrl').value;
+  const btn = document.getElementById('btnSalin');
+  try {
+    await navigator.clipboard.writeText(url);
+    btn.textContent = '✅ Disalin!';
+    setTimeout(() => { btn.textContent = 'Salin'; }, 2000);
+  } catch(e) {
+    // Fallback: select + prompt
+    document.getElementById('refShareUrl').select();
+    alert('Salin URL ini:\n' + url);
   }
 }
 
