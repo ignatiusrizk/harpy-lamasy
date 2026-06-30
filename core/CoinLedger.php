@@ -179,10 +179,10 @@ class CoinLedger
     }
 
     // ── Cek saldo utk fitur HQ-level (tidak pakai trial coin) ──
-    public static function canAffordHq(string $feature): bool
+    public static function canAffordHq(string $feature, ?int $overrideCost = null): bool
     {
         if (!self::isFeatureActive($feature)) return false;
-        $cost = self::getHarga($feature);
+        $cost = $overrideCost !== null ? max(0, $overrideCost) : self::getHarga($feature);
         if ($cost === 0) return true;
         $tenantId = TenantResolver::id();
         $db = Database::get();

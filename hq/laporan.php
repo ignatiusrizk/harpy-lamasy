@@ -374,9 +374,8 @@ if ($action === 'ai_insight') {
     header('Content-Type: application/json');
 
     // Coin check
-    $coinBalance = (int)($hqTenant['coin_balance'] ?? 0);
-    if ($coinBalance < AIInsight::COIN_PER_INSIGHT) {
-        echo json_encode(['error' => 'Coin tidak cukup. Butuh ' . AIInsight::COIN_PER_INSIGHT . ' coin per insight, saldo: ' . $coinBalance]);
+    if (!CoinLedger::canAffordHq('ai_insight_laporan', AIInsight::COIN_PER_INSIGHT)) {
+        echo json_encode(['error' => 'Coin tidak cukup. Butuh ' . AIInsight::COIN_PER_INSIGHT . ' coin per insight']);
         exit;
     }
 

@@ -129,7 +129,7 @@ if ($action === 'briefing') {
     }
     // Cek coin — pakai tier price (next_price) kalau ada
     $tierCost = $rlStatus['next_price'] ?? CoinLedger::getHarga('ai_briefing_hq');
-    if (TenantResolver::coinBalance() < $tierCost) {
+    if (!CoinLedger::canAffordHq('ai_briefing_hq', $tierCost)) {
         ai_err("Coin tidak cukup untuk AI Briefing (butuh {$tierCost} coin, panggilan ke-".($rlStatus['used']+1)." dari {$rlStatus['limit']} hari ini)");
     }
     // Cek daily AI budget per tenant
