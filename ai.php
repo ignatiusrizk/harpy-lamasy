@@ -258,7 +258,7 @@ if ($action === 'briefing') {
 
     // Deduct coin tier-based & cache (refId include count untuk audit trail)
     $callNum = ($rlStatus['used'] ?? 0) + 1;
-    CoinLedger::deduct('ai_briefing_hq', 'briefing_'.$today.'_call'.$callNum, $tierCost);
+    CoinLedger::deductHq('ai_briefing_hq', 'briefing_'.$today.'_call'.$callNum, $tierCost);
     AIBudget::record($tid, $oid, 'ai_briefing_hq',
         $result['tokens_in'], $result['tokens_out'],
         $tierCost,
@@ -284,7 +284,7 @@ if ($action === 'laporan_analyze' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         echo json_encode(AIRateLimiter::errorResponse('ai_chat_data'));
         exit;
     }
-    if (!CoinLedger::canAfford('ai_chat_data')) {
+    if (!CoinLedger::canAffordHq('ai_chat_data')) {
         ai_err('Coin tidak cukup (butuh '.CoinLedger::getHarga('ai_chat_data').' coin)');
     }
     try { AIBudget::checkOrThrow($tid, 'ai_chat_data'); }
@@ -331,7 +331,7 @@ if ($action === 'laporan_analyze' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         ai_err('AI gagal merespons: ' . $e->getMessage(), 500);
     }
 
-    CoinLedger::deduct('ai_chat_data', 'laporan_chat');
+    CoinLedger::deductHq('ai_chat_data', 'laporan_chat');
     AIBudget::record($tid, $oid, 'ai_chat_data',
         $result['tokens_in'], $result['tokens_out'],
         CoinLedger::getHarga('ai_chat_data'),
@@ -368,7 +368,7 @@ if ($action === 'upselling' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         echo json_encode(AIRateLimiter::errorResponse('ai_upselling'));
         exit;
     }
-    if (!CoinLedger::canAfford('ai_upselling')) {
+    if (!CoinLedger::canAffordHq('ai_upselling')) {
         ai_err('Coin tidak cukup (butuh '.CoinLedger::getHarga('ai_upselling').' coin)');
     }
     try { AIBudget::checkOrThrow($tid, 'ai_upselling'); }
@@ -475,7 +475,7 @@ if ($action === 'upselling' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         'from_cache'   => false,
     ];
 
-    CoinLedger::deduct('ai_upselling', 'upsell_p'.$pid);
+    CoinLedger::deductHq('ai_upselling', 'upsell_p'.$pid);
     AIBudget::record($tid, $oid, 'ai_upselling',
         $result['tokens_in'], $result['tokens_out'],
         CoinLedger::getHarga('ai_upselling'),

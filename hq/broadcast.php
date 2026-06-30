@@ -34,7 +34,7 @@ if ($action === 'create' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     verifyCsrf();
     if (!$canSend) { echo json_encode(['error'=>'Akses ditolak']); exit; }
     $coin = new CoinLedger();
-    if (!$coin->canAfford('wa_blast')) {
+    if (!CoinLedger::canAffordHq('wa_blast')) {
         echo json_encode(['error' => 'Koin tidak cukup untuk WA Blast (butuh 100 koin).']);
         exit;
     }
@@ -44,7 +44,7 @@ if ($action === 'create' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         $bid = Broadcast::create($tid, $d['judul'] ?? '', $d['pesan'] ?? '',
             array_map('intval', $d['outlet_ids'] ?? []),
             $u ? (int)$u['id'] : null, $u['nama'] ?? null);
-        $coin->deduct('wa_blast', (string)$bid);
+        CoinLedger::deductHq('wa_blast', (string)$bid);
         try { logAudit('create', 'broadcast', 'Broadcast: '.($d['judul']??''), (string)$bid); } catch (Throwable) {}
         echo json_encode(['ok'=>true, 'id'=>$bid]);
     } catch (Throwable $e) { echo json_encode(['error'=>$e->getMessage()]); }

@@ -29,7 +29,7 @@ if ($action === 'ask' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         echo json_encode(AIRateLimiter::errorResponse('ai_chat_data'));
         exit;
     }
-    if (!CoinLedger::canAfford('ai_chat_data')) {
+    if (!CoinLedger::canAffordHq('ai_chat_data')) {
         echo json_encode(['error' => 'Coin tidak cukup. Butuh 50 coin per pertanyaan.']);
         exit;
     }
@@ -45,7 +45,7 @@ if ($action === 'ask' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
         $result = AIChatData::ask($question, $tid);
 
-        try { CoinLedger::deduct('ai_chat_data'); } catch (Throwable) {}
+        try { CoinLedger::deductHq('ai_chat_data'); } catch (Throwable) {}
         try {
             AIBudget::record($tid, null, 'ai_chat_data',
                 (int)($result['tokens_used'] / 2),   // rough split if total only

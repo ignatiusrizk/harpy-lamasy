@@ -71,7 +71,7 @@ if ($action === 'generate' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         echo json_encode(AIRateLimiter::errorResponse('ai_churn_message'));
         exit;
     }
-    if (!CoinLedger::canAfford('ai_churn_message')) {
+    if (!CoinLedger::canAffordHq('ai_churn_message')) {
         echo json_encode(['error' => 'Coin tidak cukup. Butuh 30 coin per pesan.']);
         exit;
     }
@@ -108,7 +108,7 @@ if ($action === 'generate' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         $message = $gen['message'];
 
         // Deduct + log
-        try { CoinLedger::deduct('ai_churn_message'); } catch (Throwable) {}
+        try { CoinLedger::deductHq('ai_churn_message'); } catch (Throwable) {}
 
         $logId = AIChurnDetector::logOutreach($tid, $outletId, $pelangganId, $message, [
             'days_since_last' => $customer['days_since_last'],

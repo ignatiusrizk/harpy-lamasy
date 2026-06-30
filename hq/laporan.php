@@ -488,7 +488,7 @@ if ($action === 'ai_insight') {
         // Deduct coin kalau bukan dari cache
         if (empty($insight['from_cache'])) {
             try {
-                CoinLedger::deduct('ai_insight_laporan', AIInsight::COIN_PER_INSIGHT,
+                CoinLedger::deductHq('ai_insight_laporan', AIInsight::COIN_PER_INSIGHT,
                     "AI Insight laporan: $periodeLabel");
             } catch (Throwable $e) {
                 error_log('[ai_insight coin deduct] ' . $e->getMessage());
@@ -522,7 +522,7 @@ if ($action === 'deduct_export_pdf' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     header('Content-Type: application/json');
     verifyCsrf();
     $coin = new CoinLedger();
-    if (!$coin->canAfford('export_pdf')) {
+    if (!CoinLedger::canAffordHq('export_pdf')) {
         echo json_encode(['ok' => false, 'error' => 'Koin tidak cukup untuk Export PDF (butuh 500 koin).']);
         exit;
     }
@@ -532,7 +532,7 @@ if ($action === 'deduct_export_pdf' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         echo json_encode(['ok' => true, 'checked' => true]);
         exit;
     }
-    $coin->deduct('export_pdf');
+    CoinLedger::deductHq('export_pdf');
     echo json_encode(['ok' => true]);
     exit;
 }
