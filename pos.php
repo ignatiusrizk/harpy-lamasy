@@ -168,6 +168,46 @@ if ($action) {
         exit;
     }
 
+    // ── Snapshot katalog untuk cache offline klien ──
+    if ($action === 'catalog_snapshot') {
+        $layanan = TenantQuery::raw(
+            "SELECT id, nama, kategori, harga, satuan FROM hl_layanan WHERE tenant_id=? AND outlet_id=? AND is_active=1 ORDER BY nama",
+            [$tid, $oid]
+        );
+        $tier = ExpressTier::forTenant($tid, $oid);
+        $pel  = TenantQuery::raw(
+            "SELECT id, nama, telepon FROM hl_pelanggan WHERE tenant_id=? AND outlet_id=? ORDER BY id DESC LIMIT 200",
+            [$tid, $oid]
+        );
+        echo json_encode(['layanan' => $layanan, 'tier' => $tier, 'pelanggan' => $pel]);
+        exit;
+    }
+
+    // ── Sync batch order offline ──
+    if ($action === 'sync_offline' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+        verifyCsrf();
+        require_once __DIR__ . '/core/OrderCreator.php';
+        $body   = json_decode(file_get_contents('php://input'), true);
+        $orders = is_array($body['orders'] ?? null) ? $body['orders'] : [];
+        $db     = Database::get();
+        $results = [];
+        foreach ($orders as $o) {
+            $uuid = (string)($o['uuid'] ?? '');
+            if ($uuid === '') continue;
+            $payload             = is_array($o['payload'] ?? null) ? $o['payload'] : [];
+            $payload['uuid']     = $uuid;
+            $payload['tempCode'] = (string)($o['tempCode'] ?? '');
+            try {
+                $results[$uuid] = OrderCreator::createOffline($db, $tid, $oid, $user, $payload);
+            } catch (Throwable $e) {
+                ErrorLogger::logException('sync_offline', $e, $tid, $oid);
+                $results[$uuid] = ['ok' => false, 'error' => 'Gagal proses'];
+            }
+        }
+        echo json_encode(['results' => $results]);
+        exit;
+    }
+
     if ($action === 'save' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!hasPermission('pos.create')) { echo json_encode(['error'=>'Akses ditolak']); exit; }
         verifyCsrf();
