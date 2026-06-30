@@ -162,16 +162,47 @@ $secondsRemaining = max(0, strtotime($payment['expires_at']) - time());
   button.copy { background: #35E8D5; color: #0F1C3A; border: none; padding: 6px 12px; border-radius: 6px; font-weight: 700; cursor: pointer; }
   .status { text-align: center; padding: 14px; font-size: 13px; color: #94A3B8; }
   .status.paid { color: #35E8D5; font-weight: 700; }
+  .topbar { display:flex; align-items:center; margin-bottom:16px; }
+  .back-btn { display:inline-flex; align-items:center; gap:6px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.14); color:#E2E8F0; padding:9px 14px; border-radius:10px; font-size:14px; font-weight:600; cursor:pointer; text-decoration:none; }
+  .back-btn:hover { background:rgba(255,255,255,.12); }
+  .ref-row { display:flex; align-items:center; justify-content:space-between; gap:10px; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08); padding:10px 12px; border-radius:10px; margin-top:12px; }
+  .ref-row .lbl { font-size:11px; color:#94A3B8; }
+  .ref-row .val { font-family:'JetBrains Mono', monospace; font-size:13px; color:#E2E8F0; word-break:break-all; }
+  .mini-btn { background:rgba(53,232,213,.12); color:#35E8D5; border:1px solid rgba(53,232,213,.3); padding:6px 12px; border-radius:8px; font-weight:700; font-size:12px; cursor:pointer; white-space:nowrap; }
+  .mini-btn:hover { background:rgba(53,232,213,.2); }
+  .qr-actions { display:flex; gap:10px; margin-top:16px; }
+  .qr-actions .act-btn { flex:1; display:inline-flex; align-items:center; justify-content:center; gap:7px; background:#35E8D5; color:#0F1C3A; border:none; padding:12px; border-radius:10px; font-weight:700; font-size:14px; cursor:pointer; }
+  .qr-actions .act-btn.alt { background:rgba(255,255,255,.08); color:#E2E8F0; border:1px solid rgba(255,255,255,.16); }
+  .qr-actions .act-btn:active { transform:scale(.98); }
+  #toast { position:fixed; left:50%; bottom:28px; transform:translateX(-50%) translateY(20px); background:#1E293B; color:#fff; border:1px solid rgba(255,255,255,.15); padding:11px 18px; border-radius:10px; font-size:13px; opacity:0; pointer-events:none; transition:opacity .2s, transform .2s; z-index:50; }
+  #toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
 </style>
 </head>
 <body>
 <div class="wrap">
+  <div class="topbar">
+    <a class="back-btn" href="#" onclick="goBack();return false;">&larr; Kembali</a>
+  </div>
   <div class="card">
     <h1>Pembayaran QRIS / VA</h1>
     <div class="item"><?= htmlspecialchars($itemName) ?></div>
     <div>Total Pembayaran:</div>
     <div class="amount">Rp <?= number_format($amount, 0, ',', '.') ?></div>
     <div class="timer">&#x23F1; Selesaikan pembayaran dalam <span id="timer"><?= floor($secondsRemaining / 60) ?> menit</span></div>
+    <div class="ref-row">
+      <div>
+        <div class="lbl">Nominal</div>
+        <div class="val">Rp <?= number_format($amount, 0, ',', '.') ?></div>
+      </div>
+      <button class="mini-btn" onclick="copyText('<?= (int)$amount ?>', this, 'Nominal disalin')">Salin</button>
+    </div>
+    <div class="ref-row">
+      <div>
+        <div class="lbl">Order ID</div>
+        <div class="val"><?= htmlspecialchars($payment['order_id']) ?></div>
+      </div>
+      <button class="mini-btn" onclick="copyText('<?= htmlspecialchars($payment['order_id'], ENT_QUOTES) ?>', this, 'Order ID disalin')">Salin</button>
+    </div>
   </div>
 
   <?php if ($payment['payment_type'] === 'qris' && $payment['qr_string']): ?>
@@ -183,6 +214,10 @@ $secondsRemaining = max(0, strtotime($payment['expires_at']) - time());
     <p style="font-size: 12px; color: #94A3B8; margin-top: 14px; text-align: center;">
       Buka GoPay / OVO / Dana / Banking App &rarr; Scan QR ini
     </p>
+    <div class="qr-actions">
+      <button class="act-btn" onclick="downloadQR()">&#x2B07; Simpan QR</button>
+      <button class="act-btn alt" onclick="shareQR()">&#x1F517; Bagikan</button>
+    </div>
   </div>
   <?php elseif ($payment['payment_type'] === 'bank_transfer' && $payment['va_number']): ?>
   <div class="card">
@@ -242,6 +277,81 @@ async function poll() {
   } catch (e) { /* network error — keep polling */ }
 }
 setInterval(poll, 5000);
+
+// ── Navigasi + aksi QR ──
+const qrUrl = <?= json_encode($payment['qr_string'] ?? '') ?>;
+
+function goBack() {
+  if (document.referrer && history.length > 1) { history.back(); }
+  else { location.href = '/dashboard'; }
+}
+
+function showToast(msg) {
+  let t = document.getElementById('toast');
+  if (!t) { t = document.createElement('div'); t.id = 'toast'; document.body.appendChild(t); }
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+function copyText(txt, btn, msg) {
+  const done = () => {
+    showToast(msg || 'Tersalin');
+    if (btn) { const o = btn.textContent; btn.textContent = 'Tersalin'; setTimeout(() => { btn.textContent = o; }, 1500); }
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(txt).then(done, () => fallbackCopy(txt, done));
+  } else { fallbackCopy(txt, done); }
+}
+function fallbackCopy(txt, done) {
+  const ta = document.createElement('textarea');
+  ta.value = txt; ta.style.position = 'fixed'; ta.style.opacity = '0';
+  document.body.appendChild(ta); ta.focus(); ta.select();
+  try { document.execCommand('copy'); done(); } catch (e) { showToast('Gagal menyalin'); }
+  document.body.removeChild(ta);
+}
+
+async function fetchQrBlob() {
+  if (!qrUrl) return null;
+  try {
+    const r = await fetch(qrUrl, { mode: 'cors' });
+    if (!r.ok) return null;
+    return await r.blob();
+  } catch (e) { return null; }
+}
+
+async function downloadQR() {
+  if (!qrUrl) { showToast('QR tidak tersedia'); return; }
+  const blob = await fetchQrBlob();
+  if (blob) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'qris-' + orderId + '.png';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    showToast('QR tersimpan');
+  } else {
+    window.open(qrUrl, '_blank', 'noopener');
+    showToast('QR dibuka di tab baru — tahan gambar untuk simpan');
+  }
+}
+
+async function shareQR() {
+  const amtTxt = 'Pembayaran QRIS LAMASY Rp ' + (<?= (int)$amount ?>).toLocaleString('id-ID');
+  const blob = await fetchQrBlob();
+  if (blob && navigator.canShare) {
+    const file = new File([blob], 'qris-' + orderId + '.png', { type: blob.type || 'image/png' });
+    if (navigator.canShare({ files: [file] })) {
+      try { await navigator.share({ files: [file], title: 'QRIS Pembayaran', text: amtTxt }); return; }
+      catch (e) { if (e && e.name === 'AbortError') return; }
+    }
+  }
+  if (navigator.share) {
+    try { await navigator.share({ title: 'QRIS Pembayaran', text: amtTxt }); return; }
+    catch (e) { if (e && e.name === 'AbortError') return; }
+  }
+  if (qrUrl) window.open(qrUrl, '_blank', 'noopener');
+  showToast('Bagikan tidak didukung — QR dibuka di tab baru');
+}
 </script>
 </body>
 </html>
