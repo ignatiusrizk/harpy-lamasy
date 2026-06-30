@@ -85,11 +85,54 @@ if ($action === 'transfer' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     exit;
 }
 
+// ── API: set coin mode ───────────────────────────────
+if ($action === 'set_coin_mode' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    header('Content-Type: application/json');
+    if (!TenantResolver::isOwnerLevel()) { echo json_encode(['error'=>'Akses ditolak (owner saja)']); exit; }
+    $csrfGiven = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
+    if (!$csrfGiven || !hash_equals(getCsrfToken(), $csrfGiven)) { http_response_code(403); echo json_encode(['error'=>'CSRF mismatch']); exit; }
+    $d = json_decode(file_get_contents('php://input'), true) ?: [];
+    require_once ROOT . '/core/CoinModeManager.php';
+    $mode = ($d['mode'] ?? '') === 'per_outlet' ? 'per_outlet' : 'shared';
+    $res = CoinModeManager::switchMode($tid, $mode, 'owner:'.(int)($_SESSION['user_id'] ?? 0));
+    if (!$res['ok']) { echo json_encode(['error'=>$res['error'] ?? 'Gagal']); exit; }
+    echo json_encode(['ok'=>true, 'mode'=>$mode, 'moved'=>$res['moved']]); exit;
+}
+
+// ── API: set outlet penanggung coin HQ ──────────────
+if ($action === 'set_hq_coin_outlet' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    header('Content-Type: application/json');
+    if (!TenantResolver::isOwnerLevel()) { echo json_encode(['error'=>'Akses ditolak (owner saja)']); exit; }
+    $csrfGiven = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
+    if (!$csrfGiven || !hash_equals(getCsrfToken(), $csrfGiven)) { http_response_code(403); echo json_encode(['error'=>'CSRF mismatch']); exit; }
+    $d = json_decode(file_get_contents('php://input'), true) ?: [];
+    $oid = (int)($d['outlet_id'] ?? 0);
+    if ($oid > 0) {
+        $chk = $db->prepare("SELECT id FROM outlets WHERE id=? AND tenant_id=? AND status<>'closed' LIMIT 1");
+        $chk->execute([$oid, $tid]);
+        if (!$chk->fetchColumn()) { echo json_encode(['error'=>'Outlet tidak valid']); exit; }
+    }
+    $db->prepare("UPDATE tenants SET hq_coin_outlet_id=? WHERE id=?")->execute([$oid ?: null, $tid]);
+    echo json_encode(['ok'=>true]); exit;
+}
+
 $outlets = $db->prepare("SELECT id, nama_outlet, status, coin_balance, trial_coin_balance FROM outlets WHERE tenant_id=? AND status IN ('trial','grace','active') ORDER BY is_main DESC, nama_outlet");
 $outlets->execute([$tid]);
 $outletList = $outlets->fetchAll(PDO::FETCH_ASSOC);
 
 require __DIR__ . '/_layout_open.php';
+?>
+<?php
+$row = $db->prepare("SELECT coin_mode, hq_coin_outlet_id, coin_balance FROM tenants WHERE id=?");
+$row->execute([$tid]);
+$tinfo = $row->fetch(PDO::FETCH_ASSOC) ?: ['coin_mode'=>'shared','hq_coin_outlet_id'=>null,'coin_balance'=>0];
+$curMode = $tinfo['coin_mode'];
+$hqOutletId = (int)($tinfo['hq_coin_outlet_id'] ?? 0);
+$cmOutlets = $db->prepare("SELECT id, nama_outlet, is_main, coin_balance FROM outlets WHERE tenant_id=? AND status<>'closed' ORDER BY is_main DESC, id ASC");
+$cmOutlets->execute([$tid]);
+$outletsList = $cmOutlets->fetchAll(PDO::FETCH_ASSOC);
+$isOwner = TenantResolver::isOwnerLevel();
+$csrf = getCsrfToken();
 ?>
 <style>
 .bl-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:10px}
@@ -132,6 +175,33 @@ require __DIR__ . '/_layout_open.php';
   </div>
 </div>
 <p style="font-size:13px;color:#6B7280;margin-bottom:16px">Monitor pemakaian coin tiap outlet & fitur, atur budget bulanan<?= $coinMode==='per_outlet'?', transfer saldo antar outlet':'' ?>.</p>
+
+<?php if ($isOwner): ?>
+<div class="panel" style="margin-bottom:16px">
+  <div class="panel-title">🪙 Mode Coin</div>
+  <p style="font-size:13px;color:#64748B;margin:6px 0 12px">
+    <strong><?= $curMode === 'shared' ? 'Shared' : 'Per-Outlet' ?></strong> —
+    <?= $curMode === 'shared' ? 'semua outlet pakai 1 saldo coin tenant.' : 'tiap outlet punya saldo coin sendiri.' ?>
+  </p>
+  <button class="btn-export" onclick="toggleCoinMode()" style="background:#0F1C3A">
+    Ganti ke <?= $curMode === 'shared' ? 'Per-Outlet' : 'Shared' ?>
+  </button>
+
+  <?php if ($curMode === 'per_outlet'): ?>
+  <div style="margin-top:16px">
+    <label style="font-size:13px;font-weight:700;display:block;margin-bottom:6px">Outlet penanggung coin fitur HQ</label>
+    <select id="hqOutletSel" onchange="saveHqOutlet()" style="padding:8px 10px;border:1px solid #E5E7EB;border-radius:8px;font-size:13px">
+      <?php foreach ($outletsList as $o): ?>
+      <option value="<?= (int)$o['id'] ?>" <?= ($hqOutletId === (int)$o['id'] || ($hqOutletId === 0 && (int)$o['is_main'] === 1)) ? 'selected' : '' ?>>
+        <?= htmlspecialchars($o['nama_outlet']) ?><?= (int)$o['is_main']===1?' (UTAMA)':'' ?> — <?= number_format((int)$o['coin_balance'],0,',','.') ?> coin
+      </option>
+      <?php endforeach; ?>
+    </select>
+    <p style="font-size:11px;color:#94A3B8;margin-top:6px">Fitur HQ (broadcast, laporan AI, dll) potong coin dari outlet ini.</p>
+  </div>
+  <?php endif; ?>
+</div>
+<?php endif; ?>
 
 <div class="filter">
   <label style="font-size:12px;color:#6B7280;font-weight:600">Periode:</label>
@@ -326,6 +396,42 @@ async function doTransfer(){
 function closeModal(id){ document.getElementById(id).classList.remove('open'); }
 
 loadMonitor();
+
+const COIN_CSRF = <?= json_encode($csrf) ?>;
+const CUR_MODE = <?= json_encode($curMode) ?>;
+const TENANT_POOL = <?= (int)$tinfo['coin_balance'] ?>;
+const OUTLETS_JSON = <?= json_encode(array_map(fn($o)=>['nama'=>$o['nama_outlet'],'bal'=>(int)$o['coin_balance'],'main'=>(int)$o['is_main']], $outletsList)) ?>;
+
+function toggleCoinMode() {
+  const to = CUR_MODE === 'shared' ? 'per_outlet' : 'shared';
+  let msg;
+  if (to === 'per_outlet') {
+    const main = OUTLETS_JSON.find(o => o.main === 1) || OUTLETS_JSON[0];
+    msg = `Ganti ke PER-OUTLET?\n\nSaldo tenant ${TENANT_POOL.toLocaleString('id-ID')} coin akan dipindah ke outlet UTAMA${main ? ' ('+main.nama+')' : ''}. Outlet lain mulai 0.`;
+  } else {
+    const sum = OUTLETS_JSON.reduce((a,o)=>a+o.bal,0);
+    msg = `Ganti ke SHARED?\n\nTotal ${sum.toLocaleString('id-ID')} coin dari semua outlet akan digabung jadi saldo tenant.`;
+  }
+  if (!confirm(msg)) return;
+  fetch('/hq/billing.php?action=set_coin_mode', {
+    method:'POST', headers:{'Content-Type':'application/json','X-CSRF-Token':COIN_CSRF},
+    body: JSON.stringify({ mode: to })
+  }).then(r=>r.json()).then(d=>{
+    if (d.error) { alert(d.error); return; }
+    alert('Mode coin diubah ke ' + d.mode + '. Saldo dipindah: ' + (d.moved||0).toLocaleString('id-ID') + ' coin.');
+    location.reload();
+  }).catch(()=>alert('Gagal menghubungi server'));
+}
+
+function saveHqOutlet() {
+  const oid = document.getElementById('hqOutletSel').value;
+  fetch('/hq/billing.php?action=set_hq_coin_outlet', {
+    method:'POST', headers:{'Content-Type':'application/json','X-CSRF-Token':COIN_CSRF},
+    body: JSON.stringify({ outlet_id: parseInt(oid,10) })
+  }).then(r=>r.json()).then(d=>{
+    if (d.error) { alert(d.error); return; }
+  }).catch(()=>alert('Gagal menyimpan'));
+}
 </script>
 
 <?php require __DIR__ . '/_layout_close.php'; ?>
