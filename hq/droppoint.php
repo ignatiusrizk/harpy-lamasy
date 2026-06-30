@@ -103,7 +103,7 @@ require __DIR__ . '/_layout_open.php';
 .tbl th{background:#F7F8FC;padding:9px 11px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;color:#6B7280;white-space:nowrap}
 .tbl td{padding:10px 11px;border-top:1px solid #F0F1F4;white-space:nowrap}
 .tbl td:first-child{white-space:normal;min-width:110px}
-.tbl .num{font-family:var(--mono);font-weight:700;text-align:right}
+.tbl .num{font-family:var(--mono);font-weight:700;text-align:right;min-width:96px}
 .medal{font-size:14px;font-weight:800;text-align:center}
 .empty{text-align:center;padding:30px;color:#9CA3AF;font-size:13px}
 </style>
