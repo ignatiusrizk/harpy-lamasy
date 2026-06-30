@@ -41,6 +41,24 @@ if (ini_get('session.use_cookies')) {
 
 session_destroy();
 
-// Redirect ke login
-header('Location: /login');
+// Bersihkan cache shell POS (anti bocor antar user di device bersama) lalu redirect.
+// Cache API hanya bisa diakses dari browser → render halaman kecil yang purge → redirect.
+header('Content-Type: text/html; charset=utf-8');
+?><!doctype html><html lang="id"><head><meta charset="utf-8">
+<title>Logout…</title><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="background:#0F1C3A">
+<script>
+(function(){
+  function go(){ location.replace('/login'); }
+  try {
+    if (typeof caches !== 'undefined' && caches.keys) {
+      caches.keys().then(function(keys){
+        return Promise.all(keys.filter(function(k){ return k.indexOf('lamasy-tenant') === 0; })
+          .map(function(k){ return caches.open(k).then(function(c){ return Promise.all([c.delete('/pos'), c.delete('/pos.php')]); }); }));
+      }).then(go, go);
+    } else { go(); }
+  } catch (e) { go(); }
+})();
+</script>
+</body></html><?php
 exit;

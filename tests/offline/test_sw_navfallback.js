@@ -89,6 +89,24 @@ function fire(handlers, sandbox, reqUrl, mode, fetchImpl) {
     ok(caches._store.has('https://lamasy.harpy.id/pos'), 'navigasi /pos online → shell di-cache (SWR)');
   }
 
+  // (4) navigasi /pos saat sesi kedaluwarsa (302 → /login) → redirect TIDAK di-cache
+  //     resp.redirected=true tidak bisa di-set pada Response nyata, pakai stub object.
+  {
+    const caches = makeCaches();
+    const redirectedStub = {
+      ok: true,
+      redirected: true,
+      clone() { return this; },
+      text() { return Promise.resolve('<html>LOGIN PAGE</html>'); },
+    };
+    const redirectFetch = () => Promise.resolve(redirectedStub);
+    const { handlers, sandbox } = loadSW(caches, redirectFetch);
+    await fire(handlers, sandbox, 'https://lamasy.harpy.id/pos', 'navigate', redirectFetch);
+    // beri kesempatan promise put() selesai (jika ada)
+    await new Promise(r => setTimeout(r, 10));
+    ok(!caches._store.has('https://lamasy.harpy.id/pos'), 'navigasi /pos → resp.redirected=true TIDAK di-cache (anti redirect poisoning)');
+  }
+
   console.log(`\n${pass} passed, ${fail} failed`);
   process.exit(fail ? 1 : 0);
 })();
