@@ -59,6 +59,20 @@ eqv($bal2, $coinCfg, 'saldo tetap (tidak double-credit) setelah settle kedua');
 $led2 = (int)$db->query("SELECT COUNT(*) FROM coin_ledger WHERE payment_id=$pid")->fetchColumn();
 eqv($led2, 1, 'tetap 1 baris ledger (idempoten)');
 
+// ── Step 2 test: guard $alreadyCredited (bukan early-return outlet-active) ──
+// Flip outlet kembali ke pending agar settleOutletActivation TIDAK hit early-return
+// "Outlet already active". Dengan demikian guard $alreadyCredited yang mencegah
+// double-credit benar-benar dieksekusi, bukan path di atas.
+$db->prepare("UPDATE outlets SET status='pending', activated_at=NULL WHERE id=?")
+   ->execute([$oid]);
+
+$r3 = PaymentSettler::settle($pid);
+ok(!empty($r3['ok']), 'settle ketiga ok setelah outlet-flip-pending (ledger guard)');
+$bal3 = (int)$db->query("SELECT coin_balance FROM tenants WHERE id=$tid")->fetchColumn();
+eqv($bal3, $coinCfg, 'saldo tetap = outlet_activation_coin (guard alreadyCredited, tidak double-credit)');
+$led3 = (int)$db->query("SELECT COUNT(*) FROM coin_ledger WHERE payment_id=$pid")->fetchColumn();
+eqv($led3, 1, 'tetap 1 baris ledger setelah outlet-flip-pending (guard alreadyCredited)');
+
 // Cleanup data sintetis
 $db->prepare("DELETE FROM coin_ledger WHERE payment_id=?")->execute([$pid]);
 $db->prepare("DELETE FROM saas_payments WHERE id=?")->execute([$pid]);
