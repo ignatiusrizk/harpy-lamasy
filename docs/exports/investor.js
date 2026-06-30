@@ -201,7 +201,7 @@ const content = [
   bullet([new TextRun({ text: "Product live & functional: ", bold: true }), new TextRun("Platform sudah jalan di lamasy.harpy.id dengan tenant aktif transaksi.")]),
   bullet([new TextRun({ text: "AI-first differentiation: ", bold: true }), new TextRun("11 fitur AI live (briefing, chat, churn, anomaly, dll) — moat sulit di-replikasi.")]),
   bullet([new TextRun({ text: "Multi-tenant scalable: ", bold: true }), new TextRun("Single platform handle 1 owner sampai chain N-outlet dengan HQ konsolidasi.")]),
-  bullet([new TextRun({ text: "Indonesia-native: ", bold: true }), new TextRun("UU PDP compliant, SAK EMKM laporan, Bahasa Indonesia interface, Fonnte WA integration.")]),
+  bullet([new TextRun({ text: "Indonesia-native: ", bold: true }), new TextRun("UU PDP compliant, SAK EMKM laporan, Bahasa Indonesia interface, WA notifikasi via wa.me (click-to-chat).")]),
 
   new Paragraph({ children: [new PageBreak()] }),
 
@@ -466,7 +466,7 @@ const content = [
   bullet([new TextRun({ text: "Sales & Marketing: ", bold: true }), new TextRun("Target acquisition 100+ tenant aktif via direct sales + content marketing + komunitas asosiasi laundry.")]),
   bullet([new TextRun({ text: "Mobile Native: ", bold: true }), new TextRun("Launch native app (Capacitor wrapper) untuk PlayStore + AppStore presence.")]),
   bullet([new TextRun({ text: "Payment Gateway: ", bold: true }), new TextRun("QRIS integration + Midtrans untuk auto-topup coin tanpa friction.")]),
-  bullet([new TextRun({ text: "WhatsApp Business API: ", bold: true }), new TextRun("Upgrade dari Fonnte ke WA Business API untuk volume + reliability.")]),
+  bullet([new TextRun({ text: "WhatsApp Business API: ", bold: true }), new TextRun("Dari wa.me link manual ke WA Business API resmi (otomasi + volume + reliability).")]),
   bullet([new TextRun({ text: "2FA + Audit Viewer: ", bold: true }), new TextRun("Security hardening untuk enterprise-ready posture.")]),
 
   h2("12-18 Months Vision"),
