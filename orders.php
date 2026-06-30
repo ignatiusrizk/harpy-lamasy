@@ -449,13 +449,25 @@ if ($action) {
             // Loyalty: earn TIDAK di-trigger oleh pembayaran lagi (sekarang
             // by status_proses='siap'). Cuma touch last_transaksi.
             $poinEarned = 0;
+            $pelangganId = null;
             try {
                 $prow = TenantQuery::rawOne("SELECT pelanggan_id FROM hl_transaksi WHERE tenant_id=? AND outlet_id=? AND id=?", [$tid,$oid,$id]);
                 if ($prow && $prow['pelanggan_id']) {
-                    Loyalty::touchLastTransaksi($tid, (int)$prow['pelanggan_id']);
+                    $pelangganId = $prow['pelanggan_id'];
+                    Loyalty::touchLastTransaksi($tid, (int)$pelangganId);
                 }
             } catch (Throwable $e) {
                 ErrorLogger::logException('loyalty_error', $e, $tid, $oid);
+            }
+
+            // Referral payout — dipanggil SETELAH commit (payoutOnFirstLunas buka
+            // transaksi sendiri). Idempoten & best-effort — tidak boleh gagalkan response.
+            if ($new_status === 'lunas' && $pelangganId) {
+                try {
+                    Referral::payoutOnFirstLunas($tid, (int)$pelangganId, (int)$id, $user['id']);
+                } catch (Throwable $e) {
+                    ErrorLogger::logException('referral_payout_bayar', $e, $tid, $oid);
+                }
             }
 
             echo json_encode([

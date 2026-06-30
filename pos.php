@@ -523,6 +523,13 @@ if ($action) {
             if ($hasTierNama)  { $cols[] = 'express_tier_nama'; $vals[] = $expressTierNama; }
             if ($hasParfum && $parfum !== '') { $cols[] = 'parfum'; $vals[] = $parfum; }
             $placeholders = implode(',', array_fill(0, count($cols), '?'));
+
+            // Referral attribution — SEBELUM INSERT hl_transaksi supaya referee masih
+            // terlihat sebagai pelanggan baru (zero orders). Best-effort, rollback aman.
+            if ($isNewPelanggan && $pel_id && $referralKode !== '' && Referral::config($tid)['enabled']) {
+                try { Referral::attribute($tid, $referralKode, (int)$pel_id); } catch (Throwable) {}
+            }
+
             $stmt = $db->prepare("INSERT INTO hl_transaksi (".implode(',', $cols).") VALUES ($placeholders)");
             $stmt->execute($vals);
             $trx_id = $db->lastInsertId();
@@ -661,12 +668,6 @@ if ($action) {
             $poinEarned = 0;
             if ($pel_id) {
                 try { Loyalty::touchLastTransaksi($tid, (int)$pel_id); } catch (Throwable) {}
-            }
-
-            // Referral attribution — best-effort, NEVER fail the order.
-            // Hanya untuk pelanggan yang baru dibuat di save ini.
-            if ($isNewPelanggan && $pel_id && $referralKode !== '' && Referral::config($tid)['enabled']) {
-                try { Referral::attribute($tid, $referralKode, (int)$pel_id); } catch (Throwable) {}
             }
 
             // Referral payout — kalau order lahir LUNAS dan ada pelanggan.
