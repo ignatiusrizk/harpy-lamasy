@@ -36,7 +36,7 @@ class OrderCreator
         if ($total < 0)         $errs[] = 'Total negatif';
         if ($dp < 0)            $errs[] = 'DP negatif';
         if ($dp > $total)       $errs[] = 'DP melebihi total';
-        if (($p['metode'] ?? 'cash') !== 'cash') $errs[] = 'Metode offline harus tunai';
+        if (($p['metode_bayar'] ?? $p['metode'] ?? 'cash') !== 'cash') $errs[] = 'Metode offline harus tunai';
         foreach (self::ONLINE_ONLY_FIELDS as $f) {
             if (!empty($p[$f])) $errs[] = "Field online-only tidak diizinkan offline: $f";
         }
@@ -58,11 +58,11 @@ class OrderCreator
             return ['ok'=>true, 'no_order'=>$row['no_order'], 'id'=>(int)$row['id'], 'offline_ref'=>$tempCode, 'dedup'=>true];
         }
 
-        // Validasi terhadap katalog terkini
-        $validL = array_map('intval', $db->query(
-            "SELECT id FROM hl_layanan WHERE tenant_id=".(int)$tid
-        )->fetchAll(PDO::FETCH_COLUMN));
-        $stmt = $db->prepare("SELECT nama_tier FROM hl_express_tier WHERE tenant_id=? AND outlet_id=?");
+        // Validasi terhadap katalog terkini (outlet-scoped + active only)
+        $stmtL = $db->prepare("SELECT id FROM hl_layanan WHERE tenant_id=? AND outlet_id=? AND is_active=1");
+        $stmtL->execute([$tid, $oid]);
+        $validL = array_map('intval', $stmtL->fetchAll(PDO::FETCH_COLUMN));
+        $stmt = $db->prepare("SELECT nama_tier FROM hl_express_tier WHERE tenant_id=? AND (outlet_id IS NULL OR outlet_id=?)");
         $stmt->execute([$tid, $oid]);
         $validTierNames = array_map('strval', $stmt->fetchAll(PDO::FETCH_COLUMN));
         $errs = self::validateOfflinePayload($payload, $validL, $validTierNames);
@@ -89,13 +89,15 @@ class OrderCreator
                 "INSERT INTO hl_transaksi
                  (tenant_id, outlet_id, no_order, offline_ref, offline_uuid, tanggal,
                   pelanggan_id, nama_pelanggan, telepon, total, dp, sisa_bayar,
-                  status_bayar, catatan, created_by, created_at)
-                 VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,NOW())"
+                  status_bayar, catatan, created_by, created_at,
+                  status_proses, metode_bayar, subtotal)
+                 VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,NOW(),?,?,?)"
             );
             $ins->execute([
                 $tid, $oid, $no, $tempCode, $uuid, $tanggal,
                 $pelId, $nama, $telp, $total, $dp, $sisa,
-                $status, $catatan, (int)$user['id']
+                $status, $catatan, (int)$user['id'],
+                'masuk', 'cash', $total
             ]);
             $trxId = (int)$db->lastInsertId();
 

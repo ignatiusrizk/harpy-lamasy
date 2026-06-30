@@ -18,10 +18,15 @@ require_once dirname(__DIR__, 2) . '/core/OrderCreator.php';
 
 $db = Database::get();
 
-// pakai tenant/outlet pertama yang ada layanan, jangan commit (rollback di akhir)
-$tid = (int)$db->query("SELECT tenant_id FROM hl_layanan LIMIT 1")->fetchColumn();
-$oid = (int)$db->query("SELECT id FROM outlets WHERE tenant_id=$tid LIMIT 1")->fetchColumn();
-$lid = (int)$db->query("SELECT id FROM hl_layanan WHERE tenant_id=$tid LIMIT 1")->fetchColumn();
+// pakai tenant/outlet yang punya layanan aktif (layanan scoped ke outlet setelah fix I1)
+$oidRow = $db->query(
+    "SELECT outlet_id, tenant_id FROM hl_layanan WHERE outlet_id IS NOT NULL AND is_active=1 LIMIT 1"
+)->fetch(PDO::FETCH_ASSOC);
+$tid = (int)($oidRow['tenant_id'] ?? 0);
+$oid = (int)($oidRow['outlet_id'] ?? 0);
+$lid = (int)$db->query(
+    "SELECT id FROM hl_layanan WHERE tenant_id=$tid AND outlet_id=$oid AND is_active=1 LIMIT 1"
+)->fetchColumn();
 ok($tid>0 && $oid>0 && $lid>0, 'ada tenant/outlet/layanan utk test');
 
 $uuid = 'test-'.bin2hex(random_bytes(8));
@@ -40,7 +45,7 @@ $payload = [
     ]],
     'total'         => 1000,
     'dp'            => 1000,
-    'metode'        => 'cash',
+    'metode_bayar'  => 'cash',
 ];
 $user = ['id' => (int)$db->query("SELECT id FROM hl_users WHERE tenant_id=$tid LIMIT 1")->fetchColumn()];
 
