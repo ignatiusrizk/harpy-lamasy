@@ -669,6 +669,16 @@ if ($action) {
                 try { Referral::attribute($tid, $referralKode, (int)$pel_id); } catch (Throwable) {}
             }
 
+            // Referral payout — kalau order lahir LUNAS dan ada pelanggan.
+            // Dipanggil SETELAH commit (payoutOnFirstLunas buka transaksi sendiri). Best-effort.
+            if ($status_b === 'lunas' && $pel_id) {
+                try {
+                    Referral::payoutOnFirstLunas($tid, (int)$pel_id, (int)$trx_id, $user['id']);
+                } catch (Throwable $e) {
+                    ErrorLogger::logException('referral_payout_pos_lunas', $e, $tid, $oid);
+                }
+            }
+
             echo json_encode(['success'=>true, 'no_order'=>$no, 'id'=>$trx_id,
                 'total'=>$total, 'sisa'=>$sisa, 'poin_earned'=>$poinEarned,
                 'poin_redeemed'=>$redeemPoin, 'redeem_value'=>$redeemValue]);

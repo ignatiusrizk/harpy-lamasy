@@ -4,6 +4,7 @@ define('ROOT', __DIR__);
 require_once ROOT . '/middleware/tenant_guard.php';
 require_once ROOT . '/core/Loyalty.php';
 require_once ROOT . '/core/ErrorLogger.php';
+require_once ROOT . '/core/Referral.php';
 require_once ROOT . '/core/PushSender.php';
 require_once ROOT . '/core/WaLogger.php';
 require_once __DIR__ . '/components.php';
@@ -546,7 +547,7 @@ if ($action) {
             $ph = implode(',', array_fill(0, count($ids), '?'));
             // Cari order yang belum lunas + collect kas masuk insertion
             $sel = $db->prepare(
-                "SELECT id, no_order, total, dp, sisa_bayar, status_bayar
+                "SELECT id, no_order, total, dp, sisa_bayar, status_bayar, pelanggan_id
                    FROM hl_transaksi
                   WHERE tenant_id=? AND outlet_id=? AND id IN ($ph)
                     AND status_bayar != 'lunas'"
@@ -584,6 +585,18 @@ if ($action) {
             }
             $db->commit();
             logAudit('bulk_pay', 'orders', $count.' order → lunas ('.$metode.') total Rp '.number_format($totalIn,0,',','.'));
+
+            // Referral payout — best-effort, SETELAH commit (payoutOnFirstLunas buka tx sendiri)
+            foreach ($rows as $r) {
+                if (!empty($r['pelanggan_id'])) {
+                    try {
+                        Referral::payoutOnFirstLunas($tid, (int)$r['pelanggan_id'], (int)$r['id'], $user['id']);
+                    } catch (Throwable $e) {
+                        ErrorLogger::logException('referral_payout_bulk_pay', $e, $tid, $oid);
+                    }
+                }
+            }
+
             echo json_encode(['ok'=>true, 'affected'=>$count, 'total_in'=>$totalIn]);
         } catch (Throwable $e) {
             $db->rollBack();
