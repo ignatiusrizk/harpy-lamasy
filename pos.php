@@ -2300,6 +2300,89 @@ async function doSaveTransaksi() {
   const btn = document.getElementById('btnSave');
   btn.disabled=true; btn.textContent='⏳ Menyimpan...';
 
+  // ── JALUR OFFLINE ─────────────────────────────────────────────────────────
+  if (!OfflinePOS.isOnline()) {
+    try {
+      const offlinePayload = {
+        tanggal:        document.getElementById('f_tanggal').value,
+        nama_pelanggan: nama,
+        telepon:        telp,
+        pelanggan_id:   currentPelangganId || null,
+        catatan:        document.getElementById('f_catatan').value,
+        metode_bayar:   'cash',
+        dp:             parseFloat(document.getElementById('f_dp').value) || 0,
+        redeem_poin:    0,
+        use_deposit:    0,
+        deposit_amount: 0,
+        items: items.map(it => ({
+          layanan_id:       it.layanan_id,
+          nama_layanan:     it.nama_layanan,
+          satuan:           it.satuan,
+          jumlah:           parseFloat(it.jumlah) || 0,
+          harga_satuan:     parseFloat(it.harga_satuan) || 0,
+          subtotal:         (parseFloat(it.jumlah)||0) * (parseFloat(it.harga_satuan)||0),
+          express_tier_nama: it.express_tier_nama || null,
+          biaya_express:    parseFloat(it.biaya_express) || 0
+        })),
+        total: parseFloat(document.getElementById('sumTotal')?.textContent?.replace(/[^0-9]/g,'')) ||
+               items.reduce((s,it)=>(s + (parseFloat(it.jumlah)||0)*(parseFloat(it.harga_satuan)||0) + (parseFloat(it.biaya_express)||0)),0)
+      };
+
+      const { tempCode } = await OfflinePOS.enqueueOrder(offlinePayload);
+
+      // Tampilkan struk offline minimal di modalStruk
+      const isFull = offlinePayload.dp >= offlinePayload.total;
+      const itemRowsOffline = offlinePayload.items.map(it => `
+        <div class="struk-item">${escapeHtml(it.nama_layanan)}
+          <br>&nbsp;&nbsp;${it.jumlah} ${escapeHtml(it.satuan)} x Rp ${parseFloat(it.harga_satuan).toLocaleString('id-ID')}
+        </div>
+        <div class="struk-row"><span></span><span>Rp ${parseFloat(it.subtotal).toLocaleString('id-ID')}</span></div>`).join('');
+
+      document.getElementById('strukPrint').innerHTML = `
+        <div class="struk">
+          <div class="struk-header">
+            <h2>STRUK OFFLINE</h2>
+          </div>
+          <div style="background:#FEF3C7;border:1px solid #F59E0B;border-radius:6px;padding:6px 10px;font-size:11px;color:#92400E;text-align:center;margin-bottom:8px">
+            ⚠️ ORDER OFFLINE — akan tersinkron saat online
+          </div>
+          <div class="struk-row"><span>No. Order</span><span>${escapeHtml(tempCode)}</span></div>
+          <div class="struk-row"><span>Tanggal</span><span>${escapeHtml(offlinePayload.tanggal)}</span></div>
+          <div class="struk-row"><span>Pelanggan</span><span>${escapeHtml(nama)}</span></div>
+          ${telp?`<div class="struk-row"><span>Telp</span><span>${escapeHtml(telp)}</span></div>`:''}
+          <hr class="struk-divider"/>
+          ${itemRowsOffline}
+          <hr class="struk-divider"/>
+          <div class="struk-total">
+            <div class="struk-row bold"><span>TOTAL</span><span>Rp ${offlinePayload.total.toLocaleString('id-ID')}</span></div>
+            <div class="struk-row"><span>Bayar (Cash)</span><span>Rp ${offlinePayload.dp.toLocaleString('id-ID')}</span></div>
+            ${!isFull?`<div class="struk-row bold"><span>SISA BAYAR</span><span>Rp ${(offlinePayload.total - offlinePayload.dp).toLocaleString('id-ID')}</span></div>`:''}
+          </div>
+          ${offlinePayload.catatan?`<hr class="struk-divider"/><div style="font-size:11px">Catatan: ${escapeHtml(offlinePayload.catatan)}</div>`:''}
+          <div class="struk-footer">
+            <p>${isFull?'** LUNAS **':'** BELUM LUNAS **'}</p>
+            <p style="color:#92400E;font-size:10px">⚠️ Nomor order sementara — akan diperbarui setelah sinkronisasi</p>
+          </div>
+        </div>`;
+
+      // Tampilkan modal struk (frame disembunyikan — pakai strukPrint)
+      const frame = document.getElementById('strukFrame');
+      const loading = document.getElementById('strukLoading');
+      if (frame) frame.style.display = 'none';
+      if (loading) loading.style.display = 'none';
+      document.getElementById('modalStruk').classList.add('open');
+      { var _aifab2 = document.getElementById('aiBubbleBtn'); if (_aifab2) _aifab2.style.display = 'none'; }
+
+      showToast('✅ Order offline tersimpan: ' + tempCode + ' — ter-sync saat online', 'success');
+      resetForm();
+    } catch(e) {
+      showToast('❌ Gagal simpan offline: ' + e.message, 'error');
+    }
+    btn.disabled=false; btn.textContent='💾 Simpan & Print Struk';
+    return;
+  }
+  // ── AKHIR JALUR OFFLINE ───────────────────────────────────────────────────
+
   const payload = {
     tanggal:        document.getElementById('f_tanggal').value,
     estimasi:       document.getElementById('f_estimasi').value,
@@ -2798,5 +2881,79 @@ function voiceOrderApply() {
 </script>
 
 <?php renderToast(); ?>
+
+<script src="/assets/offline-pos.js?v=1"></script>
+<script>
+OfflinePOS.init({
+  tenantId: <?= (int)TenantResolver::id() ?>,
+  outletId: <?= (int)TenantResolver::outletId() ?>,
+  userId:   <?= (int)$user['id'] ?>
+});
+
+// ── Offline UI: disable kontrol online-only saat tidak ada koneksi ──────────
+function applyOfflineUI() {
+  const offline = !OfflinePOS.isOnline();
+
+  // f_redeem_poin + Max button
+  const elRedeem = document.getElementById('f_redeem_poin');
+  if (elRedeem) elRedeem.disabled = offline;
+  const maxBtn = elRedeem?.closest('div')?.querySelector('button');
+  if (maxBtn) maxBtn.disabled = offline;
+
+  // f_use_deposit + f_deposit_amount
+  const elUseDeposit = document.getElementById('f_use_deposit');
+  if (elUseDeposit) {
+    elUseDeposit.disabled = offline;
+    if (offline && elUseDeposit.checked) {
+      elUseDeposit.checked = false;
+      document.getElementById('depositAmountWrap').style.display = 'none';
+    }
+  }
+  const elDepositAmt = document.getElementById('f_deposit_amount');
+  if (elDepositAmt) elDepositAmt.disabled = offline;
+
+  // f_voucher input + Pakai button
+  const elVoucher = document.getElementById('f_voucher');
+  if (elVoucher) elVoucher.disabled = offline;
+  const voucherBtn = elVoucher?.closest('div.form-group')?.nextElementSibling;
+  if (voucherBtn && voucherBtn.tagName === 'BUTTON') voucherBtn.disabled = offline;
+
+  // f_metode: paksa cash + disable non-cash options
+  const elMetode = document.getElementById('f_metode');
+  if (elMetode) {
+    if (offline) {
+      elMetode.value = 'cash';
+      for (const opt of elMetode.options) {
+        opt.disabled = (opt.value !== 'cash');
+      }
+    } else {
+      for (const opt of elMetode.options) {
+        // Restore: hanya biarkan QRIS disabled jika memang tidak ada setup
+        if (opt.value !== 'qris' || window.outletQris?.image) opt.disabled = false;
+      }
+    }
+  }
+
+  // Visual indicator di area form
+  let indicator = document.getElementById('offlineIndicator');
+  if (offline) {
+    if (!indicator) {
+      indicator = document.createElement('div');
+      indicator.id = 'offlineIndicator';
+      indicator.style.cssText = 'background:#FEF3C7;border:1px solid #F59E0B;border-radius:8px;padding:8px 14px;font-size:12px;color:#92400E;margin-bottom:8px;text-align:center;font-weight:600';
+      indicator.textContent = '⚠️ Mode OFFLINE — hanya metode Cash, deposit/poin/voucher dinonaktifkan';
+      const btnSave = document.getElementById('btnSave');
+      btnSave?.parentNode?.insertBefore(indicator, btnSave);
+    }
+  } else {
+    indicator?.remove();
+  }
+}
+
+// Panggil saat load + saat status jaringan berubah
+applyOfflineUI();
+window.addEventListener('online',  applyOfflineUI);
+window.addEventListener('offline', applyOfflineUI);
+</script>
 </body>
 </html>
