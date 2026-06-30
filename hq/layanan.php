@@ -186,9 +186,11 @@ require __DIR__ . '/_layout_open.php';
 .btn-light{background:#fff;color:#0F1C3A;border:1px solid #E5E9F2}
 .btn-sm{padding:6px 11px;font-size:12px}
 
-.lyn-table{width:100%;border-collapse:collapse;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 1px 6px rgba(0,0,0,.05)}
-.lyn-table th{background:#F7F8FC;color:#6B7280;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:11px 14px;text-align:left}
-.lyn-table td{padding:12px 14px;border-top:1px solid #F0F1F4;font-size:13px;color:#1F2937}
+.lyn-scroll{overflow-x:auto;border-radius:12px;box-shadow:0 1px 6px rgba(0,0,0,.05)}
+.lyn-table{width:100%;border-collapse:collapse;background:#fff}
+.lyn-table th{background:#F7F8FC;color:#6B7280;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:11px 14px;text-align:left;white-space:nowrap}
+.lyn-table td{padding:12px 14px;border-top:1px solid #F0F1F4;font-size:13px;color:#1F2937;white-space:nowrap}
+.lyn-table .lyn-nama,.lyn-table .lyn-kat{white-space:normal}
 .lyn-table tr:hover td{background:#FAFBFC}
 .lyn-nama{font-weight:700;color:#0F1C3A}
 .lyn-kat{font-size:11px;color:#6B7280}
@@ -294,7 +296,7 @@ require __DIR__ . '/_layout_open.php';
     <div class="fld-row">
       <div class="fld">
         <label>Harga Default (Rp)</label>
-        <input type="number" id="fHarga" placeholder="7000" min="0">
+        <input type="text" id="fHarga" inputmode="numeric" placeholder="7.000" oninput="ribuanFmt(this)" autocomplete="off">
       </div>
       <div class="fld">
         <label>Urutan</label>
@@ -379,13 +381,13 @@ async function loadList(){
       return;
     }
     wrap.innerHTML = `
-      <table class="lyn-table">
+      <div class="lyn-scroll"><table class="lyn-table">
         <thead><tr>
           ${CAN_EDIT?'<th style="width:34px"><input type="checkbox" id="cbAll" onchange="toggleAll(this)"></th>':''}
           <th>Layanan</th><th>Harga Default</th><th>Override</th><th>Coverage Outlet</th><th style="text-align:right">Aksi</th>
         </tr></thead>
         <tbody>${d.master.map(rowHtml).join('')}</tbody>
-      </table>`;
+      </table></div>`;
     updateBulkBar();
   } catch (e) {
     wrap.innerHTML = `<div class="empty"><div class="ico">⚠️</div>Gagal: ${esc(e.message)}</div>`;
@@ -427,7 +429,7 @@ function openForm(m){
   document.getElementById('fNama').value = m ? m.nama : '';
   document.getElementById('fKategori').value = m ? m.kategori : 'Umum';
   document.getElementById('fSatuan').value = m ? m.satuan : 'kg';
-  document.getElementById('fHarga').value = m ? m.harga_default : '';
+  document.getElementById('fHarga').value = m ? Number(m.harga_default).toLocaleString('id-ID') : '';
   document.getElementById('fUrutan').value = m ? m.urutan : 0;
   document.getElementById('fSegmen').value = m ? (m.segmen || 'kiloan') : 'kiloan';
   document.getElementById('fAllowOverride').checked = m ? m.allow_override == 1 : false;
@@ -443,6 +445,8 @@ document.getElementById('fAllowOverride').addEventListener('change', toggleOverr
 
 function closeModal(id){ document.getElementById(id).classList.remove('open'); }
 
+function ribuanFmt(el){ const n = el.value.replace(/\D/g,''); el.value = n ? Number(n).toLocaleString('id-ID') : ''; }
+
 async function saveMaster(){
   const fd = new FormData();
   fd.append('_csrf', document.querySelector('meta[name="csrf-token"]')?.content || '');
@@ -450,7 +454,7 @@ async function saveMaster(){
   fd.append('nama', document.getElementById('fNama').value);
   fd.append('kategori', document.getElementById('fKategori').value);
   fd.append('satuan', document.getElementById('fSatuan').value);
-  fd.append('harga_default', document.getElementById('fHarga').value);
+  fd.append('harga_default', document.getElementById('fHarga').value.replace(/\D/g,''));
   fd.append('urutan', document.getElementById('fUrutan').value);
   fd.append('segmen', document.getElementById('fSegmen').value);
   fd.append('is_active', 1);
