@@ -185,6 +185,7 @@ if ($action) {
 
     // ── Sync batch order offline ──
     if ($action === 'sync_offline' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+        if (!hasPermission('pos.create')) { echo json_encode(['error'=>'Akses ditolak']); exit; }
         verifyCsrf();
         require_once __DIR__ . '/core/OrderCreator.php';
         $body   = json_decode(file_get_contents('php://input'), true);
