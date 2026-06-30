@@ -216,6 +216,7 @@ class PaymentSettler
      */
     public static function settleOutletActivation(array $payment): array
     {
+        require_once __DIR__ . '/BillingConfig.php';
         if (empty($payment['ref_outlet_id'])) {
             return ['ok' => false, 'error' => 'ref_outlet_id missing'];
         }
@@ -240,6 +241,35 @@ class PaymentSettler
             $db->prepare("UPDATE outlets SET status='active', activated_at=NOW() WHERE id=?")
                ->execute([$payment['ref_outlet_id']]);
 
+            // Bonus coin aktivasi — idempoten via coin_ledger.payment_id
+            $coinAdded = 0;
+            $ledgerExists = $db->prepare("SELECT id FROM coin_ledger WHERE payment_id=? AND type='topup'");
+            $ledgerExists->execute([$payment['id']]);
+            $alreadyCredited = (bool)$ledgerExists->fetchColumn();
+
+            $bonusCoin = max(0, BillingConfig::getInt('outlet_activation_coin', 100000));
+            if (!$alreadyCredited && $bonusCoin > 0) {
+                $db->prepare("UPDATE tenants SET coin_balance = coin_balance + ? WHERE id=?")
+                   ->execute([$bonusCoin, $payment['tenant_id']]);
+
+                $balSt = $db->prepare("SELECT coin_balance FROM tenants WHERE id=?");
+                $balSt->execute([$payment['tenant_id']]);
+                $newBal = (int)$balSt->fetchColumn();
+
+                $db->prepare(
+                    "INSERT INTO coin_ledger (tenant_id, outlet_id, type, amount, feature_used, description, balance_after, payment_id)
+                     VALUES (?, ?, 'topup', ?, 'outlet_activation', ?, ?, ?)"
+                )->execute([
+                    $payment['tenant_id'],
+                    $payment['ref_outlet_id'],
+                    $bonusCoin,
+                    'Bonus aktivasi outlet',
+                    $newBal,
+                    $payment['id'],
+                ]);
+                $coinAdded = $bonusCoin;
+            }
+
             $db->commit();
 
             // Side effect: notif (best-effort, after commit)
@@ -248,7 +278,7 @@ class PaymentSettler
                 try { SaNotifier::outletActivated($payment['ref_outlet_id'], true); } catch (Throwable) {}
             }
 
-            return ['ok' => true, 'outlet_activated' => $payment['ref_outlet_id']];
+            return ['ok' => true, 'outlet_activated' => $payment['ref_outlet_id'], 'coin_added' => $coinAdded];
         } catch (Throwable $e) {
             if ($db->inTransaction()) $db->rollBack();
             return ['ok' => false, 'error' => $e->getMessage()];
