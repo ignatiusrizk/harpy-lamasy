@@ -88,6 +88,51 @@ if ($action === 'send_now' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     exit;
 }
 
+// ── API: get notif preferences ──
+if ($action === 'get_prefs') {
+    header('Content-Type: application/json');
+    if (!TenantResolver::isAdminLevel()) { echo json_encode(['error'=>'Akses ditolak']); exit; }
+    $db = Database::get();
+    $s = $db->prepare("SELECT notif_settings FROM tenants WHERE id=?");
+    $s->execute([$tid]);
+    $raw = $s->fetchColumn();
+    $cfg = $raw ? (json_decode($raw, true) ?: []) : [];
+    $g = function($cat,$ch) use ($cfg) { return (int)($cfg[$cat][$ch] ?? 1); }; // default 1
+    echo json_encode([
+        'dr_email'=>$g('daily_report','email'), 'dr_inapp'=>$g('daily_report','inapp'),
+        'an_email'=>$g('alert_anomali','email'), 'an_inapp'=>$g('alert_anomali','inapp'),
+        'jam'=>$cfg['daily_report_jam'] ?? '21:00',
+        'konten'=>$cfg['daily_report_konten'] ?? ['omset','order','kas','absensi','alert'],
+    ]); exit;
+}
+
+// ── API: save notif preferences (merge — jaga key HQ) ──
+if ($action === 'save_prefs' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    header('Content-Type: application/json');
+    if (!TenantResolver::isAdminLevel()) { echo json_encode(['error'=>'Akses ditolak']); exit; }
+    verifyCsrf();
+    $d = json_decode(file_get_contents('php://input'), true) ?: [];
+    $db = Database::get();
+    $s = $db->prepare("SELECT notif_settings FROM tenants WHERE id=?");
+    $s->execute([$tid]);
+    $raw = $s->fetchColumn();
+    $cur = $raw ? (json_decode($raw, true) ?: []) : [];   // merge — jaga key HQ (coin_low/trial_ending)
+    $cur['daily_report']  = ['email'=>!empty($d['dr_email'])?1:0, 'inapp'=>!empty($d['dr_inapp'])?1:0];
+    $cur['alert_anomali'] = ['email'=>!empty($d['an_email'])?1:0, 'inapp'=>!empty($d['an_inapp'])?1:0];
+    $jam = $d['jam'] ?? '21:00';
+    if (!preg_match('/^\d{2}:\d{2}$/', $jam)) $jam = '21:00';
+    $cur['daily_report_jam'] = $jam;
+    $valid = ['omset','order','kas','absensi','alert']; $konten = [];
+    foreach ((array)($d['konten'] ?? []) as $k) { if (in_array($k, $valid, true)) $konten[] = $k; }
+    if (!$konten) $konten = $valid;
+    $cur['daily_report_konten'] = $konten;
+    try {
+        $db->prepare("UPDATE tenants SET notif_settings=? WHERE id=?")->execute([json_encode($cur), $tid]);
+        echo json_encode(['success'=>true]);
+    } catch (Throwable $e) { echo json_encode(['error'=>$e->getMessage()]); }
+    exit;
+}
+
 // ── API: preview JSON (untuk modal) ──
 if ($action === 'preview') {
     header('Content-Type: application/json');
@@ -155,6 +200,7 @@ if ($action === 'preview') {
     </div>
     <div style="display:flex;gap:8px">
       <button class="hl-btn hl-btn-outline hl-btn-sm" onclick="markAllRead()">✓ Tandai semua dibaca</button>
+      <button class="hl-btn hl-btn-outline hl-btn-sm" onclick="openPrefs()">⚙️ Pengaturan Notifikasi</button>
       <button class="hl-btn hl-btn-primary hl-btn-sm" onclick="sendNow()">📊 Kirim Laporan Sekarang</button>
     </div>
   </div>
@@ -191,6 +237,43 @@ if ($action === 'preview') {
     <div class="modal-body" id="mBody"></div>
     <div class="modal-footer">
       <button class="hl-btn hl-btn-outline hl-btn-sm" onclick="closeModal()">Tutup</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Prefs Modal ── -->
+<div class="modal-overlay" id="prefsModal" onclick="if(event.target===this)closePrefs()">
+  <div class="modal-card" role="dialog" aria-modal="true" style="max-width:480px">
+    <div class="modal-header">
+      <div class="modal-icon t-daily">⚙️</div>
+      <div class="modal-title-wrap">
+        <h2 style="font-size:1.1rem;font-weight:800;color:var(--navy)">⚙️ Pengaturan Notifikasi</h2>
+      </div>
+      <button class="modal-close" onclick="closePrefs()" title="Tutup">✕</button>
+    </div>
+    <div class="modal-body" style="padding:20px">
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div>
+          <div style="font-weight:700;color:var(--navy);font-size:13px;margin-bottom:6px">📊 Laporan Harian</div>
+          <label style="display:flex;gap:8px;align-items:center;font-size:13px;margin-bottom:4px"><input type="checkbox" id="pf_dr_email"> Email</label>
+          <label style="display:flex;gap:8px;align-items:center;font-size:13px"><input type="checkbox" id="pf_dr_inapp"> In-app (feed)</label>
+          <div style="margin-top:8px;font-size:12px;color:var(--gray)">Jam kirim: <input type="time" id="pf_jam" style="padding:4px 8px;border:1px solid #E5E9F2;border-radius:6px"></div>
+          <div style="margin-top:8px;display:flex;gap:10px;flex-wrap:wrap">
+            <?php foreach (['omset'=>'💰 Omset','order'=>'📦 Order','kas'=>'💵 Kas','absensi'=>'👥 Absensi','alert'=>'⚠️ Alert'] as $k=>$lbl): ?>
+              <label style="display:flex;gap:5px;align-items:center;font-size:12px"><input type="checkbox" class="pf_konten" value="<?= $k ?>"> <?= $lbl ?></label>
+            <?php endforeach; ?>
+          </div>
+        </div>
+        <div>
+          <div style="font-weight:700;color:var(--navy);font-size:13px;margin-bottom:6px">⚠️ Alert Anomali</div>
+          <label style="display:flex;gap:8px;align-items:center;font-size:13px;margin-bottom:4px"><input type="checkbox" id="pf_an_email"> Email</label>
+          <label style="display:flex;gap:8px;align-items:center;font-size:13px"><input type="checkbox" id="pf_an_inapp"> In-app (feed)</label>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="hl-btn hl-btn-outline hl-btn-sm" onclick="closePrefs()">Batal</button>
+      <button class="hl-btn hl-btn-primary hl-btn-sm" onclick="savePrefs()">💾 Simpan</button>
     </div>
   </div>
 </div>
@@ -358,6 +441,47 @@ async function sendNow(){
 }
 
 loadFeed();
+
+async function openPrefs(){
+  try {
+    const r = await fetch('owner_report.php?action=get_prefs');
+    const d = await r.json();
+    if (d.error) { showToast(d.error,'error'); return; }
+    document.getElementById('pf_dr_email').checked = !!d.dr_email;
+    document.getElementById('pf_dr_inapp').checked = !!d.dr_inapp;
+    document.getElementById('pf_an_email').checked = !!d.an_email;
+    document.getElementById('pf_an_inapp').checked = !!d.an_inapp;
+    document.getElementById('pf_jam').value = d.jam || '21:00';
+    document.querySelectorAll('.pf_konten').forEach(c => { c.checked = (d.konten||[]).includes(c.value); });
+    document.getElementById('prefsModal').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  } catch(e){ showToast('Gagal memuat pengaturan: '+e.message,'error'); }
+}
+
+function closePrefs(){
+  document.getElementById('prefsModal').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+async function savePrefs(){
+  const konten = Array.from(document.querySelectorAll('.pf_konten')).filter(c=>c.checked).map(c=>c.value);
+  const body = {
+    dr_email: document.getElementById('pf_dr_email').checked ? 1 : 0,
+    dr_inapp: document.getElementById('pf_dr_inapp').checked ? 1 : 0,
+    an_email: document.getElementById('pf_an_email').checked ? 1 : 0,
+    an_inapp: document.getElementById('pf_an_inapp').checked ? 1 : 0,
+    jam: document.getElementById('pf_jam').value || '21:00',
+    konten: konten,
+  };
+  try {
+    const r = await fetch('owner_report.php?action=save_prefs', {
+      method:'POST', headers:{'Content-Type':'application/json','X-CSRF-Token':csrfToken()}, body: JSON.stringify(body)
+    });
+    const d = await r.json();
+    if (d.success) { showToast('Pengaturan disimpan','success'); closePrefs(); }
+    else showToast(d.error || 'Gagal','error');
+  } catch(e){ showToast('Gagal menyimpan: '+e.message,'error'); }
+}
 </script>
 </body>
 </html>
