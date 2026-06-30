@@ -209,6 +209,8 @@ require __DIR__ . '/_layout_open.php';
 .fld input,.fld select{width:100%;padding:9px 12px;border:1px solid #E5E9F2;border-radius:8px;font-family:inherit;font-size:14px}
 .fld-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .chk-row{display:flex;align-items:center;gap:8px;font-size:13px;color:#374151}
+.fld label.chk-row{display:flex;margin-bottom:0}
+.chk-row input[type=checkbox]{width:auto;padding:0;margin:0;flex:none}
 .modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:20px}
 
 .push-outlets{display:flex;flex-direction:column;gap:6px;max-height:240px;overflow-y:auto;margin-bottom:10px}
@@ -306,6 +308,9 @@ require __DIR__ . '/_layout_open.php';
       <label>Batas Adjust (±%)</label>
       <input type="number" id="fOverridePct" value="10" min="0" max="100" step="0.5">
     </div>
+    <p style="font-size:12px;color:#6B7280;background:#F7F8FC;border-radius:8px;padding:10px 12px;margin:0 0 4px;line-height:1.5">
+      💡 Tersimpan ke <strong>master HQ</strong> dulu. Untuk mengirim ke outlet, klik <strong>📤 Push</strong> di daftar (atau centang beberapa lalu push sekaligus).
+    </p>
     <div class="modal-actions">
       <button class="btn btn-light" onclick="closeModal('formModal')">Batal</button>
       <button class="btn btn-primary" onclick="saveMaster()">Simpan</button>
