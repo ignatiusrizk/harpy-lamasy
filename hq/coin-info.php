@@ -277,6 +277,42 @@ $katMeta = [
   </div>
 </div>
 
+<!-- Coin Bundles Top-up Section (dipindah ke atas — sebelum daftar harga fitur) -->
+<?php if (!empty($bundles)): ?>
+  <div class="bundle-section">
+    <h2>💳 Top-up Coin Sekarang</h2>
+    <div class="bundle-grid">
+      <?php foreach ($bundles as $b): ?>
+        <div class="bundle-card <?= !empty($b['is_featured']) ? 'featured' : '' ?>">
+          <div class="nama"><?= htmlspecialchars($b['nama']) ?></div>
+          <div class="info">
+            Beli paket coin dan dapatkan akses ke fitur premium
+          </div>
+          <div class="harga-section">
+            <div>
+              <div class="harga">
+                Rp <?= number_format($b['harga'], 0, ',', '.') ?>
+                <small>via QRIS/VA</small>
+              </div>
+            </div>
+            <div>
+              <div class="coin-amount"><?= number_format($b['coin_didapat'], 0, ',', '.') ?></div>
+              <div style="font-size:10px;color:#6C7A8D;">coin</div>
+            </div>
+          </div>
+          <?php if (!empty($b['bonus_pct']) && (float)$b['bonus_pct'] > 0): ?>
+            <div class="bonus">✨ Bonus <?= number_format($b['bonus_pct'], 0) ?>% coin!</div>
+          <?php endif; ?>
+          <a href="/billing-checkout.php?type=topup_coin&bundle_id=<?= (int)$b['id'] ?>"
+             class="btn-topup">
+            💳 Top-up Sekarang
+          </a>
+        </div>
+      <?php endforeach; ?>
+    </div>
+  </div>
+<?php endif; ?>
+
 <?php if (empty($pricing)): ?>
   <div class="empty-state">
     <div class="ico">💲</div>
@@ -316,42 +352,6 @@ $katMeta = [
     </div>
   <?php endforeach; ?>
 
-<?php endif; ?>
-
-<!-- Coin Bundles Top-up Section -->
-<?php if (!empty($bundles)): ?>
-  <div class="bundle-section">
-    <h2>💳 Top-up Coin Sekarang</h2>
-    <div class="bundle-grid">
-      <?php foreach ($bundles as $b): ?>
-        <div class="bundle-card <?= !empty($b['is_featured']) ? 'featured' : '' ?>">
-          <div class="nama"><?= htmlspecialchars($b['nama']) ?></div>
-          <div class="info">
-            Beli paket coin dan dapatkan akses ke fitur premium
-          </div>
-          <div class="harga-section">
-            <div>
-              <div class="harga">
-                Rp <?= number_format($b['harga'], 0, ',', '.') ?>
-                <small>via QRIS/VA</small>
-              </div>
-            </div>
-            <div>
-              <div class="coin-amount"><?= number_format($b['coin_didapat'], 0, ',', '.') ?></div>
-              <div style="font-size:10px;color:#6C7A8D;">coin</div>
-            </div>
-          </div>
-          <?php if (!empty($b['bonus_pct']) && (float)$b['bonus_pct'] > 0): ?>
-            <div class="bonus">✨ Bonus <?= number_format($b['bonus_pct'], 0) ?>% coin!</div>
-          <?php endif; ?>
-          <a href="/billing-checkout.php?type=topup_coin&bundle_id=<?= (int)$b['id'] ?>"
-             class="btn-topup">
-            💳 Top-up Sekarang
-          </a>
-        </div>
-      <?php endforeach; ?>
-    </div>
-  </div>
 <?php endif; ?>
 
 <div class="note-footer">
