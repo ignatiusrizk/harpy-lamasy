@@ -1,7 +1,7 @@
 // sw-tenant.js — Service Worker tenant LAMASY (POS, orders, kanban, dashboard)
 // Scope: '/' — exclude /pelanggan/* (portal pelanggan has own SW di /sw.js)
 
-const CACHE = 'lamasy-tenant-v1';
+const CACHE = 'lamasy-tenant-v2';
 
 const STATIC_ASSETS = [
   '/assets/harpy-erp.css',
@@ -9,6 +9,7 @@ const STATIC_ASSETS = [
   '/assets/icon-192.png',
   '/assets/icon-512.png',
   '/assets/logo.png',
+  '/assets/offline-pos.js',
 ];
 
 const READ_MOSTLY_PATHS = [
