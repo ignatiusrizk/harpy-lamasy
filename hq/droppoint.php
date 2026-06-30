@@ -94,13 +94,15 @@ require __DIR__ . '/_layout_open.php';
 .panel{background:#fff;border:1px solid #EEF1F8;border-radius:14px;padding:20px;box-shadow:0 1px 6px rgba(0,0,0,.05);margin-bottom:16px}
 .panel-title{font-size:14px;font-weight:700;color:#0F1C3A;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
 .filter{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:16px}
-.filter input{padding:7px 11px;border:1px solid #E5E9F2;border-radius:8px;font-family:inherit;font-size:13px}
+.filter input{padding:7px 11px;border:1px solid #E5E9F2;border-radius:8px;font-family:inherit;font-size:13px;flex:1 1 140px;min-width:135px;max-width:200px;box-sizing:border-box}
+@media(max-width:520px){.filter label{flex-basis:100%}.filter input{flex:1 1 calc(50% - 4px);max-width:none}}
 .btn{padding:7px 13px;border-radius:8px;font-weight:700;font-size:13px;border:none;cursor:pointer;font-family:inherit;background:#0F1C3A;color:#fff}
 .btn-light{background:#fff;color:#0F1C3A;border:1px solid #E5E9F2}
 .btn-sm{padding:6px 11px;font-size:12px}
 .tbl{width:100%;border-collapse:collapse;font-size:13px}
-.tbl th{background:#F7F8FC;padding:9px 11px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;color:#6B7280}
-.tbl td{padding:10px 11px;border-top:1px solid #F0F1F4}
+.tbl th{background:#F7F8FC;padding:9px 11px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;color:#6B7280;white-space:nowrap}
+.tbl td{padding:10px 11px;border-top:1px solid #F0F1F4;white-space:nowrap}
+.tbl td:first-child{white-space:normal;min-width:110px}
 .tbl .num{font-family:var(--mono);font-weight:700;text-align:right}
 .medal{font-size:14px;font-weight:800;text-align:center}
 .empty{text-align:center;padding:30px;color:#9CA3AF;font-size:13px}
