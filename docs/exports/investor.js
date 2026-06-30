@@ -192,7 +192,7 @@ const content = [
   h1("Executive Summary"),
   lead("LAMASY adalah platform SaaS ERP modern untuk industri laundry di Indonesia — sektor yang growth tinggi tapi underserved oleh teknologi enterprise."),
 
-  p("Kami menawarkan operasional end-to-end dalam satu platform: POS, produksi, antar-jemput, inventori, keuangan compliant SAK EMKM, plus integrasi AI yang menjadikan kami ERP pertama di Indonesia yang AI-first untuk segmen laundry."),
+  p("Kami menawarkan operasional end-to-end dalam satu platform: POS, produksi, antar-jemput, inventori, keuangan yang mengacu SAK EMKM, plus integrasi AI yang menjadikan kami ERP pertama di Indonesia yang AI-first untuk segmen laundry."),
 
   callout("Kompetitor utama (Smartlink, Cuci.Co) belum integrasi AI. LAMASY membangun moat lewat AI-driven operations: briefing harian otomatis, churn detection, anomaly alerts, dan natural-language data chat — semua dengan business model pay-as-you-use coin.", "teal"),
 
@@ -201,7 +201,7 @@ const content = [
   bullet([new TextRun({ text: "Product live & functional: ", bold: true }), new TextRun("Platform sudah jalan di lamasy.harpy.id dengan tenant aktif transaksi.")]),
   bullet([new TextRun({ text: "AI-first differentiation: ", bold: true }), new TextRun("11 fitur AI live (briefing, chat, churn, anomaly, dll) — moat sulit di-replikasi.")]),
   bullet([new TextRun({ text: "Multi-tenant scalable: ", bold: true }), new TextRun("Single platform handle 1 owner sampai chain N-outlet dengan HQ konsolidasi.")]),
-  bullet([new TextRun({ text: "Indonesia-native: ", bold: true }), new TextRun("UU PDP compliant, SAK EMKM laporan, Bahasa Indonesia interface, WA notifikasi via wa.me (click-to-chat).")]),
+  bullet([new TextRun({ text: "Indonesia-native: ", bold: true }), new TextRun("dirancang selaras UU PDP, laporan mengacu SAK EMKM, Bahasa Indonesia interface, WA notifikasi via wa.me (click-to-chat).")]),
 
   new Paragraph({ children: [new PageBreak()] }),
 
@@ -250,6 +250,11 @@ const content = [
       ["SOM (3-tahun realistic)", "~Rp 6 Miliar/tahun", "10% SAM penetration"],
     ]
   ),
+  callout([
+    new TextRun({ text: "Catatan TAM: ", bold: true, color: INK, size: 22 }),
+    new TextRun({ text: "angka di atas konservatif (per-tenant @Rp 4 jt/thn). Basis lebih luas memperbesar TAM secara material — (a) per-OUTLET, bukan per-bisnis (rata-rata >1 outlet/tenant); (b) ekspansi vertikal serupa (salon, klinik kecantikan, jasa kelola pakaian premium); (c) revenue usage-based coin AI. Estimasi diperluas: ", italics: true, color: INK, size: 22 }),
+    new TextRun({ text: "[isi: owner]", italics: true, color: AMBER, size: 22 }),
+  ], "teal"),
 
   h2("Mengapa Sekarang"),
   bullet([new TextRun({ text: "AI accessible & affordable: ", bold: true }), new TextRun("Claude API mature, harga turun → bisa build AI features dengan margin profit.")]),
@@ -306,7 +311,7 @@ const content = [
   h3("Keuangan"),
   bullet("Kas harian per outlet + mutasi antar kas"),
   bullet("Aset tetap + liabilitas + jurnal manual"),
-  bullet("Laporan SAK EMKM compliant: Neraca, Laba Rugi, Arus Kas (auto-generate)"),
+  bullet("Laporan mengacu SAK EMKM: Neraca, Laba Rugi, Arus Kas (auto-generate)"),
   bullet("Piutang B2B tracking"),
 
   h3("HR & Payroll"),
@@ -362,6 +367,7 @@ const content = [
 
   h3("1. Setup Fee (One-time)"),
   p("Onboarding tenant baru dengan provisioning, data migration assistance, training. Berkisar Rp 500K – Rp 2 jt tergantung kompleksitas (single outlet vs chain)."),
+  p("Catatan: untuk jalur self-serve (daftar sendiri, single-outlet) setup fee di-waive agar CAC tetap rendah — fee hanya berlaku untuk tenant Chain / yang butuh asistensi migrasi & training. Jadi tidak bentrok dengan strategi akuisisi self-serve."),
 
   h3("2. Subscription Tier (Recurring)"),
   dataTable(
@@ -397,6 +403,25 @@ const content = [
       ["Gross margin", "78%", "82%", "85%"],
     ]
   ),
+
+  h3("Metrik Kesehatan SaaS (proyeksi)"),
+  p("Metrik standar yang diminta investor — diisi dengan data/asumsi riil saat fundraising:"),
+  dataTable(
+    ["Metrik", "Target/Asumsi", "Catatan"],
+    [
+      ["CAC (Customer Acquisition Cost)", "[isi: owner]", "Biaya akuisisi per tenant (S&M ÷ tenant baru)"],
+      ["LTV (Lifetime Value)", "[isi: owner]", "ARPU × gross margin × umur pelanggan"],
+      ["LTV / CAC", "[isi: owner] (target ≥ 3×)", "Sehat bila ≥ 3"],
+      ["Payback period", "[isi: owner] (target < 12 bln)", "Bulan untuk balik modal CAC"],
+      ["Churn bulanan", "[isi: owner] (target < 3%)", "% tenant berhenti/bulan"],
+      ["Net Revenue Retention", "[isi: owner] (target > 100%)", "Ekspansi (upgrade tier + coin) − churn"],
+    ]
+  ),
+  callout([
+    new TextRun({ text: "Asumsi pertumbuhan (perlu divalidasi): ", bold: true, color: INK, size: 22 }),
+    new TextRun({ text: "target 50→1.000 tenant dalam 18 bln mengasumsikan kapasitas sales, conversion rate trial→bayar, dan churn tertentu. Model driver + sensitivitas (skenario konservatif/basis/optimis): ", italics: true, color: INK, size: 22 }),
+    new TextRun({ text: "[isi: owner]", italics: true, color: AMBER, size: 22 }),
+  ], "amber"),
 
   callout([
     new TextRun({ text: "Strategi: ", bold: true, color: INK, size: 22 }),
@@ -434,12 +459,12 @@ const content = [
   bullet([new TextRun({ text: "✓ End-to-end POS + produksi + antar-jemput", bold: true })]),
   bullet([new TextRun({ text: "✓ Multi-outlet HQ konsolidasi dengan impersonate", bold: true })]),
   bullet([new TextRun({ text: "✓ Customer portal + public tracking + self-service mesin", bold: true })]),
-  bullet([new TextRun({ text: "✓ Laporan keuangan SAK EMKM compliant auto-generate", bold: true })]),
+  bullet([new TextRun({ text: "✓ Laporan keuangan mengacu SAK EMKM (auto-generate)", bold: true })]),
   bullet([new TextRun({ text: "✓ 11 AI features production dengan rate limiting + cache + cost tracking", bold: true })]),
   bullet([new TextRun({ text: "✓ SuperAdmin dashboard + RBAC + billing + support ticket system", bold: true })]),
   bullet([new TextRun({ text: "✓ Smartlink (kompetitor) Excel migration dengan AI mapping", bold: true })]),
   bullet([new TextRun({ text: "✓ PWA installable + mobile-first responsive design", bold: true })]),
-  bullet([new TextRun({ text: "✓ UU PDP + SAK EMKM + UU ITE compliance", bold: true })]),
+  bullet([new TextRun({ text: "✓ Dirancang selaras UU PDP + SAK EMKM + UU ITE", bold: true })]),
 
   h2("Competitive Position"),
   dataTable(
@@ -513,6 +538,28 @@ const content = [
   new Paragraph({ children: [new PageBreak()] }),
 
   // ═══════════ THE ASK ═══════════
+  h1("Risiko & Mitigasi"),
+  p("Pengungkapan jujur untuk diligence — risiko utama dan rencana mitigasinya:"),
+  dataTable(
+    ["Risiko", "Mitigasi"],
+    [
+      ["Solo founder (bus factor, kapasitas)", "Prioritas hire Engineer #2 + Sales Lead pasca-pendanaan; dokumentasi & workflow AI-assisted; advisor"],
+      ["Infra single shared-hosting", "Roadmap migrasi ke cloud terkelola (AWS/GCP) saat skala; backup harian; rencana DR & monitoring"],
+      ["Isolasi data multi-tenant (1 query lupa scope = bocor)", "Scoping terpusat di TenantQuery + audit berkala; rencana test isolasi otomatis"],
+      ["Ketergantungan 1 vendor AI (Anthropic)", "Biaya di-meter & di-cap (coin/budget); arsitektur AI di belakang adapter → bisa ganti/ tambah model"],
+      ["Respon kompetitor (Smartlink/Cuci.Co bangun AI)", "Lead waktu + data flywheel + kedalaman vertikal; eksekusi cepat (auto-deploy)"],
+      ["Regulasi (UU PDP/ITE) & pajak", "Desain selaras regulasi + mekanisme hapus data; konsultasi legal sebelum klaim sertifikasi"],
+      ["Volatilitas biaya AI / margin", "Cache + rate-limit + pricing coin pay-as-you-use yang bisa disesuaikan"],
+    ]
+  ),
+  callout([
+    new TextRun({ text: "Governance: ", bold: true, color: INK, size: 22 }),
+    new TextRun({ text: "pasca-pendanaan, KPI inti (MRR, tenant aktif, churn, CAC, runway) dilaporkan ke board secara berkala; penggunaan dana ditrack per kategori. Cadence & detail: ", italics: true, color: INK, size: 22 }),
+    new TextRun({ text: "[isi: owner]", italics: true, color: AMBER, size: 22 }),
+  ], "violet"),
+
+  new Paragraph({ children: [new PageBreak()] }),
+
   h1("The Ask"),
 
   h2("Funding"),
@@ -556,10 +603,10 @@ const content = [
   numbered([new TextRun({ text: "Multi-tenant + Multi-outlet ", bold: true }), new TextRun("chain-friendly dengan HQ konsolidasi view.")]),
   numbered([new TextRun({ text: "Self-service customer ", bold: true }), new TextRun("via QR struk (track + portal + reward).")]),
   numbered([new TextRun({ text: "Antar-jemput integrated ", bold: true }), new TextRun("dengan kurir mobile app, signature + foto, no 3rd party needed.")]),
-  numbered([new TextRun({ text: "SAK EMKM compliant ", bold: true }), new TextRun("laporan keuangan otomatis untuk pajak.")]),
+  numbered([new TextRun({ text: "Laporan keuangan mengacu SAK EMKM ", bold: true }), new TextRun("— otomatis untuk pajak.")]),
   numbered([new TextRun({ text: "Smartlink migration ", bold: true }), new TextRun("AI-mapped Excel import dari kompetitor utama.")]),
   numbered([new TextRun({ text: "Sistem coin ", bold: true }), new TextRun("pay-as-you-use untuk premium features — fairness + transparency.")]),
-  numbered([new TextRun({ text: "Comprehensive audit ", bold: true }), new TextRun("semua action sensitif logged → compliance-ready.")]),
+  numbered([new TextRun({ text: "Comprehensive audit ", bold: true }), new TextRun("semua action sensitif logged → mendukung kepatuhan.")]),
   numbered([new TextRun({ text: "Modern UI design ", bold: true }), new TextRun("dual-theme professional (Ponytail outlet + AI Command Center SA).")]),
   numbered([new TextRun({ text: "PWA-ready ", bold: true }), new TextRun("installable ke device tanpa app store dependency.")]),
 

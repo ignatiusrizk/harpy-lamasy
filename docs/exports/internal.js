@@ -691,7 +691,7 @@ const content = [
   ...bullet([new TextRun({ text: "UU PDP No 27/2022 ", bold: true }), new TextRun("— Personal Data Protection (delete request mechanism)")]),
   ...bullet([new TextRun({ text: "UU PK 8/1999 ", bold: true }), new TextRun("— Consumer Protection")]),
   ...bullet([new TextRun({ text: "UU ITE 11/2008 ", bold: true }), new TextRun("— Electronic Information & Transactions")]),
-  ...bullet([new TextRun({ text: "SAK EMKM ", bold: true }), new TextRun("— laporan keuangan auto-generate compliant")]),
+  ...bullet([new TextRun({ text: "SAK EMKM ", bold: true }), new TextRun("— laporan keuangan auto-generate mengacu SAK EMKM")]),
 
   h2("9.5 Audit Trail"),
   ...bullet("hl_audit_log — log semua action sensitif"),
