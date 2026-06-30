@@ -155,7 +155,7 @@ const coverPage = [
   }),
   new Paragraph({
     alignment: AlignmentType.CENTER,
-    children: [new TextRun({ text: "Tanggal: 24 Juni 2026", size: 20, color: ASH })],
+    children: [new TextRun({ text: "Tanggal: 24 Juni 2026 (diperbarui 30 Juni 2026)", size: 20, color: ASH })],
   }),
   new Paragraph({
     alignment: AlignmentType.CENTER,
@@ -226,7 +226,7 @@ const content = [
   ...numbered_list([
     "Visitor buka lamasy.harpy.id → klik 'Daftar Gratis'",
     "Isi form /register.php (nama bisnis, owner, email, WA, password, nama outlet pertama)",
-    "DB INSERT saas_tenants + hl_outlets + saas_users; auto-credit 10.000 coin trial",
+    "DB INSERT tenants + hl_outlets + hl_users; auto-credit 10.000 coin trial",
     "SaNotifier::tenantRegistered → email ke SA dengan permission registrations.view",
     "Email verification link dikirim → tenant klik → status = trial",
     "Login pertama kali → /accept-tos.php → Splash tips + Product Tour walkthrough",
@@ -245,7 +245,7 @@ const content = [
     "Estimasi otomatis via applyMaxEstimasi() — max dari semua layanan + tier override",
     "Auto-apply promo aktif, cek saldo deposit + member tier discount",
     "Pembayaran: cash / transfer / deposit-deduct",
-    "DB INSERT hl_order + hl_order_item + hl_pembayaran; status = 'diterima'",
+    "DB INSERT hl_transaksi + hl_transaksi_item (pembayaran inline kolom status_bayar/dp); status = 'diterima'",
     "Auto-deduct stok bahan (FinancialCalculator); auto-issue poin loyalty",
     "Cetak struk via StrukGenerator.php + QR code untuk track + portal",
     "Staff produksi scan QR di /produksi.php → 6 tahap dengan signature + foto",
@@ -331,7 +331,7 @@ const content = [
     "Cache template di hl_migration_mapping_templates untuk reuse",
     "SA review mapping → confirm/edit field assignment",
     "Dry run 10 rows pertama → cek correctness",
-    "Confirm → batch INSERT hl_pelanggan, hl_order, hl_order_item",
+    "Confirm → batch INSERT hl_pelanggan, hl_transaksi, hl_transaksi_item",
     "Hitung kolom 'Total' (heuristic — handle biaya tambahan)",
     "Job logged di hl_migration_jobs dengan status success/partial",
   ]),
@@ -571,7 +571,7 @@ const content = [
 
   // ──── 7. AI Integration ────
   h1("7. Integrasi AI"),
-  h2("7.1 9 Fitur AI yang Live"),
+  h2("7.1 Fitur AI Inti yang Live"),
   dataTable(
     ["Fitur", "Modul", "Layer", "Pricing"],
     [
@@ -607,11 +607,11 @@ const content = [
 
   // ──── 8. Database Schema ────
   h1("8. Database Schema Overview"),
-  p("103 tabel total, dikelompokkan berdasarkan domain."),
+  p("~125 tabel total, dikelompokkan berdasarkan domain."),
 
   h2("8.1 SaaS Platform Tables (saas_* / super_*)"),
-  ...bullet("saas_tenants — tenant master + coin balance"),
-  ...bullet("saas_users — user accounts per tenant"),
+  ...bullet("tenants — tenant master + coin balance"),
+  ...bullet("hl_users — user accounts per tenant"),
   ...bullet("saas_banners — banner carousel (gradient ATAU image)"),
   ...bullet("saas_coin_pricing — coin pack + AI limits"),
   ...bullet("saas_sa_notif_log — SA notification audit"),
@@ -629,8 +629,8 @@ const content = [
   ...bullet("hl_drop_points, hl_kurir, hl_karyawan_outlet"),
 
   h3("Transaksional"),
-  ...bullet("hl_order, hl_order_item, hl_order_notes"),
-  ...bullet("hl_pembayaran"),
+  ...bullet("hl_transaksi, hl_transaksi_item, hl_order_notes"),
+  ...bullet("Pembayaran: kolom status_bayar/dp/sisa_bayar di hl_transaksi"),
   ...bullet("hl_proses_input — produksi 6-stage audit"),
   ...bullet("hl_antar_jemput — pickup/delivery"),
 
@@ -823,7 +823,7 @@ const content = [
       ["PHP files (HQ)", "30"],
       ["PHP files (SuperAdmin)", "24"],
       ["Core Libraries", "30"],
-      ["AI Features Integrated", "9"],
+      ["AI Features Integrated", "11"],
       ["Default SA Roles", "5"],
       ["SA Permissions", "29"],
       ["Auto-deploy Time", "~15 detik"],

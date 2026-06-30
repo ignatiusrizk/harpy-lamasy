@@ -245,9 +245,9 @@ const content = [
     [
       ["Total usaha laundry Indonesia", "~50.000+", "Industry estimates"],
       ["Pertumbuhan industri YoY", "12-15%", "Asosiasi Laundry"],
-      ["TAM (Total Addressable Market)", "~Rp 200 M/tahun ARR", "@ Rp 4 jt/tenant/tahun"],
-      ["SAM (Serviceable Addressable)", "~Rp 60 M/tahun", "30% market reachable"],
-      ["SOM (3-tahun realistic)", "~Rp 6 M/tahun", "10% SAM penetration"],
+      ["TAM (Total Addressable Market)", "~Rp 200 Miliar/tahun ARR", "@ Rp 4 jt/tenant/tahun"],
+      ["SAM (Serviceable Addressable)", "~Rp 60 Miliar/tahun", "30% market reachable"],
+      ["SOM (3-tahun realistic)", "~Rp 6 Miliar/tahun", "10% SAM penetration"],
     ]
   ),
 
@@ -266,7 +266,7 @@ const content = [
       ["Cuci.Co", "Web SaaS", "❌", "Basic", "No AI, no integrasi mendalam"],
       ["DIY Spreadsheet", "Excel/Google Sheets", "❌", "No", "Manual, error-prone"],
       ["WhatsApp + Buku", "Manual", "❌", "No", "Hilang data, tidak scalable"],
-      ["LAMASY", "AI-first SaaS", "✓ 9 fitur", "✓ HQ console", "—"],
+      ["LAMASY", "AI-first SaaS", "✓ 11 fitur", "✓ HQ console", "—"],
     ],
     4  // highlight last column
   ),
@@ -322,7 +322,7 @@ const content = [
 
   // ═══════════ AI DIFFERENTIATION ═══════════
   h1("AI Differentiation"),
-  lead("9 fitur AI live yang membuat LAMASY ERP pertama di Indonesia dengan AI deep integration untuk laundry."),
+  lead("11 fitur AI live yang membuat LAMASY ERP pertama di Indonesia dengan AI deep integration untuk laundry."),
 
   callout([
     new TextRun({ text: "Positioning: ", bold: true, color: INK, size: 22 }),
@@ -418,12 +418,12 @@ const content = [
   dataTable(
     ["Component", "Count", "Notes"],
     [
-      ["Database Tables", "103", "Comprehensive coverage"],
+      ["Database Tables", "~125", "Comprehensive coverage"],
       ["Outlet Pages", "~25", "Operasional harian"],
       ["HQ Pages", "~30", "Multi-outlet management"],
       ["SuperAdmin Pages", "~24", "Platform admin"],
       ["Core Libraries", "30", "Reusable PHP classes"],
-      ["AI Features", "9", "Production-grade"],
+      ["AI Features", "11", "Production-grade"],
       ["RBAC Roles (default)", "5", "+ custom roles"],
       ["RBAC Permissions", "29", "Granular per module"],
       ["Auto-deploy Time", "~15 detik", "git push to live"],
@@ -435,7 +435,7 @@ const content = [
   bullet([new TextRun({ text: "✓ Multi-outlet HQ konsolidasi dengan impersonate", bold: true })]),
   bullet([new TextRun({ text: "✓ Customer portal + public tracking + self-service mesin", bold: true })]),
   bullet([new TextRun({ text: "✓ Laporan keuangan SAK EMKM compliant auto-generate", bold: true })]),
-  bullet([new TextRun({ text: "✓ 9 AI features production dengan rate limiting + cache + cost tracking", bold: true })]),
+  bullet([new TextRun({ text: "✓ 11 AI features production dengan rate limiting + cache + cost tracking", bold: true })]),
   bullet([new TextRun({ text: "✓ SuperAdmin dashboard + RBAC + billing + support ticket system", bold: true })]),
   bullet([new TextRun({ text: "✓ Smartlink (kompetitor) Excel migration dengan AI mapping", bold: true })]),
   bullet([new TextRun({ text: "✓ PWA installable + mobile-first responsive design", bold: true })]),
@@ -445,7 +445,7 @@ const content = [
   dataTable(
     ["Capability", "Smartlink", "Cuci.Co", "LAMASY"],
     [
-      ["AI integration", "❌", "❌", "✓ 9 fitur"],
+      ["AI integration", "❌", "❌", "✓ 11 fitur"],
       ["Multi-outlet HQ console", "Limited", "Basic", "✓ Full"],
       ["Customer portal", "❌", "Basic", "✓ Full"],
       ["Antar-jemput integrated", "❌", "Limited", "✓ Mobile app"],
