@@ -188,7 +188,7 @@ const content = [
   ...bullet([new TextRun({ text: "Tenant ", bold: true }), new TextRun("= bisnis laundry (1 owner, N outlet)")]),
   ...bullet([new TextRun({ text: "Outlet ", bold: true }), new TextRun("= lokasi fisik dengan operasional independen")]),
   ...bullet([new TextRun({ text: "Isolasi data ", bold: true }), new TextRun("enforced di query layer via TenantResolver + TenantQuery helper")]),
-  ...bullet([new TextRun({ text: "103 tabel database ", bold: true }), new TextRun("mencakup operasional, finansial, HR, AI, dan platform")]),
+  ...bullet([new TextRun({ text: "~125 tabel database ", bold: true }), new TextRun("mencakup operasional, finansial, HR, AI, dan platform")]),
 
   h2("2.2 Tech Stack"),
   dataTable(
@@ -818,7 +818,7 @@ const content = [
   dataTable(
     ["Metric", "Count"],
     [
-      ["DB Tables", "103"],
+      ["DB Tables", "~125"],
       ["PHP files (Outlet + Public)", "61"],
       ["PHP files (HQ)", "30"],
       ["PHP files (SuperAdmin)", "24"],
@@ -829,6 +829,54 @@ const content = [
       ["Auto-deploy Time", "~15 detik"],
     ]
   ),
+
+  new Paragraph({ children: [new PageBreak()] }),
+  // ──── 15. Update Fitur Q2 2026 ────
+  h1("15. Update Fitur — Q2 2026"),
+  p("Modul & penyempurnaan yang live setelah 24 Juni 2026. Semua opt-in / aman dan terintegrasi ke modul terkait. Detail spec & plan ada di docs/superpowers/."),
+
+  h2("15.1 Referral / Ajak Teman"),
+  ...bullet("Opt-in per owner (tenants.referral_enabled + butuh loyalty aktif). Diatur di HQ → Loyalty."),
+  ...bullet("Pelanggan punya kode referral (hl_pelanggan.referral_code) + link share ?ref= ke self-booking."),
+  ...bullet("Atribusi 2 jalur: input kode manual di POS/self-booking ATAU link share. Tabel hl_referral (UNIQUE referee = satu teman sekali)."),
+  ...bullet("Payout: pengajak + teman dapat poin saat order pertama teman LUNAS (idempoten, via Loyalty::adjust). Cap per-pengajak; cap penuh → teman tetap dapat, pengajak 0."),
+  ...bullet("Anti-abuse: teman harus baru (tak punya order), no self-refer (id+telepon). core/Referral.php."),
+
+  h2("15.2 Voice Order (POS)"),
+  ...bullet("Kasir input order via suara: rekam → STT (native Android) → api/voice_order_parse.php → core/VoiceOrderParser.php (Claude) → form POS terisi."),
+  ...bullet("Tombol mic berubah state saat recording; potong coin hanya saat parse sukses. Termasuk dalam metering AI."),
+
+  h2("15.3 Offline POS + Sync"),
+  ...bullet("POS tetap menerima order saat internet mati. assets/offline-pos.js: IndexedDB (katalog cache + antrian order)."),
+  ...bullet("Endpoint pos.php?action=catalog_snapshot & sync_offline; core/OrderCreator.php::createOffline. Idempoten via hl_transaksi.offline_uuid (UNIQUE)."),
+  ...bullet("Struk offline pakai kode sementara OFF-<dev>-<seq>; saat sync dapat nomor asli + alias offline_ref (tetap bisa dilacak di track.php/orders.php)."),
+  ...bullet("Service worker sw-tenant.js cache shell POS. Kontrol online-only (deposit/redeem/voucher) auto-disable saat offline; network-fail saat online → fallback enqueue."),
+
+  h2("15.4 Checklist Wajib-Foto"),
+  ...bullet("Saat buat template checklist, tiap item bisa ditandai 'wajib foto'. core/Checklist.php; data di items_json/answers_json (tanpa migrasi)."),
+  ...bullet("Sisi pengisian: item wajib-foto yang dicentang harus lampirkan foto — blok simpan (validasi klien + server otoritatif). Upload ke uploads/foto_checklist (anti-XSS path)."),
+
+  h2("15.5 Absensi: Selfie + Geofence + Shift"),
+  ...bullet("Clock-in: selfie WAJIB + geofence ketat (config per-outlet + peta Leaflet). Lokasi diverifikasi server."),
+  ...bullet("Jadwal shift (hl_shift / hl_jadwal_shift): hitung telat/lembur otomatis (core/ShiftCalc.php), snapshot saat absen, handover shift."),
+
+  h2("15.6 Penggajian: Bonus & Bagi-Hasil"),
+  ...bullet("Aturan bonus karyawan (hl_bonus_rule, core/BonusEvaluator.php) masuk ke slip gaji."),
+  ...bullet("Bagi-hasil (core/BagiHasilCalculator.php, hl_bagi_hasil) untuk skema profit-sharing."),
+
+  h2("15.7 Ringkasan Fitur Baru"),
+  dataTable(
+    ["Fitur", "Inti", "Status"],
+    [
+      ["Referral", "Kode/link → poin dua-duanya saat order pertama teman lunas (opt-in)", "Live"],
+      ["Voice Order", "Suara → AI parse → form POS (metered coin)", "Live"],
+      ["Offline POS", "Order saat internet mati → IndexedDB queue → sync idempoten", "Live"],
+      ["Checklist Wajib-Foto", "Item wajib lampirkan foto, blok simpan kalau kosong", "Live"],
+      ["Absensi Hardening", "Selfie + geofence + jadwal shift (telat/lembur)", "Live"],
+      ["Bonus & Bagi-Hasil", "Aturan bonus + profit-sharing ke slip gaji", "Live"],
+    ]
+  ),
+  callout("E2E manual di device masih pending untuk: offline POS (airplane mode), voice order, checklist wajib-foto, referral.", AMBER),
 
   new Paragraph({ spacing: { before: 600 }, children: [] }),
   new Paragraph({

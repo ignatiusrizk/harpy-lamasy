@@ -199,7 +199,7 @@ const content = [
   h2("Highlight Investasi"),
   bullet([new TextRun({ text: "Pasar besar dan terfragmentasi: ", bold: true }), new TextRun("~50.000+ usaha laundry di Indonesia, mayoritas masih spreadsheet/manual.")]),
   bullet([new TextRun({ text: "Product live & functional: ", bold: true }), new TextRun("Platform sudah jalan di lamasy.harpy.id dengan tenant aktif transaksi.")]),
-  bullet([new TextRun({ text: "AI-first differentiation: ", bold: true }), new TextRun("9 fitur AI live (briefing, chat, churn, anomaly, dll) — moat sulit di-replikasi.")]),
+  bullet([new TextRun({ text: "AI-first differentiation: ", bold: true }), new TextRun("11 fitur AI live (briefing, chat, churn, anomaly, dll) — moat sulit di-replikasi.")]),
   bullet([new TextRun({ text: "Multi-tenant scalable: ", bold: true }), new TextRun("Single platform handle 1 owner sampai chain N-outlet dengan HQ konsolidasi.")]),
   bullet([new TextRun({ text: "Indonesia-native: ", bold: true }), new TextRun("UU PDP compliant, SAK EMKM laporan, Bahasa Indonesia interface, Fonnte WA integration.")]),
 
@@ -292,6 +292,8 @@ const content = [
   bullet("Antar-jemput dengan kurir mobile app (foto + signature delivery proof)"),
   bullet("Self-service mesin untuk laundromat (customer scan QR → booking sendiri)"),
   bullet("Inventori dengan auto-deduct bahan + alert stok kritis + PO PDF"),
+  bullet("POS Voice Order — input order via suara (AI parse) + mode Offline (order saat internet mati → sync otomatis)"),
+  bullet("Checklist operasional dengan opsi wajib lampirkan foto per item"),
 
   h3("Customer-Centric"),
   bullet("Portal pelanggan via QR di struk (read-only, secure)"),
@@ -299,6 +301,7 @@ const content = [
   bullet("Member tier system (Bronze/Silver/Gold/VIP) dengan auto-promotion"),
   bullet("Sistem poin + reward catalog"),
   bullet("Deposit wallet untuk customer regular"),
+  bullet("Referral 'ajak teman' — kode/link share, poin dua-duanya saat order pertama teman lunas (growth loop viral)"),
 
   h3("Keuangan"),
   bullet("Kas harian per outlet + mutasi antar kas"),
@@ -312,6 +315,8 @@ const content = [
   bullet("Penggajian dengan komponen custom"),
   bullet("Komisi rekap per karyawan"),
   bullet("Bonus rule target-based per outlet"),
+  bullet("Absensi selfie + geofence ketat + jadwal shift (telat/lembur otomatis)"),
+  bullet("Bagi-hasil / profit-sharing ke slip gaji"),
 
   new Paragraph({ children: [new PageBreak()] }),
 
@@ -324,7 +329,7 @@ const content = [
     new TextRun({ text: "ERP modern dengan integrasi AI pertama di Indonesia untuk laundry SME.", italics: true, color: INK, size: 22 }),
   ], "violet"),
 
-  h2("9 AI Features Live"),
+  h2("11 AI Features Live"),
   dataTable(
     ["Fitur", "Value untuk Tenant", "Tech"],
     [
@@ -337,6 +342,8 @@ const content = [
       ["AI Daily Report", "Auto-generated daily report HQ", "Claude Sonnet"],
       ["AI Generate Nota", "Smart nota template generation", "Claude Haiku"],
       ["AI Send WA", "AI-rewrite WA message ke customer", "Claude Haiku"],
+      ["AI Voice Order", "Input order via suara → form POS otomatis", "Claude + STT"],
+      ["AI Scan Struk", "Foto struk belanja → entri kas otomatis", "Claude Vision"],
     ]
   ),
 
