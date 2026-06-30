@@ -31,7 +31,7 @@
       await pput('meta', _scope, 'scope');
       let dev = await pget('meta', 'deviceId');
       if (!dev) { dev = Math.random().toString(36).slice(2, 4).toUpperCase(); await pput('meta', dev, 'deviceId'); }
-      window.addEventListener('online',  () => { this._renderBanner(); this.sync(); });
+      window.addEventListener('online',  () => { this._renderBanner(); this.snapshotCatalog().catch(()=>{}); this.sync().catch(()=>{}); });
       window.addEventListener('offline', () => this._renderBanner());
       this._renderBanner(); this._renderIndicator();
       if (this.isOnline()) { this.snapshotCatalog().catch(()=>{}); this.sync().catch(()=>{}); }
@@ -84,6 +84,7 @@
       this._renderIndicator();
     },
     async clearScope() {
+      if (!_db) return;
       for (const s of STORES) { await new Promise((res)=>{ const q = tx(s,'readwrite').clear(); q.onsuccess=()=>res(); q.onerror=()=>res(); }); }
     },
     _renderBanner() {
