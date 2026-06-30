@@ -17,13 +17,17 @@ class CoinModeManager
         $db = Database::get();
         $db->beginTransaction();
         try {
-            $cur = $db->prepare("SELECT coin_mode FROM tenants WHERE id=? FOR UPDATE");
+            // FIX 3: lock tenant row once and read both coin_mode + coin_balance together
+            $cur = $db->prepare("SELECT coin_mode, coin_balance FROM tenants WHERE id=? FOR UPDATE");
             $cur->execute([$tenantId]);
-            $from = $cur->fetchColumn();
-            if ($from === false) {
+            $row = $cur->fetch(PDO::FETCH_ASSOC);
+            if ($row === false) {
                 $db->rollBack();
                 return ['ok'=>false,'moved'=>0,'from'=>'','to'=>$newMode,'error'=>'Tenant tidak ditemukan'];
             }
+            $from = $row['coin_mode'];
+            $pool = (int)$row['coin_balance'];
+
             if ($from === $newMode) {
                 $db->commit();
                 return ['ok'=>true,'moved'=>0,'from'=>$from,'to'=>$newMode,'error'=>null];
@@ -33,14 +37,20 @@ class CoinModeManager
             $desc  = 'Migrasi mode coin ' . $from . '→' . $newMode . ($actor ? " ({$actor})" : '');
 
             if ($newMode === 'per_outlet') {
-                $tb = $db->prepare("SELECT coin_balance FROM tenants WHERE id=? FOR UPDATE");
-                $tb->execute([$tenantId]);
-                $pool = (int)$tb->fetchColumn();
-                $mainId = self::mainOutletId($db, $tenantId);
+                // FIX 2: single locked query for main outlet (id + balance together, no race window)
+                $mo = $db->prepare("SELECT id, coin_balance FROM outlets WHERE tenant_id=? AND status<>'closed' ORDER BY is_main DESC, id ASC LIMIT 1 FOR UPDATE");
+                $mo->execute([$tenantId]);
+                $mainRow = $mo->fetch(PDO::FETCH_ASSOC);
+                $mainId  = $mainRow ? (int)$mainRow['id'] : 0;
+
+                // FIX 1: guard against coin stranding — pool > 0 but no non-closed outlet to receive
+                if ($pool > 0 && $mainId <= 0) {
+                    $db->rollBack();
+                    return ['ok'=>false,'moved'=>0,'from'=>$from,'to'=>$newMode,'error'=>'Tidak ada outlet aktif untuk menerima saldo coin'];
+                }
+
                 if ($pool > 0 && $mainId > 0) {
-                    $ob = $db->prepare("SELECT coin_balance FROM outlets WHERE id=? AND tenant_id=? FOR UPDATE");
-                    $ob->execute([$mainId, $tenantId]);
-                    $newOut = (int)$ob->fetchColumn() + $pool;
+                    $newOut = (int)$mainRow['coin_balance'] + $pool;
                     $db->prepare("UPDATE outlets SET coin_balance=? WHERE id=? AND tenant_id=?")->execute([$newOut, $mainId, $tenantId]);
                     $db->prepare("UPDATE tenants SET coin_balance=0 WHERE id=?")->execute([$tenantId]);
                     self::ledger($db, $tenantId, null, 'deduct', $pool, $desc, 0);
@@ -52,9 +62,7 @@ class CoinModeManager
                 $rows = $db->prepare("SELECT id, coin_balance FROM outlets WHERE tenant_id=? FOR UPDATE");
                 $rows->execute([$tenantId]);
                 $outlets = $rows->fetchAll(PDO::FETCH_ASSOC);
-                $tb = $db->prepare("SELECT coin_balance FROM tenants WHERE id=? FOR UPDATE");
-                $tb->execute([$tenantId]);
-                $pool = (int)$tb->fetchColumn();
+                // FIX 3: $pool already read from the first locked SELECT above (no second tenant SELECT needed)
                 $sum = 0;
                 foreach ($outlets as $o) {
                     $bal = (int)$o['coin_balance'];
@@ -78,13 +86,6 @@ class CoinModeManager
             if ($db->inTransaction()) $db->rollBack();
             return ['ok'=>false,'moved'=>0,'from'=>'','to'=>$newMode,'error'=>$e->getMessage()];
         }
-    }
-
-    private static function mainOutletId(PDO $db, int $tenantId): int
-    {
-        $s = $db->prepare("SELECT id FROM outlets WHERE tenant_id=? AND status<>'closed' ORDER BY is_main DESC, id ASC LIMIT 1");
-        $s->execute([$tenantId]);
-        return (int)($s->fetchColumn() ?: 0);
     }
 
     private static function ledger(PDO $db, int $tenantId, ?int $outletId, string $type, int $amount, string $desc, int $balanceAfter): void

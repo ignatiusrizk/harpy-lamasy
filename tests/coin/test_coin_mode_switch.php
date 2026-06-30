@@ -22,6 +22,12 @@ $tid = (int)$db->lastInsertId();
 
 // 2 outlet temp (clone baris outlet existing kalau ada, else minimal)
 $osrc = $db->query("SELECT * FROM outlets LIMIT 1")->fetch(PDO::FETCH_ASSOC);
+// FIX 4: guard — no outlets in DB means we can't clone a row, clean up temp tenant and skip
+if (!$osrc) {
+    $db->prepare("DELETE FROM tenants WHERE id=?")->execute([$tid]);
+    echo "SKIP: tidak ada outlet\n";
+    exit(0);
+}
 function mkOutlet(PDO $db, array $osrc, int $tid, string $nama, int $isMain, int $bal): int {
     unset($osrc['id']);
     $osrc['tenant_id'] = $tid; $osrc['nama_outlet'] = $nama; $osrc['is_main'] = $isMain;
@@ -77,6 +83,36 @@ try {
     // ── (d) mode tidak valid ──
     $r4 = CoinModeManager::switchMode($tid, 'bogus', 'test');
     ok($r4['ok'] === false, '(d) mode invalid ditolak');
+
+    // ── (e) FIX 1: shared→per_outlet gagal jika pool > 0 tapi tidak ada outlet aktif ──
+    // Buat tenant temp baru dengan coin_balance > 0
+    $src2 = $db->query("SELECT * FROM tenants WHERE id=$tid")->fetch(PDO::FETCH_ASSOC);
+    unset($src2['id']);
+    $src2['slug']        = 'zz_test_coin_strand_' . time();
+    $src2['email']       = 'zz_test_coin_strand_' . time() . '@test.invalid';
+    $src2['coin_mode']   = 'shared';
+    $src2['coin_balance'] = 99999;
+    $cols2 = array_keys($src2);
+    $db->prepare("INSERT INTO tenants (".implode(',', $cols2).") VALUES (".implode(',', array_fill(0,count($cols2),'?')).")")
+       ->execute(array_values($src2));
+    $tid2 = (int)$db->lastInsertId();
+
+    // Buat satu outlet lalu tutup (status='closed') agar tidak ada outlet aktif
+    $o_closed = mkOutlet($db, $osrc, $tid2, 'ZZ_TEST_CLOSED', 1, 0);
+    $db->prepare("UPDATE outlets SET status='closed' WHERE id=?")->execute([$o_closed]);
+
+    $r5 = CoinModeManager::switchMode($tid2, 'per_outlet', 'test');
+    ok($r5['ok'] === false, '(e) stranding ditolak — tidak ada outlet aktif');
+    ok(isset($r5['error']) && $r5['error'] !== '', '(e) error message ada');
+    $modeAfter = $db->query("SELECT coin_mode FROM tenants WHERE id=$tid2")->fetchColumn();
+    $balAfter  = (int)$db->query("SELECT coin_balance FROM tenants WHERE id=$tid2")->fetchColumn();
+    ok($modeAfter !== 'per_outlet', '(e) coin_mode tidak berubah ke per_outlet');
+    ok($balAfter === 99999, '(e) coin_balance tidak berubah (99999)');
+
+    // Cleanup tenant dan outlet ekstra dari test (e)
+    $db->prepare("DELETE FROM coin_ledger WHERE tenant_id=?")->execute([$tid2]);
+    $db->prepare("DELETE FROM outlets WHERE tenant_id=?")->execute([$tid2]);
+    $db->prepare("DELETE FROM tenants WHERE id=?")->execute([$tid2]);
 
     echo "OK test_coin_mode_switch\n";
 } finally {
