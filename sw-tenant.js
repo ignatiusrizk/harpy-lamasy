@@ -117,7 +117,7 @@ function staleWhileRevalidate(req) {
   return caches.open(CACHE).then(cache =>
     cache.match(req).then(cached => {
       const network = fetch(req).then(resp => {
-        if (resp && resp.ok) cache.put(req, resp.clone());
+        if (resp && resp.ok) cache.put(req, resp.clone()).catch(() => {});
         return resp;
       }).catch(() => null);
       return cached || network.then(r => r || offlinePage());

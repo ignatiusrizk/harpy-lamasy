@@ -6,11 +6,17 @@ const path = require('path');
 
 let pass = 0, fail = 0;
 const ok = (c, m) => c ? (pass++, console.log('  ok   - ' + m)) : (fail++, console.error('  FAIL - ' + m));
-const urlOf = (r) => (typeof r === 'string' ? r : r.url);
+const SW_ORIGIN = 'https://lamasy.harpy.id';
+// Normalize any string path or Request to a full URL, mirroring what the real
+// Cache API does internally (it resolves relative keys against the SW origin).
+const urlOf = (r) => new URL(typeof r === 'string' ? r : r.url, SW_ORIGIN).href;
 
-// Fake Cache API berbagi satu store (url -> Response)
+// Fake Cache API berbagi satu store (full-url -> Response).
+// Seed keys are normalized to full URLs so that seeding with '/pos' and looking
+// up with '/pos' (or the full URL) resolve to the same Map entry — matching how
+// the real Cache API resolves keys against the SW origin.
 function makeCaches(seed) {
-  const store = new Map(Object.entries(seed || {}));
+  const store = new Map(Object.entries(seed || {}).map(([k, v]) => [urlOf(k), v]));
   const cache = {
     match: (r) => Promise.resolve(store.get(urlOf(r))),
     put: (r, resp) => { store.set(urlOf(r), resp); return Promise.resolve(); },
