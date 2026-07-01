@@ -8,6 +8,29 @@ date_default_timezone_set('Asia/Jakarta');
 $tenantId = (int)($_SESSION['tenant_id'] ?? 0);
 if (!$tenantId) { header('Location: /login'); exit; }
 
+// ── Proxy gambar QR (same-origin) supaya bisa di-share sbg file via navigator.share ──
+// Scope tenant + hanya domain Midtrans (anti-SSRF). Baca qr_string milik payment sendiri.
+if (($_GET['action'] ?? '') === 'qr_img') {
+    $pid = (int)($_GET['pid'] ?? 0);
+    $db  = Database::get();
+    $st  = $db->prepare("SELECT qr_string FROM saas_payments WHERE id=? AND tenant_id=?");
+    $st->execute([$pid, $tenantId]);
+    $qr  = (string)$st->fetchColumn();
+    if ($qr === '') { http_response_code(404); exit; }
+    $host = parse_url($qr, PHP_URL_HOST) ?: '';
+    if (!preg_match('/(^|\.)midtrans\.com$/i', $host)) { http_response_code(400); exit; }
+    $ch = curl_init($qr);
+    curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 10, CURLOPT_FOLLOWLOCATION => true, CURLOPT_SSL_VERIFYPEER => true]);
+    $img  = curl_exec($ch);
+    $ct   = curl_getinfo($ch, CURLINFO_CONTENT_TYPE) ?: 'image/png';
+    $code = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    if ($code !== 200 || $img === false || $img === '') { http_response_code(502); exit; }
+    header('Content-Type: ' . $ct);
+    header('Cache-Control: private, max-age=300');
+    echo $img; exit;
+}
+
 $type = $_GET['type'] ?? '';
 $validTypes = ['topup_coin', 'setup_fee', 'outlet_activation'];
 if (!in_array($type, $validTypes, true)) {
@@ -282,6 +305,7 @@ setInterval(poll, 5000);
 
 // ── Navigasi + aksi QR ──
 const qrUrl = <?= json_encode($payment['qr_string'] ?? '') ?>;
+const qrProxy = 'billing-checkout.php?action=qr_img&pid=<?= (int)$payment['id'] ?>'; // same-origin, bisa di-fetch utk share file
 
 function goBack() {
   if (document.referrer && history.length > 1) { history.back(); }
@@ -315,7 +339,7 @@ function fallbackCopy(txt, done) {
 async function fetchQrBlob() {
   if (!qrUrl) return null;
   try {
-    const r = await fetch(qrUrl, { mode: 'cors' });
+    const r = await fetch(qrProxy); // proxy same-origin → tak kena CORS, blob bisa dipakai share file
     if (!r.ok) return null;
     return await r.blob();
   } catch (e) { return null; }
