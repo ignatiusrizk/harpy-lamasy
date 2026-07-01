@@ -175,6 +175,14 @@ require __DIR__ . '/_layout_open.php';
 
 <script>
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const CSRF = <?= json_encode(getCsrfToken()) ?>;
+// Helper POST JSON + kirim CSRF token (server verifyCsrf baca header X-CSRF-Token)
+async function postJson(url, payload){
+  const r = await fetch(url, {method:'POST', headers:{'Content-Type':'application/json','X-CSRF-Token':CSRF}, body:JSON.stringify(payload)});
+  const txt = await r.text();
+  try { return JSON.parse(txt); }
+  catch(e){ return {error: (txt || ('HTTP '+r.status)).slice(0,120)}; }
+}
 let curPesan = '';
 
 function selectedOutlets(){
@@ -186,8 +194,7 @@ async function previewRecip(){
   const el = document.getElementById('recipPreview');
   if (!ids.length){ el.textContent = 'Pilih minimal 1 outlet.'; return; }
   try {
-    const r = await fetch('/hq/broadcast.php?action=preview', {method:'POST', body:JSON.stringify({outlet_ids:ids})});
-    const d = await r.json();
+    const d = await postJson('/hq/broadcast.php?action=preview', {outlet_ids:ids});
     if (d.error){ el.textContent = '⚠️ '+d.error; return; }
     el.innerHTML = `📱 <strong>${d.recipients.length} penerima</strong> dengan nomor WA di outlet terpilih`;
   } catch(e){ el.textContent = '⚠️ '+e.message; }
@@ -200,9 +207,7 @@ async function createBroadcast(){
   if (!judul || !pesan){ alert('Judul & pesan wajib diisi'); return; }
   if (!ids.length){ alert('Pilih minimal 1 outlet'); return; }
   try {
-    const r = await fetch('/hq/broadcast.php?action=create', {method:'POST',
-      body:JSON.stringify({judul, pesan, outlet_ids:ids})});
-    const d = await r.json();
+    const d = await postJson('/hq/broadcast.php?action=create', {judul, pesan, outlet_ids:ids});
     if (d.error){ alert('⚠️ '+d.error); return; }
     document.getElementById('bcJudul').value='';
     document.getElementById('bcPesan').value='';
@@ -259,7 +264,7 @@ function closeDetail(){ document.getElementById('detailModal').classList.remove(
 
 async function markSent(rid, el){
   try {
-    await fetch('/hq/broadcast.php?action=mark_sent', {method:'POST', body:JSON.stringify({recipient_id:rid})});
+    await postJson('/hq/broadcast.php?action=mark_sent', {recipient_id:rid});
     el.outerHTML = '<span class="recip-sent">✓ terkirim</span>';
   } catch(e){}
 }
