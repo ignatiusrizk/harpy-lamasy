@@ -153,20 +153,60 @@ function renderGlobalJsHelpers(): void { ?>
       } catch(e) {}
     })();
 
-    // ── Hardware back button (native app): jangan keluar app — mundur ke halaman/menu sebelumnya ──
+    // ── Hardware back button (native app): berjenjang — tutup overlay → dashboard → double-tap keluar ──
     (function(){
       try {
         var App = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App;
         if (!App || !App.addListener) return;
+        var backExitArmed = false;
+
+        function isVisible(el){
+          if (!el) return false;
+          var cs = window.getComputedStyle(el);
+          if (cs.display === 'none' || cs.visibility === 'hidden') return false;
+          // position:fixed → offsetParent null tapi tetap terlihat; jadi jangan andalkan offsetParent saja
+          return el.getClientRects().length > 0;
+        }
+        function isOpenOverlay(el){
+          var cls = (el.className && el.className.toString) ? el.className.toString() : '';
+          if (!/(modal|overlay|backdrop|drawer|sheet|popup)/i.test(cls)) return false;
+          if (!isVisible(el)) return false;
+          return /\b(open|active|show|visible)\b/.test(cls)
+                 || el.style.display === 'flex' || el.style.display === 'block';
+        }
+        function closeTopOverlay(){
+          var nodes = document.querySelectorAll(
+            '[class*="modal"],[class*="overlay"],[class*="backdrop"],[class*="drawer"],[class*="sheet"],[class*="popup"]'
+          );
+          var cands = [];
+          for (var i = 0; i < nodes.length; i++){ if (isOpenOverlay(nodes[i])) cands.push(nodes[i]); }
+          if (!cands.length) return false;
+          cands.sort(function(a, b){
+            return (parseInt(window.getComputedStyle(a).zIndex, 10) || 0)
+                 - (parseInt(window.getComputedStyle(b).zIndex, 10) || 0);
+          });
+          var top = cands[cands.length - 1];
+          var btn = top.querySelector('.modal-close, [data-close], [onclick*="close" i]');
+          if (btn) { btn.click(); return true; }
+          top.classList.remove('open', 'active', 'show', 'visible');
+          if (top.style.display) top.style.display = 'none';
+          return true;
+        }
+
         App.addListener('backButton', function(e){
-          // Kalau ada modal/overlay terbuka, tutup itu dulu (jangan navigasi)
-          var openModal = document.querySelector('.modal.open, [data-modal-open="1"]');
-          if (openModal) { openModal.classList.remove('open'); openModal.removeAttribute('data-modal-open'); return; }
-          if (e && e.canGoBack) { window.history.back(); return; }
-          // Di root history: jangan keluar — arahkan ke dashboard; kalau sudah di dashboard, minimize (bukan exit)
+          // 1) Tutup overlay teratas bila ada
+          if (closeTopOverlay()) return;
+          // 2) Bukan di dashboard → ke dashboard (bukan history.back)
           var p = location.pathname.replace(/\/$/, '');
-          if (p !== '/dashboard' && p !== '/login' && p !== '') { location.href = '/dashboard'; }
-          else { try { App.minimizeApp(); } catch(_){} }
+          if (p !== '/dashboard' && p !== '/login' && p !== '') { location.href = '/dashboard'; return; }
+          // 3) Di dashboard → double-tap untuk keluar
+          if (!backExitArmed) {
+            backExitArmed = true;
+            setTimeout(function(){ backExitArmed = false; }, 2000);
+            if (typeof showToast === 'function') { try { showToast('Tekan sekali lagi untuk keluar', 'info'); } catch(_){} }
+            return;
+          }
+          try { App.exitApp(); } catch(_){ try { App.minimizeApp(); } catch(__){} }
         });
       } catch(e) {}
     })();
