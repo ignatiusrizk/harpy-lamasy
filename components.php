@@ -225,7 +225,7 @@ function renderGlobalJsHelpers(): void { ?>
         + '.lm-overlay.show{display:flex}';
       document.head.appendChild(s);
 
-      var LOGO = '/assets/loader-logo.png?v=<?= @filemtime(__DIR__ . '/assets/loader-logo.png') ?: date('Ymd') ?>';
+      var LOGO = '/assets/loader-mark.png';
       var mk = function(sz){ return '<span class="lm-loader" style="--sz:'+sz+'px"><span class="lm-ring"></span><img class="lm-logo" src="'+LOGO+'" alt=""></span>'; };
       window.lmLoaderHTML = function(sz){ return '<div class="lm-loading">' + mk(sz||52) + '<span>Memuat…</span></div>'; };
 
@@ -263,7 +263,7 @@ function renderGlobalJsHelpers(): void { ?>
 
       var el = document.createElement('div');
       el.id = 'ptrIndicator';
-      el.innerHTML = '<span class="lm-loader" style="--sz:42px"><span class="lm-ring"></span><img class="lm-logo" src="/assets/loader-logo.png" alt=""></span>';
+      el.innerHTML = '<span class="lm-loader" style="--sz:42px"><span class="lm-ring"></span><img class="lm-logo" src="/assets/loader-mark.png" alt=""></span>';
       el.style.transition = 'opacity .15s';
       var css = document.createElement('style');
       css.textContent = '#ptrIndicator{position:fixed;top:0;left:50%;transform:translate(-50%,-60px);z-index:9999;opacity:0;pointer-events:none}';
