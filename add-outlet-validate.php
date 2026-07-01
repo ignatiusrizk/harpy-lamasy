@@ -10,8 +10,17 @@ function aoValidateAddress(array $post): array
     if (strlen($penerima) < 2)          $errors[] = 'Nama penerima wajib diisi.';
     if (!preg_match('/\d{8,}/', preg_replace('/\D/','',$telepon))) $errors[] = 'No. HP penerima wajib (min 8 digit).';
     if (strlen($alamat) < 8)            $errors[] = 'Alamat jalan wajib diisi (min 8 karakter).';
-    foreach (['w_prov'=>'Provinsi','w_kota'=>'Kota/Kabupaten','w_kec'=>'Kecamatan','w_kel'=>'Kelurahan'] as $k=>$label) {
-        if (trim($post[$k] ?? '') === '') $errors[] = $label.' wajib dipilih.';
+    // Wilayah: pemanggil baru (add-outlet) kirim kode w_prov/w_kota/w_kec/w_kel;
+    // pemanggil lama (wizard SA registrasi) kirim teks `kota`. Dukung keduanya.
+    $usesCodes = trim($post['w_prov'] ?? '') !== '' || trim($post['w_kota'] ?? '') !== ''
+              || trim($post['w_kec'] ?? '')  !== '' || trim($post['w_kel'] ?? '')  !== '';
+    if ($usesCodes) {
+        foreach (['w_prov'=>'Provinsi','w_kota'=>'Kota/Kabupaten','w_kec'=>'Kecamatan','w_kel'=>'Kelurahan'] as $k=>$label) {
+            if (trim($post[$k] ?? '') === '') $errors[] = $label.' wajib dipilih.';
+        }
+    } else {
+        // Mode teks (legacy, wizard SA): minimal kota terisi.
+        if (strlen(trim($post['kota'] ?? '')) < 2) $errors[] = 'Kota/Kabupaten wajib diisi.';
     }
     if (!preg_match('/^\d{5}$/', $kodePos)) $errors[] = 'Kode pos wajib 5 digit.';
     return $errors;

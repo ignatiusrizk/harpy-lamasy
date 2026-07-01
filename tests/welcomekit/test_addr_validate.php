@@ -20,4 +20,9 @@ ok(count(aoValidateAddress(array_merge($valid,['kode_pos'=>'1234']))) > 0, 'kode
 ok(count(aoValidateAddress(array_merge($valid,['kode_pos'=>'123456']))) > 0, 'kode_pos 6 digit → error');
 ok(count(aoValidateAddress(array_merge($valid,['kode_pos'=>'1234a']))) > 0, 'kode_pos non-digit → error');
 
+// Legacy mode (wizard SA registrasi): pakai teks `kota`, tanpa kode wilayah w_*
+$legacy = ['penerima'=>'Budi','telepon'=>'08123456789','alamat'=>'Jl. Uji No 1','kota'=>'Bandung','kode_pos'=>'40111'];
+ok(count(aoValidateAddress($legacy)) === 0, 'legacy kota teks → tanpa error');
+ok(count(aoValidateAddress(array_merge($legacy,['kota'=>'']))) > 0, 'legacy kota kosong → error');
+
 echo "OK test_addr_validate\n";
