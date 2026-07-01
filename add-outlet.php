@@ -383,14 +383,28 @@ if ($isHqMode) {
 .field { margin-bottom: 18px; }
 .field label { display:block; font-size:13px; font-weight:600; margin-bottom:6px; color:var(--dark); }
 .req { color: var(--teal); } .opt { color: var(--gray); font-weight:400; font-size:12px; }
-.field input, .field textarea {
+.field input, .field textarea, .field select {
   width: 100%; padding: 10px 14px;
   border: 1.5px solid rgba(27,45,90,.12); border-radius: 8px;
   font-size: 14px; font-family: inherit; color: var(--dark);
-  transition: border-color .2s; outline: none; background: #fff;
+  transition: border-color .2s, box-shadow .2s; outline: none; background: #fff;
 }
-.field input:focus, .field textarea:focus { border-color: var(--teal); }
+.field input:focus, .field textarea:focus, .field select:focus {
+  border-color: var(--teal); box-shadow: 0 0 0 3px rgba(53,232,213,.18);
+}
 .field textarea { resize: vertical; min-height: 72px; }
+/* Dropdown wilayah — chevron kustom + rapi seragam dgn input */
+.field select {
+  -webkit-appearance: none; appearance: none; cursor: pointer;
+  padding-right: 40px; line-height: 1.3;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%231CC4B2' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 14px center;
+}
+.field select:disabled {
+  background-color: #F3F4F6; color: #9CA3AF; cursor: not-allowed; opacity: 1;
+  border-color: rgba(27,45,90,.08);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23CBD5E1' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+}
 .hint { font-size: 12px; color: var(--gray); margin-top: 5px; }
 .alert-error {
   background: #FEF2F2; border: 1px solid #FECACA;
