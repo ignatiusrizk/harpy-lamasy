@@ -528,13 +528,20 @@ require __DIR__ . '/_layout_open.php';
   .modal-footer{display:flex;gap:10px;margin-top:20px;justify-content:flex-end}
 
   @media(max-width:640px){
+    h1{font-size:1.15rem}
     .keu-card{padding:14px}
+    /* Tab bar bisa digeser mendatar, tak terpotong */
+    .keu-tabs{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;gap:0}
+    .keu-tab{white-space:nowrap;flex:0 0 auto;padding:9px 13px;font-size:12.5px}
     /* Tabel keuangan bisa digeser mendatar, tak terpotong */
     table.keu-tbl{display:block;overflow-x:auto;white-space:nowrap;-webkit-overflow-scrolling:touch}
     /* Grid 2/3 kolom (termasuk inline) menumpuk di HP */
     .keu-form .row2,.keu-form .row3{grid-template-columns:1fr}
     div[style*="360px 1fr"],div[style*="1fr 1fr"]{grid-template-columns:1fr!important}
+    /* Toolbar judul + kontrol: judul kiri, kontrol full-width di bawah */
     .bar-between{flex-wrap:wrap;gap:10px}
+    .bar-between > div{flex-wrap:wrap;width:100%}
+    .bar-between .outlet-sel{flex:1 1 100%;margin-bottom:0}
   }
 </style>
 
