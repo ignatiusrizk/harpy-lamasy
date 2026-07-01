@@ -224,6 +224,8 @@ require __DIR__ . '/_layout_open.php';
   .modal h4{font-size:16px;font-weight:800;color:#0F1C3A;margin-bottom:20px}
   .modal-footer{display:flex;gap:10px;margin-top:20px;justify-content:flex-end}
   @media(max-width:640px){
+    /* Tab bar mengisi lebar merata, tak terpotong */
+    .inv-tab{flex:1 1 0;padding:9px 8px;text-align:center;font-size:12.5px}
     /* Tabel investor bisa digeser mendatar, tak terpotong */
     table.inv-tbl{display:block;overflow-x:auto;white-space:nowrap;-webkit-overflow-scrolling:touch}
   }

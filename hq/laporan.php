@@ -670,6 +670,9 @@ require __DIR__ . '/_layout_open.php';
   /* ── Mobile: rapikan baris tombol filter (hilangkan margin-left:auto yg bikin ragged) ── */
   @media(max-width:640px){
     .lap-tab{flex:1 1 0;padding:9px 6px;text-align:center}
+    /* 7 sub-tab keuangan formal: geser mendatar, tak terpotong */
+    .keu-subtabs{width:auto;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch}
+    .keu-stab{flex:0 0 auto}
     .filter-bar{padding:12px;gap:8px}
     .filter-bar > label{flex:1 1 46%}
     .filter-bar > label input[type=date]{width:100%}

@@ -97,6 +97,9 @@ require __DIR__ . '/_layout_open.php';
 .item-row label{font-size:11px;color:#6B7280;white-space:nowrap;display:flex;align-items:center;gap:3px}
 .modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:18px}
 .empty{text-align:center;padding:40px;color:#6B7280}
+@media(max-width:640px){
+  .cl-tab{flex:1 1 0;padding:9px 8px;text-align:center;font-size:12.5px}
+}
 </style>
 
 <div class="head">
