@@ -316,7 +316,7 @@ require __DIR__ . '/_layout_open.php';
     <div style="overflow-x:auto">
       <table class="pivot-table" id="pivotTable">
         <thead><tr><th>Loading...</th></tr></thead>
-        <tbody><tr><td>⏳ Memuat data...</td></tr></tbody>
+        <tbody><tr><td style="padding:0"><div class="lm-loading"><span class="lm-loader" style="--sz:52px"><span class="lm-ring"></span><img class="lm-logo" src="/assets/loader-logo.png" alt=""></span><span>Memuat data…</span></div></td></tr></tbody>
       </table>
     </div>
     <p style="margin-top:12px;font-size:12px;color:#6B7280">
@@ -332,7 +332,7 @@ require __DIR__ . '/_layout_open.php';
           <tr><th>Outlet</th><th>Bahan</th><th>Kategori</th><th class="num">Stok</th><th class="num">Min</th><th>Status</th></tr>
         </thead>
         <tbody id="hqAlertBody">
-          <tr><td colspan="6" style="text-align:center;padding:40px;color:#6B7280">⏳ Memuat data...</td></tr>
+          <tr><td colspan="6" style="padding:0"><div class="lm-loading"><span class="lm-loader" style="--sz:52px"><span class="lm-ring"></span><img class="lm-logo" src="/assets/loader-logo.png" alt=""></span><span>Memuat data…</span></div></td></tr>
         </tbody>
       </table>
     </div>

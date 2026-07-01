@@ -211,6 +211,50 @@ function renderGlobalJsHelpers(): void { ?>
       } catch(e) {}
     })();
 
+    <!-- Brand loader (logo Harpy + cincin berputar) -->
+    <style>
+    .lm-loader{position:relative;display:inline-flex;width:var(--sz,56px);height:var(--sz,56px);vertical-align:middle}
+    .lm-loader .lm-ring{position:absolute;inset:0;border-radius:50%;border:3px solid rgba(53,232,213,.22);border-top-color:#35E8D5;animation:lmspin .8s linear infinite}
+    .lm-loader .lm-logo{position:absolute;inset:15%;width:70%;height:70%;border-radius:50%;object-fit:cover;background:#fff}
+    @keyframes lmspin{to{transform:rotate(360deg)}}
+    @media (prefers-reduced-motion:reduce){.lm-loader .lm-ring{animation-duration:2.4s}}
+    .lm-loading{display:flex;flex-direction:column;align-items:center;gap:12px;padding:40px 16px;color:#6B7280;font-size:13px;font-weight:600}
+    .lm-overlay{position:fixed;inset:0;background:rgba(15,28,58,.92);display:none;align-items:center;justify-content:center;z-index:99998}
+    .lm-overlay.show{display:flex}
+    </style>
+    <script>
+    (function(){
+      var LOGO = '/assets/loader-logo.png';
+      var mk = function(sz){ return '<span class="lm-loader" style="--sz:'+sz+'px"><span class="lm-ring"></span><img class="lm-logo" src="'+LOGO+'" alt=""></span>'; };
+      window.lmLoaderHTML = function(sz){ return '<div class="lm-loading">' + mk(sz||52) + '<span>Memuat…</span></div>'; };
+
+      // Overlay transisi halaman
+      var ov = document.createElement('div');
+      ov.className = 'lm-overlay';
+      ov.innerHTML = mk(76);
+      function mountOv(){ if (document.body && !document.body.contains(ov)) document.body.appendChild(ov); }
+      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', mountOv); else mountOv();
+      var hideT = null;
+      window.lmShowPageLoader = function(){ ov.classList.add('show'); clearTimeout(hideT); hideT = setTimeout(function(){ ov.classList.remove('show'); }, 8000); };
+      window.lmHidePageLoader = function(){ ov.classList.remove('show'); clearTimeout(hideT); };
+
+      // Tampilkan overlay saat mulai navigasi ke halaman lain (same-origin, bukan tab baru / hash / eksternal)
+      document.addEventListener('click', function(e){
+        var a = e.target.closest ? e.target.closest('a[href]') : null;
+        if (!a) return;
+        if (a.target === '_blank' || a.hasAttribute('download')) return;
+        if (e.defaultPrevented || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button) return;
+        var href = a.getAttribute('href') || '';
+        if (!href || href.charAt(0) === '#' || /^(javascript|tel|mailto|whatsapp):/i.test(href)) return;
+        var u; try { u = new URL(a.href, location.href); } catch(_){ return; }
+        if (u.origin !== location.origin) return;                 // eksternal → biarkan
+        if (u.pathname === location.pathname && u.hash) return;    // anchor di halaman sama
+        window.lmShowPageLoader();
+      }, true);
+      window.addEventListener('pageshow', function(ev){ if (ev.persisted) window.lmHidePageLoader(); });
+    })();
+    </script>
+
     // ── Pull-to-refresh (perangkat sentuh): tarik dari atas → reload ──
     (function(){
       if (!('ontouchstart' in window) && !(navigator.maxTouchPoints > 0)) return;
@@ -219,16 +263,10 @@ function renderGlobalJsHelpers(): void { ?>
 
       var el = document.createElement('div');
       el.id = 'ptrIndicator';
-      el.innerHTML = '<div class="ptr-spin"></div>';
+      el.innerHTML = '<span class="lm-loader" style="--sz:42px"><span class="lm-ring"></span><img class="lm-logo" src="/assets/loader-logo.png" alt=""></span>';
       el.style.transition = 'opacity .15s';
       var css = document.createElement('style');
-      css.textContent =
-        '#ptrIndicator{position:fixed;top:0;left:50%;transform:translate(-50%,-60px);z-index:9999;'
-      + 'width:40px;height:40px;border-radius:50%;background:#fff;box-shadow:0 2px 10px rgba(0,0,0,.15);'
-      + 'display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none}'
-      + '#ptrIndicator .ptr-spin{width:20px;height:20px;border:2.5px solid #E5E7EB;border-top-color:#14B8A6;border-radius:50%}'
-      + '#ptrIndicator.ptr-spinning .ptr-spin{animation:ptrspin .7s linear infinite}'
-      + '@keyframes ptrspin{to{transform:rotate(360deg)}}';
+      css.textContent = '#ptrIndicator{position:fixed;top:0;left:50%;transform:translate(-50%,-60px);z-index:9999;opacity:0;pointer-events:none}';
       document.head.appendChild(css);
       function mount(){ if (document.body && !document.body.contains(el)) document.body.appendChild(el); }
       if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', mount); else mount();
@@ -272,7 +310,6 @@ function renderGlobalJsHelpers(): void { ?>
         if (!armed) return;
         armed = false;
         if (pull >= THRESHOLD) {
-          el.classList.add('ptr-spinning');
           el.style.transform = 'translate(-50%,20px)';
           el.style.opacity = '1';
           location.reload();
