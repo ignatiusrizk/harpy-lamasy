@@ -149,10 +149,20 @@ $csrf = getCsrfToken();
 .tbl th{background:#F7F8FC;padding:9px 11px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;color:#6B7280}
 .tbl td{padding:10px 11px;border-top:1px solid #F0F1F4}
 .tbl .num{font-family:var(--mono);font-weight:700;text-align:right}
-/* Wrapper tabel selalu bisa digeser mendatar (tak bergantung breakpoint) */
-#outletBox,#featureBox{overflow-x:auto;-webkit-overflow-scrolling:touch}
-#outletBox table.tbl,#featureBox table.tbl{min-width:480px}
-#outletBox .tbl th,#outletBox .tbl td,#featureBox .tbl th,#featureBox .tbl td{white-space:nowrap}
+/* ≤700px: tabel pemakaian per outlet jadi kartu bertumpuk (tak ada yg terpotong) */
+@media(max-width:700px){
+  #outletBox table.tbl,#outletBox thead,#outletBox tbody,#outletBox tr,#outletBox td{display:block;width:100%;box-sizing:border-box}
+  #outletBox thead{display:none}
+  #outletBox tr{border:1px solid #EEF1F8;border-radius:10px;padding:4px 2px;margin-bottom:10px;background:#fff}
+  #outletBox td{border:0;padding:7px 12px;display:flex;justify-content:space-between;align-items:center;gap:12px;text-align:right}
+  #outletBox td::before{content:attr(data-label);font-weight:700;color:#6B7280;font-size:11px;text-transform:uppercase;letter-spacing:.03em;text-align:left;flex:0 0 auto}
+  #outletBox td.cell-name{justify-content:flex-start;font-size:15px;padding-top:9px;border-bottom:1px solid #F3F4F6;margin-bottom:3px}
+  #outletBox td.cell-name::before{display:none}
+  #outletBox td .bar{flex:1 1 auto;max-width:140px;margin-top:0}
+  #outletBox td.cell-act{justify-content:flex-end}
+  #outletBox td.cell-act::before{display:none}
+  #outletBox td.cell-act .btn{width:100%;justify-content:center}
+}
 .bar{background:#EEF1F8;border-radius:100px;height:7px;overflow:hidden;margin-top:3px}
 .bar-fill{height:100%;background:#35E8D5}
 .bar-fill.over{background:#EF4444}
@@ -341,11 +351,11 @@ function renderOutlets(rows, tenantBalance){
       ? `<span style="color:#9CA3AF;font-size:11px;font-style:italic">(shared)</span>`
       : fmt(o.coin_balance);
     html += `<tr>
-      <td><strong>${esc(o.nama_outlet)}</strong></td>
-      <td class="num">${saldoCell}</td>
-      <td class="num">${fmt(used)}<div class="bar"><div class="bar-fill" style="width:${pct}%"></div></div></td>
-      <td>${budgetTxt}</td>
-      ${CAN_MANAGE?`<td><button class="btn btn-light btn-sm" onclick="openBudget(${o.outlet_id}, ${JSON.stringify(o.nama_outlet)}, ${budget})">🎯</button></td>`:''}
+      <td class="cell-name"><strong>${esc(o.nama_outlet)}</strong></td>
+      <td class="num" data-label="Saldo">${saldoCell}</td>
+      <td class="num" data-label="Terpakai">${fmt(used)}<div class="bar"><div class="bar-fill" style="width:${pct}%"></div></div></td>
+      <td data-label="Budget/bln">${budgetTxt}</td>
+      ${CAN_MANAGE?`<td class="cell-act" data-label="Atur budget"><button class="btn btn-light btn-sm" onclick="openBudget(${o.outlet_id}, ${JSON.stringify(o.nama_outlet)}, ${budget})">🎯 Budget</button></td>`:''}
     </tr>`;
   });
   html += '</tbody></table>';
