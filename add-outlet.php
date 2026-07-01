@@ -20,6 +20,7 @@ if (empty($_SESSION['user_id']) || empty($_SESSION['tenant_id'])) {
 require_once ROOT . '/middleware/tenant_guard.php';
 require_once ROOT . '/core/StrukGenerator.php';
 require_once ROOT . '/core/BillingConfig.php';
+require_once ROOT . '/add-outlet-validate.php';
 
 $tid  = TenantResolver::id();
 $user     = currentUser() ?? [];
@@ -109,17 +110,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['step1_submit'])) {
     $kota       = trim($_POST['kota'] ?? '');
     $alamat     = trim($_POST['alamat'] ?? '');
     $telepon    = trim($_POST['telepon'] ?? '');
+    $penerima   = trim($_POST['penerima'] ?? '');
+    $kodePos    = trim($_POST['kode_pos'] ?? '');
     $mode       = $forcePaid ? 'paid' : (($_POST['mode'] ?? 'trial') === 'paid' ? 'paid' : 'trial');
 
+    $addrErr = aoValidateAddress($_POST);
     if (strlen($namaOutlet) < 3) {
         $error = 'Nama outlet minimal 3 karakter.';
     } elseif (strlen($namaOutlet) > 80) {
         $error = 'Nama outlet maksimal 80 karakter.';
+    } elseif (!empty($addrErr)) {
+        $error = implode(' ', $addrErr);
     } else {
         $d['nama_outlet'] = $namaOutlet;
         $d['kota']        = $kota;
         $d['alamat']      = $alamat;
         $d['telepon']     = $telepon;
+        $d['penerima']    = $penerima;
+        $d['kode_pos']    = $kodePos;
         $d['mode']        = $mode;
         $w['step'] = 2; $step = 2;
         $_SESSION['ao_csrf'] = bin2hex(random_bytes(32));
@@ -143,17 +151,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['step2_submit'])) {
 
         $db->prepare("
             INSERT INTO outlets
-              (tenant_id, nama_outlet, slug, kota, alamat, telepon,
+              (tenant_id, nama_outlet, slug, kota, alamat, telepon, penerima, kode_pos,
                status, trial_starts_at, trial_ends_at,
                trial_coin_balance, coin_balance, is_main, setup_done)
-            VALUES (?,?,?,?,?,?,?,NOW(),?,?,0,?,0)
+            VALUES (?,?,?,?,?,?,?,?,?,NOW(),?,?,0,?,0)
         ")->execute([
             $tid,
             $d['nama_outlet'],
             $outletSlug,
-            $d['kota']    ?: null,
-            $d['alamat']  ?: null,
-            $d['telepon'] ?: null,
+            $d['kota']     ?: null,
+            $d['alamat']   ?: null,
+            $d['telepon']  ?: null,
+            $d['penerima'] ?? null,
+            $d['kode_pos'] ?? null,
             $trialStatus,
             $trialEnds,
             $trialCoins,
@@ -515,22 +525,37 @@ if ($isHqMode) {
             <?php endif; ?>
           </div>
           <div class="field">
-            <label>Kota <span class="opt">(opsional)</span></label>
-            <input type="text" name="kota" maxlength="100"
+            <label>Nama Penerima <span class="req">*</span></label>
+            <input type="text" name="penerima" required maxlength="120"
+                   value="<?= htmlspecialchars($d['penerima'] ?? '') ?>"
+                   placeholder="cth: Budi (PIC outlet)">
+            <div class="hint">Nama penerima untuk pengiriman welcome kit</div>
+          </div>
+          <div class="field">
+            <label>No. HP Penerima <span class="req">*</span></label>
+            <input type="tel" name="telepon" required maxlength="20"
+                   value="<?= htmlspecialchars($d['telepon'] ?? '') ?>"
+                   placeholder="cth: 08123456789">
+            <div class="hint">Minimal 8 digit — untuk keperluan nota, profil outlet &amp; pengiriman</div>
+          </div>
+          <div class="field">
+            <label>Alamat Lengkap <span class="req">*</span></label>
+            <textarea name="alamat" rows="2" maxlength="300" required
+                      placeholder="Jl. Contoh No. 1, Kel. ..."><?= htmlspecialchars($d['alamat'] ?? '') ?></textarea>
+          </div>
+          <div class="field">
+            <label>Kota / Kabupaten <span class="req">*</span></label>
+            <input type="text" name="kota" required maxlength="100"
                    value="<?= htmlspecialchars($d['kota'] ?? '') ?>"
                    placeholder="cth: Bandung">
           </div>
           <div class="field">
-            <label>Alamat <span class="opt">(opsional)</span></label>
-            <textarea name="alamat" rows="2" maxlength="300"
-                      placeholder="Jl. Contoh No. 1, Kel. ..."><?= htmlspecialchars($d['alamat'] ?? '') ?></textarea>
-          </div>
-          <div class="field">
-            <label>Nomor Telepon Outlet <span class="opt">(opsional)</span></label>
-            <input type="tel" name="telepon" maxlength="20"
-                   value="<?= htmlspecialchars($d['telepon'] ?? '') ?>"
-                   placeholder="cth: 022-1234567">
-            <div class="hint">Untuk keperluan nota & profil outlet</div>
+            <label>Kode Pos <span class="req">*</span></label>
+            <input type="text" name="kode_pos" required maxlength="5"
+                   inputmode="numeric" pattern="\d{5}"
+                   value="<?= htmlspecialchars($d['kode_pos'] ?? '') ?>"
+                   placeholder="cth: 40111">
+            <div class="hint">5 digit kode pos wilayah outlet</div>
           </div>
 
           <?php if ($isFirstOutlet): ?>
