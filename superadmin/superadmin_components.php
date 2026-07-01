@@ -723,6 +723,9 @@ function saRenderNav(string $activePage = '', string $pageTitle = ''): void {
         <a href="/superadmin/packages.php" class="sa-nav-link <?= $activePage === 'packages' ? 'active' : '' ?>">
           <span class="icon">🪙</span> Coin &amp; Aktivasi
         </a>
+        <a href="/superadmin/welcome_kit.php" class="sa-nav-link <?= $activePage === 'welcome_kit' ? 'active' : '' ?>">
+          <span class="icon">📦</span> Welcome Kit
+        </a>
         <a href="/superadmin/coin_pricing.php" class="sa-nav-link <?= $activePage === 'coin_pricing' ? 'active' : '' ?>">
           <span class="icon">💲</span> Coin Pricing
         </a>
