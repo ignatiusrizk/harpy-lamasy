@@ -150,7 +150,7 @@ function renderGlobalJsHelpers(): void { ?>
         if (!SB) return;
         if (SB.setOverlaysWebView) SB.setOverlaysWebView({ overlay: false });
         if (SB.setBackgroundColor) SB.setBackgroundColor({ color: '#000000' });
-        if (SB.setStyle) SB.setStyle({ style: 'LIGHT' }); // teks status bar terang (bg navy gelap)
+        if (SB.setStyle) SB.setStyle({ style: 'DARK' }); // Capacitor: DARK = teks/ikon PUTIH (utk bg gelap/hitam)
       } catch(e) {}
     })();
 
