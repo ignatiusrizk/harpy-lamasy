@@ -1894,12 +1894,13 @@ function switchCmpTab(tab, btn) {
         <sup>Rp</sup>800<span style="font-size:24px;font-weight:600;">rb</span>
         <div class="per">1× per outlet · permanen, tanpa langganan</div>
       </div>
-      <div class="pricing-desc">Aktivasi outlet permanen — dapat <strong>100.000 coin</strong>. Sisa coin trial otomatis ditambahkan ke saldo aktivasi.</div>
+      <div class="pricing-desc">Aktivasi outlet permanen — dapat <strong>100.000 coin</strong> + <strong>welcome kit fisik</strong>. Sisa coin trial otomatis ditambahkan ke saldo aktivasi.</div>
       <div class="pricing-divider"></div>
       <ul class="pricing-features" style="flex:1;">
         <li><strong>Semua fitur Trial</strong> + AI tools lanjutan</li>
         <li><strong>100.000 coin</strong> bonus aktivasi</li>
         <li>+ <strong>sisa coin trial</strong> ditransfer otomatis</li>
+        <li>🎁 <strong>Welcome kit fisik</strong> dikirim gratis ke outlet</li>
         <li>Outlet aktif permanen (no expiry)</li>
         <li>Onboarding 1-on-1 (30 menit via WA/Zoom)</li>
         <li>Support prioritas + dedicated WA</li>
