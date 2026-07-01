@@ -710,7 +710,7 @@ if ($isHqMode) {
             <?php if (($d['mode'] ?? 'trial') === 'paid' && $ao_coin > 0): ?>
             <li><strong><?= number_format($ao_coin,0,',','.') ?> coin bonus</strong> dikreditkan saat outlet aktif</li>
             <?php endif; ?>
-            <?php if (WelcomeKit::enabled() && WelcomeKit::items()): ?>
+            <?php if (($d['mode'] ?? 'trial') === 'paid' && WelcomeKit::enabled() && WelcomeKit::items()): ?>
             <li><strong>🎁 Welcome kit fisik</strong> dikirim ke alamat outlet: <?= htmlspecialchars(implode(', ', array_map(fn($i) => $i['qty'] . '× ' . $i['nama'], WelcomeKit::items()))) ?></li>
             <?php endif; ?>
           </ul>
