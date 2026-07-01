@@ -825,7 +825,6 @@ if ($isHqMode) {
     [prov,kota,kec,kel].forEach(function(c){ if (!c.el.contains(e.target)) c.close(); });
   });
 })();
-})();
 </script>
 
       <?php // ═══ STEP 2: Review & Confirm ════════════════
