@@ -127,7 +127,7 @@ require __DIR__ . '/_layout_open.php';
 .empty{text-align:center;padding:30px;color:#9CA3AF;font-size:13px}
 
 /* ── Mobile (≤640px) ── */
-@media (max-width:640px){
+@media (max-width:900px){
   h1{font-size:1.15rem}
   .sdm-tabs{gap:6px}
   .sdm-tab{flex:1 1 0;padding:9px 6px;text-align:center}

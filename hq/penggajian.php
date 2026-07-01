@@ -256,7 +256,7 @@ require __DIR__ . '/_layout_open.php';
 .pill-warn{background:#FEF3C7;color:#92400E}.pill-ok{background:#D1FAE5;color:#065F46}.pill-gray{background:#F3F4F6;color:#6B7280}
 .empty{text-align:center;padding:30px;color:#9CA3AF;font-size:13px}
 
-@media(max-width:640px){
+@media(max-width:900px){
   h1,.pg-head h1{font-size:1.15rem}
   .pg-head .btn{width:100%;justify-content:center}
   /* Kartu ringkasan 2×2, tak meluber ke kanan */

@@ -149,6 +149,10 @@ $csrf = getCsrfToken();
 .tbl th{background:#F7F8FC;padding:9px 11px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;color:#6B7280}
 .tbl td{padding:10px 11px;border-top:1px solid #F0F1F4}
 .tbl .num{font-family:var(--mono);font-weight:700;text-align:right}
+/* Wrapper tabel selalu bisa digeser mendatar (tak bergantung breakpoint) */
+#outletBox,#featureBox{overflow-x:auto;-webkit-overflow-scrolling:touch}
+#outletBox table.tbl,#featureBox table.tbl{min-width:480px}
+#outletBox .tbl th,#outletBox .tbl td,#featureBox .tbl th,#featureBox .tbl td{white-space:nowrap}
 .bar{background:#EEF1F8;border-radius:100px;height:7px;overflow:hidden;margin-top:3px}
 .bar-fill{height:100%;background:#35E8D5}
 .bar-fill.over{background:#EF4444}
@@ -163,13 +167,9 @@ $csrf = getCsrfToken();
 .fld input,.fld select{width:100%;padding:9px 12px;border:1px solid #E5E9F2;border-radius:8px;font-family:inherit;font-size:14px}
 .modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:18px}
 .empty{text-align:center;padding:30px;color:#9CA3AF;font-size:13px}
-@media(max-width:640px){
+@media(max-width:900px){
   .filter{gap:8px}
   .filter select,.filter input{flex:1 1 auto;min-width:0}
-  /* Tabel pemakaian coin per outlet & per fitur bisa digeser mendatar */
-  #outletBox,#featureBox{overflow-x:auto;-webkit-overflow-scrolling:touch}
-  #outletBox table.tbl,#featureBox table.tbl{min-width:480px}
-  .tbl th,.tbl td{white-space:nowrap}
 }
 </style>
 
@@ -191,8 +191,8 @@ $csrf = getCsrfToken();
     <strong><?= $curMode === 'shared' ? 'Shared' : 'Per-Outlet' ?></strong> —
     <?= $curMode === 'shared' ? 'semua outlet pakai 1 saldo coin tenant.' : 'tiap outlet punya saldo coin sendiri.' ?>
   </p>
-  <button class="btn-export" onclick="toggleCoinMode()" style="background:#0F1C3A">
-    Ganti ke <?= $curMode === 'shared' ? 'Per-Outlet' : 'Shared' ?>
+  <button class="btn btn-primary" onclick="toggleCoinMode()">
+    🔄 Ganti ke <?= $curMode === 'shared' ? 'Per-Outlet' : 'Shared' ?>
   </button>
 
   <?php if ($curMode === 'per_outlet'): ?>
