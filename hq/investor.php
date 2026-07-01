@@ -223,6 +223,10 @@ require __DIR__ . '/_layout_open.php';
   .modal{background:#fff;border-radius:16px;padding:28px;width:100%;max-width:520px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.2)}
   .modal h4{font-size:16px;font-weight:800;color:#0F1C3A;margin-bottom:20px}
   .modal-footer{display:flex;gap:10px;margin-top:20px;justify-content:flex-end}
+  @media(max-width:640px){
+    /* Tabel investor bisa digeser mendatar, tak terpotong */
+    table.inv-tbl{display:block;overflow-x:auto;white-space:nowrap;-webkit-overflow-scrolling:touch}
+  }
 </style>
 
 <h1>👥 Investor & Bagi Hasil</h1>
