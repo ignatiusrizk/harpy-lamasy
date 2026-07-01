@@ -199,7 +199,7 @@ if ($action) {
 
 <div class="hl-main">
   <!-- Stats -->
-  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px" id="statsCards">
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:18px" id="statsCards">
     <div class="hl-stat-card teal"><div class="hl-stat-num" id="sLiability">-</div><div class="hl-stat-label">💰 Liability Total</div></div>
     <div class="hl-stat-card purple"><div class="hl-stat-num" id="sActive">-</div><div class="hl-stat-label">👥 Customer Aktif</div></div>
     <div class="hl-stat-card green"><div class="hl-stat-num" id="sTopupToday">-</div><div class="hl-stat-label">⬆️ Topup Hari Ini</div></div>
