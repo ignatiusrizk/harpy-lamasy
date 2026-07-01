@@ -108,7 +108,6 @@ $success = false;
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['step1_submit'])) {
     aoVerifyCsrf();
     $namaOutlet = trim($_POST['nama_outlet'] ?? '');
-    $kota       = trim($_POST['kota'] ?? '');
     $alamat     = trim($_POST['alamat'] ?? '');
     $telepon    = trim($_POST['telepon'] ?? '');
     $penerima   = trim($_POST['penerima'] ?? '');
@@ -116,6 +115,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['step1_submit'])) {
     $mode       = $forcePaid ? 'paid' : (($_POST['mode'] ?? 'trial') === 'paid' ? 'paid' : 'trial');
 
     $addrErr = aoValidateAddress($_POST);
+    $wil = empty($addrErr) ? aoResolveWilayah(Database::get(), $_POST) : null;
+    if (empty($addrErr) && $wil === null) {
+        $addrErr[] = 'Wilayah tidak valid — pilih Provinsi→Kota→Kecamatan→Kelurahan dengan benar.';
+    }
     if (strlen($namaOutlet) < 3) {
         $error = 'Nama outlet minimal 3 karakter.';
     } elseif (strlen($namaOutlet) > 80) {
@@ -124,12 +127,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['step1_submit'])) {
         $error = implode(' ', $addrErr);
     } else {
         $d['nama_outlet'] = $namaOutlet;
-        $d['kota']        = $kota;
+        $d['provinsi']    = $wil['provinsi'];
+        $d['kota']        = $wil['kota'];
+        $d['kecamatan']   = $wil['kecamatan'];
+        $d['kelurahan']   = $wil['kelurahan'];
+        $d['wilayah_kode']= $wil['wilayah_kode'];
         $d['alamat']      = $alamat;
         $d['telepon']     = $telepon;
         $d['penerima']    = $penerima;
         $d['kode_pos']    = $kodePos;
         $d['mode']        = $mode;
+        // simpan kode utk restore dropdown saat balik ke step 1
+        $d['w_prov']=$_POST['w_prov']; $d['w_kota']=$_POST['w_kota'];
+        $d['w_kec']=$_POST['w_kec'];   $d['w_kel']=$_POST['w_kel'];
         $w['step'] = 2; $step = 2;
         $_SESSION['ao_csrf'] = bin2hex(random_bytes(32));
     }
@@ -152,19 +162,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['step2_submit'])) {
 
         $db->prepare("
             INSERT INTO outlets
-              (tenant_id, nama_outlet, slug, kota, alamat, telepon, penerima, kode_pos,
+              (tenant_id, nama_outlet, slug, kota, provinsi, kecamatan, kelurahan, wilayah_kode,
+               alamat, telepon, penerima, kode_pos,
                status, trial_starts_at, trial_ends_at,
                trial_coin_balance, coin_balance, is_main, setup_done)
-            VALUES (?,?,?,?,?,?,?,?,?,NOW(),?,?,0,?,0)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,NOW(),?,?,0,?,0)
         ")->execute([
             $tid,
             $d['nama_outlet'],
             $outletSlug,
-            $d['kota']     ?: null,
-            $d['alamat']   ?: null,
-            $d['telepon']  ?: null,
-            $d['penerima'] ?? null,
-            $d['kode_pos'] ?? null,
+            $d['kota']         ?: null,
+            $d['provinsi']     ?? null,
+            $d['kecamatan']    ?? null,
+            $d['kelurahan']    ?? null,
+            $d['wilayah_kode'] ?? null,
+            $d['alamat']       ?: null,
+            $d['telepon']      ?: null,
+            $d['penerima']     ?? null,
+            $d['kode_pos']     ?? null,
             $trialStatus,
             $trialEnds,
             $trialCoins,
@@ -744,18 +759,30 @@ if ($isHqMode) {
             <span class="rv-label">Nama Outlet</span>
             <span class="rv-val"><?= htmlspecialchars($d['nama_outlet'] ?? '-') ?></span>
           </div>
-          <?php if (!empty($d['kota'])): ?>
           <div class="review-row">
-            <span class="rv-label">Kota</span>
-            <span class="rv-val"><?= htmlspecialchars($d['kota']) ?></span>
+            <span class="rv-label">Provinsi</span>
+            <span class="rv-val"><?= htmlspecialchars($d['provinsi'] ?? '-') ?></span>
           </div>
-          <?php endif; ?>
-          <?php if (!empty($d['alamat'])): ?>
           <div class="review-row">
-            <span class="rv-label">Alamat</span>
-            <span class="rv-val" style="max-width:65%;text-align:right"><?= htmlspecialchars($d['alamat']) ?></span>
+            <span class="rv-label">Kota / Kabupaten</span>
+            <span class="rv-val"><?= htmlspecialchars($d['kota'] ?? '-') ?></span>
           </div>
-          <?php endif; ?>
+          <div class="review-row">
+            <span class="rv-label">Kecamatan</span>
+            <span class="rv-val"><?= htmlspecialchars($d['kecamatan'] ?? '-') ?></span>
+          </div>
+          <div class="review-row">
+            <span class="rv-label">Kelurahan / Desa</span>
+            <span class="rv-val"><?= htmlspecialchars($d['kelurahan'] ?? '-') ?></span>
+          </div>
+          <div class="review-row">
+            <span class="rv-label">Alamat jalan</span>
+            <span class="rv-val" style="max-width:60%;text-align:right"><?= htmlspecialchars($d['alamat'] ?? '-') ?></span>
+          </div>
+          <div class="review-row">
+            <span class="rv-label">Kode Pos</span>
+            <span class="rv-val"><?= htmlspecialchars($d['kode_pos'] ?? '-') ?></span>
+          </div>
           <?php if (!empty($d['telepon'])): ?>
           <div class="review-row">
             <span class="rv-label">Telepon</span>
