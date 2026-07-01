@@ -527,17 +527,20 @@ require __DIR__ . '/_layout_open.php';
   .modal h4{font-size:16px;font-weight:800;color:#0F1C3A;margin-bottom:20px}
   .modal-footer{display:flex;gap:10px;margin-top:20px;justify-content:flex-end}
 
+  /* Layout dua-kolom (form 360px + tabel, atau dua kartu 1fr 1fr) menumpuk
+     jauh sebelum 640px — di HP besar/phablet pun tetap muat & tabel bisa discroll. */
+  @media(max-width:900px){
+    div[style*="360px 1fr"],div[style*="1fr 1fr"]{grid-template-columns:1fr!important}
+    table.keu-tbl{display:block;overflow-x:auto;white-space:nowrap;-webkit-overflow-scrolling:touch}
+  }
   @media(max-width:640px){
     h1{font-size:1.15rem}
     .keu-card{padding:14px}
     /* Tab bar bisa digeser mendatar, tak terpotong */
     .keu-tabs{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;gap:0}
     .keu-tab{white-space:nowrap;flex:0 0 auto;padding:9px 13px;font-size:12.5px}
-    /* Tabel keuangan bisa digeser mendatar, tak terpotong */
-    table.keu-tbl{display:block;overflow-x:auto;white-space:nowrap;-webkit-overflow-scrolling:touch}
-    /* Grid 2/3 kolom (termasuk inline) menumpuk di HP */
+    /* Grid form 2/3 kolom menumpuk di HP */
     .keu-form .row2,.keu-form .row3{grid-template-columns:1fr}
-    div[style*="360px 1fr"],div[style*="1fr 1fr"]{grid-template-columns:1fr!important}
     /* Toolbar judul + kontrol: judul kiri, kontrol full-width di bawah */
     .bar-between{flex-wrap:wrap;gap:10px}
     .bar-between > div{flex-wrap:wrap;width:100%}
