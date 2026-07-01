@@ -257,6 +257,12 @@ require __DIR__ . '/_layout_open.php';
 .empty{text-align:center;padding:30px;color:#9CA3AF;font-size:13px}
 
 @media(max-width:640px){
+  h1,.pg-head h1{font-size:1.15rem}
+  .pg-head .btn{width:100%;justify-content:center}
+  /* Kartu ringkasan 2×2, tak meluber ke kanan */
+  .metrics{grid-template-columns:repeat(2,1fr);gap:10px}
+  .metric{padding:12px}
+  .metric-num{font-size:1.2rem}
   .filter{gap:8px}
   .filter select,.filter input{flex:1 1 auto;min-width:0}
   /* Tabel beban gaji & tabel detail modal bisa digeser mendatar */
