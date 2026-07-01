@@ -181,7 +181,7 @@ require __DIR__ . '/_layout_open.php';
   .filter-bar input:focus,.filter-bar select:focus{border-color:#35E8D5}
 
   .stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}
-  .stat-pill{background:#fff;border-radius:10px;padding:10px 14px;box-shadow:0 1px 6px rgba(0,0,0,.05);display:flex;align-items:center;gap:10px}
+  .stat-pill{background:#fff;border-radius:10px;padding:10px 14px;box-shadow:0 1px 6px rgba(0,0,0,.05);display:flex;align-items:center;justify-content:center;gap:10px}
   .stat-pill .num{font-size:1.4rem;font-weight:800;color:#0F1C3A;font-family:var(--mono)}
   .stat-pill .lbl{font-size:11px;color:#6B7280;text-transform:uppercase;letter-spacing:.05em;font-weight:700}
 
@@ -213,7 +213,7 @@ require __DIR__ . '/_layout_open.php';
     .filter-bar select{flex:1 1 100%;min-width:0;width:100%}
     .filter-bar button{flex:1 1 100%;justify-content:center}
     .stats-row{gap:8px}
-    .stat-pill{flex-direction:column;align-items:flex-start;gap:2px;padding:9px 9px}
+    .stat-pill{flex-direction:column;align-items:center;gap:2px;padding:9px 9px}
     .stat-pill .num{font-size:1.1rem}
     .stat-pill .lbl{font-size:9.5px;letter-spacing:.02em}
     .log-row{grid-template-columns:1fr;gap:6px}
