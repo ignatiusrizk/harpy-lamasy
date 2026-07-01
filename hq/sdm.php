@@ -125,6 +125,24 @@ require __DIR__ . '/_layout_open.php';
 .bar{background:#EEF1F8;border-radius:100px;height:7px;overflow:hidden;margin-top:3px}
 .bar-fill{height:100%;background:#35E8D5}
 .empty{text-align:center;padding:30px;color:#9CA3AF;font-size:13px}
+
+/* ── Mobile (≤640px) ── */
+@media (max-width:640px){
+  h1{font-size:1.15rem}
+  .sdm-tabs{gap:6px}
+  .sdm-tab{flex:1 1 0;padding:9px 6px;text-align:center}
+  .panel{padding:14px}
+  /* Filter rapi & bertumpuk */
+  .filter{gap:8px}
+  .filter > label{flex:1 1 100%;margin-bottom:-2px}
+  .filter input[type=date]{flex:1 1 0;min-width:0}
+  .filter select{flex:1 1 100%}
+  .filter .btn{flex:1 1 100%;padding:10px}
+  /* Tabel bisa digeser mendatar, tak terpotong */
+  #absBox,#prodBox{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .tbl{min-width:560px}
+  .tbl th,.tbl td{white-space:nowrap}
+}
 </style>
 
 <h1 style="font-size:1.3rem;font-weight:800;color:#0F1C3A;margin-bottom:4px">👥 SDM Analytics Lintas Outlet</h1>
