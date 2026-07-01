@@ -323,17 +323,17 @@ async function fetchQrBlob() {
 
 async function downloadQR() {
   if (!qrUrl) { showToast('QR tidak tersedia'); return; }
-  const blob = await fetchQrBlob();
-  if (blob) {
-    const url = URL.createObjectURL(blob);
+  // Pakai URL asli (data:/http) langsung — di APK ditangkap DownloadListener native,
+  // di browser biasa tersimpan via atribut download. Blob URL tak ditangani WebView.
+  try {
     const a = document.createElement('a');
-    a.href = url; a.download = 'qris-' + orderId + '.png';
+    a.href = qrUrl; a.download = 'qris-' + orderId + '.png';
+    a.rel = 'noopener';
     document.body.appendChild(a); a.click(); a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-    showToast('QR tersimpan');
-  } else {
+    showToast('Menyimpan QR…');
+  } catch (e) {
     window.open(qrUrl, '_blank', 'noopener');
-    showToast('QR dibuka di tab baru — tahan gambar untuk simpan');
+    showToast('QR dibuka — tahan gambar untuk simpan');
   }
 }
 
