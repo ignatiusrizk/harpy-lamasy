@@ -1016,8 +1016,10 @@ textarea{resize:vertical;min-height:64px}
   .pos-mobile-cta {
     display: flex;
     position: fixed;
-    bottom: 0; left: 0; right: 0;
-    padding: 10px 14px calc(10px + env(safe-area-inset-bottom, 0px));
+    /* Duduk DI ATAS bottom nav (nav ~48px + safe-area di paling bawah);
+       celah ~12px jadi tempat FAB 🛒 nyembul. */
+    bottom: calc(60px + env(safe-area-inset-bottom, 0px)); left: 0; right: 0;
+    padding: 10px 14px;
     background: var(--white);
     border-top: 1px solid rgba(27,45,90,.1);
     box-shadow: 0 -4px 20px rgba(0,0,0,.08);
