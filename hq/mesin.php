@@ -110,6 +110,7 @@ require __DIR__ . '/_layout_open.php';
 
 <style>
 .hq-ms-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+@media(max-width:640px){.hq-ms-summary{grid-template-columns:repeat(2,1fr);gap:10px}}
 .hq-ms-card{background:#fff;border-radius:14px;padding:14px 16px;border:1px solid #E5E7EB;position:relative;overflow:hidden}
 .hq-ms-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
 .hq-ms-card.outlet::before{background:linear-gradient(90deg,#3B82F6,#60A5FA)}
