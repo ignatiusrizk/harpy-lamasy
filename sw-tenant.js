@@ -86,14 +86,12 @@ self.addEventListener('fetch', (e) => {
     return;
   }
 
-  // Navigasi lain (/, /landing.php, /login, route apa pun): network-first,
-  // gagal offline → cached exact → POS cached → halaman offline brand.
-  if (req.mode === 'navigate') {
-    e.respondWith(navigationFallback(req));
-    return;
-  }
+  // Navigasi halaman lain (mis. /hq/*, /login, /) → JANGAN di-intercept SW.
+  // Biarkan webview/browser memuat natively supaya redirect (mis. 302 → /login)
+  // & session diikuti benar, dan tak memicu errorPath APK. Cold-start offline
+  // ditangani Capacitor errorPath (offline.html) di sisi APK.
 
-  // Default: network-only (fetch API non-navigasi, mis. action=list)
+  // Default: network-only
 });
 
 function cacheFirst(req) {
@@ -122,14 +120,6 @@ function staleWhileRevalidate(req) {
       }).catch(() => null);
       return cached || network.then(r => r || offlinePage());
     })
-  );
-}
-
-function navigationFallback(req) {
-  return fetch(req).catch(() =>
-    caches.match(req).then(cached =>
-      cached || caches.match('/pos').then(pos => pos || offlinePage())
-    )
   );
 }
 

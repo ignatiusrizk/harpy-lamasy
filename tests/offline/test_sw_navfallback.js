@@ -57,23 +57,21 @@ function fire(handlers, sandbox, reqUrl, mode, fetchImpl) {
 }
 
 (async () => {
-  // (1) navigasi offline ke /login tanpa cache → offlinePage (ada teks "Tidak ada koneksi")
+  // (1) navigasi non-POS (mis. /hq/inventori) TIDAK di-intercept SW → respondWith TIDAK dipanggil
+  //     (biar webview load natively, ikut redirect/session, tak memicu errorPath APK)
   {
     const caches = makeCaches();
-    const { handlers, sandbox } = loadSW(caches, () => Promise.reject(new Error('offline')));
-    const res = await fire(handlers, sandbox, 'https://lamasy.harpy.id/login', 'navigate', () => Promise.reject(new Error('offline')));
-    ok(!!res, 'navigasi /login offline → respondWith dipanggil (tidak lolos ke browser)');
-    const txt = res ? await res.text() : '';
-    ok(/Tidak ada koneksi/.test(txt), 'navigasi /login offline tanpa cache → offlinePage');
+    const { handlers, sandbox } = loadSW(caches, () => Promise.reject(new Error('should not be called')));
+    const res = fire(handlers, sandbox, 'https://lamasy.harpy.id/hq/inventori', 'navigate', () => Promise.reject(new Error('should not be called')));
+    ok(res === undefined, 'navigasi /hq/inventori → respondWith TIDAK dipanggil (lolos ke browser)');
   }
 
-  // (2) navigasi offline ke /login DENGAN /pos cached → serve POS cached
+  // (2) navigasi /login juga TIDAK di-intercept (bukan POS, bukan read-mostly)
   {
-    const caches = makeCaches({ '/pos': new Response('<html>POS CACHED</html>', { headers: { 'Content-Type': 'text/html' } }) });
-    const { handlers, sandbox } = loadSW(caches, () => Promise.reject(new Error('offline')));
-    const res = await fire(handlers, sandbox, 'https://lamasy.harpy.id/login', 'navigate', () => Promise.reject(new Error('offline')));
-    const txt = res ? await res.text() : '';
-    ok(/POS CACHED/.test(txt), 'navigasi /login offline + /pos cached → serve POS cached');
+    const caches = makeCaches();
+    const { handlers, sandbox } = loadSW(caches, () => Promise.reject(new Error('should not be called')));
+    const res = fire(handlers, sandbox, 'https://lamasy.harpy.id/login', 'navigate', () => Promise.reject(new Error('should not be called')));
+    ok(res === undefined, 'navigasi /login → respondWith TIDAK dipanggil (lolos ke browser)');
   }
 
   // (3) navigasi online ke /pos → stale-while-revalidate menaruh ke cache
