@@ -601,7 +601,7 @@ function renderTierList(tiers) {
     return;
   }
   list.innerHTML = `
-    <table style="width:100%;border-collapse:collapse;font-size:13px;">
+    <div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px;">
       <thead>
         <tr style="background:#F3F4F6;text-align:left;">
           <th style="padding:8px 10px;">Nama Tier</th>
@@ -635,7 +635,7 @@ function renderTierList(tiers) {
           </tr>`;
         }).join('')}
       </tbody>
-    </table>`;
+    </table></div>`;
 }
 
 function updateNilaiUnit() {

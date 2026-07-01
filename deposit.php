@@ -426,7 +426,7 @@ async function loadCustomers(q='') {
     list.innerHTML = '<div style="padding:60px;text-align:center;color:var(--gray)">Tidak ada pelanggan</div>';
     return;
   }
-  list.innerHTML = `<table style="width:100%;background:#fff;border-collapse:collapse;font-size:13px;border-radius:10px;overflow:hidden">
+  list.innerHTML = `<div style="overflow-x:auto"><table style="width:100%;background:#fff;border-collapse:collapse;font-size:13px;border-radius:10px;overflow:hidden">
     <thead><tr style="background:#F3F4F6;text-align:left">
       <th style="padding:10px 12px">Pelanggan</th>
       <th style="padding:10px 12px">Telepon</th>
@@ -446,7 +446,7 @@ async function loadCustomers(q='') {
           ${r.saldo_deposit > 0 ? `<button class="hl-btn hl-btn-sm" style="background:#FEE2E2;color:#991B1B;border:1px solid #FCA5A5" onclick="openRefund(${r.id}, ${JSON.stringify(r.nama).replace(/"/g,'&quot;')}, ${r.saldo_deposit})">↩️ Refund</button>` : ''}
         </td>
       </tr>
-    `).join('')}</tbody></table>`;
+    `).join('')}</tbody></table></div>`;
 }
 
 // ── Topup ──
@@ -554,7 +554,7 @@ async function openHistory(id, nama) {
     document.getElementById('histList').innerHTML = '<div style="padding:30px;text-align:center;color:var(--gray)">Belum ada transaksi saldo</div>';
     return;
   }
-  document.getElementById('histList').innerHTML = `<table style="width:100%;border-collapse:collapse;font-size:13px">
+  document.getElementById('histList').innerHTML = `<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px">
     <thead><tr style="background:#F3F4F6;text-align:left">
       <th style="padding:8px 10px">Tanggal</th>
       <th style="padding:8px 10px">Jenis</th>
@@ -570,7 +570,7 @@ async function openHistory(id, nama) {
         <td style="padding:8px 10px;text-align:right;font-family:var(--mono,monospace);color:#6B7280">${fmt(r.saldo_sesudah)}</td>
         <td style="padding:8px 10px;font-size:11.5px;color:#6B7280">${esc(r.catatan||'-')}</td>
       </tr>
-    `).join('')}</tbody></table>`;
+    `).join('')}</tbody></table></div>`;
 }
 function closeHistoryModal() { document.getElementById('modalHistory').classList.remove('open'); }
 
@@ -621,7 +621,7 @@ async function loadBonusTiers() {
     list.innerHTML = '<div style="padding:14px;text-align:center;color:var(--gray);font-size:12.5px;background:#F9FAFB;border:1px dashed #E5E7EB;border-radius:8px">Belum ada bonus tier. Tambah pakai form di bawah.</div>';
     return;
   }
-  list.innerHTML = `<table style="width:100%;font-size:12.5px;border-collapse:collapse">
+  list.innerHTML = `<div style="overflow-x:auto"><table style="width:100%;font-size:12.5px;border-collapse:collapse">
     <thead><tr style="background:#F3F4F6;text-align:left">
       <th style="padding:7px 10px">Min Topup</th><th style="padding:7px 10px">Bonus</th><th style="padding:7px 10px">Outlet</th><th style="padding:7px 10px">Label</th><th style="padding:7px 10px">Status</th><th style="padding:7px 10px;text-align:right"></th>
     </tr></thead>
@@ -636,7 +636,7 @@ async function loadBonusTiers() {
           <button class="hl-btn hl-btn-outline hl-btn-sm" onclick='editBonusTier(${JSON.stringify(r)})'>✏️</button>
           <button class="hl-btn hl-btn-danger hl-btn-sm" onclick="deleteBonusTier(${r.id})">🗑️</button>
         </td>
-      </tr>`).join('')}</tbody></table>`;
+      </tr>`).join('')}</tbody></table></div>`;
 }
 
 function editBonusTier(t) {
