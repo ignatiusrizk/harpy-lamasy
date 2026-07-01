@@ -65,3 +65,51 @@ Confirmed: `createForOutlet` INSERT uses `` `trigger` `` (backtick) in the colum
 ## Concerns
 
 None. The `try/finally` cleanup pattern ensures synthetic rows are removed even if a mid-test assertion fails (unlike the brief's bare cleanup at end). No production logic was changed to fit the test.
+
+## Fix: restore config in finally
+
+**Finding:** `BillingConfig::set('welcome_kit_enabled', '1', null)` restore call was inside the `try` block (line 88). If any assertion between set-'0' (line 82) and the restore threw, the `finally` cleanup ran WITHOUT restoring the config — leaving PROD `welcome_kit_enabled` stuck at `'0'`.
+
+**Fix applied:** Moved the restore call into the `finally` block, as the FIRST statement before row cleanup, so it always runs regardless of where any assertion may fail.
+
+**Command run:**
+```
+php tests/welcomekit/test_welcome_kit.php
+```
+
+**Output (passing):**
+```
+PASS: outlets.penerima ada
+PASS: outlets.kode_pos ada
+PASS: tabel saas_welcome_kit ada
+[...19 schema PASS lines...]
+OK test_welcome_kit (schema)
+PASS: items() decode config (>=1 item)
+PASS: createForOutlet ok + id
+PASS: status pending (got "pending", want "pending")
+PASS: snapshot penerima (got "Budi", want "Budi")
+PASS: snapshot kode_pos (got "40111", want "40111")
+PASS: snapshot items berisi thermal
+PASS: create kedua skipped (idempoten)
+PASS: tetap 1 record utk payment sama (got 1, want 1)
+PASS: markShipped ok
+PASS: status shipped (got "shipped", want "shipped")
+PASS: kurir (got "JNE", want "JNE")
+PASS: resi (got "RESI123", want "RESI123")
+PASS: shipped_at terisi
+PASS: markDelivered ok
+PASS: status delivered (got "delivered", want "delivered")
+PASS: statusForOutlet delivered
+PASS: enabled() false saat config 0
+PASS: disabled → skip create
+PASS: disabled → 0 record (got 0, want 0)
+OK test_welcome_kit
+```
+All 38 assertions PASS. Lint clean (`No syntax errors detected`).
+
+**Config value check after run:**
+```sql
+SELECT value_text FROM saas_billing_config WHERE key_name='welcome_kit_enabled'
+-- value_text: 1
+```
+`welcome_kit_enabled = 1` confirmed. PROD config correctly restored.

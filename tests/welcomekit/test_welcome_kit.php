@@ -85,9 +85,9 @@ try {
     ok(empty($r3['ok']) && !empty($r3['skipped']), 'disabled → skip create');
     $cnt2 = (int)$db->query("SELECT COUNT(*) FROM saas_welcome_kit WHERE payment_id=".$pid2)->fetchColumn();
     eqv($cnt2, 0, 'disabled → 0 record');
-    BillingConfig::set('welcome_kit_enabled', '1', null);
 } finally {
-    // Cleanup — always run even on failure
+    // Cleanup — always run even on failure (config restore BEFORE row cleanup)
+    BillingConfig::set('welcome_kit_enabled', '1', null);
     $db->prepare("DELETE FROM saas_welcome_kit WHERE tenant_id=?")->execute([$tid]);
     $db->prepare("DELETE FROM saas_payments WHERE tenant_id=?")->execute([$tid]);
     $db->prepare("DELETE FROM outlets WHERE id=?")->execute([$oid]);
