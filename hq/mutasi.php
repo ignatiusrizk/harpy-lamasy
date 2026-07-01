@@ -116,6 +116,11 @@ require __DIR__ . '/_layout_open.php';
   .empty .ico{font-size:48px;margin-bottom:12px;opacity:.5}
 
   @media(max-width:780px){
+    .filter-bar{gap:8px}
+    .filter-bar label{flex:1 1 calc(50% - 4px)}
+    .filter-bar label input[type=date]{width:100%}
+    .filter-bar select{flex:1 1 100%;min-width:0;width:100%}
+    .filter-bar button{flex:1 1 100%;justify-content:center}
     .stats{gap:8px}
     .stat{padding:10px 9px}
     .stat-num{font-size:1.15rem}

@@ -206,6 +206,12 @@ require __DIR__ . '/_layout_open.php';
   .empty .ico{font-size:48px;margin-bottom:12px;opacity:.5}
 
   @media(max-width:780px){
+    .filter-bar{gap:8px}
+    .filter-bar label{flex:1 1 calc(50% - 4px)}
+    .filter-bar label input[type=date]{width:100%}
+    .filter-bar input[type=search]{flex:1 1 100%;min-width:0;width:100%}
+    .filter-bar select{flex:1 1 100%;min-width:0;width:100%}
+    .filter-bar button{flex:1 1 100%;justify-content:center}
     .stats-row{gap:8px}
     .stat-pill{flex-direction:column;align-items:flex-start;gap:2px;padding:9px 9px}
     .stat-pill .num{font-size:1.1rem}
