@@ -272,6 +272,19 @@ require __DIR__ . '/_layout_open.php';
   .hq-tab{padding:10px 14px;font-size:13px;white-space:nowrap}
   .pivot-table th,.pivot-table td{padding:8px 10px}
 }
+
+/* Table polish — scroll rapi + kolom pertama sticky + zebra */
+.hq-tab-content > div[style*="overflow"]{border:1px solid #E5E7EB;border-radius:10px}
+.pivot-table{min-width:100%}
+.pivot-table th{white-space:nowrap;vertical-align:bottom}
+.pivot-table td.num,.pivot-table th.num{white-space:nowrap}
+.pivot-table tbody tr:nth-child(even){background:#FAFAFA}
+.pivot-table th:first-child,.pivot-table td:first-child{position:sticky;left:0;background:#fff;box-shadow:1px 0 0 #F3F4F6}
+.pivot-table thead th:first-child{background:#F9FAFB;z-index:2}
+.pivot-table tbody tr:nth-child(even) td:first-child{background:#FAFAFA}
+@media (max-width:640px){
+  .pivot-table td:first-child{max-width:130px}
+}
 </style>
 
 <div class="hq-page-wrap">
@@ -313,14 +326,16 @@ require __DIR__ . '/_layout_open.php';
 
   <!-- TAB: ALERT -->
   <div id="hq-tab-alert" class="hq-tab-content" style="display:none">
-    <table class="pivot-table">
-      <thead>
-        <tr><th>Outlet</th><th>Bahan</th><th>Kategori</th><th class="num">Stok</th><th class="num">Min</th><th>Status</th></tr>
-      </thead>
-      <tbody id="hqAlertBody">
-        <tr><td colspan="6" style="text-align:center;padding:40px;color:#6B7280">⏳ Memuat data...</td></tr>
-      </tbody>
-    </table>
+    <div style="overflow-x:auto">
+      <table class="pivot-table">
+        <thead>
+          <tr><th>Outlet</th><th>Bahan</th><th>Kategori</th><th class="num">Stok</th><th class="num">Min</th><th>Status</th></tr>
+        </thead>
+        <tbody id="hqAlertBody">
+          <tr><td colspan="6" style="text-align:center;padding:40px;color:#6B7280">⏳ Memuat data...</td></tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 
 </div>
