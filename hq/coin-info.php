@@ -231,7 +231,7 @@ $katMeta = [
   .coin-tab.active { color:#0F1C3A; border-bottom-color:#35E8D5; }
   .cu-toolbar { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px; }
   .cu-cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin-bottom:20px; }
-  .cu-card { background:#fff; border:1px solid #EEF0F3; border-radius:12px; padding:14px 16px; }
+  .cu-card { background:#fff; border:1px solid #EEF0F3; border-radius:12px; padding:14px 16px; text-align:center; }
   .cu-card .lbl { font-size:11px; text-transform:uppercase; letter-spacing:.04em; color:#9CA3AF; }
   .cu-card .val { font-size:22px; font-weight:800; font-family:'DM Mono',monospace; margin-top:4px; }
   .cu-section { margin-bottom:22px; }
