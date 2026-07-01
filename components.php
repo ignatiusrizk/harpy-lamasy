@@ -832,6 +832,11 @@ function renderTopbar(string $activePage = '', bool $minimalMode = false): void 
               $coin      = TenantResolver::coinBalance();
               $isGrace   = TenantResolver::isGraceMode();
               $coinFmt   = number_format($coin, 0, ',', '.');
+              // Saat grace: coin trial masih tersimpan tapi beku (tak bisa dipakai).
+              // Tetap ditampilkan (biar tak terkesan hilang) + diberi note.
+              $frozenCoin = $isGrace ? (int) TenantResolver::trialCoinBalance() : 0;
+              $coinFrozen = $frozenCoin > 0;
+              $frozenFmt  = number_format($frozenCoin, 0, ',', '.');
 
               if ($isTrial) {
                 $sev = $trialDays <= 3 ? 'danger' : ($trialDays <= 7 ? 'warn' : 'info');
@@ -843,14 +848,17 @@ function renderTopbar(string $activePage = '', bool $minimalMode = false): void 
                 ];
               } elseif ($isGrace) {
                 $g = TenantResolver::graceDaysLeft();
+                $coinNote = $coinFrozen
+                  ? " <br>🪙 <strong>{$frozenFmt}</strong> coin beku — aktivasi outlet untuk memakainya lagi."
+                  : '';
                 $notifItems[] = [
                   'icon'  => '⚠️', 'sev' => 'danger',
                   'title' => 'Grace Period — Bayar Segera',
-                  'desc'  => "Layanan terhenti dalam <strong>{$g} hari</strong> kalau tidak bayar.",
+                  'desc'  => "Layanan terhenti dalam <strong>{$g} hari</strong> kalau tidak bayar.{$coinNote}",
                   'cta'   => ['url' => '/hq/billing.php', 'label' => 'Bayar'],
                 ];
               }
-              if ($coin < 500 && !$isTrial) {
+              if ($coin < 500 && !$isTrial && !$isGrace) {
                 $notifItems[] = [
                   'icon'  => '🪙', 'sev' => $coin < 100 ? 'danger' : 'warn',
                   'title' => 'Saldo Coin Rendah',
@@ -985,7 +993,12 @@ function renderTopbar(string $activePage = '', bool $minimalMode = false): void 
               </div>
 
               <!-- Coin chip tetap inline (info operasional, selalu terlihat) -->
-              <span class="ol-top-chip" title="Saldo coin">🪙 <?= $coinFmt ?></span>
+              <?php if ($coinFrozen): ?>
+                <span class="ol-top-chip" style="opacity:.65"
+                      title="Coin beku selama masa tenggang — aktivasi outlet untuk memakainya lagi.">🪙 <?= $frozenFmt ?> 🔒</span>
+              <?php else: ?>
+                <span class="ol-top-chip" title="Saldo coin">🪙 <?= $coinFmt ?></span>
+              <?php endif; ?>
             <?php endif; ?>
 
             <?php /* Outlet switcher dipindah ke side menu (ol-side-outlet-sw) — topbar tak sumpek */ ?>
