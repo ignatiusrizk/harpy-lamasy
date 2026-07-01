@@ -154,7 +154,7 @@
 .hq-content-inner { max-width: 1400px; margin: 0 auto; }
 
 /* ── RESPONSIVE ──────────────────────────────────────── */
-.hq-main { overflow-x: hidden; }
+.hq-main { overflow-x: clip; }
 
 @media (max-width: 900px) {
   .hq-side {

@@ -965,7 +965,7 @@ body { font-family: var(--font); background: var(--off); color: var(--dark); min
 }
 
 /* ── RESPONSIVE ────────────────────────────────────── */
-.ol-main { overflow-x: hidden; }
+.ol-main { overflow-x: clip; }
 
 @media (max-width: 900px) {
   /* Mobile: sidebar di-hide, slide in dari kiri saat hamburger di-klik */
@@ -992,7 +992,7 @@ body { font-family: var(--font); background: var(--off); color: var(--dark); min
   }
   /* Mobile: konstrain content area + inner supaya child flex/grid dgn
      overflow-x:auto bekerja (kalau tidak, child push page horizontal). */
-  .ol-content { padding: 14px; overflow-x: hidden; min-width: 0; }
+  .ol-content { padding: 14px; overflow-x: clip; min-width: 0; }
   .ol-content-inner { min-width: 0; max-width: 100%; }
   /* Topbar: kompres elemen — pakai !important untuk override inline style */
   .ol-top { padding: calc(env(safe-area-inset-top, 0px) + 10px) 10px 10px !important; gap: 6px !important; }
@@ -1035,7 +1035,7 @@ body { font-family: var(--font); background: var(--off); color: var(--dark); min
 }
 
 /* Body: prevent horizontal scroll bleed */
-html, body { overflow-x: hidden; }
+html, body { overflow-x: clip; }
 
 /* ── GLOBAL MOBILE FIXES (semua page) ──────────────── */
 @media (max-width: 680px) {
