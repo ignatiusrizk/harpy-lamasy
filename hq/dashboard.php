@@ -979,11 +979,21 @@ require __DIR__ . '/_layout_open.php';
   <div class="outlet-grid">
     <?php foreach ($outlets as $o):
       $isBest = $bestOutlet && (int)$o['id'] === (int)$bestOutlet['id'];
-      $coinShow = $o['status'] === 'trial' && (int)$o['trial_coin_balance'] > 0
-        ? number_format((int)$o['trial_coin_balance']) . ' <span class="badge-trial-coin">TRIAL</span>'
-        : number_format((int)$o['coin_balance']);
-      // Visual highlight saat coin tipis
-      $coinAmt = $o['status'] === 'trial' ? (int)$o['trial_coin_balance'] : (int)$o['coin_balance'];
+      // Grace: coin trial masih ada tapi beku — tetap ditampilkan (bukan 0) + badge BEKU.
+      $isGraceFrozen = $o['status'] === 'grace' && (int)$o['trial_coin_balance'] > 0;
+      $coinTitle = '';
+      if ($o['status'] === 'trial' && (int)$o['trial_coin_balance'] > 0) {
+        $coinShow = number_format((int)$o['trial_coin_balance']) . ' <span class="badge-trial-coin">TRIAL</span>';
+        $coinAmt  = (int)$o['trial_coin_balance'];
+      } elseif ($isGraceFrozen) {
+        $coinShow = number_format((int)$o['trial_coin_balance'])
+                  . ' 🔒 <span class="badge-trial-coin" style="background:#FEF3C7;color:#92400E">BEKU</span>';
+        $coinAmt  = (int)$o['coin_balance'];
+        $coinTitle = 'Coin beku selama masa tenggang — aktivasi outlet untuk memakainya lagi.';
+      } else {
+        $coinShow = number_format((int)$o['coin_balance']);
+        $coinAmt  = (int)$o['coin_balance'];
+      }
       $coinLowThreshold = $o['status'] === 'trial' ? 200 : 1000;
       $coinCritThreshold = $o['status'] === 'trial' ? 50 : 300;
       $coinClass = '';
@@ -1026,7 +1036,7 @@ require __DIR__ . '/_layout_open.php';
       </div>
 
       <div class="ocard-foot">
-        <div class="ocard-coin<?= $coinClass ?>" <?= $coinClass ? 'title="Coin tipis — segera topup"' : '' ?>>
+        <div class="ocard-coin<?= $coinClass ?>" <?= $coinTitle ? 'title="'.htmlspecialchars($coinTitle, ENT_QUOTES).'"' : ($coinClass ? 'title="Coin tipis — segera topup"' : '') ?>>
           <?= $coinClass === ' crit' ? '⚠️' : '🪙' ?> <strong><?= $coinShow ?></strong> coin<?= $coinClass === ' crit' ? ' · KRITIS' : ($coinClass === ' low' ? ' · TIPIS' : '') ?>
         </div>
         <a href="/switch-outlet?id=<?= (int)$o['id'] ?>&amp;t=<?= $_swToken((int)$o['id']) ?>" class="btn btn-primary btn-sm">Masuk →</a>
