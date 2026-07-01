@@ -599,8 +599,15 @@ require __DIR__ . '/_layout_open.php';
   .alert.success{background:#D1FAE5;color:#065F46;border:1px solid #6EE7B7}
 
   @media(max-width:640px){
+    .header{margin-bottom:14px}
+    .header .btn-primary{width:100%;justify-content:center}
+    /* Toolbar: semua field full-width & rapi, count di baris sendiri */
+    .toolbar{flex-direction:column;align-items:stretch;gap:8px;padding:12px 14px}
+    .toolbar input,.toolbar select{width:100%;min-width:0;flex:none}
+    #totalCount{align-self:flex-end;margin-top:2px}
     .kr-card{grid-template-columns:1fr;gap:8px}
-    .kr-actions{justify-content:flex-start;flex-wrap:wrap}
+    .kr-actions{flex-wrap:wrap;gap:8px}
+    .kr-actions .btn{flex:1 1 0;justify-content:center;min-width:0}
   }
 </style>
 
