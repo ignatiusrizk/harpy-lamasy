@@ -85,6 +85,18 @@ try {
     ok(empty($r3['ok']) && !empty($r3['skipped']), 'disabled → skip create');
     $cnt2 = (int)$db->query("SELECT COUNT(*) FROM saas_welcome_kit WHERE payment_id=".$pid2)->fetchColumn();
     eqv($cnt2, 0, 'disabled → 0 record');
+    // (f) settleOutletActivation membuat welcome_kit
+    BillingConfig::set('welcome_kit_enabled', '1', null); // restore dari (e)
+    require_once dirname(__DIR__, 2) . '/core/PaymentSettler.php';
+    $db->prepare("UPDATE outlets SET status='pending' WHERE id=?")->execute([$oid]);
+    $db->prepare("INSERT INTO saas_payments (tenant_id, type, amount, status, ref_outlet_id, order_id, created_at, expires_at)
+                  VALUES (?, 'outlet_activation', 800000, 'paid', ?, ?, NOW(), DATE_ADD(NOW(), INTERVAL 1 DAY))")
+       ->execute([$tid, $oid, 'WK-ORD3-'.$tid]);
+    $pid3 = (int)$db->lastInsertId();
+    $res = PaymentSettler::settleOutletActivation((function() use ($db,$pid3){ $s=$db->prepare("SELECT * FROM saas_payments WHERE id=?"); $s->execute([$pid3]); return $s->fetch(PDO::FETCH_ASSOC); })());
+    ok(!empty($res['ok']), 'settleOutletActivation ok');
+    $kitCnt = (int)$db->query("SELECT COUNT(*) FROM saas_welcome_kit WHERE payment_id=".$pid3)->fetchColumn();
+    eqv($kitCnt, 1, 'settle membuat 1 welcome_kit');
 } finally {
     // Cleanup — always run even on failure (config restore BEFORE row cleanup)
     BillingConfig::set('welcome_kit_enabled', '1', null);

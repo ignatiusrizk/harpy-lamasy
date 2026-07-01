@@ -184,6 +184,20 @@ class PaymentSettler
 
             $db->commit();
 
+            // Welcome kit fisik outlet utama (best-effort)
+            try {
+                require_once __DIR__ . '/WelcomeKit.php';
+                if (WelcomeKit::enabled()) {
+                    $db2 = Database::get();
+                    $moSt = $db2->prepare("SELECT id FROM outlets WHERE tenant_id=? ORDER BY is_main DESC, id ASC LIMIT 1");
+                    $moSt->execute([$payment['tenant_id']]);
+                    $mainOutletId = (int)$moSt->fetchColumn();
+                    if ($mainOutletId > 0) {
+                        WelcomeKit::createForOutlet($db2, (int)$payment['tenant_id'], $mainOutletId, (int)$payment['id'], 'setup_fee');
+                    }
+                }
+            } catch (Throwable $e) { error_log('[WelcomeKit settleSetupFee] ' . $e->getMessage()); }
+
             // Side effects: Mailer + SaNotifier (best-effort, after commit)
             @require_once dirname(__DIR__) . '/core/Mailer.php';
             @require_once dirname(__DIR__) . '/core/SaNotifier.php';
@@ -277,6 +291,14 @@ class PaymentSettler
             if (class_exists('SaNotifier') && method_exists('SaNotifier', 'outletActivated')) {
                 try { SaNotifier::outletActivated($payment['ref_outlet_id'], true); } catch (Throwable) {}
             }
+
+            // Welcome kit fisik (best-effort, tidak menggagalkan settle)
+            try {
+                require_once __DIR__ . '/WelcomeKit.php';
+                if (WelcomeKit::enabled()) {
+                    WelcomeKit::createForOutlet(Database::get(), (int)$payment['tenant_id'], (int)$payment['ref_outlet_id'], (int)$payment['id'], 'outlet_activation');
+                }
+            } catch (Throwable $e) { error_log('[WelcomeKit settleOutletActivation] ' . $e->getMessage()); }
 
             return ['ok' => true, 'outlet_activated' => $payment['ref_outlet_id'], 'coin_added' => $coinAdded];
         } catch (Throwable $e) {
