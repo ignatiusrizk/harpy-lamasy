@@ -26,11 +26,12 @@ echo "OK test_welcome_kit_options (schema)\n";
 // ── WelcomeKit options logic tests ────────────────────────────────────────────
 require_once dirname(__DIR__, 2) . '/core/WelcomeKit.php';
 
-// Set config opsi uji
+// Set config opsi uji — capture original first so shutdown can restore it
+$origOpts = BillingConfig::get('welcome_kit_options', '');
 $optsCfg = '[{"key":"standar","nama":"Standar","default":true,"items":[{"nama":"Roll thermal","qty":2}]},'
          . '{"key":"printer","nama":"Paket Printer","items":[{"nama":"Roll thermal","qty":4}]}]';
 BillingConfig::set('welcome_kit_options', $optsCfg, null);
-register_shutdown_function(fn() => BillingConfig::set('welcome_kit_options', '', null));
+register_shutdown_function(function() use ($origOpts) { BillingConfig::set('welcome_kit_options', $origOpts, null); });
 
 ok(count(WelcomeKit::options()) === 2, 'options() = 2 opsi');
 eqv(WelcomeKit::defaultOption()['key'], 'standar', 'defaultOption = standar');

@@ -1,115 +1,136 @@
-# Task 2 Report: core/WelcomeKit.php
+# Task 2 Report: WelcomeKit — options + snapshot choice
 
 ## Status
 DONE — all tests GREEN, lint clean, committed.
 
-## Implemented Methods
+## Methods Added to core/WelcomeKit.php
 
 | Method | Behaviour |
 |---|---|
-| `enabled(): bool` | Reads `welcome_kit_enabled` via `BillingConfig::getInt`, defaults to 1 (enabled) |
-| `items(): array` | Decodes `welcome_kit_items` JSON; returns `[]` on invalid JSON; each entry `{nama, qty}` |
-| `createForOutlet(PDO, tenantId, outletId, paymentId, trigger): array` | Idempotent via `payment_id` check; disabled → `{ok:false, skipped:true}`; outlet not found → same; snapshots penerima/hp/alamat/kota/kode_pos/items_json at time of creation; sets `catatan` if address incomplete; returns `{ok, id, skipped}` |
-| `listQueue(?status): array` | JOINs outlets+tenants; filters by status if valid, else returns all ordered by FIELD(status,...) |
-| `markShipped(id, kurir, resi): bool` | Updates status→'shipped', sets kurir/resi/shipped_at; only when current status in (pending, shipped) |
-| `markDelivered(id): bool` | Updates status→'delivered', sets delivered_at; only when status in (shipped, pending) |
-| `statusForOutlet(outletId): ?array` | Returns latest row (by id DESC) for outlet; null if none |
+| `options(): array` | Reads `welcome_kit_options` JSON from BillingConfig; back-compat fallback wraps `welcome_kit_items` as one default 'standar' option if `welcome_kit_options` is empty/absent; validates each entry (skips missing nama or empty items); ensures exactly one `default:true` entry (auto-assigns first if none) |
+| `cleanItems($arr): array` | Private helper; filters/normalises item entries to `{nama, qty}` |
+| `slugKey(string $nama): string` | Private helper; generates URL-safe key from option name |
+| `defaultOption(): ?array` | Returns first option with `default:true`; falls back to first option; null if no options |
+| `optionByKey(string $key): ?array` | Returns matching option by key; null if not found |
+| `resolveChoiceKey(?string $key): ?string` | Validates key exists in options; falls back to defaultOption key; null if no options |
+| `items(): array` (shim) | Back-compat: returns `defaultOption()['items'] ?? []` so existing callers (add-outlet.php, welcome_kit.php, old test) stay functional during migration |
+
+## createForOutlet Changes
+
+- Added `welcome_kit_choice` to the outlet SELECT
+- Picks option via `optionByKey(choice) ?? defaultOption()`; returns `{ok:false, skipped:true}` if no option at all
+- Snapshots `kit_nama` + option's `items_json` into INSERT (which now includes the `kit_nama` column)
+- Column `` `trigger` `` remains backticked in INSERT
+
+## statusForOutlet Change
+
+- Added `kit_nama` to SELECT; `listQueue` already uses `wk.*` so kit_nama auto-included
+
+## items() Shim Behaviour
+
+`items()` now delegates to `defaultOption()['items'] ?? []` instead of directly reading `welcome_kit_items`. Since `options()` has its own back-compat fallback (if `welcome_kit_options` empty → wraps `welcome_kit_items`), old callers still get the same item list.
 
 ## TDD Evidence
 
-**RED (Step 1):** Tests appended to `tests/welcomekit/test_welcome_kit.php` before `core/WelcomeKit.php` existed → Fatal error: `Failed opening required .../core/WelcomeKit.php`.
+**RED (Step 1):** Appended logic tests to `test_welcome_kit_options.php` before implementing → Fatal: `Call to undefined method WelcomeKit::options()` (confirmed via run).
 
-**GREEN (Step 3):** After implementing `core/WelcomeKit.php` → all 19 domain tests + 19 schema tests passed (38 total PASS).
+**GREEN (Step 4):** After implementing methods + createForOutlet changes → all 16 assertions PASS.
 
-## Test Results (full suite)
+## Test Results
 
+### New: test_welcome_kit_options.php — 16/16 PASS
 ```
-OK test_welcome_kit (schema)      ← 19 schema PASS
-PASS: items() decode config (>=1 item)
-PASS: createForOutlet ok + id
-PASS: status pending
-PASS: snapshot penerima
-PASS: snapshot kode_pos
-PASS: snapshot items berisi thermal
-PASS: create kedua skipped (idempoten)
-PASS: tetap 1 record utk payment sama
-PASS: markShipped ok
-PASS: status shipped / kurir / resi / shipped_at terisi
-PASS: markDelivered ok
-PASS: status delivered
-PASS: statusForOutlet delivered
-PASS: enabled() false saat config 0
-PASS: disabled → skip create
-PASS: disabled → 0 record
-OK test_welcome_kit
+PASS: outlets.welcome_kit_choice ada
+PASS: saas_welcome_kit.kit_nama ada
+PASS: welcome_kit_options berisi >=1 opsi
+PASS: ada opsi default
+OK test_welcome_kit_options (schema)
+PASS: options() = 2 opsi
+PASS: defaultOption = standar
+PASS: optionByKey printer
+PASS: optionByKey key tak ada → null
+PASS: resolveChoiceKey valid
+PASS: resolveChoiceKey invalid → default
+PASS: resolveChoiceKey null → default
+PASS: createForOutlet ok
+PASS: snapshot kit_nama = pilihan owner (Paket Printer)
+PASS: snapshot items = opsi printer (4)
+PASS: choice kosong → opsi default (Standar)
+OK test_welcome_kit_options
 ```
+
+### Regression: test_welcome_kit.php — 41/41 PASS
+All 19 schema + 22 domain assertions pass. items() shim returns default-option items (same roll thermal items) so `snapshot items berisi thermal` still passes.
 
 ## Schema Adaptations
 
-Real `saas_payments` columns confirmed: `order_id` exists (no adaptation needed). `tenants` has `nama_perusahaan`, `slug` (NOT NULL), `coin_balance`. `outlets` has `penerima`, `kode_pos` (confirmed by Task 1). Brief's synthetic INSERT matched real schema without changes.
+- Confirmed `outlets.welcome_kit_choice VARCHAR(40)` and `saas_welcome_kit.kit_nama VARCHAR(80)` exist (Task 1 migration ran).
+- `welcome_kit_options` row existed in `saas_billing_config` but had empty string value. Seeded it with one 'standar' option wrapping existing `welcome_kit_items` (the migration's `WHERE NOT EXISTS` was blocked by the pre-existing empty row).
 
-## Backtick on `trigger`
+## DB Config Seeding Concern
 
-Confirmed: `createForOutlet` INSERT uses `` `trigger` `` (backtick) in the column list. The brief's sample had it unquoted — this was corrected.
+Task 1's migration SQL (`welcome_kit_options_migration.sql`) uses `WHERE NOT EXISTS` which failed to seed data because the `welcome_kit_options` row already existed with an empty string. Required manual seeding via `BillingConfig::set()` during Task 2. Recommend Task 1 migration be updated to use `ON DUPLICATE KEY UPDATE value_text=... WHERE value_text IS NULL OR value_text=''` for idempotent seeding. Task 3/4 callers (SA welcome_kit.php) should work once they see the populated config.
 
-## Cleanup
+## Items() Callers (back-compat maintained)
 
-- Synthetic rows (`saas_welcome_kit`, `saas_payments`, `outlets`, `tenants`) deleted in `finally` block.
-- After test run: 0 WK-TEST tenants, 0 WK rows, `welcome_kit_enabled` restored to `'1'`.
+- `add-outlet.php:713-714` — still uses `WelcomeKit::items()`; shim keeps it working
+- `superadmin/welcome_kit.php:32` — still uses `WelcomeKit::items()`; shim keeps it working
+- `tests/welcomekit/test_welcome_kit.php:32` — old test still passes (41/41)
 
 ## Files Changed
 
-- **Created:** `core/WelcomeKit.php`
-- **Modified:** `tests/welcomekit/test_welcome_kit.php` (appended domain logic tests + cleanup in try/finally)
+- **Modified:** `core/WelcomeKit.php` — added 5 public methods + 2 private helpers; updated createForOutlet + statusForOutlet; refactored items() to shim
+- **Modified:** `tests/welcomekit/test_welcome_kit_options.php` — appended 12 logic assertions + createForOutlet snapshot tests (choice + fallback)
 
-## Concerns
+## Lint
 
-None. The `try/finally` cleanup pattern ensures synthetic rows are removed even if a mid-test assertion fails (unlike the brief's bare cleanup at end). No production logic was changed to fit the test.
+`php -l core/WelcomeKit.php` → No syntax errors detected.
 
-## Fix: restore config in finally
+## Fix: capture+restore original config
 
-**Finding:** `BillingConfig::set('welcome_kit_enabled', '1', null)` restore call was inside the `try` block (line 88). If any assertion between set-'0' (line 82) and the restore threw, the `finally` cleanup ran WITHOUT restoring the config — leaving PROD `welcome_kit_enabled` stuck at `'0'`.
+**Finding:** The test's `register_shutdown_function` was restoring `welcome_kit_options` to `''` (hardcoded empty string) instead of the original PROD value. Every test run wiped the live config.
 
-**Fix applied:** Moved the restore call into the `finally` block, as the FIRST statement before row cleanup, so it always runs regardless of where any assertion may fail.
-
-**Command run:**
+**PROD value BEFORE test run:**
 ```
-php tests/welcomekit/test_welcome_kit.php
+key_name              value_text
+welcome_kit_options   [{"key":"standar","nama":"Standar","default":true,"items":[{"nama":"Roll kertas thermal 58mm","qty":2},{"nama":"Plastik packing","qty":1},{"nama":"Solasi roll","qty":1}]}]
+welcome_kit_enabled   1
 ```
 
-**Output (passing):**
-```
-PASS: outlets.penerima ada
-PASS: outlets.kode_pos ada
-PASS: tabel saas_welcome_kit ada
-[...19 schema PASS lines...]
-OK test_welcome_kit (schema)
-PASS: items() decode config (>=1 item)
-PASS: createForOutlet ok + id
-PASS: status pending (got "pending", want "pending")
-PASS: snapshot penerima (got "Budi", want "Budi")
-PASS: snapshot kode_pos (got "40111", want "40111")
-PASS: snapshot items berisi thermal
-PASS: create kedua skipped (idempoten)
-PASS: tetap 1 record utk payment sama (got 1, want 1)
-PASS: markShipped ok
-PASS: status shipped (got "shipped", want "shipped")
-PASS: kurir (got "JNE", want "JNE")
-PASS: resi (got "RESI123", want "RESI123")
-PASS: shipped_at terisi
-PASS: markDelivered ok
-PASS: status delivered (got "delivered", want "delivered")
-PASS: statusForOutlet delivered
-PASS: enabled() false saat config 0
-PASS: disabled → skip create
-PASS: disabled → 0 record (got 0, want 0)
-OK test_welcome_kit
-```
-All 38 assertions PASS. Lint clean (`No syntax errors detected`).
+**Fix applied in `tests/welcomekit/test_welcome_kit_options.php`:**
+- Added `$origOpts = BillingConfig::get('welcome_kit_options', '');` BEFORE the first `BillingConfig::set()`
+- Changed shutdown function from `fn() => BillingConfig::set('welcome_kit_options', '', null)` to `function() use ($origOpts) { BillingConfig::set('welcome_kit_options', $origOpts, null); }`
+- No other global config (e.g. `welcome_kit_enabled`) is mutated by this test, so no additional capture needed.
 
-**Config value check after run:**
-```sql
-SELECT value_text FROM saas_billing_config WHERE key_name='welcome_kit_enabled'
--- value_text: 1
+**test_welcome_kit_options.php run output — 16/16 PASS:**
 ```
-`welcome_kit_enabled = 1` confirmed. PROD config correctly restored.
+PASS: outlets.welcome_kit_choice ada
+PASS: saas_welcome_kit.kit_nama ada
+PASS: welcome_kit_options berisi >=1 opsi
+PASS: ada opsi default
+OK test_welcome_kit_options (schema)
+PASS: options() = 2 opsi
+PASS: defaultOption = standar (got "standar", want "standar")
+PASS: optionByKey printer (got "Paket Printer", want "Paket Printer")
+PASS: optionByKey key tak ada → null
+PASS: resolveChoiceKey valid (got "printer", want "printer")
+PASS: resolveChoiceKey invalid → default (got "standar", want "standar")
+PASS: resolveChoiceKey null → default (got "standar", want "standar")
+PASS: createForOutlet ok
+PASS: snapshot kit_nama = pilihan owner (got "Paket Printer", want "Paket Printer")
+PASS: snapshot items = opsi printer (4)
+PASS: choice kosong → opsi default (got "Standar", want "Standar")
+OK test_welcome_kit_options
+```
+
+**test_welcome_kit.php — 41/41 PASS** (all assertions intact, welcome_kit_enabled still 1 after run)
+
+**PROD value AFTER both test runs:**
+```
+key_name              value_text
+welcome_kit_options   [{"key":"standar","nama":"Standar","default":true,"items":[{"nama":"Roll kertas thermal 58mm","qty":2},{"nama":"Plastik packing","qty":1},{"nama":"Solasi roll","qty":1}]}]
+welcome_kit_enabled   1
+```
+**UNCHANGED — restore confirmed working.**
+
+**Lint:** `php -l tests/welcomekit/test_welcome_kit_options.php` → No syntax errors detected.
