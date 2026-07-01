@@ -707,11 +707,11 @@ require __DIR__ . '/_layout_open.php';
   .st-trial{background:#DBEAFE;color:#1E40AF}
   .st-grace{background:#FEF3C7;color:#92400E}
   .st-active{background:#D1FAE5;color:#065F46}
-  .ocard-main{margin-bottom:14px;padding:12px 14px;background:#F9FAFB;border-radius:10px}
+  .ocard-main{margin-bottom:14px;padding:12px 14px;background:#F9FAFB;border-radius:10px;text-align:center}
   .ocard-main-num{font-size:1.55rem;font-weight:800;color:#0F1C3A;font-family:var(--mono);line-height:1}
   .ocard-main-label{font-size:11px;color:#6B7280;font-weight:600;margin-top:4px}
   .ocard-stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;font-size:12px}
-  .ocard-stat{background:#F9FAFB;border-radius:8px;padding:9px 11px}
+  .ocard-stat{background:#F9FAFB;border-radius:8px;padding:9px 11px;text-align:center}
   .ocard-stat-num{font-weight:800;color:#0F1C3A;font-family:var(--mono);font-size:14px}
   .ocard-stat-label{color:#9CA3AF;font-size:10px;text-transform:uppercase;letter-spacing:.04em;font-weight:600;margin-top:2px}
   .ocard-foot{display:flex;gap:6px;align-items:center;justify-content:space-between}

@@ -189,7 +189,7 @@ require __DIR__ . '/_layout_open.php';
 .cc-ratio.mild { background:#F3F4F6; color:#374151 }
 
 .cc-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin:10px 0;
-  background:#F7F8FC; border-radius:8px; padding:10px }
+  background:#F7F8FC; border-radius:8px; padding:10px; text-align:center }
 .cc-stat-num { font-size:14px; font-weight:800; color:#0F1C3A; font-family:var(--mono) }
 .cc-stat-label { font-size:10px; color:#6B7280; text-transform:uppercase; letter-spacing:.04em; margin-top:2px }
 
