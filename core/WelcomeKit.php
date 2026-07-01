@@ -9,18 +9,76 @@ class WelcomeKit
         return BillingConfig::getInt('welcome_kit_enabled', 1) === 1;
     }
 
-    /** @return array<int,array{nama:string,qty:int}> */
-    public static function items(): array
+    /** @return array<int,array{key:string,nama:string,items:array,default:bool}> */
+    public static function options(): array
     {
-        $raw = BillingConfig::get('welcome_kit_items', '[]');
-        $arr = json_decode((string)$raw, true);
-        if (!is_array($arr)) { error_log('[WelcomeKit] items JSON invalid'); return []; }
+        $raw = BillingConfig::get('welcome_kit_options', '');
+        $arr = $raw !== '' ? json_decode((string)$raw, true) : null;
+        // Back-compat: fallback ke welcome_kit_items (single) → 1 opsi default
+        if (!is_array($arr) || !$arr) {
+            $legacy = json_decode((string)BillingConfig::get('welcome_kit_items', '[]'), true);
+            $items  = self::cleanItems(is_array($legacy) ? $legacy : []);
+            return $items ? [['key' => 'standar', 'nama' => 'Standar', 'items' => $items, 'default' => true]] : [];
+        }
+        $out = [];
+        foreach ($arr as $o) {
+            if (!is_array($o) || empty($o['nama'])) continue;
+            $items = self::cleanItems($o['items'] ?? []);
+            if (!$items) continue;
+            $out[] = [
+                'key'     => (string)($o['key'] ?? self::slugKey($o['nama'])),
+                'nama'    => (string)$o['nama'],
+                'items'   => $items,
+                'default' => !empty($o['default']),
+            ];
+        }
+        // Pastikan tepat satu default (kalau tak ada, opsi pertama)
+        if ($out && !array_filter($out, fn($o) => $o['default'])) $out[0]['default'] = true;
+        return $out;
+    }
+
+    private static function cleanItems($arr): array
+    {
+        if (!is_array($arr)) return [];
         $out = [];
         foreach ($arr as $it) {
             if (!is_array($it) || empty($it['nama'])) continue;
             $out[] = ['nama' => (string)$it['nama'], 'qty' => max(1, (int)($it['qty'] ?? 1))];
         }
         return $out;
+    }
+
+    private static function slugKey(string $nama): string
+    {
+        $s = strtolower(preg_replace('/[^a-z0-9]+/i', '_', $nama));
+        return trim($s, '_') ?: 'kit';
+    }
+
+    public static function defaultOption(): ?array
+    {
+        $opts = self::options();
+        foreach ($opts as $o) if ($o['default']) return $o;
+        return $opts[0] ?? null;
+    }
+
+    public static function optionByKey(string $key): ?array
+    {
+        foreach (self::options() as $o) if ($o['key'] === $key) return $o;
+        return null;
+    }
+
+    public static function resolveChoiceKey(?string $key): ?string
+    {
+        if ($key !== null && $key !== '' && self::optionByKey($key)) return $key;
+        $def = self::defaultOption();
+        return $def['key'] ?? null;
+    }
+
+    // Back-compat shim: pemanggil lama yang butuh daftar item tunggal → item opsi default.
+    /** @return array<int,array{nama:string,qty:int}> */
+    public static function items(): array
+    {
+        return self::defaultOption()['items'] ?? [];
     }
 
     /**
@@ -39,25 +97,29 @@ class WelcomeKit
             }
         }
 
-        $o = $db->prepare("SELECT penerima, telepon, alamat, kota, kode_pos FROM outlets WHERE id=? AND tenant_id=?");
+        $o = $db->prepare("SELECT penerima, telepon, alamat, kota, kode_pos, welcome_kit_choice FROM outlets WHERE id=? AND tenant_id=?");
         $o->execute([$outletId, $tenantId]);
         $outlet = $o->fetch(PDO::FETCH_ASSOC);
         if (!$outlet) return ['ok' => false, 'id' => null, 'skipped' => true];
+
+        $opt = self::optionByKey((string)($outlet['welcome_kit_choice'] ?? '')) ?? self::defaultOption();
+        if (!$opt) return ['ok' => false, 'id' => null, 'skipped' => true]; // tak ada opsi kit
+        $kitNama   = $opt['nama'];
+        $itemsJson = json_encode($opt['items'], JSON_UNESCAPED_UNICODE);
 
         $incomplete = (empty($outlet['penerima']) || empty($outlet['alamat']) || empty($outlet['kota']) || empty($outlet['kode_pos']));
         $catatan = $incomplete ? 'alamat belum lengkap — lengkapi sebelum kirim' : null;
 
         $ins = $db->prepare(
             "INSERT INTO saas_welcome_kit
-               (tenant_id, outlet_id, payment_id, `trigger`, penerima, hp, alamat, kota, kode_pos, items_json, status, catatan)
-             VALUES (?,?,?,?,?,?,?,?,?,?, 'pending', ?)"
+               (tenant_id, outlet_id, payment_id, `trigger`, penerima, hp, alamat, kota, kode_pos, items_json, kit_nama, status, catatan)
+             VALUES (?,?,?,?,?,?,?,?,?,?,?, 'pending', ?)"
         );
         $ins->execute([
             $tenantId, $outletId, $paymentId, $trigger,
             $outlet['penerima'] ?: null, $outlet['telepon'] ?: null,
             $outlet['alamat'] ?: null, $outlet['kota'] ?: null, $outlet['kode_pos'] ?: null,
-            json_encode(self::items(), JSON_UNESCAPED_UNICODE),
-            $catatan,
+            $itemsJson, $kitNama, $catatan,
         ]);
         return ['ok' => true, 'id' => (int)$db->lastInsertId(), 'skipped' => false];
     }
@@ -105,7 +167,7 @@ class WelcomeKit
     public static function statusForOutlet(int $outletId): ?array
     {
         $db = Database::get();
-        $st = $db->prepare("SELECT status, kurir, resi, items_json FROM saas_welcome_kit WHERE outlet_id=? ORDER BY id DESC LIMIT 1");
+        $st = $db->prepare("SELECT status, kurir, resi, items_json, kit_nama FROM saas_welcome_kit WHERE outlet_id=? ORDER BY id DESC LIMIT 1");
         $st->execute([$outletId]);
         $row = $st->fetch(PDO::FETCH_ASSOC);
         return $row ?: null;
