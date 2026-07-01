@@ -672,6 +672,8 @@ if ($isHqMode) {
   const pos  = document.getElementById('kode_pos');
   if (!prov) return;
 
+  const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
   async function loadInto(sel, parent, placeholder){
     sel.innerHTML = '<option value="">⏳ memuat…</option>';
     sel.disabled = true;
@@ -682,8 +684,8 @@ if ($isHqMode) {
       const rows = (j && j.ok && j.data) ? j.data : [];
       let html = '<option value="">' + placeholder + '</option>';
       rows.forEach(o => {
-        html += '<option value="' + o.kode + '"' + (o.kodepos ? ' data-pos="' + o.kodepos + '"' : '') + '>'
-              + o.nama.replace(/</g,'&lt;') + '</option>';
+        html += '<option value="' + esc(o.kode) + '"' + (o.kodepos ? ' data-pos="' + esc(o.kodepos) + '"' : '') + '>'
+              + esc(o.nama) + '</option>';
       });
       sel.innerHTML = html;
       sel.disabled = false;
