@@ -531,6 +531,10 @@ require __DIR__ . '/_layout_open.php';
      jauh sebelum 640px — di HP besar/phablet pun tetap muat & tabel bisa discroll. */
   @media(max-width:900px){
     div[style*="360px 1fr"],div[style*="1fr 1fr"]{grid-template-columns:1fr!important}
+    /* Izinkan track 1fr menyusut < konten (select opsi panjang) → form tak meluber ke kanan */
+    div[style*="360px 1fr"] > *,div[style*="1fr 1fr"] > *{min-width:0}
+    .keu-card{min-width:0}
+    .keu-form select,.keu-form input,.keu-form textarea{min-width:0;max-width:100%}
     table.keu-tbl{display:block;overflow-x:auto;white-space:nowrap;-webkit-overflow-scrolling:touch}
   }
   @media(max-width:640px){
