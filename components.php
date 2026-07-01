@@ -101,7 +101,7 @@ function renderHead(string $title = 'LAMASY'): void {
     <meta name="csrf-token" content="<?= htmlspecialchars($csrf) ?>"/>
     <link rel="icon" type="image/png" href="/assets/icon-192.png?v=<?= @filemtime(__DIR__.'/assets/icon-192.png') ?: '3' ?>"/>
     <link rel="apple-touch-icon" href="/assets/apple-touch-icon-180.png?v=<?= @filemtime(__DIR__.'/assets/apple-touch-icon-180.png') ?: '3' ?>"/>
-    <meta name="theme-color" content="#0F1C3A"/>
+    <meta name="theme-color" content="#000000"/>
     <?php if (!$isPortalPelanggan): ?>
     <!-- PWA tenant -->
     <link rel="manifest" href="/assets/manifest-tenant.json">
@@ -149,7 +149,7 @@ function renderGlobalJsHelpers(): void { ?>
         var SB = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.StatusBar;
         if (!SB) return;
         if (SB.setOverlaysWebView) SB.setOverlaysWebView({ overlay: false });
-        if (SB.setBackgroundColor) SB.setBackgroundColor({ color: '#0F1C3A' });
+        if (SB.setBackgroundColor) SB.setBackgroundColor({ color: '#000000' });
         if (SB.setStyle) SB.setStyle({ style: 'LIGHT' }); // teks status bar terang (bg navy gelap)
       } catch(e) {}
     })();

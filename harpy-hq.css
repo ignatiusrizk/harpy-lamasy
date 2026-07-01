@@ -197,3 +197,6 @@
   .hq-top-switch::before { content: '🏪'; font-size: 14px; }
   .hq-top-logout { font-size: 11px; padding: 5px 9px; }
 }
+
+/* Bar hitam untuk area status bar / notch (di belakang notif bar OS) */
+body::before{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area-inset-top,0px);background:#000;z-index:10000;pointer-events:none}
