@@ -222,7 +222,8 @@ require __DIR__ . '/_layout_open.php';
 .t-time{font-size:12px;color:#6B7280;white-space:nowrap}
 
 .hq-card{background:#fff;border:1px solid #E5E9F2;border-radius:12px;padding:18px;margin-bottom:18px}
-.hq-card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid #F0F1F4}
+.hq-card-head{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid #F0F1F4}
+@media(max-width:640px){.tk-filter{width:100%}.tk-filter .hq-select{flex:1 1 0;min-width:0;width:auto!important}}
 .hq-card-title{font-size:15px;font-weight:700;color:#0F1C3A}
 
 .hq-form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
@@ -332,7 +333,7 @@ require __DIR__ . '/_layout_open.php';
 <div class="hq-card">
   <div class="hq-card-head">
     <span class="hq-card-title">📋 Tiket — Semua Outlet</span>
-    <div style="display:flex;gap:8px;align-items:center">
+    <div class="tk-filter" style="display:flex;gap:8px;align-items:center">
       <select id="filterOutlet" class="hq-select" style="width:auto;font-size:12px;height:32px;padding:6px 10px" onchange="loadTickets()">
         <option value="0">Semua Outlet</option>
         <option value="-1">🏢 Tenant-wide saja</option>
