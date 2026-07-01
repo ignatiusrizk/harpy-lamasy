@@ -380,6 +380,10 @@ require __DIR__ . '/_layout_open.php';
     .pl-num{text-align:left}
     .toolbar input,.toolbar select{min-width:0}
     .stats{grid-template-columns:repeat(2,1fr)}
+    /* Chip segmen rapi 2×2, label kiri & badge kanan */
+    .seg-tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .seg-btn{justify-content:space-between;padding:10px 12px;min-width:0;text-align:left}
+    .seg-btn small{opacity:.7}
   }
 </style>
 
