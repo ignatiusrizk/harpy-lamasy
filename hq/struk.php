@@ -484,12 +484,38 @@ async function refreshPreview() {
   const html = await r.text();
   const frame = document.getElementById('previewFrame');
   const fmt = data.format || 'thermal_80';
-  frame.style.width    = fmt==='a4'?'210mm':(fmt==='a5'?'148mm':(fmt==='thermal_58'?'72mm':'92mm'));
-  frame.style.maxWidth = '100%';
-  frame.style.minHeight = (fmt==='a4'||fmt==='a5') ? '650px' : '380px';
+  window._previewFmt = fmt;
   const doc = frame.contentDocument || frame.contentWindow.document;
   doc.open(); doc.write(html); doc.close();
+  // Skala-agar-muat: render di lebar dokumen asli lalu kecilkan proporsional
+  // (biar preview A4/A5 tak meluber & terpotong di layar sempit).
+  const applyFit = () => fitPreview(fmt);
+  frame.onload = applyFit;
+  setTimeout(applyFit, 130);
 }
+
+// Lebar dokumen asli dalam px (96dpi): A4 210mm, A5 148mm, thermal 80/58mm.
+const PREVIEW_W = { a4:794, a5:559, thermal_80:348, thermal_58:272 };
+function fitPreview(fmt){
+  const frame = document.getElementById('previewFrame');
+  if (!frame) return;
+  const wrap = frame.parentElement;
+  const wpx  = PREVIEW_W[fmt] || 348;
+  frame.style.transform = 'none';
+  frame.style.maxWidth  = 'none';
+  frame.style.minHeight = '0';
+  frame.style.width     = wpx + 'px';
+  frame.style.transformOrigin = 'top left';
+  let h = 500;
+  try { const d = frame.contentDocument; h = Math.max(d.documentElement.scrollHeight, d.body.scrollHeight, 400); } catch(e){}
+  frame.style.height = h + 'px';
+  const avail = wrap.clientWidth || wpx;
+  const scale = Math.min(1, avail / wpx);
+  frame.style.transform = scale < 1 ? `scale(${scale})` : 'none';
+  wrap.style.height   = Math.ceil(h * scale) + 'px';
+  wrap.style.overflow = 'hidden';
+}
+window.addEventListener('resize', () => { if (window._previewFmt) fitPreview(window._previewFmt); });
 
 function printPreview() {
   const f = document.getElementById('previewFrame');
