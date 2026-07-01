@@ -165,6 +165,12 @@ require __DIR__ . '/_layout_open.php';
 .churn-filter select { background:#fff; border:1px solid #E5E9F2 }
 .btn-load { background:#0F1C3A; color:#fff; border:none; font-weight:700; cursor:pointer }
 .btn-load:hover { background:#1a2d52 }
+/* Mobile: filter bertumpuk rapi (label di atas select, tombol full-width) */
+@media(max-width:900px){
+  .churn-filter{flex-direction:column;align-items:stretch;gap:8px}
+  .churn-filter label{margin-left:0 !important;margin-bottom:-2px}
+  .churn-filter select,.churn-filter .btn-load{width:100%}
+}
 
 .churn-list { display:grid; grid-template-columns:repeat(auto-fill,minmax(340px,1fr)); gap:14px }
 .churn-card { background:#fff; border:1px solid #EEF1F8; border-radius:12px; padding:16px 18px;
