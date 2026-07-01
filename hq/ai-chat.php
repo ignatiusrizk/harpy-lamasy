@@ -252,7 +252,7 @@ async function submitQ() {
   try {
     const fd = new FormData();
     fd.append('question', q);
-    fd.append('_csrf', csrfToken());
+    fd.append('_csrf', document.querySelector('meta[name="csrf-token"]')?.content || '');
     const r = await fetch('/hq/ai-chat.php?action=ask', { method: 'POST', body: fd });
     const d = await r.json();
     removeTyping();
