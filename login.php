@@ -333,7 +333,7 @@ function logAuditLogin(array $user, string $aksi, string $modul, string $ket): v
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw-tenant.js', { scope: '/' })
+    navigator.serviceWorker.register('/sw-tenant.js?v=<?= @filemtime(__DIR__ . '/sw-tenant.js') ?: date('Ymd') ?>', { scope: '/' })
       .catch(err => console.warn('SW tenant register failed:', err));
   });
 }

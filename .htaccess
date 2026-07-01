@@ -71,10 +71,11 @@ RedirectMatch 403 ^/scripts/
 RedirectMatch 403 ^/middleware/
 RedirectMatch 403 ^/core/
 
-# ── Service Worker scope header ─────────────────────
-<Files "sw.js">
+# ── Service Worker: scope + JANGAN di-cache (biar update SW cepat sampai ke device) ──
+<FilesMatch "^sw(-tenant)?\.js$">
   Header set Service-Worker-Allowed "/"
-</Files>
+  Header set Cache-Control "no-cache, no-store, must-revalidate"
+</FilesMatch>
 
 # ── Security & anti-fingerprint headers ─────────────
 <IfModule mod_headers.c>
