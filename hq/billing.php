@@ -163,6 +163,14 @@ $csrf = getCsrfToken();
 .fld input,.fld select{width:100%;padding:9px 12px;border:1px solid #E5E9F2;border-radius:8px;font-family:inherit;font-size:14px}
 .modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:18px}
 .empty{text-align:center;padding:30px;color:#9CA3AF;font-size:13px}
+@media(max-width:640px){
+  .filter{gap:8px}
+  .filter select,.filter input{flex:1 1 auto;min-width:0}
+  /* Tabel pemakaian coin per outlet & per fitur bisa digeser mendatar */
+  #outletBox,#featureBox{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  #outletBox table.tbl,#featureBox table.tbl{min-width:480px}
+  .tbl th,.tbl td{white-space:nowrap}
+}
 </style>
 
 <div class="bl-head">

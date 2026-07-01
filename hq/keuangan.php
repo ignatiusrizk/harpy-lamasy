@@ -526,6 +526,16 @@ require __DIR__ . '/_layout_open.php';
   .modal{background:#fff;border-radius:16px;padding:28px;width:100%;max-width:520px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.2)}
   .modal h4{font-size:16px;font-weight:800;color:#0F1C3A;margin-bottom:20px}
   .modal-footer{display:flex;gap:10px;margin-top:20px;justify-content:flex-end}
+
+  @media(max-width:640px){
+    .keu-card{padding:14px}
+    /* Tabel keuangan bisa digeser mendatar, tak terpotong */
+    table.keu-tbl{display:block;overflow-x:auto;white-space:nowrap;-webkit-overflow-scrolling:touch}
+    /* Grid 2/3 kolom (termasuk inline) menumpuk di HP */
+    .keu-form .row2,.keu-form .row3{grid-template-columns:1fr}
+    div[style*="360px 1fr"],div[style*="1fr 1fr"]{grid-template-columns:1fr!important}
+    .bar-between{flex-wrap:wrap;gap:10px}
+  }
 </style>
 
 <h1>💰 Data Keuangan</h1>

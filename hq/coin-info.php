@@ -250,6 +250,14 @@ $katMeta = [
   .cu-pager button { padding:6px 14px; border:1px solid #E5E7EB; border-radius:8px; background:#fff; cursor:pointer; font-size:13px; }
   .cu-pager button:disabled { opacity:.4; cursor:default; }
   .cu-empty { text-align:center; padding:30px; color:#9CA3AF; font-size:14px; }
+
+  @media (max-width:640px){
+    /* Tabel ledger coin bisa digeser mendatar */
+    #cuLedger{overflow-x:auto;-webkit-overflow-scrolling:touch}
+    #cuLedger table.cu-table{min-width:480px}
+    .cu-table th,.cu-table td{white-space:nowrap}
+    .cu-toolbar{gap:10px}
+  }
 </style>
 
 <h1>💲 Harga Fitur Coin

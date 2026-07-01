@@ -255,6 +255,17 @@ require __DIR__ . '/_layout_open.php';
 .pill{font-size:11px;font-weight:700;padding:2px 8px;border-radius:100px}
 .pill-warn{background:#FEF3C7;color:#92400E}.pill-ok{background:#D1FAE5;color:#065F46}.pill-gray{background:#F3F4F6;color:#6B7280}
 .empty{text-align:center;padding:30px;color:#9CA3AF;font-size:13px}
+
+@media(max-width:640px){
+  .filter{gap:8px}
+  .filter select,.filter input{flex:1 1 auto;min-width:0}
+  /* Tabel beban gaji & tabel detail modal bisa digeser mendatar */
+  #tblBox{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  #tblBox table.tbl{min-width:520px}
+  .tbl th,.tbl td{white-space:nowrap}
+  .hq-modal-body{overflow-x:auto}
+  .hq-modal-body table{min-width:480px}
+}
 </style>
 
 <div class="pg-head">
