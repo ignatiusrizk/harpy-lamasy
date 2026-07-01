@@ -105,6 +105,46 @@ require __DIR__ . '/_layout_open.php';
 #supplierAlert { display:none; padding:.65rem 1rem; border-radius:.5rem; margin-bottom:1rem; font-size:.9rem; }
 #supplierAlert.success { background:#d1fae5; color:#065f46; display:block; }
 #supplierAlert.error   { background:#fee2e2; color:#991b1b; display:block; }
+
+/* ── Mobile: baris tabel jadi kartu (≤700px) ── */
+@media (max-width:700px) {
+  .supplier-toolbar { flex-direction:column; align-items:stretch; }
+  .supplier-toolbar .btn-primary { width:100%; justify-content:center; }
+  .supplier-table-wrap { overflow-x:visible; }
+  .supplier-table thead { display:none; }
+  .supplier-table, .supplier-table tbody, .supplier-table tr, .supplier-table td { display:block; width:100%; box-sizing:border-box; }
+  .supplier-table tr {
+    border:1px solid var(--border-color,#e2e8f0); border-radius:12px;
+    margin-bottom:.75rem; padding:.35rem .25rem; background:#fff;
+    box-shadow:0 1px 3px rgba(0,0,0,.04);
+  }
+  .supplier-table tr:hover td { background:transparent; }
+  .supplier-table td {
+    border:none; padding:.4rem .9rem; display:flex;
+    justify-content:space-between; align-items:center; gap:1rem;
+    text-align:right; font-size:.9rem;
+  }
+  .supplier-table td::before {
+    content:attr(data-label); font-weight:600; color:var(--text-muted,#64748b);
+    text-align:left; flex:0 0 auto; font-size:.8rem;
+  }
+  /* # (nomor) disembunyikan di mobile */
+  .supplier-table td.cell-no { display:none; }
+  /* Nama supplier jadi header kartu */
+  .supplier-table td.cell-nama {
+    justify-content:flex-start; text-align:left; font-size:1rem;
+    padding-top:.65rem; padding-bottom:.55rem; border-bottom:1px solid #f1f5f9; margin-bottom:.25rem;
+  }
+  .supplier-table td.cell-nama::before { display:none; }
+  .supplier-table td.num { text-align:right; }
+  /* Baris aksi: tombol memenuhi lebar */
+  .supplier-table td.cell-aksi { justify-content:stretch; padding-top:.6rem; }
+  .supplier-table td.cell-aksi::before { display:none; }
+  .supplier-table td.cell-aksi > div { display:flex; gap:.5rem; width:100%; }
+  .supplier-table td.cell-aksi .btn { flex:1 1 0; justify-content:center; margin-left:0 !important; }
+  .supplier-table .tbl-empty { display:block; }
+  .supplier-table .tbl-empty::before { display:none; }
+}
 </style>
 
 <div class="hq-page-header" style="margin-bottom:1.25rem;">
@@ -212,16 +252,18 @@ async function loadSupplier() {
     let html = '';
     rows.forEach((s, i) => {
       html += `<tr>
-        <td>${i+1}</td>
-        <td><strong>${esc(s.nama)}</strong></td>
-        <td>${esc(s.kontak_nama||'—')}</td>
-        <td>${esc(s.telepon||'—')}</td>
-        <td>${esc(s.term_pembayaran||'—')}</td>
-        <td class="num">${fmtNum(s.total_po||0)}</td>
-        <td class="num">${fmtRp(s.nilai_po||0)}</td>
-        <td>
-          <button class="btn btn-ghost" style="padding:.3rem .6rem;font-size:.8rem" onclick="openModal(${JSON.stringify(s)})">Edit</button>
-          <button class="btn btn-danger" style="padding:.3rem .6rem;font-size:.8rem;margin-left:.25rem" onclick="deleteSupplier(${s.id},${JSON.stringify(s.nama)})">Hapus</button>
+        <td class="cell-no">${i+1}</td>
+        <td class="cell-nama"><strong>${esc(s.nama)}</strong></td>
+        <td data-label="Kontak">${esc(s.kontak_nama||'—')}</td>
+        <td data-label="Telepon">${esc(s.telepon||'—')}</td>
+        <td data-label="Term Pembayaran">${esc(s.term_pembayaran||'—')}</td>
+        <td class="num" data-label="Total PO">${fmtNum(s.total_po||0)}</td>
+        <td class="num" data-label="Nilai Diterima">${fmtRp(s.nilai_po||0)}</td>
+        <td class="cell-aksi">
+          <div>
+            <button class="btn btn-ghost" style="padding:.3rem .6rem;font-size:.8rem" onclick="openModal(${JSON.stringify(s)})">Edit</button>
+            <button class="btn btn-danger" style="padding:.3rem .6rem;font-size:.8rem;margin-left:.25rem" onclick="deleteSupplier(${s.id},${JSON.stringify(s.nama)})">Hapus</button>
+          </div>
         </td>
       </tr>`;
     });
