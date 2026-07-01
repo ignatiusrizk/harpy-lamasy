@@ -108,7 +108,7 @@ require __DIR__ . '/_layout_open.php';
   .row-by strong{display:block;color:#0F1C3A;font-weight:700;font-size:12px}
 
   .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}
-  .stat{background:#fff;border-radius:10px;padding:12px 14px;box-shadow:0 1px 6px rgba(0,0,0,.05)}
+  .stat{background:#fff;border-radius:10px;padding:12px 14px;box-shadow:0 1px 6px rgba(0,0,0,.05);text-align:center}
   .stat-num{font-size:1.4rem;font-weight:800;color:#0F1C3A;font-family:var(--mono)}
   .stat-lbl{font-size:11px;color:#6B7280;text-transform:uppercase;letter-spacing:.05em;font-weight:700}
 

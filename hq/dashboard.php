@@ -615,7 +615,7 @@ require __DIR__ . '/_layout_open.php';
 
   .metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px}
   .metric{background:#fff;border-radius:12px;padding:18px;box-shadow:0 1px 6px rgba(0,0,0,.05);
-          border-top:3px solid #35E8D5}
+          border-top:3px solid #35E8D5;text-align:center}
   .metric.blue{border-top-color:#3B82F6}.metric.purple{border-top-color:#8B5CF6}
   .metric.orange{border-top-color:#F59E0B}
   .metric-num{font-size:1.6rem;font-weight:800;color:#0F1C3A;font-family:var(--mono);margin-bottom:2px}

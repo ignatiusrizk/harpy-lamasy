@@ -236,7 +236,7 @@ require __DIR__ . '/_layout_open.php';
 .pg-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:10px}
 .pg-head h1{font-size:1.3rem;font-weight:800;color:#0F1C3A}
 .metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
-.metric{background:#fff;border:1px solid #EEF1F8;border-radius:12px;padding:16px;box-shadow:0 1px 6px rgba(0,0,0,.05);border-top:3px solid #35E8D5}
+.metric{background:#fff;border:1px solid #EEF1F8;border-radius:12px;padding:16px;box-shadow:0 1px 6px rgba(0,0,0,.05);border-top:3px solid #35E8D5;text-align:center}
 .metric.amber{border-top-color:#F59E0B}.metric.green{border-top-color:#10B981}.metric.blue{border-top-color:#3B82F6}
 .metric-num{font-size:1.4rem;font-weight:800;color:#0F1C3A;font-family:var(--mono)}
 .metric-label{font-size:12px;color:#6B7280;font-weight:600;margin-top:2px}

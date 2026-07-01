@@ -278,7 +278,7 @@ require __DIR__ . '/_layout_open.php';
   h1 small{display:block;font-size:13px;font-weight:400;color:#6B7280;margin-top:2px}
 
   .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}
-  .stat-card{background:#fff;border-radius:12px;padding:16px 18px;box-shadow:0 1px 6px rgba(0,0,0,.05);border-top:3px solid #35E8D5}
+  .stat-card{background:#fff;border-radius:12px;padding:16px 18px;box-shadow:0 1px 6px rgba(0,0,0,.05);border-top:3px solid #35E8D5;text-align:center}
   .stat-num{font-size:1.5rem;font-weight:800;color:#0F1C3A;font-family:var(--mono)}
   .stat-label{font-size:12px;color:#6B7280;font-weight:600}
 
