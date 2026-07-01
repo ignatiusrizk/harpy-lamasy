@@ -1016,17 +1016,19 @@ textarea{resize:vertical;min-height:64px}
   .pos-mobile-cta {
     display: flex;
     position: fixed;
-    /* Duduk DI ATAS bottom nav. Nav + FAB 🛒 yg nyembul makan ~70px
-       (sama dgn reserve .ol-content), jadi CTA di 74px biar lingkaran FAB
-       lolos bersih di bawahnya, tak tertumpuk. */
-    bottom: calc(74px + env(safe-area-inset-bottom, 0px)); left: 0; right: 0;
-    padding: 10px 14px;
+    /* Nempel penuh ke bawah; padding-bawah mengangkat Total+Simpan ke atas
+       bottom nav + FAB (reserve ~70px, sama dgn .ol-content), sekaligus latar
+       putihnya menutup celah — tak ada konten scroll bocor di antara CTA & nav.
+       z-index di BAWAH nav (40) biar nav tetap di atas & FAB 🛒 nyembul di atas
+       latar putih CTA, bukan di atas konten. */
+    bottom: 0; left: 0; right: 0;
+    padding: 10px 14px calc(70px + env(safe-area-inset-bottom, 0px));
     background: var(--white);
     border-top: 1px solid rgba(27,45,90,.1);
     box-shadow: 0 -4px 20px rgba(0,0,0,.08);
     gap: 12px;
     align-items: center;
-    z-index: 50;
+    z-index: 30;
   }
   .pos-mobile-cta-total {
     flex: 1; min-width: 0; display: flex; align-items: baseline; gap: 6px;
