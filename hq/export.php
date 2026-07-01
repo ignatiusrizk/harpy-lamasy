@@ -326,7 +326,11 @@ $outletList = $outlets->fetchAll(PDO::FETCH_ASSOC);
   <form id="expForm">
     <input type="hidden" name="_csrf" value="<?= htmlspecialchars(getCsrfToken()) ?>">
 
-    <div style="display:grid;grid-template-columns:1fr 1fr 2fr;gap:14px;margin-bottom:18px">
+    <style>
+    .exp-filter{display:grid;grid-template-columns:1fr 1fr 2fr;gap:14px;margin-bottom:18px}
+    @media(max-width:640px){.exp-filter{grid-template-columns:1fr 1fr}.exp-filter>div:last-child{grid-column:1/-1}}
+    </style>
+    <div class="exp-filter">
       <div>
         <label style="display:block;font-weight:600;font-size:13px;color:#0F1C3A;margin-bottom:4px">Dari Tanggal</label>
         <input type="date" name="dari" class="hl-input" value="<?= date('Y-m-01') ?>" required>
