@@ -229,6 +229,11 @@ require __DIR__ . '/_layout_open.php';
     /* Tabel investor bisa digeser mendatar, tak terpotong */
     table.inv-tbl{display:block;overflow-x:auto;white-space:nowrap;-webkit-overflow-scrolling:touch}
   }
+  @media(max-width:640px){
+    .bh-filter{width:100%}
+    .bh-filter input[type=month]{flex:1 1 100%;min-width:0}
+    .bh-filter button{flex:1 1 calc(50% - 5px)}
+  }
 </style>
 
 <h1>👥 Investor & Bagi Hasil</h1>
@@ -271,7 +276,7 @@ require __DIR__ . '/_layout_open.php';
     <div class="inv-card">
       <div class="bar-between" style="flex-wrap:wrap;gap:10px">
         <h3 style="margin:0">💰 Distribusi Bagi Hasil</h3>
-        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <div class="bh-filter" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
           <label style="font-size:12px;font-weight:600;color:#374151;margin:0">Periode:</label>
           <input type="month" id="bhPeriode" style="padding:7px 10px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px;font-family:inherit">
           <button class="btn btn-teal btn-sm" onclick="loadBagiHasil()">Tampilkan</button>
