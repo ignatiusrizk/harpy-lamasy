@@ -1074,7 +1074,7 @@ html, body { overflow-x: clip; }
     border-radius: var(--r-lg) var(--r-lg) 0 0 !important;
     max-height: 92vh !important;
   }
-  .hl-modal-overlay, .modal-overlay { align-items: flex-end !important; padding: 0 !important; }
+  .hl-modal-overlay, .modal-overlay, .modal-bg, .modal-backdrop { align-items: flex-end !important; padding: 0 !important; }
 
   /* ── STACKED TABLE PATTERN ──────────────────────────
      Apply class="hl-stack-mobile" ke <table>, lalu tambah
