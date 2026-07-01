@@ -258,6 +258,20 @@ require __DIR__ . '/_layout_open.php';
 
 .transfer-btn{padding:4px 10px;background:#EFF6FF;color:#1E40AF;border:1px solid #BFDBFE;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer}
 .transfer-btn:hover{background:#DBEAFE}
+
+/* Mobile polish (≤640px) */
+@media (max-width:640px){
+  .inv-hq-summary{grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:16px}
+  .inv-hq-card{padding:12px}
+  .inv-hq-num{font-size:1.2rem}
+  .inv-hq-label{font-size:10px;letter-spacing:.2px}
+  .hq-page-header h1{font-size:20px}
+  .hq-page-header p{font-size:13px}
+  .hq-page-header .hl-btn{width:100%}
+  .hq-tabs{overflow-x:auto;flex-wrap:nowrap;-webkit-overflow-scrolling:touch;gap:0}
+  .hq-tab{padding:10px 14px;font-size:13px;white-space:nowrap}
+  .pivot-table th,.pivot-table td{padding:8px 10px}
+}
 </style>
 
 <div class="hq-page-wrap">
