@@ -44,8 +44,20 @@ try {
     $bundles = [];
 }
 
-// Saldo coin sekarang
+// Saldo coin usable = pool tenant + trial coin outlet yang MASIH trial (bisa dipakai HQ).
 $saldo = (int)($hqTenant['coin_balance'] ?? 0);
+try {
+    $tp = $db->prepare("SELECT COALESCE(SUM(trial_coin_balance),0) FROM outlets WHERE tenant_id=? AND status='trial'");
+    $tp->execute([$tid]);
+    $saldo += (int)$tp->fetchColumn();
+} catch (Throwable) {}
+// Coin trial yang beku (outlet dalam masa tenggang / grace) — tampil terpisah, tak bisa dipakai.
+$frozenCoin = 0;
+try {
+    $fz = $db->prepare("SELECT COALESCE(SUM(trial_coin_balance),0) FROM outlets WHERE tenant_id=? AND status='grace'");
+    $fz->execute([$tid]);
+    $frozenCoin = (int)$fz->fetchColumn();
+} catch (Throwable) {}
 
 // ── AJAX: Riwayat & Pemakaian Coin (read-only, tenant scope) ──
 $action = $_GET['action'] ?? '';
@@ -278,6 +290,11 @@ $katMeta = [
   <div>
     <div class="saldo-label">Saldo Coin Anda</div>
     <div class="saldo-num"><?= number_format($saldo, 0, ',', '.') ?></div>
+    <?php if ($frozenCoin > 0): ?>
+      <div style="font-size:12px;color:rgba(255,255,255,.7);margin-top:6px">
+        🔒 <?= number_format($frozenCoin, 0, ',', '.') ?> coin beku (masa tenggang) — aktivasi outlet untuk memakainya lagi.
+      </div>
+    <?php endif; ?>
   </div>
   <div class="info-text">
     <strong>Transparansi pricing:</strong> setiap fitur memotong coin sesuai harga di bawah.
