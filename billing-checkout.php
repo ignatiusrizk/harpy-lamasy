@@ -169,45 +169,58 @@ $secondsRemaining = max(0, strtotime($payment['expires_at']) - time());
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Pembayaran — LAMASY</title>
 <link rel="stylesheet" href="/harpy-erp.css?v=<?= date('Ymd') ?>">
 <style>
-  body { font-family: 'Plus Jakarta Sans', sans-serif; background: #0F1C3A; color: #fff; padding: 20px; }
-  .wrap { max-width: 480px; margin: 0 auto; }
-  .card { background: #162348; border: 1px solid rgba(255,255,255,.1); border-radius: 16px; padding: 28px; margin-bottom: 16px; }
-  h1 { font-size: 22px; margin-bottom: 6px; }
-  .item { color: #94A3B8; font-size: 13px; margin-bottom: 24px; }
-  .amount { font-size: 32px; font-weight: 800; font-family: 'JetBrains Mono', monospace; color: #35E8D5; margin: 18px 0; }
-  .timer { background: rgba(245,158,11,.1); border: 1px solid rgba(245,158,11,.3); color: #FCD34D; padding: 10px 14px; border-radius: 8px; font-size: 13px; text-align: center; }
-  .qr-wrap { text-align: center; padding: 20px; background: #fff; border-radius: 12px; }
-  .qr-wrap img { max-width: 260px; }
-  .va-box { display: flex; align-items: center; justify-content: space-between; background: rgba(53,232,213,.06); border: 1px solid rgba(53,232,213,.25); padding: 14px; border-radius: 10px; margin: 8px 0; }
-  .va-num { font-family: 'JetBrains Mono', monospace; font-size: 18px; font-weight: 700; color: #35E8D5; }
-  button.copy { background: #35E8D5; color: #0F1C3A; border: none; padding: 6px 12px; border-radius: 6px; font-weight: 700; cursor: pointer; }
-  .status { text-align: center; padding: 14px; font-size: 13px; color: #94A3B8; }
-  .status.paid { color: #35E8D5; font-weight: 700; }
-  .topbar { display:flex; align-items:center; margin-bottom:16px; }
-  .back-btn { display:inline-flex; align-items:center; gap:6px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.14); color:#E2E8F0; padding:9px 14px; border-radius:10px; font-size:14px; font-weight:600; cursor:pointer; text-decoration:none; }
-  .back-btn:hover { background:rgba(255,255,255,.12); }
-  .ref-row { display:flex; align-items:center; justify-content:space-between; gap:10px; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08); padding:10px 12px; border-radius:10px; margin-top:12px; }
-  .ref-row .lbl { font-size:11px; color:#94A3B8; }
-  .ref-row .val { font-family:'JetBrains Mono', monospace; font-size:13px; color:#E2E8F0; word-break:break-all; }
-  .mini-btn { background:rgba(53,232,213,.12); color:#35E8D5; border:1px solid rgba(53,232,213,.3); padding:6px 12px; border-radius:8px; font-weight:700; font-size:12px; cursor:pointer; white-space:nowrap; }
-  .mini-btn:hover { background:rgba(53,232,213,.2); }
-  .qr-actions { display:flex; gap:10px; margin-top:16px; }
-  .qr-actions .act-btn { flex:1; display:inline-flex; align-items:center; justify-content:center; gap:7px; background:#35E8D5; color:#0F1C3A; border:none; padding:12px; border-radius:10px; font-weight:700; font-size:14px; cursor:pointer; }
-  .qr-actions .act-btn.alt { background:rgba(255,255,255,.08); color:#E2E8F0; border:1px solid rgba(255,255,255,.16); }
-  .qr-actions .act-btn:active { transform:scale(.98); }
-  #toast { position:fixed; left:50%; bottom:28px; transform:translateX(-50%) translateY(20px); background:#1E293B; color:#fff; border:1px solid rgba(255,255,255,.15); padding:11px 18px; border-radius:10px; font-size:13px; opacity:0; pointer-events:none; transition:opacity .2s, transform .2s; z-index:50; }
-  #toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+  :root{ --off:#F3F4F6; --navy:#0F1C3A; --teal:#35E8D5; --teal-d:#1CC4B2; --ink:#1F2937; --ash:#6B7280; }
+  *{box-sizing:border-box}
+  body{ font-family:'Plus Jakarta Sans',system-ui,sans-serif; background:var(--off); color:var(--ink); margin:0; padding:0;
+        min-height:100vh; -webkit-font-smoothing:antialiased; }
+  /* Bar hitam area status bar / notch */
+  body::before{ content:""; position:fixed; top:0; left:0; right:0; height:env(safe-area-inset-top,0px); background:#000; z-index:1000; pointer-events:none; }
+  /* Header sticky */
+  .bc-top{ position:sticky; top:0; z-index:90; background:var(--navy); color:#fff;
+           padding:calc(env(safe-area-inset-top,0px) + 12px) 16px 12px; display:flex; align-items:center; gap:12px; }
+  .bc-top .back-btn{ display:inline-flex; align-items:center; gap:6px; background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.18);
+                     color:#fff; padding:8px 12px; border-radius:10px; font-size:13.5px; font-weight:600; text-decoration:none; cursor:pointer; }
+  .bc-top .back-btn:active{ transform:scale(.97); }
+  .bc-top .bc-title{ font-size:15px; font-weight:800; }
+  .wrap{ max-width:480px; margin:0 auto; padding:16px 16px 40px; }
+  .card{ background:#fff; border:1px solid #EEF1F8; border-radius:16px; padding:20px; margin-bottom:14px; box-shadow:0 1px 6px rgba(15,28,58,.06); }
+  h1{ font-size:20px; font-weight:800; color:var(--navy); margin:0 0 4px; }
+  h3{ font-size:15px; font-weight:800; color:var(--navy); margin:0 0 14px; }
+  .item{ color:var(--ash); font-size:13px; margin-bottom:18px; }
+  .amount{ font-size:30px; font-weight:800; font-family:'DM Mono',monospace; color:var(--navy); margin:14px 0; }
+  .timer{ background:#FFF7ED; border:1px solid #FED7AA; color:#B45309; padding:10px 14px; border-radius:10px; font-size:13px; text-align:center; font-weight:600; }
+  .qr-wrap{ text-align:center; padding:18px; background:#fff; border:1px solid #E5E9F2; border-radius:14px; }
+  .qr-wrap img{ max-width:240px; width:100%; height:auto; }
+  .va-box{ display:flex; align-items:center; justify-content:space-between; gap:10px; background:#F0FDFA; border:1px solid #99F6E4; padding:14px; border-radius:12px; margin:8px 0; }
+  .va-num{ font-family:'DM Mono',monospace; font-size:18px; font-weight:800; color:var(--teal-d); word-break:break-all; }
+  button.copy{ background:var(--teal); color:var(--navy); border:none; padding:8px 14px; border-radius:8px; font-weight:800; cursor:pointer; white-space:nowrap; }
+  .status{ text-align:center; padding:14px; font-size:13px; color:var(--ash); }
+  .status.paid{ color:var(--teal-d); font-weight:800; }
+  .ref-row{ display:flex; align-items:center; justify-content:space-between; gap:10px; background:#F7F8FC; border:1px solid #EEF1F8; padding:11px 12px; border-radius:12px; margin-top:12px; }
+  .ref-row .lbl{ font-size:11px; color:var(--ash); font-weight:600; }
+  .ref-row .val{ font-family:'DM Mono',monospace; font-size:13px; color:var(--navy); word-break:break-all; font-weight:700; }
+  .mini-btn{ background:#EAFBF8; color:var(--teal-d); border:1px solid #99F6E4; padding:7px 13px; border-radius:9px; font-weight:800; font-size:12px; cursor:pointer; white-space:nowrap; }
+  .mini-btn:active{ transform:scale(.97); }
+  .qr-actions{ display:flex; gap:10px; margin-top:16px; }
+  .qr-actions .act-btn{ flex:1; display:inline-flex; align-items:center; justify-content:center; gap:7px; background:var(--navy); color:#fff; border:none; padding:13px; border-radius:12px; font-weight:800; font-size:14px; cursor:pointer; }
+  .qr-actions .act-btn.alt{ background:var(--teal); color:var(--navy); }
+  .qr-actions .act-btn:active{ transform:scale(.98); }
+  #toast{ position:fixed; left:50%; bottom:28px; transform:translateX(-50%) translateY(20px); background:var(--navy); color:#fff; padding:11px 18px; border-radius:10px; font-size:13px; opacity:0; pointer-events:none; transition:opacity .2s,transform .2s; z-index:1100; }
+  #toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
 </style>
 </head>
 <body>
+<header class="bc-top">
+  <a class="back-btn" href="#" onclick="goBack();return false;">&larr; Kembali</a>
+  <span class="bc-title">Pembayaran</span>
+</header>
 <div class="wrap">
-  <div class="topbar">
-    <a class="back-btn" href="#" onclick="goBack();return false;">&larr; Kembali</a>
-  </div>
   <div class="card">
     <h1>Pembayaran QRIS / VA</h1>
     <div class="item"><?= htmlspecialchars($itemName) ?></div>
@@ -345,8 +358,42 @@ async function fetchQrBlob() {
   } catch (e) { return null; }
 }
 
+function bcIsNative(){ try { return !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()); } catch(e){ return false; } }
+function bcPlugins(){ return (window.Capacitor && window.Capacitor.Plugins) || {}; }
+function bcAmtTxt(){ return 'Pembayaran QRIS LAMASY Rp ' + (<?= (int)$amount ?>).toLocaleString('id-ID') + ' — Order ' + orderId; }
+async function blobToBase64(blob){
+  return new Promise(function(res, rej){ var r=new FileReader(); r.onloadend=function(){ res(String(r.result).split(',')[1]||''); }; r.onerror=rej; r.readAsDataURL(blob); });
+}
+// Return true kalau native menangani; false → caller fallback web.
+async function nativeQr(mode){ // mode: 'share' | 'save'
+  if (!bcIsNative()) return false;
+  var P = bcPlugins(); var Filesystem = P.Filesystem, Share = P.Share;
+  if (!Filesystem) return false;
+  var blob = await fetchQrBlob();
+  if (!blob) {
+    if (mode==='share' && Share) { try { await Share.share({ title:'QRIS Pembayaran', text:bcAmtTxt() }); return true; } catch(e){ if(e&&e.name==='AbortError') return true; } }
+    return false;
+  }
+  var b64 = await blobToBase64(blob);
+  var name = 'qris-' + orderId + '.png';
+  try {
+    if (mode==='save') {
+      await Filesystem.writeFile({ path:name, data:b64, directory:'DOCUMENTS' });
+      showToast('QR tersimpan di Files (Documents)');
+      return true;
+    }
+    var w = await Filesystem.writeFile({ path:name, data:b64, directory:'CACHE' });
+    var uri = (w && w.uri) ? w.uri : null;
+    if (!uri && Filesystem.getUri) { try { var g = await Filesystem.getUri({ path:name, directory:'CACHE' }); uri = g && g.uri; } catch(e){} }
+    if (Share && uri) { try { await Share.share({ title:'QRIS Pembayaran', text:bcAmtTxt(), files:[uri] }); return true; } catch(e){ if(e&&e.name==='AbortError') return true; } }
+    if (Share) { try { await Share.share({ title:'QRIS Pembayaran', text:bcAmtTxt() }); return true; } catch(e){ if(e&&e.name==='AbortError') return true; } }
+  } catch(e){ /* fallback web */ }
+  return false;
+}
+
 async function downloadQR() {
   if (!qrUrl) { showToast('QR tidak tersedia'); return; }
+  if (await nativeQr('save')) return;
   // Pakai URL asli (data:/http) langsung — di APK ditangkap DownloadListener native,
   // di browser biasa tersimpan via atribut download. Blob URL tak ditangani WebView.
   try {
@@ -362,6 +409,7 @@ async function downloadQR() {
 }
 
 async function shareQR() {
+  if (await nativeQr('share')) return;
   const amtTxt = 'Pembayaran QRIS LAMASY Rp ' + (<?= (int)$amount ?>).toLocaleString('id-ID');
   const blob = await fetchQrBlob();
   if (blob && navigator.canShare) {
