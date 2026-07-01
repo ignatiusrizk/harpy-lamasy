@@ -79,6 +79,8 @@ try {
                   VALUES (?, 'outlet_activation', 800000, 'paid', ?, ?, NOW(), DATE_ADD(NOW(), INTERVAL 1 DAY))")
        ->execute([$tid, $oid, 'WK-ORD2-'.$tid]);
     $pid2 = (int)$db->lastInsertId();
+    // Safety: exit(1) di _assert.php bypass finally — pastikan config selalu dipulihkan walau assert gagal di blok disabled.
+    register_shutdown_function(fn() => BillingConfig::set('welcome_kit_enabled', '1', null));
     BillingConfig::set('welcome_kit_enabled', '0', null);
     ok(!WelcomeKit::enabled(), 'enabled() false saat config 0');
     $r3 = WelcomeKit::createForOutlet($db, $tid, $oid, $pid2, 'outlet_activation');
