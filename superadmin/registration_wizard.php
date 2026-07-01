@@ -10,6 +10,7 @@ require_once SA_ROOT . '/superadmin_components.php';
 require_once SA_ROOT . '/../core/Database.php';
 require_once SA_ROOT . '/../core/StrukGenerator.php';
 require_once dirname(__DIR__) . '/core/BillingConfig.php';
+require_once dirname(__DIR__) . '/add-outlet-validate.php';
 
 date_default_timezone_set('Asia/Jakarta');
 
@@ -58,13 +59,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $wiz['owner_name']      = substr(trim(strip_tags($_POST['owner_name'] ?? '')), 0, 100);
         $wiz['owner_wa']        = substr(trim(preg_replace('/[^0-9+\-\s]/', '', $_POST['owner_wa'] ?? '')), 0, 20);
         $wiz['kota']            = substr(trim(strip_tags($_POST['kota'] ?? '')), 0, 100);
+        $wiz['penerima']        = substr(trim(strip_tags($_POST['penerima'] ?? '')), 0, 100);
+        $wiz['alamat']          = substr(trim(strip_tags($_POST['alamat'] ?? '')), 0, 255);
+        $wiz['kode_pos']        = substr(trim(strip_tags($_POST['kode_pos'] ?? '')), 0, 10);
         $wiz['source']          = in_array($_POST['source'] ?? '', ['self_service','assisted']) ? $_POST['source'] : 'assisted';
         $wiz['notes']           = substr(trim(strip_tags($_POST['notes'] ?? '')), 0, 500);
 
         if (!$wiz['nama_outlet'] || !$wiz['owner_name'] || !$wiz['owner_wa']) {
             $error = 'Nama outlet, nama owner, dan nomor WA wajib diisi.';
         } else {
-            $wiz['step'] = 2; $step = 2;
+            // Validasi alamat lengkap (HP menggunakan owner_wa)
+            $addrErrors = aoValidateAddress([
+                'penerima' => $wiz['penerima'],
+                'telepon'  => $wiz['owner_wa'],
+                'alamat'   => $wiz['alamat'],
+                'kota'     => $wiz['kota'],
+                'kode_pos' => $wiz['kode_pos'],
+            ]);
+            if ($addrErrors) {
+                $error = implode(' ', $addrErrors);
+            } else {
+                $wiz['step'] = 2; $step = 2;
+            }
         }
     }
 
@@ -272,13 +288,17 @@ function provisionTenant(array $wizard): array
         $payStatus = $wizard['payment_status'] ?? 'belum_bayar';
         $outletStatus = ($payStatus === 'sudah_bayar' || $payStatus === 'gratis') ? 'active' : 'pending';
         $db->prepare(
-            "INSERT INTO outlets (tenant_id, nama_outlet, slug, kota, status, coin_balance, is_main, setup_done)
-             VALUES (?,?,?,?,?,0,1,0)"
+            "INSERT INTO outlets (tenant_id, nama_outlet, slug, kota, alamat, telepon, penerima, kode_pos, status, coin_balance, is_main, setup_done)
+             VALUES (?,?,?,?,?,?,?,?,?,0,1,0)"
         )->execute([
             $tenantId,
             $wizard['nama_outlet'],
             $outletSlug,
             $wizard['kota'] ?? '',
+            $wizard['alamat'] ?? '',
+            $wizard['owner_wa'] ?? '',
+            $wizard['penerima'] ?? '',
+            $wizard['kode_pos'] ?? '',
             $outletStatus,
         ]);
         $newOutletId = (int)$db->lastInsertId();
@@ -695,8 +715,8 @@ $csrf = saGetCsrf();
       </div>
       <div class="field-grid-2">
         <div class="wiz-field">
-          <label class="wiz-label">Kota</label>
-          <input type="text" name="kota" class="wiz-input"
+          <label class="wiz-label">Kota / Kabupaten <span class="req">*</span></label>
+          <input type="text" name="kota" class="wiz-input" required
                  placeholder="Semarang" value="<?= htmlspecialchars($wiz['kota'] ?? '') ?>"/>
         </div>
         <div class="wiz-field">
@@ -706,6 +726,27 @@ $csrf = saGetCsrf();
             <option value="self_service" <?= ($wiz['source'] ?? '') === 'self_service' ? 'selected' : '' ?>>Self Service</option>
           </select>
         </div>
+      </div>
+      <!-- ── Alamat Pengiriman Welcome Kit ── -->
+      <div class="field-grid-2">
+        <div class="wiz-field">
+          <label class="wiz-label">Nama Penerima <span class="req">*</span></label>
+          <input type="text" name="penerima" class="wiz-input" required
+                 placeholder="Budi Santoso" value="<?= htmlspecialchars($wiz['penerima'] ?? '') ?>"/>
+        </div>
+        <div class="wiz-field">
+          <label class="wiz-label">Kode Pos <span class="req">*</span></label>
+          <input type="text" name="kode_pos" class="wiz-input" required
+                 placeholder="50111" maxlength="5" pattern="\d{5}"
+                 value="<?= htmlspecialchars($wiz['kode_pos'] ?? '') ?>"/>
+        </div>
+      </div>
+      <div class="wiz-field">
+        <label class="wiz-label">Alamat Lengkap <span class="req">*</span></label>
+        <input type="text" name="alamat" class="wiz-input" required
+               placeholder="Jl. Merdeka No. 1, RT 02/RW 03, Kelurahan Semarang Tengah"
+               value="<?= htmlspecialchars($wiz['alamat'] ?? '') ?>"/>
+        <div style="font-size:11px;color:var(--ash-dim);margin-top:4px;">Digunakan untuk pengiriman welcome kit. No. HP menggunakan No WA Owner.</div>
       </div>
       <div class="wiz-field">
         <label class="wiz-label">Catatan Internal</label>
@@ -924,6 +965,9 @@ $csrf = saGetCsrf();
       <tr><td>Owner</td><td><?= htmlspecialchars($wiz['owner_name'] ?? '-') ?></td></tr>
       <tr><td>WhatsApp</td><td><?= htmlspecialchars($wiz['owner_wa'] ?? '-') ?></td></tr>
       <tr><td>Kota</td><td><?= htmlspecialchars($wiz['kota'] ?: '-') ?></td></tr>
+      <tr><td>Penerima</td><td><?= htmlspecialchars($wiz['penerima'] ?? '-') ?></td></tr>
+      <tr><td>Alamat</td><td><?= htmlspecialchars($wiz['alamat'] ?? '-') ?></td></tr>
+      <tr><td>Kode Pos</td><td><?= htmlspecialchars($wiz['kode_pos'] ?? '-') ?></td></tr>
       <tr><td>Sumber</td><td><?= ($wiz['source'] ?? '') === 'self_service' ? 'Self Service' : 'Assisted' ?></td></tr>
 
       <tr class="section-head"><td colspan="2">Aktivasi</td></tr>
