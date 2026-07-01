@@ -539,6 +539,14 @@ if ($isHqMode) {
         <div class="alert-error">⚠️ <?= htmlspecialchars($error) ?></div>
       <?php endif; ?>
 
+      <?php
+        // Fee/diskon/bonus-coin aktivasi — dihitung SEBELUM cabang step
+        // agar tersedia baik di STEP 1 maupun STEP 2 (konfirmasi).
+        $ao_fee  = BillingConfig::getInt('outlet_activation_fee', 800000);
+        $ao_disc = max(0, min(100, BillingConfig::getInt('outlet_activation_discount', 0)));
+        $ao_net  = (int)round($ao_fee * (1 - $ao_disc / 100));
+        $ao_coin = max(0, BillingConfig::getInt('outlet_activation_coin', 100000));
+      ?>
       <?php // ═══ STEP 1 ═════════════════════════════════
       if ($step === 1): ?>
 
@@ -636,13 +644,6 @@ if ($isHqMode) {
             </button>
           </div>
         </form>
-
-      <?php
-        $ao_fee  = BillingConfig::getInt('outlet_activation_fee', 800000);
-        $ao_disc = max(0, min(100, BillingConfig::getInt('outlet_activation_discount', 0)));
-        $ao_net  = (int)round($ao_fee * (1 - $ao_disc / 100));
-        $ao_coin = max(0, BillingConfig::getInt('outlet_activation_coin', 100000));
-      ?>
 
       <?php // ═══ STEP 2: Review & Confirm ════════════════
       elseif ($step === 2): ?>
