@@ -650,6 +650,12 @@ function saRenderHead(string $title = 'Super Admin'): void {
       .sa-grid-2, .sa-grid-3, .sa-grid-4 { grid-template-columns: 1fr; }
       .sa-topbar { padding: 0 18px; }
       .sa-page-header h1 { font-size: 24px; }
+      /* Semua tabel konten bisa digeser mendatar di HP (tak terpotong).
+         review-table (ringkasan konfirmasi, 2 kolom) dikecualikan. */
+      .sa-content table:not(.review-table) {
+        display: block; overflow-x: auto; white-space: nowrap;
+        -webkit-overflow-scrolling: touch;
+      }
     }
     @media (max-width: 480px) {
       .sa-stats-grid { grid-template-columns: 1fr; }
