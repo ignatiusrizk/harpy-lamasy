@@ -211,19 +211,19 @@ function renderGlobalJsHelpers(): void { ?>
       } catch(e) {}
     })();
 
-    <!-- Brand loader (logo Harpy + cincin berputar) -->
-    <style>
-    .lm-loader{position:relative;display:inline-flex;width:var(--sz,56px);height:var(--sz,56px);vertical-align:middle}
-    .lm-loader .lm-ring{position:absolute;inset:0;border-radius:50%;border:3px solid rgba(53,232,213,.22);border-top-color:#35E8D5;animation:lmspin .8s linear infinite}
-    .lm-loader .lm-logo{position:absolute;inset:15%;width:70%;height:70%;border-radius:50%;object-fit:cover;background:#fff}
-    @keyframes lmspin{to{transform:rotate(360deg)}}
-    @media (prefers-reduced-motion:reduce){.lm-loader .lm-ring{animation-duration:2.4s}}
-    .lm-loading{display:flex;flex-direction:column;align-items:center;gap:12px;padding:40px 16px;color:#6B7280;font-size:13px;font-weight:600}
-    .lm-overlay{position:fixed;inset:0;background:rgba(15,28,58,.92);display:none;align-items:center;justify-content:center;z-index:99998}
-    .lm-overlay.show{display:flex}
-    </style>
-    <script>
+    // ── Brand loader (logo Harpy + cincin) + overlay transisi halaman ──
     (function(){
+      var s = document.createElement('style');
+      s.textContent = '.lm-loader{position:relative;display:inline-flex;width:var(--sz,56px);height:var(--sz,56px);vertical-align:middle}'
+        + '.lm-loader .lm-ring{position:absolute;inset:0;border-radius:50%;border:3px solid rgba(53,232,213,.22);border-top-color:#35E8D5;animation:lmspin .8s linear infinite}'
+        + '.lm-loader .lm-logo{position:absolute;inset:15%;width:70%;height:70%;border-radius:50%;object-fit:cover;background:#fff}'
+        + '@keyframes lmspin{to{transform:rotate(360deg)}}'
+        + '@media (prefers-reduced-motion:reduce){.lm-loader .lm-ring{animation-duration:2.4s}}'
+        + '.lm-loading{display:flex;flex-direction:column;align-items:center;gap:12px;padding:40px 16px;color:#6B7280;font-size:13px;font-weight:600}'
+        + '.lm-overlay{position:fixed;inset:0;background:rgba(15,28,58,.92);display:none;align-items:center;justify-content:center;z-index:99998}'
+        + '.lm-overlay.show{display:flex}';
+      document.head.appendChild(s);
+
       var LOGO = '/assets/loader-logo.png';
       var mk = function(sz){ return '<span class="lm-loader" style="--sz:'+sz+'px"><span class="lm-ring"></span><img class="lm-logo" src="'+LOGO+'" alt=""></span>'; };
       window.lmLoaderHTML = function(sz){ return '<div class="lm-loading">' + mk(sz||52) + '<span>Memuat…</span></div>'; };
@@ -253,7 +253,6 @@ function renderGlobalJsHelpers(): void { ?>
       }, true);
       window.addEventListener('pageshow', function(ev){ if (ev.persisted) window.lmHidePageLoader(); });
     })();
-    </script>
 
     // ── Pull-to-refresh (perangkat sentuh): tarik dari atas → reload ──
     (function(){
