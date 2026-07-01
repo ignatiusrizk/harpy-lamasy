@@ -358,6 +358,72 @@ async function fetchQrBlob() {
   } catch (e) { return null; }
 }
 
+// ── Kartu QR ber-bingkai (brand + nominal + QR + order) untuk share/simpan ──
+const bcFont = 'system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif';
+function bcLoadImg(src){
+  return new Promise(function(res, rej){ var im = new Image(); im.onload = function(){ res(im); }; im.onerror = rej; im.src = src; });
+}
+function bcRoundRect(ctx, x, y, w, h, r){
+  ctx.beginPath();
+  ctx.moveTo(x+r, y); ctx.arcTo(x+w, y, x+w, y+h, r); ctx.arcTo(x+w, y+h, x, y+h, r);
+  ctx.arcTo(x, y+h, x, y, r); ctx.arcTo(x, y, x+w, y, r); ctx.closePath();
+}
+function bcFit(ctx, text, maxW){ // potong + ellipsis kalau kepanjangan (1 baris)
+  if (ctx.measureText(text).width <= maxW) return text;
+  var t = text; while (t.length > 1 && ctx.measureText(t + '…').width > maxW) t = t.slice(0, -1);
+  return t + '…';
+}
+function bcWrap(ctx, text, x, y, maxW, lh){ // bungkus ke beberapa baris (center)
+  var words = String(text).split(' '), line = '', yy = y;
+  for (var i = 0; i < words.length; i++){
+    var test = line ? line + ' ' + words[i] : words[i];
+    if (ctx.measureText(test).width > maxW && line){ ctx.fillText(line, x, yy); line = words[i]; yy += lh; }
+    else line = test;
+  }
+  if (line) ctx.fillText(line, x, yy);
+}
+// Susun kartu QR → Blob PNG. Kalau apa pun gagal, fallback ke QR mentah (fetchQrBlob).
+async function composeQrBlob(){
+  if (!qrUrl) return null;
+  try {
+    var qr = await bcLoadImg(qrProxy); // same-origin → canvas tak ter-taint
+    var S = 2, W = 680, H = 960;
+    var cv = document.createElement('canvas'); cv.width = W * S; cv.height = H * S;
+    var ctx = cv.getContext('2d'); ctx.scale(S, S); ctx.textBaseline = 'alphabetic';
+    // latar putih + header navy
+    ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#0F1C3A'; ctx.fillRect(0, 0, W, 150);
+    ctx.textAlign = 'left';
+    ctx.fillStyle = '#35E8D5'; ctx.font = '700 44px ' + bcFont; ctx.fillText('LAMASY', 40, 82);
+    ctx.fillStyle = '#ffffff'; ctx.font = '500 22px ' + bcFont; ctx.fillText('Pembayaran QRIS', 40, 116);
+    ctx.textAlign = 'center';
+    // nama item (1 baris, dipotong bila panjang)
+    var item = <?= json_encode($itemName ?? '') ?>;
+    if (item){ ctx.fillStyle = '#6B7280'; ctx.font = '500 20px ' + bcFont; ctx.fillText(bcFit(ctx, item, W - 80), W/2, 198); }
+    // nominal
+    ctx.fillStyle = '#1F2937'; ctx.font = '800 46px ' + bcFont;
+    ctx.fillText('Rp ' + (<?= (int)$amount ?>).toLocaleString('id-ID'), W/2, 258);
+    // kotak QR
+    var qsz = 380, bw = qsz + 40, bh = qsz + 40, bx = (W - bw)/2, byy = 296;
+    ctx.fillStyle = '#ffffff'; ctx.strokeStyle = '#E5E7EB'; ctx.lineWidth = 2;
+    bcRoundRect(ctx, bx, byy, bw, bh, 18); ctx.fill(); ctx.stroke();
+    ctx.drawImage(qr, bx + 20, byy + 20, qsz, qsz);
+    // order id
+    ctx.fillStyle = '#6B7280'; ctx.font = '500 18px ' + bcFont;
+    ctx.fillText('Order: ' + orderId, W/2, byy + bh + 42);
+    // footer
+    var fy = byy + bh + 74;
+    ctx.fillStyle = '#F3F4F6'; ctx.fillRect(0, fy, W, H - fy);
+    ctx.fillStyle = '#6B7280'; ctx.font = '500 18px ' + bcFont;
+    bcWrap(ctx, 'Scan dengan GoPay • OVO • DANA • ShopeePay • m-Banking', W/2, fy + 42, W - 90, 24);
+    ctx.fillStyle = '#1CC4B2'; ctx.font = '600 16px ' + bcFont;
+    ctx.fillText('lamasy.harpy.id', W/2, H - 26);
+    var blob = await new Promise(function(res){ cv.toBlob(function(b){ res(b); }, 'image/png'); });
+    if (blob) return blob;
+  } catch (e) { /* fallback ke QR mentah */ }
+  return await fetchQrBlob();
+}
+
 function bcIsNative(){ try { return !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()); } catch(e){ return false; } }
 function bcPlugins(){ return (window.Capacitor && window.Capacitor.Plugins) || {}; }
 function bcAmtTxt(){ return 'Pembayaran QRIS LAMASY Rp ' + (<?= (int)$amount ?>).toLocaleString('id-ID') + ' — Order ' + orderId; }
@@ -369,7 +435,7 @@ async function nativeQr(mode){ // mode: 'share' | 'save'
   if (!bcIsNative()) return false;
   var P = bcPlugins(); var Filesystem = P.Filesystem, Share = P.Share;
   if (!Filesystem) return false;
-  var blob = await fetchQrBlob();
+  var blob = await composeQrBlob();
   if (!blob) {
     if (mode==='share' && Share) { try { await Share.share({ title:'QRIS Pembayaran', text:bcAmtTxt() }); return true; } catch(e){ if(e&&e.name==='AbortError') return true; } }
     return false;
@@ -394,8 +460,19 @@ async function nativeQr(mode){ // mode: 'share' | 'save'
 async function downloadQR() {
   if (!qrUrl) { showToast('QR tidak tersedia'); return; }
   if (await nativeQr('save')) return;
-  // Pakai URL asli (data:/http) langsung — di APK ditangkap DownloadListener native,
-  // di browser biasa tersimpan via atribut download. Blob URL tak ditangani WebView.
+  // Web/PWA: simpan kartu QR ber-bingkai via blob URL (native APK sudah ditangani nativeQr).
+  const blob = await composeQrBlob();
+  if (blob) {
+    try {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'qris-' + orderId + '.png'; a.rel = 'noopener';
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 4000);
+      showToast('Menyimpan QR…');
+      return;
+    } catch (e) { /* fallback URL asli */ }
+  }
   try {
     const a = document.createElement('a');
     a.href = qrUrl; a.download = 'qris-' + orderId + '.png';
@@ -411,7 +488,7 @@ async function downloadQR() {
 async function shareQR() {
   if (await nativeQr('share')) return;
   const amtTxt = 'Pembayaran QRIS LAMASY Rp ' + (<?= (int)$amount ?>).toLocaleString('id-ID');
-  const blob = await fetchQrBlob();
+  const blob = await composeQrBlob();
   if (blob && navigator.canShare) {
     const file = new File([blob], 'qris-' + orderId + '.png', { type: blob.type || 'image/png' });
     if (navigator.canShare({ files: [file] })) {
