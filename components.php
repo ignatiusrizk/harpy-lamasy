@@ -211,6 +211,77 @@ function renderGlobalJsHelpers(): void { ?>
       } catch(e) {}
     })();
 
+    // ── Pull-to-refresh (perangkat sentuh): tarik dari atas → reload ──
+    (function(){
+      if (!('ontouchstart' in window) && !(navigator.maxTouchPoints > 0)) return;
+      var THRESHOLD = 70, MAX = 90, RESIST = 0.5;
+      var startY = 0, pull = 0, armed = false;
+
+      var el = document.createElement('div');
+      el.id = 'ptrIndicator';
+      el.innerHTML = '<div class="ptr-spin"></div>';
+      el.style.transition = 'opacity .15s';
+      var css = document.createElement('style');
+      css.textContent =
+        '#ptrIndicator{position:fixed;top:0;left:50%;transform:translate(-50%,-60px);z-index:9999;'
+      + 'width:40px;height:40px;border-radius:50%;background:#fff;box-shadow:0 2px 10px rgba(0,0,0,.15);'
+      + 'display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none}'
+      + '#ptrIndicator .ptr-spin{width:20px;height:20px;border:2.5px solid #E5E7EB;border-top-color:#14B8A6;border-radius:50%}'
+      + '#ptrIndicator.ptr-spinning .ptr-spin{animation:ptrspin .7s linear infinite}'
+      + '@keyframes ptrspin{to{transform:rotate(360deg)}}';
+      document.head.appendChild(css);
+      function mount(){ if (document.body && !document.body.contains(el)) document.body.appendChild(el); }
+      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', mount); else mount();
+
+      function overlayOpen(){
+        var n = document.querySelectorAll('[class*="modal"],[class*="overlay"],[class*="backdrop"],[class*="drawer"],[class*="sheet"],[class*="popup"]');
+        for (var i=0;i<n.length;i++){
+          var e = n[i], c = (e.className && e.className.toString) ? e.className.toString() : '';
+          if (!/\b(open|active|show|visible)\b/.test(c) && e.style.display!=='flex' && e.style.display!=='block') continue;
+          var cs = window.getComputedStyle(e);
+          if (cs.display!=='none' && cs.visibility!=='hidden' && e.getClientRects().length) return true;
+        }
+        return false;
+      }
+      function setPull(p){
+        pull = p;
+        el.style.transform = 'translate(-50%,' + (Math.min(p, MAX) - 60) + 'px)';
+        el.style.opacity = p > 6 ? '1' : '0';
+      }
+      function snapBack(){
+        el.style.transition = 'transform .2s, opacity .2s';
+        setPull(0);
+        setTimeout(function(){ el.style.transition = 'opacity .15s'; }, 220);
+      }
+
+      document.addEventListener('touchstart', function(e){
+        armed = (window.scrollY <= 0) && e.touches.length === 1 && !overlayOpen();
+        startY = e.touches[0].clientY;
+        pull = 0;
+      }, { passive: true });
+
+      document.addEventListener('touchmove', function(e){
+        if (!armed) return;
+        var dy = e.touches[0].clientY - startY;
+        if (dy <= 0 || window.scrollY > 0) { if (pull > 0) snapBack(); armed = false; return; }
+        e.preventDefault();
+        setPull(dy * RESIST);
+      }, { passive: false });
+
+      document.addEventListener('touchend', function(){
+        if (!armed) return;
+        armed = false;
+        if (pull >= THRESHOLD) {
+          el.classList.add('ptr-spinning');
+          el.style.transform = 'translate(-50%,20px)';
+          el.style.opacity = '1';
+          location.reload();
+        } else if (pull > 0) {
+          snapBack();
+        }
+      }, { passive: true });
+    })();
+
     // ── Push notification (hanya di native app) ──
     (function(){
       var PN = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.PushNotifications;
