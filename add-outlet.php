@@ -586,23 +586,41 @@ if ($isHqMode) {
             <div class="hint">Minimal 8 digit — untuk keperluan nota, profil outlet &amp; pengiriman</div>
           </div>
           <div class="field">
-            <label>Alamat Lengkap <span class="req">*</span></label>
-            <textarea name="alamat" rows="2" maxlength="300" required
-                      placeholder="Jl. Contoh No. 1, Kel. ..."><?= htmlspecialchars($d['alamat'] ?? '') ?></textarea>
+            <label>Provinsi <span class="req">*</span></label>
+            <select name="w_prov" id="w_prov" required data-cur="<?= htmlspecialchars($d['w_prov'] ?? '') ?>">
+              <option value="">⏳ memuat…</option>
+            </select>
           </div>
           <div class="field">
             <label>Kota / Kabupaten <span class="req">*</span></label>
-            <input type="text" name="kota" required maxlength="100"
-                   value="<?= htmlspecialchars($d['kota'] ?? '') ?>"
-                   placeholder="cth: Bandung">
+            <select name="w_kota" id="w_kota" required disabled data-cur="<?= htmlspecialchars($d['w_kota'] ?? '') ?>">
+              <option value="">Pilih provinsi dulu</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Kecamatan <span class="req">*</span></label>
+            <select name="w_kec" id="w_kec" required disabled data-cur="<?= htmlspecialchars($d['w_kec'] ?? '') ?>">
+              <option value="">Pilih kota dulu</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Kelurahan / Desa <span class="req">*</span></label>
+            <select name="w_kel" id="w_kel" required disabled data-cur="<?= htmlspecialchars($d['w_kel'] ?? '') ?>">
+              <option value="">Pilih kecamatan dulu</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Alamat jalan (No, RT/RW) <span class="req">*</span></label>
+            <textarea name="alamat" rows="2" maxlength="300" required
+                      placeholder="cth: Jl. Merdeka No. 5 RT 01 RW 02"><?= htmlspecialchars($d['alamat'] ?? '') ?></textarea>
           </div>
           <div class="field">
             <label>Kode Pos <span class="req">*</span></label>
-            <input type="text" name="kode_pos" required maxlength="5"
+            <input type="text" name="kode_pos" id="kode_pos" required maxlength="5"
                    inputmode="numeric" pattern="\d{5}"
                    value="<?= htmlspecialchars($d['kode_pos'] ?? '') ?>"
-                   placeholder="cth: 40111">
-            <div class="hint">5 digit kode pos wilayah outlet</div>
+                   placeholder="terisi otomatis dari kelurahan">
+            <div class="hint">Terisi otomatis saat pilih kelurahan — bisa diedit bila perlu.</div>
           </div>
 
           <?php if ($isFirstOutlet): ?>
@@ -644,6 +662,74 @@ if ($isHqMode) {
             </button>
           </div>
         </form>
+
+<script>
+(function(){
+  const prov = document.getElementById('w_prov');
+  const kota = document.getElementById('w_kota');
+  const kec  = document.getElementById('w_kec');
+  const kel  = document.getElementById('w_kel');
+  const pos  = document.getElementById('kode_pos');
+  if (!prov) return;
+
+  async function loadInto(sel, parent, placeholder){
+    sel.innerHTML = '<option value="">⏳ memuat…</option>';
+    sel.disabled = true;
+    try {
+      const url = '/api/wilayah.php' + (parent ? ('?parent=' + encodeURIComponent(parent)) : '');
+      const r = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+      const j = await r.json();
+      const rows = (j && j.ok && j.data) ? j.data : [];
+      let html = '<option value="">' + placeholder + '</option>';
+      rows.forEach(o => {
+        html += '<option value="' + o.kode + '"' + (o.kodepos ? ' data-pos="' + o.kodepos + '"' : '') + '>'
+              + o.nama.replace(/</g,'&lt;') + '</option>';
+      });
+      sel.innerHTML = html;
+      sel.disabled = false;
+      return rows.length;
+    } catch(e){
+      sel.innerHTML = '<option value="">gagal memuat, pilih lagi</option>';
+      sel.disabled = false;
+      return 0;
+    }
+  }
+
+  function resetBelow(){
+    kota.innerHTML = '<option value="">Pilih provinsi dulu</option>'; kota.disabled = true;
+    kec.innerHTML  = '<option value="">Pilih kota dulu</option>';      kec.disabled  = true;
+    kel.innerHTML  = '<option value="">Pilih kecamatan dulu</option>'; kel.disabled  = true;
+  }
+
+  prov.addEventListener('change', async () => { resetBelow(); if (prov.value) await loadInto(kota, prov.value, 'Pilih Kota/Kabupaten'); });
+  kota.addEventListener('change', async () => {
+    kec.innerHTML='<option value="">Pilih kota dulu</option>'; kec.disabled=true;
+    kel.innerHTML='<option value="">Pilih kecamatan dulu</option>'; kel.disabled=true;
+    if (kota.value) await loadInto(kec, kota.value, 'Pilih Kecamatan');
+  });
+  kec.addEventListener('change', async () => {
+    kel.innerHTML='<option value="">Pilih kecamatan dulu</option>'; kel.disabled=true;
+    if (kec.value) await loadInto(kel, kec.value, 'Pilih Kelurahan/Desa');
+  });
+  kel.addEventListener('change', () => {
+    const opt = kel.options[kel.selectedIndex];
+    const p = opt && opt.getAttribute('data-pos');
+    if (p) pos.value = p;   // auto-isi kode pos, tetap editable
+  });
+
+  // Restore berjenjang saat kembali dari step 2 (data-cur = kode tersimpan)
+  (async function restore(){
+    await loadInto(prov, '', 'Pilih Provinsi');
+    if (prov.dataset.cur){ prov.value = prov.dataset.cur;
+      if (await loadInto(kota, prov.value, 'Pilih Kota/Kabupaten') && kota.dataset.cur){ kota.value = kota.dataset.cur;
+        if (await loadInto(kec, kota.value, 'Pilih Kecamatan') && kec.dataset.cur){ kec.value = kec.dataset.cur;
+          if (await loadInto(kel, kec.value, 'Pilih Kelurahan/Desa') && kel.dataset.cur){ kel.value = kel.dataset.cur; }
+        }
+      }
+    }
+  })();
+})();
+</script>
 
       <?php // ═══ STEP 2: Review & Confirm ════════════════
       elseif ($step === 2): ?>
