@@ -228,7 +228,7 @@ require __DIR__ . '/_layout_open.php';
 
 <style>
 .inv-hq-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
-.inv-hq-card{background:#fff;border-radius:14px;padding:14px 16px;border:1px solid #E5E7EB;position:relative;overflow:hidden}
+.inv-hq-card{background:#fff;border-radius:14px;padding:14px 16px;border:1px solid #E5E7EB;position:relative;overflow:hidden;text-align:center}
 .inv-hq-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
 .inv-hq-card.outlet::before{background:linear-gradient(90deg,#3B82F6,#60A5FA)}
 .inv-hq-card.kritis::before{background:linear-gradient(90deg,#EF4444,#F87171)}
