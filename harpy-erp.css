@@ -1800,3 +1800,37 @@ html, body { overflow-x: hidden; }
   .hl-table { font-size: 11px; }
   .metric-label, .ocard-label, .pl-label { font-size: 10px; }
 }
+
+/* ── Bottom navigation bar (outlet, mobile only) ── */
+.ol-bottomnav { display: none; }
+@media (max-width: 900px) {
+  .ol-bottomnav {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 40;
+    display: flex; align-items: center; justify-content: space-around;
+    background: #fff; border-top: 1px solid #E5E7EB;
+    padding: 6px 4px calc(6px + env(safe-area-inset-bottom, 0px));
+    box-shadow: 0 -2px 12px rgba(0,0,0,.06);
+  }
+  .ol-bottomnav .bn-item {
+    flex: 1 1 0; min-width: 0;
+    display: flex; flex-direction: column; align-items: center; gap: 2px;
+    background: none; border: 0; cursor: pointer; padding: 4px 0;
+    color: #6B7280; font-size: 11px; font-weight: 600; font-family: inherit;
+    text-decoration: none;
+  }
+  .ol-bottomnav .bn-item.active { color: #14B8A6; }
+  .ol-bottomnav .bn-ic { font-size: 19px; line-height: 1; }
+  .ol-bottomnav .bn-lb { line-height: 1; }
+  .ol-bottomnav .bn-fab {
+    flex: 0 0 auto; width: 56px; height: 56px; border-radius: 50%;
+    margin: -22px 4px 0; background: #35E8D5; color: #0F1C3A;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 12px rgba(53,232,213,.5); text-decoration: none;
+  }
+  .ol-bottomnav .bn-fab-ic { font-size: 24px; line-height: 1; }
+  .ol-bottomnav .bn-fab.active { outline: 3px solid rgba(53,232,213,.35); }
+  /* Konten tak ketutup bar */
+  .ol-content { padding-bottom: calc(70px + env(safe-area-inset-bottom, 0px)); }
+  /* Sembunyikan bar saat drawer terbuka (drawer punya menu lengkap) */
+  .ol-shell.open .ol-bottomnav { display: none; }
+}

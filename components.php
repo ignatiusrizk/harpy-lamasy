@@ -1000,6 +1000,34 @@ function renderTopbar(string $activePage = '', bool $minimalMode = false): void 
           </div>
         </header>
 
+        <?php if (!$minimalMode):
+          // Bottom nav (mobile only, CSS handle visibilitas ≤900px)
+          $bnOrder    = navItemVisible($navGroups['operasional']['items']['orders'], $user);
+          $bnPos      = navItemVisible($navGroups['operasional']['items']['pos'], $user);
+          $bnCustomer = navItemVisible($navGroups['master']['items']['customer'], $user);
+          $bnAct = fn(array $keys) => in_array($activePage, $keys, true) ? ' active' : '';
+        ?>
+        <nav class="ol-bottomnav" aria-label="Navigasi utama">
+          <a href="/dashboard" class="bn-item<?= $bnAct(['dashboard']) ?>">
+            <span class="bn-ic">🏠</span><span class="bn-lb">Beranda</span></a>
+          <?php if ($bnOrder): ?>
+          <a href="/orders" class="bn-item<?= $bnAct(['orders','kanban']) ?>">
+            <span class="bn-ic">📋</span><span class="bn-lb">Order</span></a>
+          <?php endif; ?>
+          <?php if ($bnPos): ?>
+          <a href="/pos" class="bn-fab<?= $bnAct(['pos']) ?>" aria-label="POS">
+            <span class="bn-fab-ic">🛒</span></a>
+          <?php endif; ?>
+          <?php if ($bnCustomer): ?>
+          <a href="/customer" class="bn-item<?= $bnAct(['customer']) ?>">
+            <span class="bn-ic">👥</span><span class="bn-lb">Customer</span></a>
+          <?php endif; ?>
+          <button type="button" class="bn-item"
+                  onclick="document.getElementById('olShell').classList.toggle('open')">
+            <span class="bn-ic">☰</span><span class="bn-lb">Menu</span></button>
+        </nav>
+        <?php endif; ?>
+
         <main class="ol-content">
           <div class="ol-content-inner">
     <?php // Konten page mulai di sini — ditutup di renderToast(). ?>
