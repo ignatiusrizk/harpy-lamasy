@@ -116,7 +116,10 @@ require __DIR__ . '/_layout_open.php';
   .empty .ico{font-size:48px;margin-bottom:12px;opacity:.5}
 
   @media(max-width:780px){
-    .stats{grid-template-columns:1fr}
+    .stats{gap:8px}
+    .stat{padding:10px 9px}
+    .stat-num{font-size:1.15rem}
+    .stat-lbl{font-size:10px;letter-spacing:.02em}
     .row{grid-template-columns:1fr;gap:6px}
     .row-date,.row-by{text-align:left}
   }

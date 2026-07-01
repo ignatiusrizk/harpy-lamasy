@@ -206,7 +206,10 @@ require __DIR__ . '/_layout_open.php';
   .empty .ico{font-size:48px;margin-bottom:12px;opacity:.5}
 
   @media(max-width:780px){
-    .stats-row{grid-template-columns:1fr}
+    .stats-row{gap:8px}
+    .stat-pill{flex-direction:column;align-items:flex-start;gap:2px;padding:9px 9px}
+    .stat-pill .num{font-size:1.1rem}
+    .stat-pill .lbl{font-size:9.5px;letter-spacing:.02em}
     .log-row{grid-template-columns:1fr;gap:6px}
     .log-time,.log-user{font-size:10px}
   }
