@@ -33,7 +33,7 @@ function setConfig(string $key, ?string $value): void {
 $cacheFile = dirname(__DIR__) . '/storage/maintenance.json';
 
 // ── AJAX Actions ───────────────────────────────────────
-if (!empty($_SERVER['HTTP_X_REQUESTED_WITH'])) {
+if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && ($_SERVER['HTTP_SEC_FETCH_MODE'] ?? '') !== 'navigate') {
     header('Content-Type: application/json');
     $action = $_GET['action'] ?? '';
     saVerifyCsrf(false); // lempar exception jika invalid

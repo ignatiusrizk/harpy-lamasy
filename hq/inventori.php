@@ -23,7 +23,7 @@ $uid  = (int) ($user['id'] ?? 0);
 $csrf = getCsrfToken();
 
 // ── AJAX Handler ───────────────────────────────────────
-if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) || !empty($_GET['action'])) {
+if ((!empty($_SERVER['HTTP_X_REQUESTED_WITH']) || !empty($_GET['action'])) && ($_SERVER['HTTP_SEC_FETCH_MODE'] ?? '') !== 'navigate') {
     header('Content-Type: application/json');
     $action = $_GET['action'] ?? $_POST['action'] ?? '';
 

@@ -17,7 +17,7 @@ $tid  = (int) TenantResolver::id();
 $user = currentUser();
 $csrf = getCsrfToken();
 
-if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) || !empty($_GET['action'])) {
+if ((!empty($_SERVER['HTTP_X_REQUESTED_WITH']) || !empty($_GET['action'])) && ($_SERVER['HTTP_SEC_FETCH_MODE'] ?? '') !== 'navigate') {
     header('Content-Type: application/json');
     $action = $_GET['action'] ?? $_POST['action'] ?? '';
 
