@@ -20,6 +20,7 @@ if (empty($_SESSION['user_id']) || empty($_SESSION['tenant_id'])) {
 require_once ROOT . '/middleware/tenant_guard.php';
 require_once ROOT . '/core/StrukGenerator.php';
 require_once ROOT . '/core/BillingConfig.php';
+require_once ROOT . '/core/WelcomeKit.php';
 require_once ROOT . '/add-outlet-validate.php';
 
 $tid  = TenantResolver::id();
@@ -440,6 +441,21 @@ if ($isHqMode) {
               <li>Tim kami akan konfirmasi &amp; aktifkan outlet dalam 1×24 jam</li>
             </ol>
           </div>
+          <?php
+          $wkStatus = isset($outletId) ? WelcomeKit::statusForOutlet($outletId) : null;
+          if ($wkStatus): ?>
+          <div style="background:#F0FDFA;border:1px solid #99F6E4;border-radius:10px;
+                      padding:12px 16px;font-size:13px;text-align:left;margin-bottom:20px">
+            <div style="font-weight:700;color:#0F766E;margin-bottom:4px">🎁 Status Welcome Kit</div>
+            <?php if ($wkStatus['status'] === 'shipped'): ?>
+              Dikirim via <?= htmlspecialchars($wkStatus['kurir'] ?? '') ?>, resi <?= htmlspecialchars($wkStatus['resi'] ?? '') ?>
+            <?php elseif ($wkStatus['status'] === 'delivered'): ?>
+              <span style="color:#065F46;font-weight:600">Terkirim ✓</span>
+            <?php else: ?>
+              Welcome kit sedang disiapkan
+            <?php endif; ?>
+          </div>
+          <?php endif; ?>
           <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
             <a href="https://wa.me/6285121519302?text=<?= urlencode('Halo Tim LAMASY, saya baru mendaftarkan outlet baru bernama "' . ($outletName ?? '') . '" dan ingin melakukan pembayaran setup fee. Mohon info rekening / prosedurnya. Terima kasih.') ?>"
                target="_blank" rel="noopener"
@@ -457,6 +473,21 @@ if ($isHqMode) {
             <strong><?= htmlspecialchars($outletName ?? '') ?></strong> sudah aktif dan siap digunakan.<br>
             Kamu mendapat <strong>10.000 coin trial</strong> gratis untuk 7 hari ke depan.
           </p>
+          <?php
+          $wkStatus = isset($outletId) ? WelcomeKit::statusForOutlet($outletId) : null;
+          if ($wkStatus): ?>
+          <div style="background:#F0FDFA;border:1px solid #99F6E4;border-radius:10px;
+                      padding:12px 16px;font-size:13px;text-align:left;margin-bottom:20px">
+            <div style="font-weight:700;color:#0F766E;margin-bottom:4px">🎁 Status Welcome Kit</div>
+            <?php if ($wkStatus['status'] === 'shipped'): ?>
+              Dikirim via <?= htmlspecialchars($wkStatus['kurir'] ?? '') ?>, resi <?= htmlspecialchars($wkStatus['resi'] ?? '') ?>
+            <?php elseif ($wkStatus['status'] === 'delivered'): ?>
+              <span style="color:#065F46;font-weight:600">Terkirim ✓</span>
+            <?php else: ?>
+              Welcome kit sedang disiapkan
+            <?php endif; ?>
+          </div>
+          <?php endif; ?>
           <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
             <a href="/dashboard" class="hl-btn hl-btn-primary" style="padding:13px 32px">
               🚀 Mulai Kelola Laundry
@@ -678,6 +709,9 @@ if ($isHqMode) {
             <li>Penomoran nota otomatis khas outlet</li>
             <?php if (($d['mode'] ?? 'trial') === 'paid' && $ao_coin > 0): ?>
             <li><strong><?= number_format($ao_coin,0,',','.') ?> coin bonus</strong> dikreditkan saat outlet aktif</li>
+            <?php endif; ?>
+            <?php if (WelcomeKit::enabled() && WelcomeKit::items()): ?>
+            <li><strong>🎁 Welcome kit fisik</strong> dikirim ke alamat outlet: <?= htmlspecialchars(implode(', ', array_map(fn($i) => $i['qty'] . '× ' . $i['nama'], WelcomeKit::items()))) ?></li>
             <?php endif; ?>
           </ul>
         </div>
