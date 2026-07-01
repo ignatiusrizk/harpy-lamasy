@@ -266,7 +266,7 @@ function renderGlobalJsHelpers(): void { ?>
       el.innerHTML = '<span class="lm-loader" style="--sz:42px"><span class="lm-ring"></span><img class="lm-logo" src="/assets/loader-mark.png" alt=""></span>';
       el.style.transition = 'opacity .15s';
       var css = document.createElement('style');
-      css.textContent = '#ptrIndicator{position:fixed;top:0;left:50%;transform:translate(-50%,-60px);z-index:9999;opacity:0;pointer-events:none}';
+      css.textContent = '#ptrIndicator{position:fixed;top:calc(env(safe-area-inset-top, 0px) + 56px);left:50%;transform:translate(-50%,-60px);z-index:80;opacity:0;pointer-events:none}';
       document.head.appendChild(css);
       function mount(){ if (document.body && !document.body.contains(el)) document.body.appendChild(el); }
       if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', mount); else mount();
