@@ -224,7 +224,7 @@ function renderGlobalJsHelpers(): void { ?>
         + '.lm-overlay.show{display:flex}';
       document.head.appendChild(s);
 
-      var LOGO = '/assets/loader-logo.png';
+      var LOGO = '/assets/loader-logo.png?v=<?= @filemtime(__DIR__ . '/assets/loader-logo.png') ?: date('Ymd') ?>';
       var mk = function(sz){ return '<span class="lm-loader" style="--sz:'+sz+'px"><span class="lm-ring"></span><img class="lm-logo" src="'+LOGO+'" alt=""></span>'; };
       window.lmLoaderHTML = function(sz){ return '<div class="lm-loading">' + mk(sz||52) + '<span>Memuat…</span></div>'; };
 
