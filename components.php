@@ -235,9 +235,26 @@ function renderGlobalJsHelpers(): void { ?>
       ov.innerHTML = mk(76);
       function mountOv(){ if (document.body && !document.body.contains(ov)) document.body.appendChild(ov); }
       if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', mountOv); else mountOv();
-      var hideT = null;
-      window.lmShowPageLoader = function(){ ov.classList.add('show'); clearTimeout(hideT); hideT = setTimeout(function(){ ov.classList.remove('show'); }, 8000); };
-      window.lmHidePageLoader = function(){ ov.classList.remove('show'); clearTimeout(hideT); };
+      var hideT = null, _lmOnInteract = null;
+      function _lmClearInteract(){
+        if (!_lmOnInteract) return;
+        ['wheel','touchmove','keydown','pointerdown'].forEach(function(ev){ window.removeEventListener(ev, _lmOnInteract); });
+        _lmOnInteract = null;
+      }
+      window.lmShowPageLoader = function(){
+        ov.classList.add('show');
+        clearTimeout(hideT);
+        hideT = setTimeout(function(){ window.lmHidePageLoader(); }, 5000);
+        // Kalau user masih bisa scroll/klik/ketik → navigasi tak jadi → sembunyikan (anti-nyangkut)
+        _lmClearInteract();
+        _lmOnInteract = function(){ window.lmHidePageLoader(); };
+        ['wheel','touchmove','keydown','pointerdown'].forEach(function(ev){
+          window.addEventListener(ev, _lmOnInteract, { once:true, passive:true });
+        });
+      };
+      window.lmHidePageLoader = function(){ ov.classList.remove('show'); clearTimeout(hideT); _lmClearInteract(); };
+      // Klik overlay sendiri juga menutupnya (escape hatch)
+      ov.addEventListener('click', function(){ window.lmHidePageLoader(); });
 
       // Tampilkan overlay saat mulai navigasi ke halaman lain (same-origin, bukan tab baru / hash / eksternal)
       document.addEventListener('click', function(e){
@@ -252,7 +269,9 @@ function renderGlobalJsHelpers(): void { ?>
         if (u.pathname === location.pathname && u.hash) return;    // anchor di halaman sama
         window.lmShowPageLoader();
       }, true);
-      window.addEventListener('pageshow', function(ev){ if (ev.persisted) window.lmHidePageLoader(); });
+      // Selalu sembunyikan saat halaman tampil kembali (bfcache maupun load normal) + saat tab aktif lagi
+      window.addEventListener('pageshow', function(){ window.lmHidePageLoader(); });
+      document.addEventListener('visibilitychange', function(){ if (!document.hidden) window.lmHidePageLoader(); });
     })();
 
     // ── Pull-to-refresh (perangkat sentuh): tarik dari atas → reload ──
