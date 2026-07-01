@@ -405,6 +405,24 @@ if ($isHqMode) {
   border-color: rgba(27,45,90,.08);
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23CBD5E1' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
 }
+/* Combobox wilayah ber-search */
+.combo { position: relative; }
+.combo-input {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%231CC4B2' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 14px center; padding-right: 40px;
+}
+.combo-input:disabled { background-color: #F3F4F6; color: #9CA3AF; cursor: not-allowed; border-color: rgba(27,45,90,.08); background-image: none; }
+.combo-list {
+  display: none; position: absolute; left: 0; right: 0; top: calc(100% + 4px); z-index: 60;
+  background: #fff; border: 1.5px solid var(--teal); border-radius: 8px;
+  box-shadow: 0 10px 28px rgba(15,28,58,.16); max-height: 260px; overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.combo-list.open { display: block; }
+.combo-opt { padding: 10px 14px; font-size: 14px; color: var(--dark); cursor: pointer; border-bottom: 1px solid #F3F4F6; }
+.combo-opt:last-child { border-bottom: none; }
+.combo-opt:hover, .combo-opt.active { background: var(--teal-bg); color: var(--teal-d); }
+.combo-empty { padding: 11px 14px; font-size: 13px; color: var(--gray); }
 .hint { font-size: 12px; color: var(--gray); margin-top: 5px; }
 .alert-error {
   background: #FEF2F2; border: 1px solid #FECACA;
@@ -616,27 +634,39 @@ if ($isHqMode) {
           </div>
           <div class="field">
             <label>Provinsi <span class="req">*</span></label>
-            <select name="w_prov" id="w_prov" required data-cur="<?= htmlspecialchars($d['w_prov'] ?? '') ?>">
-              <option value="">⏳ memuat…</option>
-            </select>
+            <div class="combo" id="cb_prov">
+              <input type="text" class="combo-input" autocomplete="off" placeholder="Ketik / pilih provinsi…"
+                     value="<?= htmlspecialchars($d['provinsi'] ?? '') ?>">
+              <input type="hidden" name="w_prov" value="<?= htmlspecialchars($d['w_prov'] ?? '') ?>">
+              <div class="combo-list"></div>
+            </div>
           </div>
           <div class="field">
             <label>Kota / Kabupaten <span class="req">*</span></label>
-            <select name="w_kota" id="w_kota" required disabled data-cur="<?= htmlspecialchars($d['w_kota'] ?? '') ?>">
-              <option value="">Pilih provinsi dulu</option>
-            </select>
+            <div class="combo" id="cb_kota">
+              <input type="text" class="combo-input" autocomplete="off" placeholder="Pilih provinsi dulu"
+                     value="<?= htmlspecialchars($d['kota'] ?? '') ?>">
+              <input type="hidden" name="w_kota" value="<?= htmlspecialchars($d['w_kota'] ?? '') ?>">
+              <div class="combo-list"></div>
+            </div>
           </div>
           <div class="field">
             <label>Kecamatan <span class="req">*</span></label>
-            <select name="w_kec" id="w_kec" required disabled data-cur="<?= htmlspecialchars($d['w_kec'] ?? '') ?>">
-              <option value="">Pilih kota dulu</option>
-            </select>
+            <div class="combo" id="cb_kec">
+              <input type="text" class="combo-input" autocomplete="off" placeholder="Pilih kota dulu"
+                     value="<?= htmlspecialchars($d['kecamatan'] ?? '') ?>">
+              <input type="hidden" name="w_kec" value="<?= htmlspecialchars($d['w_kec'] ?? '') ?>">
+              <div class="combo-list"></div>
+            </div>
           </div>
           <div class="field">
             <label>Kelurahan / Desa <span class="req">*</span></label>
-            <select name="w_kel" id="w_kel" required disabled data-cur="<?= htmlspecialchars($d['w_kel'] ?? '') ?>">
-              <option value="">Pilih kecamatan dulu</option>
-            </select>
+            <div class="combo" id="cb_kel">
+              <input type="text" class="combo-input" autocomplete="off" placeholder="Pilih kecamatan dulu"
+                     value="<?= htmlspecialchars($d['kelurahan'] ?? '') ?>">
+              <input type="hidden" name="w_kel" value="<?= htmlspecialchars($d['w_kel'] ?? '') ?>">
+              <div class="combo-list"></div>
+            </div>
           </div>
           <div class="field">
             <label>Alamat jalan (No, RT/RW) <span class="req">*</span></label>
@@ -693,72 +723,108 @@ if ($isHqMode) {
         </form>
 
 <script>
+// Combobox wilayah ber-search (ketik untuk cari) — pengganti native <select>
+// yang memuntahkan ratusan opsi. Kirim ke server tetap kode (hidden w_*).
 (function(){
-  const prov = document.getElementById('w_prov');
-  const kota = document.getElementById('w_kota');
-  const kec  = document.getElementById('w_kec');
-  const kel  = document.getElementById('w_kel');
-  const pos  = document.getElementById('kode_pos');
-  if (!prov) return;
-
   const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const posEl = document.getElementById('kode_pos');
+  if (!document.getElementById('cb_prov')) return;
 
-  async function loadInto(sel, parent, placeholder){
-    sel.innerHTML = '<option value="">⏳ memuat…</option>';
-    sel.disabled = true;
+  function Combo(id, phEnabled, phDisabled){
+    const el = document.getElementById(id);
+    this.el = el;
+    this.input  = el.querySelector('.combo-input');
+    this.hidden = el.querySelector('input[type=hidden]');
+    this.list   = el.querySelector('.combo-list');
+    this.phEnabled = phEnabled; this.phDisabled = phDisabled;
+    this.items = []; this.loaded = false; this.child = null; this.parent = null; this.isRoot = false;
+  }
+  Combo.prototype.parentCode = function(){ return this.isRoot ? '' : (this.parent ? this.parent.hidden.value : ''); };
+  Combo.prototype.enabled = function(){ return this.isRoot || this.parentCode() !== ''; };
+  Combo.prototype.syncDisabled = function(){
+    const en = this.enabled();
+    this.input.disabled = !en;
+    this.input.placeholder = en ? this.phEnabled : this.phDisabled;
+  };
+  Combo.prototype.load = async function(){
+    const pc = this.parentCode();
+    if (!this.isRoot && pc === '') { this.items = []; this.loaded = false; return; }
     try {
-      const url = '/api/wilayah.php' + (parent ? ('?parent=' + encodeURIComponent(parent)) : '');
+      const url = '/api/wilayah.php' + (pc ? ('?parent=' + encodeURIComponent(pc)) : '');
       const r = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
       const j = await r.json();
-      const rows = (j && j.ok && j.data) ? j.data : [];
-      let html = '<option value="">' + placeholder + '</option>';
-      rows.forEach(o => {
-        html += '<option value="' + esc(o.kode) + '"' + (o.kodepos ? ' data-pos="' + esc(o.kodepos) + '"' : '') + '>'
-              + esc(o.nama) + '</option>';
-      });
-      sel.innerHTML = html;
-      sel.disabled = false;
-      return rows.length;
-    } catch(e){
-      sel.innerHTML = '<option value="">gagal memuat, pilih lagi</option>';
-      sel.disabled = false;
-      return 0;
+      this.items = (j && j.ok && j.data) ? j.data : [];
+      this.loaded = true;
+    } catch(e){ this.items = []; this.loaded = false; }
+  };
+  Combo.prototype.render = function(){
+    const q = this.input.value.trim().toLowerCase();
+    if (!this.loaded){ this.list.innerHTML = '<div class="combo-empty">⏳ memuat…</div>'; }
+    else {
+      const m = this.items.filter(o => o.nama.toLowerCase().indexOf(q) !== -1).slice(0, 300);
+      this.list.innerHTML = m.length
+        ? m.map(o => '<div class="combo-opt" data-kode="'+esc(o.kode)+'"'+(o.kodepos?' data-pos="'+esc(o.kodepos)+'"':'')+'>'+esc(o.nama)+'</div>').join('')
+        : '<div class="combo-empty">Tak ada hasil</div>';
     }
-  }
-
-  function resetBelow(){
-    kota.innerHTML = '<option value="">Pilih provinsi dulu</option>'; kota.disabled = true;
-    kec.innerHTML  = '<option value="">Pilih kota dulu</option>';      kec.disabled  = true;
-    kel.innerHTML  = '<option value="">Pilih kecamatan dulu</option>'; kel.disabled  = true;
-  }
-
-  prov.addEventListener('change', async () => { resetBelow(); if (prov.value) await loadInto(kota, prov.value, 'Pilih Kota/Kabupaten'); });
-  kota.addEventListener('change', async () => {
-    kec.innerHTML='<option value="">Pilih kota dulu</option>'; kec.disabled=true;
-    kel.innerHTML='<option value="">Pilih kecamatan dulu</option>'; kel.disabled=true;
-    if (kota.value) await loadInto(kec, kota.value, 'Pilih Kecamatan');
-  });
-  kec.addEventListener('change', async () => {
-    kel.innerHTML='<option value="">Pilih kecamatan dulu</option>'; kel.disabled=true;
-    if (kec.value) await loadInto(kel, kec.value, 'Pilih Kelurahan/Desa');
-  });
-  kel.addEventListener('change', () => {
-    const opt = kel.options[kel.selectedIndex];
-    const p = opt && opt.getAttribute('data-pos');
-    if (p) pos.value = p;   // auto-isi kode pos, tetap editable
-  });
-
-  // Restore berjenjang saat kembali dari step 2 (data-cur = kode tersimpan)
-  (async function restore(){
-    await loadInto(prov, '', 'Pilih Provinsi');
-    if (prov.dataset.cur){ prov.value = prov.dataset.cur;
-      if (await loadInto(kota, prov.value, 'Pilih Kota/Kabupaten') && kota.dataset.cur){ kota.value = kota.dataset.cur;
-        if (await loadInto(kec, kota.value, 'Pilih Kecamatan') && kec.dataset.cur){ kec.value = kec.dataset.cur;
-          if (await loadInto(kel, kec.value, 'Pilih Kelurahan/Desa') && kel.dataset.cur){ kel.value = kel.dataset.cur; }
+    this.list.classList.add('open');
+  };
+  Combo.prototype.close = function(){ this.list.classList.remove('open'); };
+  Combo.prototype.open = async function(){
+    if (!this.enabled()) return;
+    if (!this.loaded){ this.render(); await this.load(); }
+    this.render();
+  };
+  Combo.prototype.pick = function(kode, nama, pos){
+    this.hidden.value = kode; this.input.value = nama; this.close();
+    if (this.child) this.child.reset();
+    if (pos && posEl) posEl.value = pos;        // level kelurahan → auto kode pos
+  };
+  Combo.prototype.reset = function(){
+    this.hidden.value = ''; this.input.value = ''; this.items = []; this.loaded = false;
+    this.close(); this.syncDisabled();
+    if (this.child) this.child.reset();
+  };
+  Combo.prototype.bind = function(){
+    const self = this;
+    this.input.addEventListener('focus', function(){ self.open(); });
+    this.input.addEventListener('input', function(){
+      self.hidden.value = '';                    // teks berubah → pilihan batal sampai re-pick
+      if (self.child) self.child.reset();
+      self.open();
+    });
+    this.list.addEventListener('mousedown', function(e){   // mousedown: sebelum blur
+      const opt = e.target.closest('.combo-opt');
+      if (!opt) return;
+      e.preventDefault();
+      self.pick(opt.getAttribute('data-kode'), opt.textContent, opt.getAttribute('data-pos'));
+      if (self.child && self.child.input) self.child.input.focus();
+    });
+    this.input.addEventListener('blur', function(){
+      setTimeout(function(){
+        self.close();
+        if (self.input.value.trim() && !self.hidden.value){
+          const m = self.items.find(o => o.nama.trim().toLowerCase() === self.input.value.trim().toLowerCase());
+          if (m) self.pick(m.kode, m.nama, m.kodepos);
+          else self.input.value = '';           // tak ada yang dipilih → kosongkan biar tak menyesatkan
         }
-      }
-    }
-  })();
+      }, 160);
+    });
+  };
+
+  const prov = new Combo('cb_prov', 'Ketik / pilih provinsi…', '');
+  const kota = new Combo('cb_kota', 'Ketik / pilih kota/kabupaten…', 'Pilih provinsi dulu');
+  const kec  = new Combo('cb_kec',  'Ketik / pilih kecamatan…',     'Pilih kota dulu');
+  const kel  = new Combo('cb_kel',  'Ketik / pilih kelurahan/desa…', 'Pilih kecamatan dulu');
+  prov.isRoot = true;
+  prov.child = kota; kota.parent = prov;
+  kota.child = kec;  kec.parent  = kota;
+  kec.child  = kel;  kel.parent  = kec;
+  [prov,kota,kec,kel].forEach(function(c){ c.bind(); c.syncDisabled(); });
+
+  document.addEventListener('click', function(e){
+    [prov,kota,kec,kel].forEach(function(c){ if (!c.el.contains(e.target)) c.close(); });
+  });
+})();
 })();
 </script>
 
