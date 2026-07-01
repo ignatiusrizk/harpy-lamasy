@@ -1095,9 +1095,11 @@ require __DIR__ . '/_layout_open.php';
       <div>
         <div style="font-weight:700;font-size:13px">📍 <?= htmlspecialchars($o['nama_outlet']) ?></div>
         <div style="font-size:11px;color:#6B7280;margin-top:2px">
-          🪙 <strong><?= $o['status']==='trial' && (int)$o['trial_coin_balance']>0
-                ? number_format((int)$o['trial_coin_balance']) . ' (trial)'
-                : number_format((int)$o['coin_balance']) ?></strong>
+          🪙 <strong><?php
+                if ($o['status']==='trial' && (int)$o['trial_coin_balance']>0)      echo number_format((int)$o['trial_coin_balance']).' (trial)';
+                elseif ($o['status']==='grace' && (int)$o['trial_coin_balance']>0)  echo number_format((int)$o['trial_coin_balance']).' 🔒 (beku)';
+                else                                                                echo number_format((int)$o['coin_balance']);
+              ?></strong>
           · <?= $o['status'] ?>
         </div>
       </div>

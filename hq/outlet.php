@@ -422,11 +422,17 @@ async function loadList(){
       lifecycle = `<div class="lifecycle-info" style="background:#F0FDF4;color:#065F46">✓ Aktif sejak ${fmtDate(o.activated_at)}</div>`;
     }
 
-    const coinShow = o.status === 'trial' && parseInt(o.trial_coin_balance||0) > 0
-      ? `<span class="num">${Number(o.trial_coin_balance).toLocaleString('id-ID')}</span><small>Trial Coin</small>`
-      : (coinMode === 'shared'
-          ? `<span class="num" style="color:#9CA3AF;font-style:italic">shared</span><small>Pakai saldo tenant</small>`
-          : `<span class="num">${Number(o.coin_balance).toLocaleString('id-ID')}</span><small>Coin Outlet</small>`);
+    let coinShow;
+    if (o.status === 'trial' && parseInt(o.trial_coin_balance||0) > 0) {
+      coinShow = `<span class="num">${Number(o.trial_coin_balance).toLocaleString('id-ID')}</span><small>Trial Coin</small>`;
+    } else if (o.status === 'grace' && parseInt(o.trial_coin_balance||0) > 0) {
+      // Grace: coin trial beku (tetap ditampilkan, tak bisa dipakai)
+      coinShow = `<span class="num" style="color:#92400E" title="Coin beku selama masa tenggang — aktivasi outlet untuk memakainya lagi.">${Number(o.trial_coin_balance).toLocaleString('id-ID')} 🔒</span><small>Coin beku</small>`;
+    } else if (coinMode === 'shared') {
+      coinShow = `<span class="num" style="color:#9CA3AF;font-style:italic">shared</span><small>Pakai saldo tenant</small>`;
+    } else {
+      coinShow = `<span class="num">${Number(o.coin_balance).toLocaleString('id-ID')}</span><small>Coin Outlet</small>`;
+    }
 
     const topupBtn = (!isClosed && (coinMode === 'per_outlet' || (o.status === 'trial' && o.trial_coin_balance == 0)))
       ? `<a href="https://wa.me/${supportWa}?text=${encodeURIComponent('Halo Tim LAMASY, mau topup coin outlet "'+o.nama_outlet+'"')}"
