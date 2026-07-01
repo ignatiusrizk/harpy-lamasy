@@ -661,9 +661,20 @@ require __DIR__ . '/_layout_open.php';
 
   @media(max-width:980px){
     .metrics{grid-template-columns:repeat(2,1fr)}
+    .metrics > *{min-width:0}
+    .metric-growth{white-space:normal;overflow-wrap:anywhere}
     .grid-2{grid-template-columns:1fr}
     table.outlets-tbl{font-size:12px}
     table.outlets-tbl th,table.outlets-tbl td{padding:7px 6px}
+  }
+  /* ── Mobile: rapikan baris tombol filter (hilangkan margin-left:auto yg bikin ragged) ── */
+  @media(max-width:640px){
+    .lap-tab{flex:1 1 0;padding:9px 6px;text-align:center}
+    .filter-bar{padding:12px;gap:8px}
+    .filter-bar > label{flex:1 1 46%}
+    .filter-bar > label input[type=date]{width:100%}
+    .filter-bar select{flex:1 1 100%;width:100%;min-width:0}
+    .preset-btn,.btn-export{flex:1 1 46%;justify-content:center;text-align:center;min-width:0;margin-left:0 !important}
   }
 
   /* ── Top-level tabs ── */
