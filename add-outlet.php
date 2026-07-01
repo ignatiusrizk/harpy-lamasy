@@ -172,6 +172,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['step2_submit'])) {
         ]);
         $outletId = (int)$db->lastInsertId();
 
+        // Simpan pilihan welcome kit (server-validasi key; else default)
+        if (($d['mode'] ?? 'trial') === 'paid' && WelcomeKit::enabled()) {
+            $choiceKey = WelcomeKit::resolveChoiceKey($_POST['welcome_kit_choice'] ?? null);
+            if ($choiceKey !== null) {
+                $db->prepare("UPDATE outlets SET welcome_kit_choice=? WHERE id=?")->execute([$choiceKey, $outletId]);
+            }
+        }
+
         // Seed default payment methods (cash/transfer/qris) untuk outlet baru
         try {
             require_once ROOT . '/core/TenantProvisioner.php';
@@ -710,14 +718,38 @@ if ($isHqMode) {
             <?php if (($d['mode'] ?? 'trial') === 'paid' && $ao_coin > 0): ?>
             <li><strong><?= number_format($ao_coin,0,',','.') ?> coin bonus</strong> dikreditkan saat outlet aktif</li>
             <?php endif; ?>
-            <?php if (($d['mode'] ?? 'trial') === 'paid' && WelcomeKit::enabled() && WelcomeKit::items()): ?>
-            <li><strong>🎁 Welcome kit fisik</strong> dikirim ke alamat outlet: <?= htmlspecialchars(implode(', ', array_map(fn($i) => $i['qty'] . '× ' . $i['nama'], WelcomeKit::items()))) ?></li>
+            <?php if (($d['mode'] ?? 'trial') === 'paid' && WelcomeKit::enabled() && WelcomeKit::options()): ?>
+            <li><strong>🎁 Welcome kit fisik</strong> dikirim ke alamat outlet (pilih paket di bawah)</li>
             <?php endif; ?>
           </ul>
         </div>
 
         <form method="POST">
           <input type="hidden" name="_csrf" value="<?= $csrf ?>">
+          <?php
+            $wkOpts = (($d['mode'] ?? 'trial') === 'paid' && WelcomeKit::enabled()) ? WelcomeKit::options() : [];
+            $wkDefault = WelcomeKit::defaultOption()['key'] ?? '';
+          ?>
+          <?php if ($wkOpts): ?>
+          <div style="margin:14px 0">
+            <div style="font-weight:700;color:#0F172A;margin-bottom:8px;font-size:13.5px">🎁 Pilih Welcome Kit (gratis)</div>
+            <?php if (count($wkOpts) === 1): ?>
+              <input type="hidden" name="welcome_kit_choice" value="<?= htmlspecialchars($wkOpts[0]['key']) ?>">
+              <div style="font-size:12.5px;color:#374151">
+                <strong><?= htmlspecialchars($wkOpts[0]['nama']) ?></strong>:
+                <?= htmlspecialchars(implode(', ', array_map(fn($i)=>$i['qty'].'× '.$i['nama'], $wkOpts[0]['items']))) ?>
+              </div>
+            <?php else: foreach ($wkOpts as $opt): ?>
+              <label style="display:flex;gap:8px;align-items:flex-start;padding:9px 11px;border:1px solid #E5E9F2;border-radius:8px;margin-bottom:6px;cursor:pointer">
+                <input type="radio" name="welcome_kit_choice" value="<?= htmlspecialchars($opt['key']) ?>" <?= $opt['key'] === $wkDefault ? 'checked' : '' ?> style="margin-top:3px">
+                <span style="font-size:12.5px;color:#374151">
+                  <strong><?= htmlspecialchars($opt['nama']) ?></strong><br>
+                  <span style="color:#6B7280"><?= htmlspecialchars(implode(', ', array_map(fn($i)=>$i['qty'].'× '.$i['nama'], $opt['items']))) ?></span>
+                </span>
+              </label>
+            <?php endforeach; endif; ?>
+          </div>
+          <?php endif; ?>
           <div class="btn-row">
             <button type="submit" name="go_back" class="hl-btn hl-btn-outline">← Kembali</button>
             <button type="submit" name="step2_submit" class="hl-btn hl-btn-primary" style="flex:1">
