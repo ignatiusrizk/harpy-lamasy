@@ -608,6 +608,17 @@ require __DIR__ . '/_layout_open.php';
     .kr-card{grid-template-columns:1fr;gap:8px}
     .kr-actions{flex-wrap:wrap;gap:8px}
     .kr-actions .btn{flex:1 1 0;justify-content:center;min-width:0}
+
+    /* Detail modal rapi di layar kecil */
+    .modal-backdrop{padding:0;align-items:flex-end}
+    .modal{padding:18px 16px;border-radius:16px 16px 0 0;max-height:94vh}
+    .info-row{gap:14px;align-items:flex-start}
+    .info-row .val{text-align:right;word-break:break-word;min-width:0}
+    .assignment-item{flex-direction:column;align-items:stretch;gap:8px}
+    .assignment-item .btn-danger{width:100%;justify-content:center}
+    .history-item{flex-direction:column;align-items:flex-start;gap:2px}
+    #detailContent .section:last-child .btn{width:100%;justify-content:center}
+    .form-grid{grid-template-columns:1fr}
   }
 </style>
 
