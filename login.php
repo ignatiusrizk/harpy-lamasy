@@ -331,11 +331,9 @@ function logAuditLogin(array $user, string $aksi, string $modul, string $ket): v
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Login — LAMASY</title>
 <script>
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw-tenant.js?v=<?= @filemtime(__DIR__ . '/sw-tenant.js') ?: date('Ymd') ?>', { scope: '/' })
-      .catch(err => console.warn('SW tenant register failed:', err));
-  });
+// Service worker dinonaktifkan sementara — unregister SW lama, jangan daftar baru.
+if ('serviceWorker' in navigator && navigator.serviceWorker.getRegistrations) {
+  navigator.serviceWorker.getRegistrations().then(rs => rs.forEach(r => r.unregister())).catch(() => {});
 }
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">

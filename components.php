@@ -109,11 +109,12 @@ function renderHead(string $title = 'LAMASY'): void {
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="LAMASY">
     <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw-tenant.js?v=<?= @filemtime(__DIR__ . '/sw-tenant.js') ?: date('Ymd') ?>', { scope: '/' })
-          .catch(err => console.warn('SW tenant register failed:', err));
-      });
+    // Service worker DINONAKTIFKAN sementara (SW offline menyebabkan errorPath di APK) —
+    // unregister SW lama yang mungkin masih nyangkut, dan JANGAN daftar yang baru.
+    if ('serviceWorker' in navigator && navigator.serviceWorker.getRegistrations) {
+      navigator.serviceWorker.getRegistrations()
+        .then(rs => rs.forEach(r => r.unregister()))
+        .catch(() => {});
     }
     </script>
     <?php endif; ?>
