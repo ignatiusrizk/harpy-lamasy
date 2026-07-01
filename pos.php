@@ -497,15 +497,20 @@ if ($action) {
                 $catatan = $catatan === '' ? $depCatatan : ($catatan . ' · ' . $depCatatan);
             }
 
-            // Defense: validate metode_bayar against active methods config (anti-tamper)
-            $_metodeIn = $data['metode_bayar'] ?? 'cash';
-            $_validate = $db->prepare("
-                SELECT 1 FROM hl_payment_methods
-                WHERE outlet_id=? AND tenant_id=? AND code=? AND is_active=1
-            ");
-            $_validate->execute([$oid, $tid, $_metodeIn]);
-            if (!$_validate->fetchColumn()) {
-                throw new RuntimeException('Metode pembayaran tidak valid atau dinonaktifkan.');
+            // Metode bayar: kalau belum ada pembayaran → kosong → simpan NULL (jangan "cash" palsu).
+            // Kalau diisi → validasi terhadap metode aktif (anti-tamper).
+            $_metodeIn    = trim($data['metode_bayar'] ?? '');
+            $_metodeStore = null;
+            if ($_metodeIn !== '') {
+                $_validate = $db->prepare("
+                    SELECT 1 FROM hl_payment_methods
+                    WHERE outlet_id=? AND tenant_id=? AND code=? AND is_active=1
+                ");
+                $_validate->execute([$oid, $tid, $_metodeIn]);
+                if (!$_validate->fetchColumn()) {
+                    throw new RuntimeException('Metode pembayaran tidak valid atau dinonaktifkan.');
+                }
+                $_metodeStore = $_metodeIn;
             }
 
             // Bangun INSERT dinamis sesuai kolom yg tersedia
@@ -515,7 +520,7 @@ if ($action) {
                        'status_proses','estimasi_selesai','catatan','created_by'];
             $vals   = [$tid,$oid,$no,$tanggal,$pel_id,$nama_pel,$telepon,
                        $subtotal,$diskonTotal,$total,$totalPaid,$sisa,
-                       $data['metode_bayar'] ?? 'cash', $status_b,
+                       $_metodeStore, $status_b,
                        'masuk',$estimasi,$catatan,$user['id']];
             if ($hasEstJam)    { $cols[] = 'estimasi_jam';   $vals[] = $estimasiJam; }
             if ($hasBiayaTipe) { $cols[] = 'biaya_tambahan'; $vals[] = $biayaTbh;
@@ -755,7 +760,7 @@ if ($action) {
         $sisaFmt  = "Rp " . number_format(floatval($t['sisa_bayar']), 0, ',', '.');
         $tgl      = $t['tanggal'] ? date('d M Y', strtotime($t['tanggal'])) : '-';
         $est      = $t['estimasi_selesai'] ? date('d M Y', strtotime($t['estimasi_selesai'])) : '-';
-        $metode   = ['cash'=>'Cash','transfer'=>'Transfer','qris'=>'QRIS'][$t['metode_bayar']] ?? $t['metode_bayar'];
+        $metode   = $t['metode_bayar'] ? ((['cash'=>'Cash','transfer'=>'Transfer','qris'=>'QRIS'][$t['metode_bayar']]) ?? $t['metode_bayar']) : '';
         $trackUrl = (defined('APP_URL') ? APP_URL : 'https://lamasy.harpy.id') . '/track.php?order=' . urlencode($t['no_order']);
 
         $msg = "Halo *{$t['nama_pelanggan']}*,\n\n"
@@ -764,8 +769,9 @@ if ($action) {
              . "*Tanggal:* {$tgl}\n"
              . "*Layanan:*{$itemList}\n\n"
              . "*Total:* {$totalFmt}\n"
-             . "*Bayar ({$metode}):* {$dpFmt}\n"
-             . ($t['sisa_bayar'] > 0 ? "*Sisa Bayar:* {$sisaFmt}\n" : "*Status Bayar:* Lunas\n")
+             . ($t['metode_bayar']
+                 ? ("*Bayar ({$metode}):* {$dpFmt}\n" . ($t['sisa_bayar'] > 0 ? "*Sisa Bayar:* {$sisaFmt}\n" : "*Status Bayar:* Lunas\n"))
+                 : "*Status Bayar:* Belum Bayar\n")
              . "*Est. Selesai:* {$est}\n\n"
              . "Cek status real-time:\n{$trackUrl}\n\n"
              . ($alamat ? "*Alamat outlet:*\n{$outletNama}\n{$alamat}\n\n" : "")
@@ -1413,6 +1419,7 @@ function posSelectPrinter(p) {
               <div class="form-group">
                 <label>Metode</label>
                 <select id="f_metode" onchange="onMetodeChange()">
+                  <option value="">—</option>
                   <?php foreach ($activeMethods as $m): ?>
                     <?php $isQrisDisabled = ($m['code'] === 'qris' && empty($outletQrisData['qris_image'])); ?>
                     <option value="<?= htmlspecialchars($m['code']) ?>" <?= $isQrisDisabled ? 'disabled' : '' ?>>
@@ -1994,6 +2001,22 @@ function recalc() {
   } else {
     info.textContent='⏳ Belum Bayar';info.style.background='#FEE2E2';info.style.color='#991B1B';
   }
+
+  // Metode bayar hanya relevan kalau ada pembayaran tunai/transfer/qris (DP/Bayar > 0).
+  // Belum bayar → kosong & disabled (biar tak tercatat "cash" palsu).
+  const metodeEl = document.getElementById('f_metode');
+  if (metodeEl) {
+    if (dp > 0) {
+      metodeEl.disabled = false;
+      if (!metodeEl.value) {
+        const opt = Array.from(metodeEl.options).find(o => o.value && !o.disabled);
+        if (opt) metodeEl.value = opt.value;   // default metode aktif pertama (Tunai)
+      }
+    } else {
+      metodeEl.value = '';
+      metodeEl.disabled = true;
+    }
+  }
 }
 
 function searchPelanggan(q) {
@@ -2262,7 +2285,7 @@ function onMetodeChange() {
   if (metode === 'qris') {
     if (!window.outletQris || !window.outletQris.image) {
       alert('QRIS belum di-setup oleh owner. Pilih metode lain.');
-      document.getElementById('f_metode').value = 'cash';
+      document.getElementById('f_metode').value = '';
       return;
     }
     openQrisModal();
@@ -2286,7 +2309,7 @@ function confirmQrisPayment() {
 function cancelQrisPayment() {
   _qrisConfirmed = false;
   document.getElementById('modalQris').style.display = 'none';
-  document.getElementById('f_metode').value = 'cash'; // reset to default
+  document.getElementById('f_metode').value = ''; // reset to default
 }
 
 function closeQrisModal() {
@@ -2704,7 +2727,7 @@ function resetForm() {
   ['f_nama','f_telepon','f_catatan'].forEach(id => document.getElementById(id).value='');
   document.getElementById('f_diskon').value='0';
   document.getElementById('f_dp').value='0';
-  document.getElementById('f_metode').value='cash';
+  document.getElementById('f_metode').value='';
   document.getElementById('f_voucher').value='';
   document.getElementById('f_voucher').disabled=false;
   document.getElementById('voucherInfo').style.display='none';
