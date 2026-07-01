@@ -425,6 +425,7 @@ require __DIR__ . '/_layout_open.php';
     .grid-2{grid-template-columns:1fr}
     .info-grid{grid-template-columns:1fr}
     .outlet-coin-row{grid-template-columns:1fr;gap:6px}
+    .outlet-coin-row > *{min-width:0;overflow-wrap:anywhere}
   }
 </style>
 

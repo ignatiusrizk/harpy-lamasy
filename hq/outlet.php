@@ -270,6 +270,7 @@ require __DIR__ . '/_layout_open.php';
 
   @media(max-width:900px){
     .ocard{grid-template-columns:1fr;gap:10px}
+    .ocard > div{min-width:0;overflow-wrap:anywhere}
     .ocard-actions{flex-direction:row;justify-content:flex-start}
   }
 </style>

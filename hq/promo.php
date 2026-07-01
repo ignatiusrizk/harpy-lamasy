@@ -404,6 +404,7 @@ require __DIR__ . '/_layout_open.php';
 
   @media(max-width:780px){
     .pm-card{grid-template-columns:1fr;gap:6px}
+    .pm-card > *{min-width:0;overflow-wrap:anywhere}
   }
 </style>
 

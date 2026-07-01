@@ -606,6 +606,8 @@ require __DIR__ . '/_layout_open.php';
     .toolbar input,.toolbar select{width:100%;min-width:0;flex:none}
     #totalCount{align-self:flex-end;margin-top:2px}
     .kr-card{grid-template-columns:1fr;gap:8px}
+    .kr-card > div{min-width:0}
+    .kr-name,.kr-name small{overflow-wrap:anywhere}
     .kr-actions{flex-wrap:wrap;gap:8px}
     .kr-actions .btn{flex:1 1 0;justify-content:center;min-width:0}
 

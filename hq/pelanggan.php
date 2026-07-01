@@ -374,6 +374,11 @@ require __DIR__ . '/_layout_open.php';
 
   @media(max-width:780px){
     .pl-card{grid-template-columns:1fr;gap:6px}
+    /* Cegah teks panjang (nama/HP/outlet) memaksa kartu melebar → scrollbar mendatar */
+    .pl-card > div{min-width:0}
+    .pl-name,.pl-name small,.pl-outlet,.pl-outlet strong{overflow-wrap:anywhere}
+    .pl-num{text-align:left}
+    .toolbar input,.toolbar select{min-width:0}
     .stats{grid-template-columns:repeat(2,1fr)}
   }
 </style>
