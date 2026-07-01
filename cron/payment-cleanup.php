@@ -29,10 +29,12 @@ if (!$isCli) {
 date_default_timezone_set('Asia/Jakarta');
 
 $db = Database::get();
+// expires_at ditulis pakai date() WIB → bandingkan dgn waktu PHP (WIB), bukan
+// MySQL NOW() (UTC) yang bikin pending baru di-expire 7 jam terlambat.
 $st = $db->prepare(
-    "UPDATE saas_payments SET status='expired' WHERE status='pending' AND expires_at < NOW()"
+    "UPDATE saas_payments SET status='expired' WHERE status='pending' AND expires_at < ?"
 );
-$st->execute();
+$st->execute([date('Y-m-d H:i:s')]);
 $count = $st->rowCount();
 
 echo json_encode([

@@ -85,8 +85,10 @@ elseif ($type === 'outlet_activation') {
 // Check existing pending payment (resume kalau ada)
 // Strict AND-clause: semua ref harus cocok — hindari false match antar bundle/outlet berbeda
 $existing = $db->prepare(
+    // expires_at dibandingkan dgn waktu PHP (WIB) — sama dgn cara expires_at ditulis
+    // (date() Asia/Jakarta). MySQL NOW() = UTC → dulu bikin pending "hidup" 7 jam ekstra.
     "SELECT * FROM saas_payments
-     WHERE tenant_id=? AND type=? AND status='pending' AND expires_at > NOW()
+     WHERE tenant_id=? AND type=? AND status='pending' AND expires_at > ?
        AND COALESCE(ref_bundle_id, 0) = COALESCE(?, 0)
        AND COALESCE(ref_outlet_id, 0) = COALESCE(?, 0)
        AND COALESCE(ref_package_id, 0) = COALESCE(?, 0)
@@ -94,6 +96,7 @@ $existing = $db->prepare(
 );
 $existing->execute([
     $tenantId, $type,
+    date('Y-m-d H:i:s'),
     $refBundleId,
     $refOutletId,
     $refPackageId,
@@ -195,6 +198,9 @@ $secondsRemaining = max(0, strtotime($payment['expires_at']) - time());
   .item{ color:var(--ash); font-size:13px; margin-bottom:18px; }
   .amount{ font-size:30px; font-weight:800; font-family:'DM Mono',monospace; color:var(--navy); margin:14px 0; }
   .timer{ background:#FFF7ED; border:1px solid #FED7AA; color:#B45309; padding:10px 14px; border-radius:10px; font-size:13px; text-align:center; font-weight:600; }
+  .timer.expired{ background:#FEE2E2; border-color:#FCA5A5; color:#B91C1C; }
+  .pay-dim{ opacity:.35; pointer-events:none; filter:grayscale(.6); }
+  .retry-btn{ display:inline-flex; align-items:center; gap:7px; margin-top:10px; background:var(--navy); color:#fff; border:none; padding:11px 18px; border-radius:11px; font-weight:800; font-size:14px; cursor:pointer; }
   .qr-wrap{ text-align:center; padding:18px; background:#fff; border:1px solid #E5E9F2; border-radius:14px; }
   .qr-wrap img{ max-width:240px; width:100%; height:auto; }
   .va-box{ display:flex; align-items:center; justify-content:space-between; gap:10px; background:#F0FDFA; border:1px solid #99F6E4; padding:14px; border-radius:12px; margin:8px 0; }
@@ -226,7 +232,7 @@ $secondsRemaining = max(0, strtotime($payment['expires_at']) - time());
     <div class="item"><?= htmlspecialchars($itemName) ?></div>
     <div>Total Pembayaran:</div>
     <div class="amount">Rp <?= number_format($amount, 0, ',', '.') ?></div>
-    <div class="timer">&#x23F1; Selesaikan pembayaran dalam <span id="timer"><?= floor($secondsRemaining / 60) ?> menit</span></div>
+    <div class="timer" id="timerBox">&#x23F1; Selesaikan pembayaran dalam <span id="timer"><?= floor($secondsRemaining / 60) ?> menit</span></div>
     <div class="ref-row">
       <div>
         <div class="lbl">Nominal</div>
@@ -244,7 +250,7 @@ $secondsRemaining = max(0, strtotime($payment['expires_at']) - time());
   </div>
 
   <?php if ($payment['payment_type'] === 'qris' && $payment['qr_string']): ?>
-  <div class="card">
+  <div class="card" id="payCard">
     <h3 style="margin-bottom: 14px;">Scan QRIS</h3>
     <div class="qr-wrap">
       <img src="<?= htmlspecialchars($payment['qr_string']) ?>" alt="QRIS QR Code">
@@ -258,7 +264,7 @@ $secondsRemaining = max(0, strtotime($payment['expires_at']) - time());
     </div>
   </div>
   <?php elseif ($payment['payment_type'] === 'bank_transfer' && $payment['va_number']): ?>
-  <div class="card">
+  <div class="card" id="payCard">
     <h3 style="margin-bottom: 14px;">Transfer Bank &mdash; <?= strtoupper(htmlspecialchars($payment['va_bank'])) ?></h3>
     <div class="va-box">
       <div>
@@ -281,20 +287,36 @@ let polling = true;
 const orderId = <?= json_encode($payment['order_id']) ?>;
 const expiresAt = <?= strtotime($payment['expires_at']) * 1000 ?>;
 
+let expiredHandled = false;
+
 function fmtTime(secs) {
-  if (secs <= 0) return 'Expired';
   const m = Math.floor(secs / 60);
   const s = secs % 60;
   return m + ' menit ' + (s < 10 ? '0' : '') + s + ' detik';
 }
 
+function markExpired() {
+  if (expiredHandled) return;
+  expiredHandled = true;
+  polling = false;
+  // Ubah kotak timer jadi status kedaluwarsa (bukan teks "Expired" mentah)
+  const box = document.getElementById('timerBox');
+  if (box) { box.classList.add('expired'); box.innerHTML = '&#x23F1; Pembayaran kedaluwarsa'; }
+  // Redupkan QR/VA supaya tak discan lagi
+  const pay = document.getElementById('payCard');
+  if (pay) pay.classList.add('pay-dim');
+  // Status + tombol buat pembayaran baru (reload → server buat pembayaran baru)
+  const st = document.getElementById('status');
+  if (st) {
+    st.innerHTML = 'Pembayaran kedaluwarsa. Kode QR tidak berlaku lagi.<br>'
+      + '<button class="retry-btn" onclick="location.reload()">&#x1F504; Buat Pembayaran Baru</button>';
+  }
+}
+
 function tick() {
   const remaining = Math.floor((expiresAt - Date.now()) / 1000);
+  if (remaining <= 0) { document.getElementById('timer').textContent = ''; markExpired(); return; }
   document.getElementById('timer').textContent = fmtTime(remaining);
-  if (remaining <= 0) {
-    polling = false;
-    document.getElementById('status').textContent = 'Payment expired. Silakan refresh untuk create payment baru.';
-  }
 }
 setInterval(tick, 1000);
 tick();

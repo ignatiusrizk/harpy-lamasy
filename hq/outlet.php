@@ -87,10 +87,12 @@ if ($action) {
 
             // Pembayaran aktivasi pending yang belum expired → tombol "Cek Pembayaran" vs "Aktivasi"
             try {
+                // expires_at ditulis pakai date() WIB → bandingkan dgn waktu PHP (WIB),
+                // bukan MySQL NOW() (UTC) yang bikin pending "hidup" 7 jam ekstra.
                 $s = $db->prepare("SELECT COUNT(*) FROM saas_payments
                                      WHERE tenant_id=? AND type='outlet_activation' AND ref_outlet_id=?
-                                       AND status='pending' AND expires_at > NOW()");
-                $s->execute([$tid, $oid]);
+                                       AND status='pending' AND expires_at > ?");
+                $s->execute([$tid, $oid, date('Y-m-d H:i:s')]);
                 $o['has_active_payment'] = ((int)$s->fetchColumn()) > 0;
             } catch (Throwable) { $o['has_active_payment'] = false; }
 
