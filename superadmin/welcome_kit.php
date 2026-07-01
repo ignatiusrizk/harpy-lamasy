@@ -29,7 +29,7 @@ if ($action) {
         echo json_encode([
             'ok'      => true,
             'enabled' => BillingConfig::getInt('welcome_kit_enabled', 1),
-            'items'   => WelcomeKit::items(),
+            'options' => WelcomeKit::options(),
         ]);
         exit;
     }
@@ -64,16 +64,30 @@ if ($action) {
 
     // POST: save_config
     if ($action === 'save_config') {
-        $enabled    = !empty($d['enabled']) ? '1' : '0';
-        $cleanItems = [];
-        foreach ((array)($d['items'] ?? []) as $it) {
-            $n = trim($it['nama'] ?? '');
-            if ($n === '') continue;
-            $cleanItems[] = ['nama' => substr($n, 0, 120), 'qty' => max(1, (int)($it['qty'] ?? 1))];
+        $enabled = !empty($d['enabled']) ? '1' : '0';
+        $options = [];
+        $seenKey = [];
+        foreach ((array)($d['options'] ?? []) as $o) {
+            $nama = trim($o['nama'] ?? '');
+            if ($nama === '') continue;
+            $items = [];
+            foreach ((array)($o['items'] ?? []) as $it) {
+                $n = trim($it['nama'] ?? ''); if ($n === '') continue;
+                $items[] = ['nama' => substr($n, 0, 120), 'qty' => max(1, (int)($it['qty'] ?? 1))];
+            }
+            if (!$items) continue;
+            $key = trim($o['key'] ?? '');
+            if ($key === '' || isset($seenKey[$key])) $key = strtolower(preg_replace('/[^a-z0-9]+/i', '_', $nama)) . '_' . count($options);
+            $seenKey[$key] = 1;
+            $options[] = ['key' => substr($key, 0, 40), 'nama' => substr($nama, 0, 80), 'items' => $items, 'default' => !empty($o['default'])];
         }
+        if (!$options) { echo json_encode(['error' => 'Minimal 1 opsi kit dengan 1 item.']); exit; }
+        // pastikan tepat 1 default
+        if (!array_filter($options, fn($o) => $o['default'])) $options[0]['default'] = true;
+        else { $seen = false; foreach ($options as &$o) { if ($o['default'] && $seen) $o['default'] = false; elseif ($o['default']) $seen = true; } unset($o); }
         BillingConfig::set('welcome_kit_enabled', $enabled, $sa);
-        BillingConfig::set('welcome_kit_items', json_encode($cleanItems, JSON_UNESCAPED_UNICODE), $sa);
-        echo json_encode(['ok' => true, 'msg' => 'Konfigurasi kit berhasil disimpan.']);
+        BillingConfig::set('welcome_kit_options', json_encode($options, JSON_UNESCAPED_UNICODE), $sa);
+        echo json_encode(['ok' => true, 'msg' => 'Opsi kit disimpan.']);
         exit;
     }
 
@@ -190,6 +204,29 @@ $activePage = 'welcome_kit';
 }
 .enable-row .enable-label { font-size: 14px; font-weight: 600; color: var(--glow); }
 .enable-row .enable-hint  { font-size: 12px; color: var(--ash); margin-top: 2px; }
+
+/* ── Multi-option kit editor ── */
+.opt-block {
+  border: 1.5px solid var(--crease); border-radius: 10px;
+  padding: 14px 16px; margin-bottom: 14px;
+  background: var(--crease-soft);
+}
+.opt-head {
+  display: flex; gap: 10px; align-items: center; margin-bottom: 12px; flex-wrap: wrap;
+}
+.opt-head .opt-nama {
+  flex: 1; min-width: 140px; padding: 8px 11px; background: var(--navy);
+  border: 1.5px solid var(--crease); border-radius: 8px;
+  color: var(--white); font-family: var(--font); font-size: 13px; outline: none;
+}
+.opt-head .opt-nama:focus { border-color: var(--teal); box-shadow: 0 0 0 3px rgba(53,232,213,.12); }
+.opt-def {
+  display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600;
+  color: var(--ash); cursor: pointer; white-space: nowrap;
+}
+.opt-def input[type="radio"] { accent-color: var(--teal); width: 15px; height: 15px; cursor: pointer; }
+.opt-items { padding-left: 4px; }
+.opt-items .item-row { background: transparent; }
 </style>
 </head>
 <body>
@@ -230,6 +267,7 @@ $activePage = 'welcome_kit';
             <th style="white-space:nowrap;">Outlet / Tenant</th>
             <th style="white-space:nowrap;">Penerima</th>
             <th style="white-space:nowrap;">Alamat Pengiriman</th>
+            <th style="white-space:nowrap;">Kit</th>
             <th style="white-space:nowrap;">Isi Kit</th>
             <th style="white-space:nowrap;">Status</th>
             <th style="white-space:nowrap;">Kurir / Resi</th>
@@ -237,7 +275,7 @@ $activePage = 'welcome_kit';
           </tr>
         </thead>
         <tbody id="queueBody">
-          <tr><td colspan="8" style="text-align:center;padding:36px;color:var(--ash-dim);">Memuat...</td></tr>
+          <tr><td colspan="9" style="text-align:center;padding:36px;color:var(--ash-dim);">Memuat...</td></tr>
         </tbody>
       </table>
     </div>
@@ -262,23 +300,17 @@ $activePage = 'welcome_kit';
       </div>
     </div>
 
-    <!-- Item list -->
+    <!-- Option list -->
     <div class="cfg-section">
-      <h4>Isi Kit</h4>
-      <div style="font-size:11.5px;color:var(--ash-dim);margin-bottom:12px;">
-        Masukkan nama item dan jumlah. Ini jadi snapshot <em>items_json</em> untuk setiap kit baru.
+      <h4>Opsi Kit</h4>
+      <div style="font-size:11.5px;color:var(--ash-dim);margin-bottom:14px;">
+        Buat satu atau lebih opsi kit. Tandai satu sebagai <strong>Default</strong> — opsi itulah yang dipakai saat aktivasi outlet.
       </div>
 
-      <div style="display:flex;gap:8px;margin-bottom:6px;padding:0 2px;">
-        <span style="flex:1;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--ash-dim);">Nama Item</span>
-        <span style="width:72px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--ash-dim);text-align:center;">Qty</span>
-        <span style="width:36px;"></span>
-      </div>
+      <div id="optRows"></div>
 
-      <div id="itemRows"></div>
-
-      <button class="sa-btn sa-btn-outline sa-btn-sm" onclick="addItemRow()" style="margin-top:6px;">
-        ＋ Tambah Item
+      <button class="sa-btn sa-btn-outline sa-btn-sm" onclick="addOptionRow()" style="margin-top:4px;">
+        ＋ Tambah Opsi
       </button>
     </div>
 
@@ -363,7 +395,7 @@ function loadQueue() {
 function renderQueue(rows) {
   const body = document.getElementById('queueBody');
   if (!rows.length) {
-    body.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:36px;color:var(--ash-dim);">Tidak ada data antrian.</td></tr>';
+    body.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:36px;color:var(--ash-dim);">Tidak ada data antrian.</td></tr>';
     return;
   }
   body.innerHTML = rows.map((r, i) => {
@@ -393,6 +425,7 @@ function renderQueue(rows) {
         <div style="font-size:12px;line-height:1.5;">${esc(addr||'—')}</div>
         ${r.catatan ? `<div style="font-size:11px;color:var(--amber);margin-top:3px;">⚠ ${esc(r.catatan)}</div>` : ''}
       </td>
+      <td style="white-space:nowrap;">${esc(r.kit_nama||'—')}</td>
       <td>${fmtItems(r.items_json)}</td>
       <td>${fmtStatus(r.status)}</td>
       <td>${kurirResi}</td>
@@ -447,52 +480,71 @@ function loadConfig() {
   saFetch('welcome_kit.php?action=get_config').then(d => {
     if (!d.ok) { saShowToast(d.error || 'Gagal memuat config.', 'error'); return; }
     document.getElementById('cfgEnabled').checked = !!parseInt(d.enabled ?? 1);
-    renderItemRows(d.items || []);
+    const box = document.getElementById('optRows'); box.innerHTML = '';
+    const opts = d.options || [];
+    if (opts.length) opts.forEach(o => addOptionRow(o));
+    else addOptionRow();
   });
 }
 
-function renderItemRows(items) {
-  const container = document.getElementById('itemRows');
-  container.innerHTML = '';
-  if (items.length === 0) {
-    addItemRow();
-    return;
-  }
-  items.forEach(it => addItemRow(it.nama, it.qty));
+function addOptionRow(o = {}) {
+  const wrap = document.createElement('div'); wrap.className = 'opt-block';
+  wrap.innerHTML = `
+    <div class="opt-head">
+      <input type="text" class="opt-nama" placeholder="Nama opsi (cth: Paket Printer)" maxlength="80"/>
+      <label class="opt-def"><input type="radio" name="optDefault"/> Default</label>
+      <button class="remove-btn" onclick="this.closest('.opt-block').remove()">✕ Opsi</button>
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:6px;padding:0 2px;">
+      <span style="flex:1;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--ash-dim);">Nama Item</span>
+      <span style="width:72px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--ash-dim);text-align:center;">Qty</span>
+      <span style="width:36px;"></span>
+    </div>
+    <div class="opt-items"></div>
+    <button class="sa-btn sa-btn-outline sa-btn-sm" onclick="addKitItem(this)" style="margin-top:4px;">＋ Item</button>`;
+  // Set via property — hindari interpolasi atribut yang rapuh
+  wrap.querySelector('.opt-nama').value = o.nama || '';
+  if (o.default) wrap.querySelector('.opt-def input').checked = true;
+  document.getElementById('optRows').appendChild(wrap);
+  const addBtn = wrap.querySelector('.sa-btn');
+  const itemsToAdd = (o.items && o.items.length) ? o.items : [{}];
+  itemsToAdd.forEach(it => addKitItem(addBtn, it));
 }
 
-function addItemRow(nama = '', qty = 1) {
-  const container = document.getElementById('itemRows');
-  const row = document.createElement('div');
-  row.className = 'item-row';
+function addKitItem(btn, it = {}) {
+  const cont = btn.closest('.opt-block').querySelector('.opt-items');
+  const row = document.createElement('div'); row.className = 'item-row';
   row.innerHTML = `
-    <input type="text" placeholder="Nama item (cth: Roll thermal 58mm)" maxlength="120"/>
-    <input type="number" value="${parseInt(qty)||1}" min="1" max="999" placeholder="1"/>
-    <button class="remove-btn" title="Hapus baris" onclick="this.closest('.item-row').remove()">✕</button>
-  `;
-  // Set value via property (bukan interpolasi atribut) — hindari pola rapuh esc() di konteks atribut.
-  row.querySelector('input[type="text"]').value = nama;
-  container.appendChild(row);
-  if (!nama) row.querySelector('input[type="text"]').focus();
+    <input type="text" class="it-nama" maxlength="120" placeholder="Nama item (cth: Roll thermal 58mm)"/>
+    <input type="number" class="it-qty" min="1" max="999" value="1"/>
+    <button class="remove-btn" title="Hapus item" onclick="this.closest('.item-row').remove()">✕</button>`;
+  // Set via property — hindari pola rapuh esc() di konteks atribut
+  row.querySelector('.it-nama').value = it.nama || '';
+  row.querySelector('.it-qty').value  = parseInt(it.qty) || 1;
+  cont.appendChild(row);
+  if (!it.nama) row.querySelector('.it-nama').focus();
 }
 
 // ── Config: save ──────────────────────────────────────
 function saveConfig() {
   const enabled = document.getElementById('cfgEnabled').checked;
-  const items   = [];
-  document.querySelectorAll('#itemRows .item-row').forEach(row => {
-    const inputs = row.querySelectorAll('input');
-    const nama   = inputs[0].value.trim();
-    const qty    = parseInt(inputs[1].value) || 1;
-    if (nama) items.push({ nama, qty });
+  const options = [];
+  document.querySelectorAll('#optRows .opt-block').forEach(b => {
+    const nama = b.querySelector('.opt-nama').value.trim(); if (!nama) return;
+    const items = []; b.querySelectorAll('.item-row').forEach(r => {
+      const n = r.querySelector('.it-nama').value.trim(); if (!n) return;
+      items.push({ nama: n, qty: parseInt(r.querySelector('.it-qty').value) || 1 });
+    });
+    if (!items.length) return;
+    options.push({ nama, items, default: b.querySelector('.opt-def input').checked });
   });
 
   saFetch('welcome_kit.php?action=save_config', {
     method:  'POST',
     headers: { 'Content-Type': 'application/json' },
-    body:    JSON.stringify({ enabled, items }),
+    body:    JSON.stringify({ enabled: enabled ? 1 : 0, options }),
   }).then(d => {
-    if (!d.ok) { saShowToast(d.error || 'Gagal menyimpan.', 'error'); return; }
+    if (d.error) { saShowToast(d.error, 'error'); return; }
     saShowToast(d.msg || 'Konfigurasi disimpan.', 'success');
   });
 }
