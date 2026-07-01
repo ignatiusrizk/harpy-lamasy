@@ -169,7 +169,9 @@ require __DIR__ . '/_layout_open.php';
           cursor:pointer; transition:all .15s; }
 .tab-btn.active{ background:#0F1C3A; color:#fff; border-color:#0F1C3A; }
 
-.hq-struk-grid{ display:grid; grid-template-columns:380px 1fr; gap:16px; align-items:start; }
+.hq-struk-grid{ display:grid; grid-template-columns:380px minmax(0,1fr); gap:16px; align-items:start; }
+/* Cegah track/panel melebar mengikuti lebar iframe asli (yg di-scale) → tak meluber */
+.hq-struk-grid > *{ min-width:0; }
 @media(max-width:960px){ .hq-struk-grid{ grid-template-columns:1fr; } }
 
 .settings-panel{ background:#fff; border-radius:12px; border:1px solid rgba(27,45,90,.08);
