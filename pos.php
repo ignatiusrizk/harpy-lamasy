@@ -1016,9 +1016,10 @@ textarea{resize:vertical;min-height:64px}
   .pos-mobile-cta {
     display: flex;
     position: fixed;
-    /* Duduk DI ATAS bottom nav (nav ~48px + safe-area di paling bawah);
-       celah ~12px jadi tempat FAB 🛒 nyembul. */
-    bottom: calc(60px + env(safe-area-inset-bottom, 0px)); left: 0; right: 0;
+    /* Duduk DI ATAS bottom nav. Nav + FAB 🛒 yg nyembul makan ~70px
+       (sama dgn reserve .ol-content), jadi CTA di 74px biar lingkaran FAB
+       lolos bersih di bawahnya, tak tertumpuk. */
+    bottom: calc(74px + env(safe-area-inset-bottom, 0px)); left: 0; right: 0;
     padding: 10px 14px;
     background: var(--white);
     border-top: 1px solid rgba(27,45,90,.1);

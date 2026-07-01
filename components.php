@@ -1022,7 +1022,7 @@ function renderTopbar(string $activePage = '', bool $minimalMode = false): void 
         ?>
         <nav class="ol-bottomnav" aria-label="Navigasi utama">
           <a href="/dashboard" class="bn-item<?= $bnAct(['dashboard']) ?>">
-            <span class="bn-ic">🏠</span><span class="bn-lb">Beranda</span></a>
+            <span class="bn-ic">🏠</span><span class="bn-lb">Dashboard</span></a>
           <?php if ($bnOrder): ?>
           <a href="/orders" class="bn-item<?= $bnAct(['orders','kanban']) ?>">
             <span class="bn-ic">📋</span><span class="bn-lb">Order</span></a>
