@@ -44,7 +44,7 @@ if ($action) {
         $id   = (int)($d['id']   ?? 0);
         $kurir = trim($d['kurir'] ?? '');
         $resi  = trim($d['resi']  ?? '');
-        if (!$id || $kurir === '' || $resi === '') {
+        if ($id < 1 || $kurir === '' || $resi === '') {
             echo json_encode(['error' => 'ID, kurir, dan resi wajib diisi.']);
             exit;
         }
@@ -56,7 +56,7 @@ if ($action) {
     // POST: mark_delivered
     if ($action === 'mark_delivered') {
         $id = (int)($d['id'] ?? 0);
-        if (!$id) { echo json_encode(['error' => 'ID tidak valid.']); exit; }
+        if ($id < 1) { echo json_encode(['error' => 'ID tidak valid.']); exit; }
         WelcomeKit::markDelivered($id);
         echo json_encode(['ok' => true, 'msg' => 'Ditandai terkirim.']);
         exit;
@@ -466,10 +466,12 @@ function addItemRow(nama = '', qty = 1) {
   const row = document.createElement('div');
   row.className = 'item-row';
   row.innerHTML = `
-    <input type="text" placeholder="Nama item (cth: Roll thermal 58mm)" value="${esc(nama)}" maxlength="120"/>
+    <input type="text" placeholder="Nama item (cth: Roll thermal 58mm)" maxlength="120"/>
     <input type="number" value="${parseInt(qty)||1}" min="1" max="999" placeholder="1"/>
     <button class="remove-btn" title="Hapus baris" onclick="this.closest('.item-row').remove()">✕</button>
   `;
+  // Set value via property (bukan interpolasi atribut) — hindari pola rapuh esc() di konteks atribut.
+  row.querySelector('input[type="text"]').value = nama;
   container.appendChild(row);
   if (!nama) row.querySelector('input[type="text"]').focus();
 }
