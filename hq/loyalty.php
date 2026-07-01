@@ -308,6 +308,13 @@ loadList();
 </script>
 
 <!-- ===================== SECTION: Referral (Ajak Teman) ===================== -->
+<style>
+  .ref-inputs{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; margin-bottom:18px; }
+  @media(max-width:640px){
+    .ref-inputs{ grid-template-columns:1fr; gap:12px; }
+    #btnSaveReferral{ width:100%; justify-content:center; }
+  }
+</style>
 <div style="margin-top:32px;background:#fff;border:1px solid #E5E7EB;border-radius:12px;padding:20px 24px">
   <h2 style="margin:0 0 4px;font-size:18px">🤝 Referral (Ajak Teman)</h2>
   <p style="margin:0 0 16px;font-size:13px;color:#64748B">Pengaturan program referral. Poin diberikan ke kedua pihak saat order pertama teman lunas.<br>
@@ -319,7 +326,7 @@ loadList();
     <span style="font-weight:600">Aktifkan program referral</span>
   </label>
 
-  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:18px">
+  <div class="ref-inputs">
     <div>
       <label style="display:block;font-size:13px;font-weight:600;margin-bottom:4px">Poin untuk Pengajak</label>
       <input type="number" id="ref_poin_pengajak" class="hl-input" min="0" value="<?= $refPoinPengajak ?>">
@@ -335,7 +342,7 @@ loadList();
     </div>
   </div>
 
-  <button class="hl-btn hl-btn-primary" onclick="saveReferral()">💾 Simpan Pengaturan Referral</button>
+  <button id="btnSaveReferral" class="hl-btn hl-btn-primary" onclick="saveReferral()">💾 Simpan Pengaturan Referral</button>
   <span id="ref_status" style="margin-left:12px;font-size:13px"></span>
 </div>
 
