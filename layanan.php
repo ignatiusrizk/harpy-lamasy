@@ -544,8 +544,8 @@ function renderLayanan() {
     <div class="layanan-card ${l.is_active==1?'':'inactive'}">
       <div class="layanan-kat">${esc(l.kategori||'Umum')} ${badge} ${ovTag}</div>
       <div class="layanan-nama">${esc(l.nama)}</div>
-      <div class="layanan-harga">Rp ${parseFloat(l.harga).toLocaleString('id-ID')} <span style="font-size:13px;font-weight:400;color:var(--gray)">/ ${l.satuan}</span></div>
-      ${canAdjust ? `<div style="font-size:11px;color:var(--gray);margin-top:2px">Default HQ: Rp ${parseFloat(l.harga_default).toLocaleString('id-ID')}</div>` : ''}
+      <div class="layanan-harga">Rp ${grpRibu(l.harga)} <span style="font-size:13px;font-weight:400;color:var(--gray)">/ ${l.satuan}</span></div>
+      ${canAdjust ? `<div style="font-size:11px;color:var(--gray);margin-top:2px">Default HQ: Rp ${grpRibu(l.harga_default)}</div>` : ''}
       <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px">
         <label class="toggle-switch" title="${l.is_active==1?'Nonaktifkan':'Aktifkan'}">
           <input type="checkbox" ${l.is_active==1?'checked':''} onchange="toggleLayanan(${l.id},this.checked)"/>
@@ -642,7 +642,7 @@ function renderTierList(tiers) {
             <td style="padding:10px;color:#4B5563;">${t.estimasi_jam} jam</td>
             <td style="padding:10px;">
               ${t.tipe_biaya === 'flat'
-                ? '+Rp ' + Math.round(t.nilai_biaya).toLocaleString('id-ID')
+                ? '+Rp ' + grpRibu(t.nilai_biaya)
                 : '+' + parseFloat(t.nilai_biaya) + '%'}
             </td>
             <td style="padding:10px;">${t.is_active == 1 ? '<span style="color:#059669;">● Aktif</span>' : '<span style="color:#9CA3AF;">○ Off</span>'}</td>
@@ -743,11 +743,11 @@ async function openAdjust(l){
   const min = base > 0 && pct > 0 ? Math.round(base * (1 - pct/100)) : 0;
   const max = base > 0 && pct > 0 ? Math.round(base * (1 + pct/100)) : 0;
   const rangeTxt = (min && max)
-    ? `Rentang diizinkan: Rp ${min.toLocaleString('id-ID')} – Rp ${max.toLocaleString('id-ID')} (±${pct}%)`
-    : `Default HQ: Rp ${base.toLocaleString('id-ID')}`;
+    ? `Rentang diizinkan: Rp ${grpRibu(min)} – Rp ${grpRibu(max)} (±${pct}%)`
+    : `Default HQ: Rp ${grpRibu(base)}`;
 
   const harga = await lmPrompt(
-    `Adjust harga "${l.nama}"\n${rangeTxt}\n\nHarga sekarang: Rp ${parseFloat(l.harga).toLocaleString('id-ID')}\nMasukkan harga baru:`,
+    `Adjust harga "${l.nama}"\n${rangeTxt}\n\nHarga sekarang: Rp ${grpRibu(l.harga)}\nMasukkan harga baru:`,
     l.harga
   );
   if (harga === null) return;
