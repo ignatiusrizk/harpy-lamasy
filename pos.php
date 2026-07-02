@@ -1270,7 +1270,7 @@ function posSelectPrinter(p) {
                   <label>Estimasi *</label>
                   <div style="display:flex;gap:6px">
                     <input type="number" id="lyn_q_jam" class="input" value="24" min="1" placeholder="24" style="flex:1"/>
-                    <select id="lyn_q_unit" class="input" style="width:84px">
+                    <select id="lyn_q_unit" class="input" style="width:84px" onchange="lynUnitChanged()">
                       <option value="jam">Jam</option>
                       <option value="hari">Hari</option>
                     </select>
@@ -1749,6 +1749,13 @@ function addLayananItem(id, nama, satuan, harga) {
 }
 
 // ── Quick-create layanan modal ──
+function lynUnitChanged(){
+  // Ganti ke Hari: kosongkan angka (default 24 itu satuan jam) — user isi jumlah hari sendiri.
+  // Balik ke Jam: kalau kosong, pulihkan default 24.
+  const el = document.getElementById('lyn_q_jam');
+  if (document.getElementById('lyn_q_unit').value === 'hari') { el.value = ''; el.placeholder = '1'; }
+  else if (!el.value) { el.value = '24'; el.placeholder = '24'; }
+}
 function openLayananQuick(){
   const m = document.getElementById('lynQuickModal');
   if (m) { m.style.display = 'flex'; document.getElementById('lyn_q_nama').focus(); }
@@ -1770,8 +1777,10 @@ async function saveLayananQuick(){
     satuan:   document.getElementById('lyn_q_satuan').value,
     harga:    parseFloat(document.getElementById('lyn_q_harga').value) || 0,
     estimasi_jam: (function(){
-      const n = parseInt(document.getElementById('lyn_q_jam').value) || 24;
-      return document.getElementById('lyn_q_unit').value === 'hari' ? n * 24 : n;
+      const hari = document.getElementById('lyn_q_unit').value === 'hari';
+      // Fallback ikut unit: kosong di mode Hari = 1 hari (bukan 24 hari = 576 jam)
+      const n = parseInt(document.getElementById('lyn_q_jam').value) || (hari ? 1 : 24);
+      return hari ? n * 24 : n;
     })(),
     qty_minimum:  parseFloat(document.getElementById('lyn_q_min').value) || 0,
   };
