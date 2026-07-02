@@ -1132,6 +1132,15 @@ function posSelectPrinter(p) {
               <small id="estHint" style="display:block;margin-top:4px;font-size:11px;color:#0891B2;font-weight:600">⏱ Memuat saran…</small>
             </div>
           </div>
+          <style>
+            #voiceOrderBtn.voice-rec{background:#EF4444!important;border-color:#EF4444!important;color:#fff!important;animation:voicePulse 1s ease-in-out infinite}
+            @keyframes voicePulse{0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,.5)}50%{box-shadow:0 0 0 8px rgba(239,68,68,0)}}
+          </style>
+          <div class="form-row">
+            <div class="form-group full">
+              <button type="button" id="voiceOrderBtn" class="btn btn-teal-sm" style="display:none;width:100%" onclick="voiceOrderStart()" title="Input order dengan suara">🎤 Voice Order</button>
+            </div>
+          </div>
           <div class="form-row">
             <div class="form-group full">
               <label>Nama Pelanggan <span class="req">*</span></label>
@@ -1140,11 +1149,6 @@ function posSelectPrinter(p) {
                   autocomplete="off" oninput="searchPelanggan(this.value)"/>
                 <div class="autocomplete-list" id="acList"></div>
               </div>
-              <style>
-                #voiceOrderBtn.voice-rec{background:#EF4444!important;border-color:#EF4444!important;color:#fff!important;animation:voicePulse 1s ease-in-out infinite}
-                @keyframes voicePulse{0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,.5)}50%{box-shadow:0 0 0 8px rgba(239,68,68,0)}}
-              </style>
-              <button type="button" id="voiceOrderBtn" class="btn btn-teal-sm" style="display:none;margin-top:6px" onclick="voiceOrderStart()" title="Input order dengan suara">🎤 Voice Order</button>
             </div>
           </div>
           <div class="form-row">
