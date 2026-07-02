@@ -272,9 +272,32 @@ if ($action) {
   </div>
 </div>
 
+<!-- Overlay detail order (iframe reuse orders.php) -->
+<div id="kbDetailOverlay" style="display:none;position:fixed;inset:0;z-index:2000;background:rgba(15,28,58,.35)">
+  <button onclick="closeKbDetail()" title="Tutup" style="position:absolute;top:calc(env(safe-area-inset-top,0px) + 10px);right:14px;z-index:2;width:38px;height:38px;border-radius:50%;border:none;background:rgba(15,28,58,.85);color:#fff;font-size:20px;cursor:pointer">✕</button>
+  <iframe id="kbDetailFrame" title="Detail Order" style="position:absolute;inset:0;width:100%;height:100%;border:0;background:transparent"></iframe>
+</div>
+
 <?php renderToast(); ?>
 <script>
 const CSRF = document.querySelector('meta[name="csrf-token"]').content;
+
+// ── Detail order in-place (iframe ke orders.php embed) ──
+function openKbDetail(id){
+  const ov = document.getElementById('kbDetailOverlay');
+  document.getElementById('kbDetailFrame').src = '/orders?open=' + id + '&embed=detail';
+  ov.style.display = 'block';
+  document.body.style.overflow = 'hidden';
+}
+function closeKbDetail(){
+  const ov = document.getElementById('kbDetailOverlay');
+  ov.style.display = 'none';
+  document.getElementById('kbDetailFrame').src = 'about:blank';
+  document.body.style.overflow = '';
+  loadKanban(); // refresh — status/bayar bisa berubah dari detail
+}
+// Detail modal di iframe menutup → tutup overlay
+window.addEventListener('message', function(e){ if (e.data === 'lmOrderDetailClosed') closeKbDetail(); });
 const NEXT = {masuk:'cuci', cuci:'kering', kering:'setrika', setrika:'siap', siap:'diambil'};
 const LABEL_NEXT = {masuk:'→ Cuci', cuci:'→ Kering', kering:'→ Setrika', setrika:'→ Siap', siap:'✓ Ambil'};
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -315,7 +338,7 @@ function renderCard(r){
   const t = timerClass(r.created_at, r.estimasi_selesai, r.estimasi_jam);
   const next = NEXT[r.status_proses];
   const isLast = r.status_proses === 'siap';
-  return `<div class="kb-card ${t.cls}" data-id="${r.id}" style="cursor:pointer" onclick="location.href='/orders?open=${r.id}'" title="Ketuk untuk lihat detail order">
+  return `<div class="kb-card ${t.cls}" data-id="${r.id}" style="cursor:pointer" onclick="openKbDetail(${r.id})" title="Ketuk untuk lihat detail order">
     <div class="kb-no">${esc(r.no_order)}</div>
     <div class="kb-nama">${esc(r.nama_pelanggan)}</div>
     <div class="kb-items">${esc(r.items_summary || '-')}</div>

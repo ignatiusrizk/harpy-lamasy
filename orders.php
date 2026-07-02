@@ -1158,6 +1158,13 @@ textarea{resize:vertical;min-height:64px}
 </style>
 </head>
 <body>
+<?php if (($_GET['embed'] ?? '') === 'detail'): ?>
+<style>/* embed dari Kanban: sembunyikan chrome, tampilkan modal detail saja */
+  .topbar, .ol-bottomnav, .pos-mobile-cta { display:none !important; }
+  body, .main { background:transparent !important; }
+  .main { display:none !important; }
+</style>
+<?php endif; ?>
 <?php renderTopbar('orders'); ?>
 
 <div class="main">
@@ -1961,6 +1968,10 @@ function closeModal() {
   document.getElementById('modalDetail').classList.remove('open');
   currentEditId = null;
   editItems = [];
+  // Bila dibuka di dalam iframe (mis. dari Kanban) → beri tahu parent utk tutup overlay
+  if (window.parent && window.parent !== window) {
+    try { window.parent.postMessage('lmOrderDetailClosed', '*'); } catch (e) {}
+  }
 }
 
 function openBayarFromDetail() {
