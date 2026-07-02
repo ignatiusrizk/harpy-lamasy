@@ -7,6 +7,8 @@ require_once ROOT . '/core/ErrorLogger.php';
 require_once ROOT . '/core/Referral.php';
 require_once ROOT . '/core/PushSender.php';
 require_once ROOT . '/core/WaLogger.php';
+require_once ROOT . '/core/OrderEditResolver.php';
+require_once ROOT . '/core/DepositManager.php';
 require_once __DIR__ . '/components.php';
 $user = currentUser();
 
@@ -199,7 +201,10 @@ if ($action) {
         $db->beginTransaction();
         try {
             // Verify ownership
-            $oldRow = $db->prepare("SELECT status_proses,status_bayar,catatan,dp FROM hl_transaksi WHERE tenant_id=? AND outlet_id=? AND id=?");
+            $oldRow = $db->prepare("SELECT status_proses,status_bayar,catatan,dp,total,diskon,
+                                           pelanggan_id,telepon,no_order,nama_pelanggan
+                                      FROM hl_transaksi
+                                     WHERE tenant_id=? AND outlet_id=? AND id=? FOR UPDATE");
             $oldRow->execute([$tid, $oid, $id]);
             $oldRow = $oldRow->fetch();
             if (!$oldRow) { $db->rollBack(); echo json_encode(['error'=>'Order tidak ditemukan']); exit; }
@@ -215,6 +220,12 @@ if ($action) {
             ]; }, $items ?? []); };
             $itemsChanged = ($sigItems($oldItems) != $sigItems($data['items'] ?? []));
 
+            $diskonBerubah = abs((float)($data['diskon'] ?? 0) - (float)$oldRow['diskon']) > 0.001;
+            if (($itemsChanged || $diskonBerubah) && !hasPermission('orders.edit')) {
+                $db->rollBack();
+                echo json_encode(['error' => 'Butuh izin edit order untuk mengubah layanan/diskon']); exit;
+            }
+
             // Recalc total jika ada items baru
             $subtotal = 0;
             if (!empty($data['items'])) {
@@ -228,6 +239,40 @@ if ($action) {
             $dp     = floatval($data['dp'] ?? 0);
             $sisa   = $total - $dp;
             $sbayar = $dp >= $total && $total > 0 ? 'lunas' : ($dp > 0 ? 'dp' : 'belum_bayar');
+
+            // ── Gerbang order LUNAS yang totalnya berubah ─────────────
+            $gate = OrderEditResolver::resolve([
+                'sbayar_lama'     => $oldRow['status_bayar'],
+                'total_lama'      => (float)$oldRow['total'],
+                'dp_lama'         => (float)$oldRow['dp'],
+                'total_baru'      => (float)$total,
+                'berubah'         => $itemsChanged || $diskonBerubah,
+                'resolusi'        => $data['confirm_resolution'] ?? null,
+                'punya_pelanggan' => !empty($oldRow['pelanggan_id']),
+            ]);
+            $gateAksi = null; $gateSelisih = 0.0;
+            if ($gate['gate']) {
+                if (isset($gate['need_confirm'])) {
+                    $db->rollBack();
+                    echo json_encode([
+                        'need_confirm' => $gate['need_confirm'],
+                        'selisih'      => (int)round($gate['selisih']),
+                        'total_baru'   => (float)$gate['total_baru'],
+                        'bisa_deposit' => $gate['bisa_deposit'],
+                    ]); exit;
+                }
+                if (isset($gate['error'])) {
+                    $db->rollBack();
+                    echo json_encode(['error' => $gate['error']]); exit;
+                }
+                // Override hasil hitung default dgn keputusan resolver
+                $dp     = $gate['apply']['dp'];
+                $sisa   = $gate['apply']['sisa'];
+                $sbayar = $gate['apply']['status'];
+                $gateAksi    = $gate['apply']['aksi'];
+                $gateSelisih = (float)$gate['apply']['selisih'];
+            }
+            $sisa = max(0.0, $sisa); // clamp global — sisa_bayar tak pernah negatif
 
             // Update header.
             // tgl_selesai distempel saat status pertama kali jadi siap/diambil/selesai.
@@ -296,6 +341,41 @@ if ($action) {
                 $db->prepare("UPDATE hl_transaksi SET subtotal=? WHERE tenant_id=? AND outlet_id=? AND id=?")->execute([$subtotal, $tid, $oid, $id]);
             }
 
+            // ── Eksekusi uang utk resolusi gerbang lunas ──────────────
+            $waUrl = null;
+            if ($gateAksi === 'refund_tunai') {
+                $db->prepare("INSERT INTO hl_kas
+                    (tenant_id, outlet_id, tanggal, tipe, kategori, keterangan, jumlah, ref_order, created_by, created_at)
+                    VALUES (?,?,CURDATE(),'keluar','Refund Order',?,?,?,?,NOW())")
+                   ->execute([$tid, $oid,
+                       'Refund koreksi order ' . $oldRow['no_order'] . ' — ' . $oldRow['nama_pelanggan'],
+                       $gateSelisih, $oldRow['no_order'], (int)$user['id']]);
+            } elseif ($gateAksi === 'ke_deposit') {
+                // applyBonus=false + numpang transaksi ini; exception → rollback utuh di catch existing
+                [, $depErr] = DepositManager::topup(
+                    $tid, $oid, (int)$oldRow['pelanggan_id'], $gateSelisih,
+                    'refund_order', 'Refund koreksi order ' . $oldRow['no_order'],
+                    (int)$user['id'], null, false
+                );
+                if ($depErr) { throw new RuntimeException('Gagal ke deposit: ' . $depErr); }
+            } elseif ($gateAksi === 'tagih' && !empty($oldRow['telepon'])) {
+                $p = preg_replace('/[^0-9]/', '', $oldRow['telepon']);
+                if (strpos($p, '0') === 0) $p = '62' . substr($p, 1);
+                elseif (strpos($p, '62') !== 0) $p = '62' . $p;
+                $outletNama = TenantResolver::getOutlet()['nama_outlet'] ?? 'kami';
+                $waMsg = "Halo {$oldRow['nama_pelanggan']}, saat penimbangan cucian order {$oldRow['no_order']} "
+                       . "terdapat layanan tambahan sehingga total menjadi Rp " . number_format($total, 0, ',', '.') . ". "
+                       . "Kekurangan Rp " . number_format($gateSelisih, 0, ',', '.') . " dapat dibayar saat pengambilan. "
+                       . "Terima kasih 🙏 — {$outletNama}";
+                $waUrl = 'https://wa.me/' . $p . '?text=' . rawurlencode($waMsg);
+            }
+            if ($gateAksi !== null) {
+                $aksiLabel = ['tagih' => 'Lunas → DP: penambahan layanan, kurang Rp ',
+                              'refund_tunai' => 'Koreksi turun: refund tunai Rp ',
+                              'ke_deposit' => 'Koreksi turun: masuk deposit Rp '][$gateAksi];
+                $logs_gate = $aksiLabel . number_format($gateSelisih, 0, ',', '.');
+            }
+
             // ── LOG semua perubahan ──────────────────────────────
             $logs_to_insert = [];
 
@@ -344,6 +424,17 @@ if ($action) {
                 ];
             }
 
+            if ($gateAksi !== null) {
+                $logs_to_insert[] = [
+                    'transaksi_id' => $id,
+                    'status_lama'  => $oldRow['status_bayar'],
+                    'status_baru'  => $sbayar,
+                    'tipe'         => 'bayar',
+                    'catatan'      => '💰 ' . $logs_gate,
+                    'oleh'         => $user['nama'],
+                ];
+            }
+
             $lstmt = $db->prepare("INSERT INTO hl_proses_log (transaksi_id,status_lama,status_baru,tipe,catatan,oleh) VALUES (?,?,?,?,?,?)");
             foreach ($logs_to_insert as $log) {
                 $lstmt->execute([
@@ -378,7 +469,7 @@ if ($action) {
                 ]);
             }
 
-            echo json_encode(['success' => true, 'poin_earned' => $poinEarned]);
+            echo json_encode(['success' => true, 'poin_earned' => $poinEarned, 'wa_url' => $waUrl]);
         } catch (Throwable $e) {
             $db->rollBack();
             echo json_encode(['error' => $e->getMessage()]);
@@ -1789,6 +1880,16 @@ async function openDetail(id) {
   const bmhReset = document.getElementById('btnMintaHapus');
   if (bmhReset) bmhReset.textContent = '🗑️ Minta Hapus';
 
+  // Banner konteks: order pernah lunas lalu jadi kurang bayar (deteksi dari log yang sudah di-load)
+  if (d.status_bayar === 'dp' && parseFloat(d.sisa_bayar||0) > 0) {
+    const hasLunasDP = (d.logs||[]).some(l => l.tipe === 'bayar' && (l.catatan||'').includes('Lunas → DP'));
+    if (hasLunasDP) {
+      const mb = document.getElementById('modalBody');
+      mb.insertAdjacentHTML('afterbegin',
+        '<div class="hl-badge hl-badge-dp" style="display:block;margin-bottom:12px;padding:8px 12px;border-radius:10px;background:#FEF3C7;border:1px solid #FDE68A;color:#92400E;font-size:13px;font-weight:600">⚠️ Kurang bayar (sebelumnya lunas)</div>');
+    }
+  }
+
   // Order dgn permintaan hapus pending → kunci semua editing
   if (d.pending_delete) {
     const mb = document.getElementById('modalBody');
@@ -2005,7 +2106,7 @@ function recalcEdit() {
 async function saveEdit() {
   if (!currentEditId) return;
   // Tak ada perubahan → info & tutup, jangan kirim ke server
-  if (editSnapshot !== null && editStateJSON() === editSnapshot) {
+  if (!window.__editResolution && editSnapshot !== null && editStateJSON() === editSnapshot) {
     showToast('ℹ️ Tidak ada perubahan untuk disimpan', 'info');
     closeModal();
     return;
@@ -2023,7 +2124,8 @@ async function saveEdit() {
     dp:               document.getElementById('edit_dp').value,
     estimasi:         document.getElementById('edit_estimasi').value,
     foto_pickup:      document.getElementById('edit_foto_pickup_path')?.value || '',
-    items:            editItems
+    items:            editItems,
+    confirm_resolution: window.__editResolution || null,
   };
 
   const r = await fetch('orders.php?action=update', {
@@ -2033,10 +2135,31 @@ async function saveEdit() {
   });
   const d = await r.json();
 
+  if (d.need_confirm === 'kurang_bayar') {
+    btn.disabled = false; btn.textContent = '💾 Simpan Perubahan';
+    const okTagih = await lmConfirm(
+      'Order ini LUNAS. Perubahan membuat kurang bayar Rp ' + Number(d.selisih).toLocaleString('id-ID') +
+      ' (total baru Rp ' + Number(d.total_baru).toLocaleString('id-ID') + '). Lanjutkan? Status akan turun ke DP.',
+      {icon:'⚠️'});
+    if (okTagih) return saveEditWithResolution('tagih');
+    return;
+  }
+  if (d.need_confirm === 'kelebihan') {
+    btn.disabled = false; btn.textContent = '💾 Simpan Perubahan';
+    const pilih = await lmKelebihanDialog(d.selisih, d.bisa_deposit);
+    if (pilih) return saveEditWithResolution(pilih);
+    return;
+  }
+
   if (d.success) {
     showToast('✅ Order berhasil diupdate!', 'success');
     const o = currentOrderData;
     const naikSiap = payload.status_proses === 'siap' && o && o.status_proses !== 'siap';
+    if (d.wa_url) {
+      if (await lmConfirm('Kirim WA pemberitahuan kekurangan bayar ke pelanggan?', {icon:'📲'})) {
+        window.open(d.wa_url, '_blank');
+      }
+    }
     closeModal();
     loadOrders();
     loadSummary();
@@ -2051,6 +2174,35 @@ async function saveEdit() {
     showToast('❌ ' + (d.error||'Gagal'), 'error');
   }
   btn.disabled = false; btn.textContent = '💾 Simpan Perubahan';
+}
+
+async function saveEditWithResolution(res) {
+  window.__editResolution = res;
+  await saveEdit();
+  window.__editResolution = null;
+}
+// Dialog pilihan kelebihan bayar: refund tunai / masuk deposit / batal
+function lmKelebihanDialog(selisih, bisaDeposit) {
+  return new Promise(resolve => {
+    const rp = 'Rp ' + Number(selisih).toLocaleString('id-ID');
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'position:fixed;inset:0;background:rgba(15,28,58,.6);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
+    wrap.innerHTML = `
+      <div style="background:#fff;border-radius:16px;padding:24px;max-width:360px;width:100%;text-align:center">
+        <div style="font-size:40px;margin-bottom:8px">💸</div>
+        <div style="font-weight:800;color:#0F1C3A;margin-bottom:6px">Kelebihan bayar ${rp}</div>
+        <div style="font-size:13px;color:#6B7280;margin-bottom:18px">Order ini sudah lunas. Kelebihan pembayaran mau diapakan?</div>
+        <button data-v="refund_tunai" style="display:block;width:100%;padding:12px;margin-bottom:8px;background:#0F1C3A;color:#fff;border:0;border-radius:10px;font-weight:700;cursor:pointer">💵 Refund Tunai ${rp}</button>
+        ${bisaDeposit ? `<button data-v="ke_deposit" style="display:block;width:100%;padding:12px;margin-bottom:8px;background:#EAFBF8;color:#0F766E;border:1px solid #99F6E4;border-radius:10px;font-weight:700;cursor:pointer">💳 Masukkan ke Deposit</button>` : ''}
+        <button data-v="" style="background:none;border:0;color:#9CA3AF;font-size:13px;cursor:pointer;margin-top:4px">Batal</button>
+      </div>`;
+    wrap.addEventListener('click', e => {
+      const v = e.target?.dataset?.v;
+      if (v === undefined && e.target !== wrap) return;
+      wrap.remove(); resolve(v || null);
+    });
+    document.body.appendChild(wrap);
+  });
 }
 
 // ── FILTER ────────────────────────────────────────────
