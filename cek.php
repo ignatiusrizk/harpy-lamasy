@@ -13,6 +13,7 @@ require_once ROOT . '/core/Database.php';
 require_once ROOT . '/core/TenantQuery.php';
 
 date_default_timezone_set('Asia/Jakarta');
+header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
 
 $noOrder = trim($_GET['n'] ?? '');
 $phoneLast4 = trim($_POST['phone'] ?? '');
