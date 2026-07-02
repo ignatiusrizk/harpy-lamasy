@@ -7,7 +7,7 @@ class SaFinance
 {
     const COIN_TO_IDR = 4.17; // samakan dgn superadmin/ai_usage.php
 
-    // Klausa BETWEEN aman utk kolom tanggal. Return [sqlFragment, params].
+    // Klausa rentang tanggal inklusif (col >= from AND col <= to). Return [sqlFragment, params].
     private static function range(string $col, ?string $from, ?string $to): array
     {
         $sql = ''; $p = [];

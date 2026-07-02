@@ -22,6 +22,18 @@ $db->prepare("INSERT INTO tenants (".implode(',', $cols).") VALUES (".implode(',
 $tid = (int)$db->lastInsertId();
 
 $from = '2026-01-01'; $to = '2026-12-31';
+$affId = null;
+
+// ── Register cleanup via shutdown function (jalan walau exit(1)) ──
+$cleanup = function() use ($db, $tid, &$affId) {
+    $db->prepare("DELETE FROM saas_manual_payments WHERE tenant_id=?")->execute([$tid]);
+    $db->prepare("DELETE FROM saas_payments WHERE tenant_id=?")->execute([$tid]);
+    $db->prepare("DELETE FROM hl_ai_usage WHERE tenant_id=?")->execute([$tid]);
+    $db->prepare("DELETE FROM coin_ledger WHERE tenant_id=?")->execute([$tid]);
+    if ($affId) $db->prepare("DELETE FROM hl_affiliate_payout WHERE id=?")->execute([$affId]);
+    $db->prepare("DELETE FROM tenants WHERE id=?")->execute([$tid]);
+};
+register_shutdown_function($cleanup);
 
 // Revenue: 1 manual confirmed (setup_fee 150000) + 1 midtrans paid (coin_topup 50000)
 $db->prepare("INSERT INTO saas_manual_payments
@@ -36,12 +48,15 @@ $db->prepare("INSERT INTO saas_payments
 $db->prepare("INSERT INTO hl_ai_usage (tenant_id, tokens_in, tokens_out, cost_estimated_idr, coin_charged, created_at)
   VALUES (?,100,200,20000,50,'2026-03-05 09:00:00')")->execute([$tid]);
 $affSrc = $db->query("SELECT id FROM hl_affiliate LIMIT 1")->fetchColumn();
-$affId = null;
 if ($affSrc) {
     $db->prepare("INSERT INTO hl_affiliate_payout (affiliate_id, jumlah, status, requested_at, paid_at)
       VALUES (?,30000,'paid','2026-03-04 08:00:00','2026-03-06 08:00:00')")->execute([(int)$affSrc]);
     $affId = (int)$db->lastInsertId();
 }
+
+// Coin consumed: seed 1 deduct utk tenant temp
+$db->prepare("INSERT INTO coin_ledger (tenant_id, outlet_id, type, amount, feature_used, description, balance_after, created_at)
+  VALUES (?,NULL,'deduct',150,'generate_nota','zzfin test',0,'2026-03-07 10:00:00')")->execute([$tid]);
 
 // ── Assert ──
 $rev = SaFinance::revenue($from, $to);
@@ -53,6 +68,9 @@ $ai = SaFinance::aiCost($from, $to);
 ok($ai >= 20000, "aiCost mencakup 20000");
 
 if ($affId) { ok(SaFinance::affiliatePayout($from, $to) >= 30000, "affiliatePayout mencakup 30000"); }
+
+$consumed = SaFinance::coinConsumed($from, $to);
+ok($consumed >= 150, "coinConsumed mencakup 150");
 
 $float = SaFinance::coinFloat();
 ok($float['coin_outstanding'] >= 10000, "coinFloat outstanding mencakup 10000");
@@ -72,10 +90,4 @@ $rows = SaFinance::revenueRows($from, $to);
 ok(count($rows) >= 2, "revenueRows >= 2 baris");
 ok(isset($rows[0]['tenant_nama'], $rows[0]['nominal'], $rows[0]['tipe']), "revenueRows punya kolom lengkap");
 
-// ── Cleanup ──
-$db->prepare("DELETE FROM saas_manual_payments WHERE tenant_id=?")->execute([$tid]);
-$db->prepare("DELETE FROM saas_payments WHERE tenant_id=?")->execute([$tid]);
-$db->prepare("DELETE FROM hl_ai_usage WHERE tenant_id=?")->execute([$tid]);
-if ($affId) $db->prepare("DELETE FROM hl_affiliate_payout WHERE id=?")->execute([$affId]);
-$db->prepare("DELETE FROM tenants WHERE id=?")->execute([$tid]);
 echo "ALL PASS\n";
