@@ -696,7 +696,7 @@ tfoot td{padding:9px 12px;font-weight:700;font-size:13px}
     .lm-dd-btn{width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px 14px;border:1.5px solid rgba(27,45,90,.14);border-radius:10px;background:#fff;color:var(--navy);font-size:15px;font-weight:600;font-family:var(--font);cursor:pointer}
     .lm-dd-caret{color:var(--gray);font-size:13px;transition:transform .2s}
     .lm-dd.open .lm-dd-caret{transform:rotate(180deg)}
-    .lm-dd-panel{display:none;position:absolute;top:calc(100% + 6px);left:0;right:0;z-index:70;background:#fff;border:1px solid rgba(27,45,90,.12);border-radius:12px;box-shadow:0 12px 32px rgba(15,28,58,.16);padding:6px}
+    .lm-dd-panel{display:none;position:fixed;z-index:9000;background:#fff;border:1px solid rgba(27,45,90,.12);border-radius:12px;box-shadow:0 12px 32px rgba(15,28,58,.16);padding:6px}
     .lm-dd.open .lm-dd-panel{display:block}
     .lm-dd-panel button{display:block;width:100%;text-align:left;padding:11px 14px;border:none;background:none;border-radius:8px;font-size:14.5px;font-weight:600;color:var(--navy);font-family:var(--font);cursor:pointer}
     .lm-dd-panel button:hover{background:var(--off)}
@@ -704,8 +704,7 @@ tfoot td{padding:9px 12px;font-weight:700;font-size:13px}
     /* Date picker kustom */
     .lm-date{position:relative;display:inline-block}
     .lm-date-btn{display:flex;align-items:center;justify-content:space-between;gap:10px;min-width:150px;padding:9px 12px;border:1.5px solid rgba(27,45,90,.14);border-radius:9px;background:#fff;color:var(--navy);font-size:14px;font-weight:600;font-family:var(--font);cursor:pointer}
-    .lm-cal{display:none;position:absolute;top:calc(100% + 6px);left:0;z-index:80;background:#fff;border:1px solid rgba(27,45,90,.12);border-radius:12px;box-shadow:0 12px 34px rgba(15,28,58,.18);padding:12px;width:264px}
-    .lm-cal.open{display:block}
+    .lm-cal{position:fixed;z-index:9001;background:#fff;border:1px solid rgba(27,45,90,.12);border-radius:12px;box-shadow:0 12px 34px rgba(15,28,58,.18);padding:12px;width:264px}
     .lm-cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
     .lm-cal-head button{border:none;background:var(--off);width:30px;height:30px;border-radius:8px;cursor:pointer;font-size:15px;color:var(--navy)}
     .lm-cal-title{font-weight:800;font-size:14px;color:var(--navy)}
@@ -800,7 +799,16 @@ tfoot td{padding:9px 12px;font-weight:700;font-size:13px}
 const CAN_EXPORT_LAPORAN = <?= hasPermission('laporan.export') ? 'true' : 'false' ?>;
 
 // ── Dropdown kustom Jenis Laporan ──
-function repDDToggle(e){ if(e) e.stopPropagation(); document.getElementById('repDD').classList.toggle('open'); }
+function repDDToggle(e){
+  if(e) e.stopPropagation();
+  const dd=document.getElementById('repDD'), p=document.getElementById('repDDPanel');
+  const willOpen=!dd.classList.contains('open');
+  dd.classList.toggle('open', willOpen);
+  if(willOpen){ // posisikan fixed di bawah tombol (hindari clip ancestor overflow:hidden)
+    const r=dd.querySelector('.lm-dd-btn').getBoundingClientRect();
+    p.style.top=(r.bottom+6)+'px'; p.style.left=r.left+'px'; p.style.width=r.width+'px';
+  }
+}
 function repPick(v, label){
   document.getElementById('repDDLabel').textContent = label;
   document.getElementById('repDD').classList.remove('open');
@@ -817,8 +825,11 @@ function lmDateOpen(id, btn){
   lmCalClose(); _lmCalFor=id;
   const cur=(document.getElementById(id).value)||localDateStr();
   const [y,m]=cur.split('-').map(Number);
-  const cal=document.createElement('div'); cal.className='lm-cal open';
-  btn.closest('.lm-date').appendChild(cal);
+  const cal=document.createElement('div'); cal.className='lm-cal';
+  document.body.appendChild(cal); // ke body → tak ke-clip .hl-filter-bar (overflow:hidden)
+  const r=btn.getBoundingClientRect();
+  cal.style.top=(r.bottom+6)+'px';
+  cal.style.left=Math.max(8, Math.min(r.left, window.innerWidth-272))+'px';
   lmCalRender(cal, id, y, m);
 }
 function lmCalRender(cal, id, y, m){
@@ -837,7 +848,7 @@ function lmCalNav(btn, id, y, m, delta){ m+=delta; if(m<1){m=12;y--;} if(m>12){m
 function lmCalPick(id, v){ lmDateSet(id, v); lmCalClose(); }
 document.addEventListener('click', function(e){
   if(!e.target.closest('#repDD')){ const d=document.getElementById('repDD'); if(d) d.classList.remove('open'); }
-  if(!e.target.closest('.lm-date')) lmCalClose();
+  if(!e.target.closest('.lm-date') && !e.target.closest('.lm-cal')) lmCalClose();
 });
 
 let chartOmsetInstance = null;
