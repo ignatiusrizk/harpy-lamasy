@@ -22,6 +22,9 @@ $db->prepare("INSERT INTO hl_pelanggan (".implode(',', $cols).") VALUES (".implo
 $pid = (int)$db->lastInsertId();
 
 $cleanup = function() use ($db, $pid) {
+    try {
+        if ($db->inTransaction()) $db->rollBack();
+    } catch (Throwable) {}
     $db->prepare("DELETE FROM hl_deposit_topup WHERE pelanggan_id=?")->execute([$pid]);
     $db->prepare("DELETE FROM hl_pelanggan WHERE id=?")->execute([$pid]);
 };
@@ -45,5 +48,21 @@ $db->commit();
 $saldo = $db->prepare("SELECT saldo_deposit FROM hl_pelanggan WHERE id=?");
 $saldo->execute([$pid]);
 eqv((float)$saldo->fetchColumn(), 15000.0, "saldo akhir 15000 (10000+5000)");
+
+// Test: topup gagal (jumlah <= 0) dalam transaksi luar → exception dilempar & outer rollback bersih
+$saldoSebelum = 15000.0;
+try {
+    $db->beginTransaction();
+    DepositManager::topup($tid, $oid, $pid, -5, 'refund_order', 'zztest neg', null, null, false);
+    eqv(true, false, "harus throw InvalidArgumentException");
+} catch (InvalidArgumentException $e) {
+    eqv(true, true, "jumlah<=0 dlm tx luar → exception");
+} catch (Throwable $e) {
+    eqv(true, false, "exception salah tipe: " . get_class($e) . " (" . $e->getMessage() . ")");
+}
+try { $db->rollBack(); } catch (Throwable) {}
+$saldo = $db->prepare("SELECT saldo_deposit FROM hl_pelanggan WHERE id=?");
+$saldo->execute([$pid]);
+eqv((float)$saldo->fetchColumn(), $saldoSebelum, "saldo tetap " . $saldoSebelum . " (rollback bersih)");
 
 echo "ALL PASS\n";

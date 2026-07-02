@@ -57,7 +57,7 @@ class DepositManager
 
     /**
      * Tambah saldo (topup). Auto-apply bonus tier kalau ada.
-     * Return [topup_id, ?error].
+     * @return array [int topup_id|0, ?string error]
      */
     public static function topup(
         int    $tenantId,
@@ -70,12 +70,15 @@ class DepositManager
         ?string $buktiBayar = null,
         bool   $applyBonus  = true
     ): array {
-        if ($jumlah <= 0) return [0, 'Jumlah topup harus > 0'];
         $db = Database::get();
         // Transaction-aware: bila pemanggil sudah dalam transaksi (mis. orders.php
         // action=update), numpang — jangan begin/commit sendiri; error dilempar
         // sebagai exception supaya transaksi luar rollback utuh.
         $ownTx = !$db->inTransaction();
+        if ($jumlah <= 0) {
+            if (!$ownTx) throw new InvalidArgumentException('Jumlah topup harus > 0');
+            return [0, 'Jumlah topup harus > 0'];
+        }
         try {
             if ($ownTx) $db->beginTransaction();
             // Lock pelanggan row
