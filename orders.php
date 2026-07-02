@@ -1244,7 +1244,7 @@ textarea{resize:vertical;min-height:64px}
       <button class="btn btn-primary btn-sm" id="btnSaveEdit" onclick="saveEdit()">💾 Simpan Perubahan</button>
       <?php endif; ?>
       <button class="btn btn-sm" style="background:#25D366;color:#fff;border:none" onclick="shareToWA()" title="Kirim link tracking ke customer via WhatsApp">💬 Kirim Status WA</button>
-      <button class="btn btn-sm btn-outline" onclick="printLabel()" title="Cetak label stiker (ukuran diatur di Outlet Settings)">🏷 Label</button>
+      <button class="btn btn-sm btn-outline" onclick="printLabel()" title="Cetak label stiker (ukuran diatur di Outlet Settings)">🏷 Print Label</button>
       <?php if (hasPermission('orders.edit') || hasPermission('orders.delete')): ?>
       <button class="btn btn-sm" style="background:#FEE2E2;color:#991B1B;border:1px solid #FCA5A5" onclick="requestDelete()" title="Submit permintaan hapus untuk persetujuan owner">🗑️ Minta Hapus</button>
       <?php endif; ?>
