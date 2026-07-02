@@ -2,6 +2,10 @@
 // ── Mode routing (HQ vs Outlet) — single URL /dashboard.php ──
 if (session_status() === PHP_SESSION_NONE) session_start();
 
+// Cegah WebView APK sajikan versi lama halaman (perubahan UI tak ke-load)
+header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+header('Pragma: no-cache');
+
 // Switch mode via ?to=hq atau ?to=outlet
 if (isset($_GET['to'])) {
     $_SESSION['hq_mode'] = ($_GET['to'] === 'hq');

@@ -100,6 +100,11 @@ class BannerLoader
 .bn-dot{width:9px;height:9px;border-radius:50%;border:none;background:rgba(255,255,255,.45);cursor:pointer;padding:0;transition:all .2s ease}
 .bn-dot.active{background:rgba(255,255,255,.98);width:28px;border-radius:5px}
 @keyframes bnFade{from{opacity:0;transform:translateY(6px) scale(.99)}to{opacity:1;transform:translateY(0) scale(1)}}
+/* Arah animasi saat digeser manual */
+.bn-slide.active.bn-from-r{animation:bnInR .28s ease}
+.bn-slide.active.bn-from-l{animation:bnInL .28s ease}
+@keyframes bnInR{from{opacity:.35;transform:translateX(46px)}to{opacity:1;transform:none}}
+@keyframes bnInL{from{opacity:.35;transform:translateX(-46px)}to{opacity:1;transform:none}}
 @media (max-width:640px){.bn-slide{padding:22px 22px 30px;min-height:140px}.bn-title{font-size:17px}.bn-desc{font-size:13px}.bn-icon{font-size:38px}.bn-cta{font-size:12.5px;padding:8px 16px}.bn-content{gap:14px}}
 </style>
 <script>
@@ -107,14 +112,34 @@ class BannerLoader
   const total = $count;
   if (total < 2) return;
   let cur = 0, timer;
-  window.bnGoto = function(i){
-    document.querySelectorAll('.bn-slide').forEach((el,idx)=>el.classList.toggle('active',idx===i));
+  const restart = () => { clearInterval(timer); timer = setInterval(()=>bnGoto((cur+1)%total), 6000); };
+  window.bnGoto = function(i, dir){
+    document.querySelectorAll('.bn-slide').forEach((el,idx)=>{
+      el.classList.remove('bn-from-r','bn-from-l');
+      el.classList.toggle('active', idx===i);
+    });
+    if (dir) document.querySelectorAll('.bn-slide')[i].classList.add(dir>0?'bn-from-r':'bn-from-l');
     document.querySelectorAll('.bn-dot').forEach((el,idx)=>el.classList.toggle('active',idx===i));
     cur = i;
-    clearInterval(timer);
-    timer = setInterval(()=>bnGoto((cur+1)%total), 6000);
+    restart();
   };
-  timer = setInterval(()=>bnGoto((cur+1)%total), 6000);
+  // Geser manual (swipe) — pause auto saat disentuh, lanjut lagi setelahnya
+  const box = document.getElementById('bannerCarousel');
+  let sx=0, sy=0;
+  box.addEventListener('touchstart', e=>{
+    sx = e.touches[0].clientX; sy = e.touches[0].clientY;
+    clearInterval(timer);
+  }, {passive:true});
+  box.addEventListener('touchend', e=>{
+    const dx = e.changedTouches[0].clientX - sx;
+    const dy = e.changedTouches[0].clientY - sy;
+    if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)*1.5) {
+      dx < 0 ? bnGoto((cur+1)%total, 1) : bnGoto((cur-1+total)%total, -1);
+    } else {
+      restart(); // bukan swipe → lanjutkan auto
+    }
+  }, {passive:true});
+  restart();
 })();
 </script>
 HTML;
