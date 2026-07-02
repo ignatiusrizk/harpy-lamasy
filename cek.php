@@ -18,39 +18,6 @@ header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
 
 $noOrder = trim($_GET['n'] ?? '');
 $phoneLast4 = trim($_POST['phone'] ?? '');
-
-// ── DIAG SEMENTARA (hapus setelah debug) ──
-if (($_GET['__diag'] ?? '') === 'hl9x2') {
-    header('Content-Type: application/json');
-    $out = ['noOrder'=>$noOrder, 'phone'=>$phoneLast4, 'db'=>defined('DB_NAME')?DB_NAME:'?'];
-    try {
-        $st = Database::get()->prepare("SELECT id, tenant_id, outlet_id, telepon FROM hl_transaksi WHERE no_order=? LIMIT 1");
-        $st->execute([$noOrder]);
-        $r = $st->fetch(PDO::FETCH_ASSOC);
-        $out['found'] = $r ? true : false;
-        $out['row']   = $r ? ['id'=>$r['id'],'tid'=>$r['tenant_id'],'oid'=>$r['outlet_id'],'last4'=>substr(preg_replace('/[^0-9]/','',(string)$r['telepon']),-4)] : null;
-        $cnt = Database::get()->query("SELECT COUNT(*) FROM hl_transaksi")->fetchColumn();
-        $out['total_trx'] = (int)$cnt;
-        // Jalankan query PERSIS spt lookupOrder utk lihat apakah dia yg gagal
-        try {
-            $st2 = Database::get()->prepare(
-                "SELECT t.*,
-                        (SELECT GROUP_CONCAT(CONCAT(nama_layanan,' (',jumlah,' ',satuan,')') SEPARATOR ', ')
-                           FROM hl_transaksi_item WHERE transaksi_id=t.id) AS items_summary,
-                        o.nama_outlet, o.alamat AS outlet_alamat, o.telepon AS outlet_telp,
-                        (SELECT logo_url FROM tenants WHERE id=t.tenant_id) AS tenant_logo,
-                        (SELECT nama_perusahaan FROM tenants WHERE id=t.tenant_id) AS tenant_nama
-                   FROM hl_transaksi t LEFT JOIN outlets o ON o.id = t.outlet_id
-                  WHERE t.no_order = ? LIMIT 1");
-            $st2->execute([$noOrder]);
-            $full = $st2->fetch(PDO::FETCH_ASSOC);
-            $out['full_ok'] = $full ? true : false;
-            $out['full_last4'] = $full ? substr(preg_replace('/[^0-9]/','',(string)$full['telepon']),-4) : null;
-        } catch (Throwable $e2) { $out['full_error'] = $e2->getMessage(); }
-        $out['lookup_returns'] = lookupOrder($noOrder, $phoneLast4) ? 'ORDER' : 'NULL';
-    } catch (Throwable $e) { $out['error'] = $e->getMessage(); }
-    echo json_encode($out); exit;
-}
 $ajaxAction = $_GET['action'] ?? '';
 
 // ── AJAX: poll status (refresh tanpa reload) ──
@@ -74,7 +41,7 @@ function lookupOrder(string $noOrder, string $phoneLast4): ?array
                     (SELECT GROUP_CONCAT(CONCAT(nama_layanan,' (',jumlah,' ',satuan,')') SEPARATOR ', ')
                        FROM hl_transaksi_item WHERE transaksi_id=t.id) AS items_summary,
                     o.nama_outlet, o.alamat AS outlet_alamat, o.telepon AS outlet_telp,
-                    (SELECT logo_url FROM tenants WHERE id=t.tenant_id) AS tenant_logo,
+                    (SELECT logo_path FROM tenants WHERE id=t.tenant_id) AS tenant_logo,
                     (SELECT nama_perusahaan FROM tenants WHERE id=t.tenant_id) AS tenant_nama
                FROM hl_transaksi t
           LEFT JOIN outlets o ON o.id = t.outlet_id
