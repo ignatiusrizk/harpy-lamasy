@@ -274,7 +274,6 @@ if ($action) {
 
 <!-- Overlay detail order (iframe reuse orders.php) -->
 <div id="kbDetailOverlay" style="display:none;position:fixed;inset:0;z-index:2000;background:rgba(15,28,58,.35)">
-  <button onclick="closeKbDetail()" title="Tutup" style="position:absolute;top:calc(env(safe-area-inset-top,0px) + 10px);right:14px;z-index:2;width:38px;height:38px;border-radius:50%;border:none;background:rgba(15,28,58,.85);color:#fff;font-size:20px;cursor:pointer">✕</button>
   <iframe id="kbDetailFrame" title="Detail Order" style="position:absolute;inset:0;width:100%;height:100%;border:0;background:transparent"></iframe>
 </div>
 
