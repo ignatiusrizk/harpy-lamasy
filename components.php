@@ -125,6 +125,39 @@ function renderHead(string $title = 'LAMASY'): void {
     <link rel="stylesheet" href="/harpy-erp.css?v=<?= @filemtime(__DIR__.'/harpy-erp.css') ?: date('Ymd') ?>">
     <!-- Inline (bypass cache CSS file): matikan pull-to-refresh browser/WebView -->
     <style>html,body{overscroll-behavior-y:contain!important}.ol-side-nav{overscroll-behavior:contain!important}</style>
+    <script>
+    /* Anti pull-to-refresh (WebView abaikan overscroll-behavior). Cegah overscroll
+       di batas scroll (atas/bawah) supaya gesture tak "bocor" jadi refresh.
+       Dikecualikan: canvas/scanner/input agar tanda tangan & scan tak terganggu. */
+    (function(){
+      var lastY=0;
+      function scroller(n){
+        while(n && n.nodeType===1 && n!==document.body && n!==document.documentElement){
+          var oy;
+          try{ oy=getComputedStyle(n).overflowY; }catch(e){ oy=''; }
+          if((oy==='auto'||oy==='scroll') && n.scrollHeight>n.clientHeight+1) return n;
+          n=n.parentNode;
+        }
+        return null;
+      }
+      document.addEventListener('touchstart',function(e){
+        if(e.touches.length===1) lastY=e.touches[0].clientY;
+      },{passive:true});
+      document.addEventListener('touchmove',function(e){
+        if(e.touches.length!==1 || !e.cancelable) return;
+        if(e.target.closest && e.target.closest('canvas,[contenteditable],#reader,.html5-qrcode-element,input[type=range]')) return;
+        var y=e.touches[0].clientY, dy=y-lastY; lastY=y;
+        var sc=scroller(e.target);
+        if(sc){
+          var atTop=sc.scrollTop<=0, atBot=sc.scrollTop+sc.clientHeight>=sc.scrollHeight-1;
+          if((atTop&&dy>0)||(atBot&&dy<0)) e.preventDefault();   // overscroll di batas → blok
+        }else{
+          var st=window.scrollY||document.documentElement.scrollTop||0;
+          if(st<=0 && dy>0) e.preventDefault();                  // dokumen mentok atas + tarik bawah
+        }
+      },{passive:false});
+    })();
+    </script>
     <?php renderGlobalJsHelpers(); ?>
     <?php
 }
