@@ -1275,8 +1275,8 @@ function markWaSent(){
 }
 
 // ── Cancel payment ────────────────────────────────────
-function cancelPayment(id){
-  if (!confirm(`Batalkan pembayaran #${id}?\n\nCoin yang sudah dikreditkan akan di-rollback dari saldo tenant.`)) return;
+async function cancelPayment(id){
+  if (!await lmConfirm(`Batalkan pembayaran #${id}?\n\nCoin yang sudah dikreditkan akan di-rollback dari saldo tenant.`)) return;
   saFetch('payments.php?action=cancel', {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ id }),

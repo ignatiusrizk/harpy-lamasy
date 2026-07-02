@@ -521,8 +521,8 @@ function togglePin(id) {
 }
 
 // ── Delete ────────────────────────────────────────────
-function deleteAnn(id, title) {
-  if(!confirm(`Hapus announcement "${title}"?`))return;
+async function deleteAnn(id, title) {
+  if(!await lmConfirm(`Hapus announcement "${title}"?`))return;
   const body=new FormData();body.append('action','delete');body.append('_csrf',CSRF);body.append('id',id);
   fetch('announcements.php',{method:'POST',body,headers:{'X-Requested-With':'XMLHttpRequest'}})
     .then(r=>r.json()).then(d=>{if(d.success){showToast('Dihapus.'); loadList();}});

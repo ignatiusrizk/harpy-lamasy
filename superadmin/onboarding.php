@@ -248,8 +248,8 @@ function renderTable(rows) {
   }).join('');
 }
 
-function sendReminder(id, nama) {
-  if (!confirm(`Kirim WA reminder ke ${nama}?`)) return;
+async function sendReminder(id, nama) {
+  if (!await lmConfirm(`Kirim WA reminder ke ${nama}?`)) return;
   saPost('onboarding.php?action=send_reminder', { tenant_id: id })
     .then(r => r.json()).then(d => {
       if (d.error) { saShowToast(d.error, 'error'); return; }

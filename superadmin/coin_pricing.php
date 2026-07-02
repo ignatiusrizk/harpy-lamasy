@@ -642,7 +642,7 @@ async function saveFitur() {
 }
 
 async function quickToggle(id, newVal) {
-  if (!confirm('Yakin ' + (newVal ? 'aktifkan' : 'NONAKTIFKAN') + ' fitur ini?\n\nKalau dinonaktifkan, fitur tidak akan bisa dipakai semua tenant.')) return;
+  if (!await lmConfirm('Yakin ' + (newVal ? 'aktifkan' : 'NONAKTIFKAN') + ' fitur ini?\n\nKalau dinonaktifkan, fitur tidak akan bisa dipakai semua tenant.')) return;
   const r = await fetch('/superadmin/coin_pricing.php?action=toggle', {
     method:'POST',
     headers:{'Content-Type':'application/json','X-CSRF-Token':CSRF},

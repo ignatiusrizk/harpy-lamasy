@@ -462,8 +462,8 @@ function doMarkShipped() {
 }
 
 // ── Mark delivered ────────────────────────────────────
-function doMarkDelivered(id) {
-  if (!confirm('Tandai kit ini sebagai TERKIRIM?')) return;
+async function doMarkDelivered(id) {
+  if (!await lmConfirm('Tandai kit ini sebagai TERKIRIM?')) return;
   saFetch('welcome_kit.php?action=mark_delivered', {
     method:  'POST',
     headers: { 'Content-Type': 'application/json' },

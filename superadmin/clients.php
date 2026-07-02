@@ -775,13 +775,13 @@ function openDeduct(id, nama, balance) {
   document.getElementById('deductNote').value = '';
   document.getElementById('deductModal').classList.add('open');
 }
-function submitDeduct() {
+async function submitDeduct() {
   const id     = document.getElementById('deductTenantId').value;
   const amount = document.getElementById('deductAmount').value;
   const note   = document.getElementById('deductNote').value.trim();
   if (!amount || amount < 1) { saShowToast('Jumlah coin harus > 0', 'error'); return; }
   if (!note) { saShowToast('Alasan deduct wajib diisi', 'error'); return; }
-  if (!confirm(`Yakin kurangi ${parseInt(amount).toLocaleString('id-ID')} coin?\n\nAksi ini ter-audit dengan alasan: "${note}"`)) return;
+  if (!await lmConfirm(`Yakin kurangi ${parseInt(amount).toLocaleString('id-ID')} coin?\n\nAksi ini ter-audit dengan alasan: "${note}"`)) return;
   saPost('clients.php?action=coin_deduct', { tenant_id: id, amount, note })
     .then(r => r.json()).then(d => {
       if (d.error) { saShowToast(d.error, 'error'); return; }
@@ -818,8 +818,8 @@ function submitExtendTrial() {
     });
 }
 
-function toggleStatus(id, newStatus, nama) {
-  if (!confirm(`Yakin ${newStatus === 'suspended' ? 'suspend' : 'aktifkan'} ${nama}?`)) return;
+async function toggleStatus(id, newStatus, nama) {
+  if (!await lmConfirm(`Yakin ${newStatus === 'suspended' ? 'suspend' : 'aktifkan'} ${nama}?`)) return;
   saPost('clients.php?action=toggle_status', { tenant_id: id, new_status: newStatus })
     .then(r => r.json()).then(d => {
       if (d.error) { saShowToast(d.error, 'error'); return; }

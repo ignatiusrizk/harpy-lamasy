@@ -267,8 +267,8 @@ function previewBroadcast() {
     });
 }
 
-function sendBroadcast() {
-  if (!confirm('Kirim broadcast ke semua tenant yang dipilih?')) return;
+async function sendBroadcast() {
+  if (!await lmConfirm('Kirim broadcast ke semua tenant yang dipilih?')) return;
 
   const btn = document.getElementById('btnSend');
   btn.textContent = '⏳ Mengirim...';

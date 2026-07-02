@@ -537,7 +537,7 @@ async function submitCreate() {
       showToast('Registrasi disimpan!', 'success');
       loadList(); loadCounts();
       // Optionally redirect to wizard
-      if (confirm('Lanjut ke wizard provisioning sekarang?')) {
+      if (await lmConfirm('Lanjut ke wizard provisioning sekarang?')) {
         window.location.href = `registration_wizard.php?id=${j.id}`;
       }
     } else {
@@ -549,7 +549,7 @@ async function submitCreate() {
 }
 
 async function cancelReg(id) {
-  if (!confirm('Yakin batalkan registrasi ini?')) return;
+  if (!await lmConfirm('Yakin batalkan registrasi ini?')) return;
   const fd = new FormData();
   fd.append('id', id); fd.append('_csrf', CSRF);
   const res = await fetch('?action=cancel', { method: 'POST', body: fd });
@@ -628,5 +628,6 @@ function saCloseNav() { document.getElementById('saSidebar').classList.remove('o
 loadList();
 loadCounts();
 </script>
+<?php require dirname(__DIR__) . '/ui_dialog.php'; ?>
 </body>
 </html>

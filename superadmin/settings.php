@@ -1404,7 +1404,7 @@ async function toggleTipActive(id) {
 }
 
 async function deleteTip(id, judul) {
-    if (!confirm(`Hapus tip "${judul}"?\nSeen history user untuk tip ini juga akan dihapus.`)) return;
+    if (!await lmConfirm(`Hapus tip "${judul}"?\nSeen history user untuk tip ini juga akan dihapus.`)) return;
     const r = await fetch('/superadmin/settings.php?action=tips_delete', {
         method:'POST', credentials:'same-origin',
         headers:{ 'Content-Type':'application/json', 'X-CSRF-Token': CSRF },
@@ -1417,7 +1417,7 @@ async function deleteTip(id, judul) {
 }
 
 async function resetTipsSeen() {
-    if (!confirm('Reset seen history untuk SEMUA user × SEMUA tip?\nSemua user akan lihat tip lagi besok.')) return;
+    if (!await lmConfirm('Reset seen history untuk SEMUA user × SEMUA tip?\nSemua user akan lihat tip lagi besok.')) return;
     const r = await fetch('/superadmin/settings.php?action=tips_reset_seen', {
         method:'POST', credentials:'same-origin',
         headers:{ 'Content-Type':'application/json', 'X-CSRF-Token': CSRF },
@@ -1465,8 +1465,8 @@ async function toggleMaintenance(enable) {
     const message = document.getElementById('maintMessage').value.trim();
     const until   = document.getElementById('maintUntil').value || '';
     if (enable && !message) { alert('Isi pesan maintenance terlebih dahulu.'); return; }
-    if (enable && !confirm(`Aktifkan maintenance mode?\nSemua tenant akan di-redirect ke halaman maintenance.`)) return;
-    if (!enable && !confirm('Nonaktifkan maintenance mode? Tenant akan bisa akses kembali.')) return;
+    if (enable && !await lmConfirm(`Aktifkan maintenance mode?\nSemua tenant akan di-redirect ke halaman maintenance.`)) return;
+    if (!enable && !await lmConfirm('Nonaktifkan maintenance mode? Tenant akan bisa akses kembali.')) return;
 
     const d = await api('maintenance_toggle', {enable: enable ? 1 : 0, message, until});
     if (d.ok) {
@@ -1489,7 +1489,7 @@ async function loadDemoStats() {
 }
 
 async function resetDemo() {
-    if (!confirm('Reset data demo sekarang?\nSemua transaksi, kas, absensi demo akan dihapus.')) return;
+    if (!await lmConfirm('Reset data demo sekarang?\nSemua transaksi, kas, absensi demo akan dihapus.')) return;
     const d = await api('demo_reset');
     if (d.ok) {
         showToast('Data demo berhasil di-reset.');
@@ -1505,7 +1505,7 @@ async function releaseTos() {
     const date    = document.getElementById('tosEffectiveDate').value;
     const summary = document.getElementById('tosSummary').value.trim();
     if (!version) { alert('Isi nomor versi.'); return; }
-    if (!confirm(`Rilis ToS versi ${version}?\n\nSemua tenant akan diminta accept ulang saat login berikutnya.`)) return;
+    if (!await lmConfirm(`Rilis ToS versi ${version}?\n\nSemua tenant akan diminta accept ulang saat login berikutnya.`)) return;
 
     const d = await api('tos_release', {version, effective_date: date, summary});
     if (d.ok) {
@@ -1576,7 +1576,7 @@ async function saveNotify(id) {
 }
 
 async function testNotify() {
-  if (!confirm('Kirim test email ke semua recipient aktif?')) return;
+  if (!await lmConfirm('Kirim test email ke semua recipient aktif?')) return;
   const r = await saFetch('?action=notify_test', { method: 'POST' });
   if (r.ok) saToast(r.message || 'Test email dikirim ✓', 'ok');
   else saToast(r.error || 'Gagal kirim', 'err');
@@ -1656,7 +1656,7 @@ async function loadTeam() {
 
 async function toggle2FA(id, newState, name) {
   const action = newState ? 'aktifkan' : 'nonaktifkan';
-  if (!confirm(`Yakin ${action} 2FA email untuk "${name}"?\n\n${newState ? 'Setelah aktif, login akan minta kode 6-digit yang dikirim via email.' : 'Login akan kembali tanpa kode 2FA — kurang aman.'}`)) return;
+  if (!await lmConfirm(`Yakin ${action} 2FA email untuk "${name}"?\n\n${newState ? 'Setelah aktif, login akan minta kode 6-digit yang dikirim via email.' : 'Login akan kembali tanpa kode 2FA — kurang aman.'}`)) return;
   const fd = new FormData();
   fd.append('id', id);
   fd.append('enabled', newState);
@@ -1753,7 +1753,7 @@ async function submitTeamPw() {
 }
 
 async function deleteTeamAdmin(id, name) {
-  if (!confirm(`Nonaktifkan akun "${name}"?\nAkun akan di-set is_active=0 (soft delete).`)) return;
+  if (!await lmConfirm(`Nonaktifkan akun "${name}"?\nAkun akan di-set is_active=0 (soft delete).`)) return;
   const fd = new FormData();
   fd.append('_csrf', CSRF);
   fd.append('id', id);
@@ -1896,7 +1896,7 @@ async function saveRoleEdit() {
 }
 
 async function deleteRole(id, name) {
-  if (!confirm(`Hapus role "${name}"?\n\nRole ini akan dihapus permanen. Pastikan tidak ada SA yang masih pakai role ini.`)) return;
+  if (!await lmConfirm(`Hapus role "${name}"?\n\nRole ini akan dihapus permanen. Pastikan tidak ada SA yang masih pakai role ini.`)) return;
   const fd = new FormData();
   fd.append('id', id);
   const r = await saFetch('?action=role_delete', { method: 'POST', body: fd });
@@ -2048,7 +2048,7 @@ async function testSendEmail() {
 
 async function resetEmail() {
   const slug = document.getElementById('em_slug').value;
-  if (!confirm(`Reset template "${slug}" ke versi default?\n\nPerubahan custom yang sudah disimpan akan di-overwrite.`)) return;
+  if (!await lmConfirm(`Reset template "${slug}" ke versi default?\n\nPerubahan custom yang sudah disimpan akan di-overwrite.`)) return;
   const fd = new FormData();
   fd.append('slug', slug);
   const r = await saFetch('?action=email_reset', { method: 'POST', body: fd });
@@ -2062,7 +2062,7 @@ async function resetEmail() {
 }
 
 async function seedEmails() {
-  if (!confirm('Tambah template default yang belum ada?\n\nTemplate yang sudah ada tidak di-overwrite — cuma yang missing akan di-seed.\nUntuk reset template tertentu ke default, buka Edit → "↻ Reset ke Default".')) return;
+  if (!await lmConfirm('Tambah template default yang belum ada?\n\nTemplate yang sudah ada tidak di-overwrite — cuma yang missing akan di-seed.\nUntuk reset template tertentu ke default, buka Edit → "↻ Reset ke Default".')) return;
   const r = await saFetch('?action=email_seed_all', { method: 'POST' });
   if (r.ok) {
     saToast(r.added > 0 ? `Tambah ${r.added} template default ✓` : 'Semua template sudah ada — tidak ada yang ditambah.', 'ok');

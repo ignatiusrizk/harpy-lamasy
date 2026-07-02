@@ -556,8 +556,8 @@ function toggleBundle(id, field, value) {
   });
 }
 
-function deleteBundle(id, nama) {
-  if (!confirm(`Hapus bundle "${nama}"?\n\nBundle yang sudah dipakai dalam transaksi tidak bisa dihapus.`)) return;
+async function deleteBundle(id, nama) {
+  if (!await lmConfirm(`Hapus bundle "${nama}"?\n\nBundle yang sudah dipakai dalam transaksi tidak bisa dihapus.`)) return;
   saFetch('packages.php?action=delete_bundle', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

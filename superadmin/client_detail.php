@@ -1212,7 +1212,7 @@ $billingStat = $bsSt->fetch(PDO::FETCH_ASSOC);
     <div style="background:rgba(245,158,11,.10);border:1px solid rgba(245,158,11,.30);border-radius:10px;padding:12px 16px;margin-bottom:20px;font-size:12.5px;color:#F59E0B;">
       ⚠️ Jangan gunakan fitur ini untuk mengakses data sensitif tenant tanpa keperluan yang jelas.
     </div>
-    <form method="POST" action="/superadmin/impersonate.php" onsubmit="return validateImpersonateForm()">
+    <form method="POST" action="/superadmin/impersonate.php" onsubmit="return validateImpersonateForm(this)">
       <input type="hidden" name="_csrf" value="<?= saGetCsrf() ?>">
       <input type="hidden" name="tenant_id" value="<?= $tenantId ?>">
       <div style="margin-bottom:16px;">
@@ -1337,13 +1337,13 @@ function previewAdj() {
   el.innerHTML = `${sign}${val.toLocaleString('id-ID')} coin → saldo baru: <strong style="color:#F59E0B;">${newBal.toLocaleString('id-ID')} coin</strong>`;
 }
 
-function submitAdjustment() {
+async function submitAdjustment() {
   const coin   = document.getElementById('adjCoin').value;
   const reason = document.getElementById('adjReason').value;
   const note   = document.getElementById('adjNote').value;
 
   if (!coin || parseInt(coin) === 0) { saShowToast('Jumlah coin tidak boleh 0.', 'error'); return; }
-  if (!confirm(`${parseInt(coin) > 0 ? 'Tambah' : 'Kurangi'} ${Math.abs(parseInt(coin)).toLocaleString('id-ID')} coin dari tenant ini?`)) return;
+  if (!await lmConfirm(`${parseInt(coin) > 0 ? 'Tambah' : 'Kurangi'} ${Math.abs(parseInt(coin)).toLocaleString('id-ID')} coin dari tenant ini?`)) return;
 
   saPost(`client_detail.php?action=adjustment`, {
     tenant_id: TENANT_ID, coin, reason, note
@@ -1393,8 +1393,8 @@ function pinNote(id) {
     .then(r=>r.json()).then(() => loadNotes());
 }
 
-function deleteNote(id) {
-  if (!confirm('Hapus catatan ini?')) return;
+async function deleteNote(id) {
+  if (!await lmConfirm('Hapus catatan ini?')) return;
   saPost(`client_detail.php?action=delete_note`, { note_id: id })
     .then(r=>r.json()).then(() => { saShowToast('Catatan dihapus.'); loadNotes(); });
 }
@@ -1486,9 +1486,9 @@ function loadTickets() {
 }
 
 // Actions
-function doAction(act) {
+async function doAction(act) {
   const labels = { suspend: 'suspend', activate: 'aktifkan' };
-  if (!confirm(`Yakin ${labels[act]} tenant ini?`)) return;
+  if (!await lmConfirm(`Yakin ${labels[act]} tenant ini?`)) return;
   saPost(`client_detail.php?action=${act}`, { tenant_id: TENANT_ID })
     .then(r=>r.json()).then(d => {
       if (d.error) { saShowToast(d.error, 'error'); return; }
@@ -1512,8 +1512,8 @@ function doTopup() {
     });
 }
 
-function setCoinMode(mode) {
-  if (!confirm('Ubah coin mode ke "' + mode + '"?\n\n⚠️ Saldo tidak dipindahkan otomatis. Pastikan saldo outlet sudah benar.')) return;
+async function setCoinMode(mode) {
+  if (!await lmConfirm('Ubah coin mode ke "' + mode + '"?\n\n⚠️ Saldo tidak dipindahkan otomatis. Pastikan saldo outlet sudah benar.')) return;
   saPost(`client_detail.php?action=set_coin_mode`, { tenant_id: TENANT_ID, mode })
     .then(r=>r.json()).then(d => {
       if (d.error) { saShowToast(d.error, 'error'); return; }
@@ -1533,11 +1533,11 @@ function doExtendTrial() {
     });
 }
 
-function doResetPassword() {
+async function doResetPassword() {
   const userId = document.getElementById('resetUserId').value;
   const pw     = document.getElementById('newPassword').value;
   if (!pw || pw.length < 6) { saShowToast('Password minimal 6 karakter.', 'error'); return; }
-  if (!confirm('Reset password user ini?')) return;
+  if (!await lmConfirm('Reset password user ini?')) return;
   saPost(`client_detail.php?action=reset_password`, { tenant_id: TENANT_ID, user_id: userId, new_password: pw })
     .then(r=>r.json()).then(d => {
       if (d.error) { saShowToast(d.error, 'error'); return; }
@@ -1591,19 +1591,21 @@ function openImpersonateModal() {
     setTimeout(() => { if (ta) ta.focus(); }, 100);
 }
 
-function validateImpersonateForm() {
+function validateImpersonateForm(form) {
     const reason = (document.getElementById('impersonateReason')?.value || '').trim();
     if (!reason) {
-        alert('Alasan observasi wajib diisi.');
+        lmAlert('Alasan observasi wajib diisi.');
         document.getElementById('impersonateReason')?.focus();
         return false;
     }
     if (reason.length < 10) {
-        alert('Alasan terlalu singkat (minimal 10 karakter).');
+        lmAlert('Alasan terlalu singkat (minimal 10 karakter).');
         document.getElementById('impersonateReason')?.focus();
         return false;
     }
-    return confirm('Yakin mulai observasi tenant ini?\n\nSemua aksi tulis akan diblokir selama mode observasi.');
+    lmConfirm('Yakin mulai observasi tenant ini?\n\nSemua aksi tulis akan diblokir selama mode observasi.', {danger:true, icon:'👁️', okText:'Mulai Observasi'})
+        .then(function(ok){ if (ok) HTMLFormElement.prototype.submit.call(form); });
+    return false;
 }
 
 // ── Tenant error log ──────────────────────────────

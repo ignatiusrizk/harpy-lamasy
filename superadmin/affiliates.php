@@ -509,9 +509,9 @@ function loadAffiliate(page){
   });
 }
 
-function doToggleAffiliate(id, newStatus){
+async function doToggleAffiliate(id, newStatus){
   const label = newStatus === 'active' ? 'aktifkan' : 'suspend';
-  if(!confirm(`Yakin ${label} affiliate #${id}?`)) return;
+  if(!await lmConfirm(`Yakin ${label} affiliate #${id}?`)) return;
   saPost(`affiliates.php?action=toggle_affiliate`, { id, new_status: newStatus })
     .then(r=>r.json()).then(d=>{
       if(d.error){ saShowToast(d.error,'error'); return; }
@@ -591,8 +591,8 @@ function loadPayout(page){
   });
 }
 
-function doMarkPaid(id){
-  const catatan = prompt(`Catatan pembayaran payout #${id} (opsional):`);
+async function doMarkPaid(id){
+  const catatan = await lmPrompt(`Catatan pembayaran payout #${id} (opsional):`);
   if(catatan === null) return; // user cancel
   saPost(`affiliates.php?action=mark_paid`, { id, catatan: catatan ?? '' })
     .then(r=>r.json()).then(d=>{
@@ -602,8 +602,8 @@ function doMarkPaid(id){
     });
 }
 
-function doRejectPayout(id){
-  const catatan = prompt(`Alasan penolakan payout #${id}:`);
+async function doRejectPayout(id){
+  const catatan = await lmPrompt(`Alasan penolakan payout #${id}:`);
   if(catatan === null) return; // user cancel
   if(!catatan.trim()){ saShowToast('Catatan penolakan wajib diisi.','error'); return; }
   saPost(`affiliates.php?action=reject_payout`, { id, catatan })
@@ -615,10 +615,10 @@ function doRejectPayout(id){
 }
 
 // ── SET COMMISSION ────────────────────────────────────
-function doSetCommission(){
+async function doSetCommission(){
   const val = parseInt(document.getElementById('commissionInput').value);
   if(isNaN(val) || val < 0){ saShowToast('Nilai komisi tidak valid.','error'); return; }
-  if(!confirm(`Set komisi affiliate ke Rp ${val.toLocaleString('id-ID')} per konversi?`)) return;
+  if(!await lmConfirm(`Set komisi affiliate ke Rp ${val.toLocaleString('id-ID')} per konversi?`)) return;
   saPost(`affiliates.php?action=set_commission`, { commission: val })
     .then(r=>r.json()).then(d=>{
       if(d.error){ saShowToast(d.error,'error'); return; }

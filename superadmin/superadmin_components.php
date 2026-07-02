@@ -767,7 +767,7 @@ function saRenderNav(string $activePage = '', string $pageTitle = ''): void {
           <?= htmlspecialchars($admin['username'] ?? '') ?>
         </div>
         <a href="/superadmin/logout.php" class="sa-logout-btn"
-           onclick="return confirm('Yakin logout?')">🚪 Logout</a>
+           onclick="return lmAsk(event,'Yakin logout?')">🚪 Logout</a>
       </div>
     </aside>
 
@@ -780,7 +780,7 @@ function saRenderNav(string $activePage = '', string $pageTitle = ''): void {
         <div class="sa-topbar-right">
           <span><?= htmlspecialchars($admin['name'] ?? '') ?></span>
           <a href="/superadmin/logout.php" style="color:#FCA5A5;font-size:12px;text-decoration:none;"
-             onclick="return confirm('Yakin logout?')">Logout</a>
+             onclick="return lmAsk(event,'Yakin logout?')">Logout</a>
         </div>
       </div>
       <div class="sa-content">
@@ -834,5 +834,6 @@ function saRenderNavClose(): void { ?>
       });
     }
     </script>
+    <?php require dirname(__DIR__) . '/ui_dialog.php'; ?>
     <?php
 }

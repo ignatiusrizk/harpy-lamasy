@@ -475,7 +475,7 @@ async function saveBanner() {
 }
 
 async function delBanner(id) {
-  if (!confirm('Hapus banner ini?')) return;
+  if (!await lmConfirm('Hapus banner ini?')) return;
   const r = await fetch('?action=delete', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({id}) });
   const d = await r.json();
   if (d.error) { alert(d.error); return; }
