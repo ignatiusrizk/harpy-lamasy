@@ -712,7 +712,7 @@ tfoot td{padding:9px 12px;font-weight:700;font-size:13px}
     .lm-cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
     .lm-cal-head button{border:none;background:var(--off);width:30px;height:30px;border-radius:8px;cursor:pointer;font-size:15px;color:var(--navy)}
     .lm-cal-title{font-weight:800;font-size:14px;color:var(--navy)}
-    .lm-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+    .lm-cal-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:2px}
     .lm-cal-dow{font-size:10px;color:var(--gray);text-align:center;font-weight:700;padding:4px 0}
     .lm-cal-day{border:none;background:none;aspect-ratio:1;border-radius:8px;font-size:13px;color:var(--navy);cursor:pointer;font-family:var(--font)}
     .lm-cal-day:hover{background:var(--off)}

@@ -232,7 +232,7 @@ renderTopbar($activePage);
 .aj-cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
 .aj-cal-head button{width:32px;height:32px;border:0;background:#F0FDFA;border-radius:8px;cursor:pointer;font-size:17px;color:var(--teal-d);font-weight:800;line-height:1}
 .aj-cal-title{font-weight:800;color:var(--navy);font-size:14px}
-.aj-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.aj-cal-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:2px}
 .aj-cal-dow{text-align:center;font-size:10px;font-weight:800;color:#9CA3AF;padding:4px 0}
 .aj-cal-day{aspect-ratio:1;border:0;background:none;border-radius:8px;cursor:pointer;font-size:13px;color:var(--navy);font-family:var(--font)}
 .aj-cal-day:hover:not(:disabled){background:#F0FDFA}
