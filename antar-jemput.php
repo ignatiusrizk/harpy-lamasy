@@ -442,7 +442,8 @@ let ajCalY, ajCalM;
 function ajCalOpen(){
   const base = slotDay ? new Date(slotDay+'T00:00:00') : new Date();
   ajCalY = base.getFullYear(); ajCalM = base.getMonth();
-  ajCalRender(); document.getElementById('ajCalPanel').hidden = false;
+  const cp = document.getElementById('ajCalPanel');
+  ajCalRender(); cp.hidden = false; slotScrollIntoView(cp);
 }
 function ajCalClose(){ const p=document.getElementById('ajCalPanel'); if(p) p.hidden = true; }
 function ajCalRender(){
@@ -486,8 +487,13 @@ function slotRender(){
 }
 function slotToggle(e){ e.stopPropagation();
   const p=document.getElementById('slotPanel');
-  if (p.hidden){ slotRender(); p.hidden=false; document.getElementById('slotTrigger').classList.add('open'); }
+  if (p.hidden){ slotRender(); p.hidden=false; document.getElementById('slotTrigger').classList.add('open');
+    slotScrollIntoView(p); }
   else slotCloseP();
+}
+// Panel muncul di bawah — pastikan terlihat (modal bisa ter-scroll, panel bisa di luar viewport)
+function slotScrollIntoView(el){
+  requestAnimationFrame(() => { try { el.scrollIntoView({behavior:'smooth', block:'nearest'}); } catch(_){} });
 }
 function slotCloseP(){ const p=document.getElementById('slotPanel'); if(p)p.hidden=true;
   document.getElementById('slotTrigger')?.classList.remove('open'); }
