@@ -476,14 +476,20 @@ tfoot td{padding:9px 12px;font-weight:700;font-size:13px}
 
   <!-- PAGE TABS -->
   <label style="display:block;font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px">Jenis Laporan</label>
-  <select id="reportSelect" onchange="switchTab(this.value, null)" style="width:100%;padding:12px 14px;border:1.5px solid rgba(27,45,90,.14);border-radius:10px;font-size:15px;font-weight:600;background:#fff;color:var(--navy);font-family:var(--font);margin-bottom:22px;cursor:pointer">
-    <?php if (hasPermission('laporan.view')): ?>
-    <option value="harian">📅 Harian</option>
-    <option value="bulanan">📆 Bulanan</option>
-    <option value="lr">📈 Laba / Rugi</option>
-    <?php endif; ?>
-    <option value="produktivitas">👥 Produktivitas Karyawan</option>
-  </select>
+  <div id="repDD" class="lm-dd" style="margin-bottom:22px">
+    <button type="button" class="lm-dd-btn" onclick="repDDToggle(event)">
+      <span id="repDDLabel"><?= hasPermission('laporan.view') ? '📅 Harian' : '👥 Produktivitas Karyawan' ?></span>
+      <span class="lm-dd-caret">▾</span>
+    </button>
+    <div class="lm-dd-panel" id="repDDPanel">
+      <?php if (hasPermission('laporan.view')): ?>
+      <button type="button" class="active" data-v="harian"  onclick="repPick('harian','📅 Harian')">📅 Harian</button>
+      <button type="button" data-v="bulanan" onclick="repPick('bulanan','📆 Bulanan')">📆 Bulanan</button>
+      <button type="button" data-v="lr"      onclick="repPick('lr','📈 Laba / Rugi')">📈 Laba / Rugi</button>
+      <?php endif; ?>
+      <button type="button" data-v="produktivitas" <?= hasPermission('laporan.view') ? '' : 'class="active"' ?> onclick="repPick('produktivitas','👥 Produktivitas Karyawan')">👥 Produktivitas Karyawan</button>
+    </div>
+  </div>
 
   <!-- ══ TAB HARIAN ═══════════════════════════════════ -->
   <?php if (hasPermission('laporan.view')): ?>
@@ -494,7 +500,7 @@ tfoot td{padding:9px 12px;font-weight:700;font-size:13px}
       </button>
       <div class="hl-filter-bar" id="harianFilter">
         <label>Tanggal</label>
-        <input type="date" id="hTgl"/>
+        <div class="lm-date"><button type="button" class="lm-date-btn" onclick="lmDateOpen('hTgl',this)"><span class="lm-date-txt">Pilih tanggal</span> <span>📅</span></button><input type="hidden" id="hTgl"></div>
         <button class="hl-btn hl-btn-primary hl-btn-sm" onclick="loadHarian()">🔍 Tampilkan</button>
         <button class="hl-btn hl-btn-outline hl-btn-sm" onclick="window.print()">🖨️ Print</button>
         <?php if (hasPermission('laporan.export')): ?>
@@ -621,9 +627,9 @@ tfoot td{padding:9px 12px;font-weight:700;font-size:13px}
       </button>
       <div class="hl-filter-bar" id="lrFilter">
         <label>Dari</label>
-        <input type="date" id="lrDari"/>
+        <div class="lm-date"><button type="button" class="lm-date-btn" onclick="lmDateOpen('lrDari',this)"><span class="lm-date-txt">Pilih tanggal</span> <span>📅</span></button><input type="hidden" id="lrDari"></div>
         <label>s/d</label>
-        <input type="date" id="lrSampai"/>
+        <div class="lm-date"><button type="button" class="lm-date-btn" onclick="lmDateOpen('lrSampai',this)"><span class="lm-date-txt">Pilih tanggal</span> <span>📅</span></button><input type="hidden" id="lrSampai"></div>
         <button class="hl-btn hl-btn-primary hl-btn-sm" onclick="loadLR()">🔍 Hitung L/R</button>
         <?php
           $rl_insight = AIRateLimiter::status('ai_insight_laporan');
@@ -684,7 +690,32 @@ tfoot td{padding:9px 12px;font-weight:700;font-size:13px}
     <style>@keyframes aiSpin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
     #aiHighlights li, #aiRecommendations li{padding:5px 0 5px 16px;position:relative}
     #aiHighlights li:before{content:'▸';position:absolute;left:0;color:#35E8D5}
-    #aiRecommendations li:before{content:'→';position:absolute;left:0;color:#F59E0B}</style>
+    #aiRecommendations li:before{content:'→';position:absolute;left:0;color:#F59E0B}
+    /* Dropdown kustom (Jenis Laporan) */
+    .lm-dd{position:relative}
+    .lm-dd-btn{width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px 14px;border:1.5px solid rgba(27,45,90,.14);border-radius:10px;background:#fff;color:var(--navy);font-size:15px;font-weight:600;font-family:var(--font);cursor:pointer}
+    .lm-dd-caret{color:var(--gray);font-size:13px;transition:transform .2s}
+    .lm-dd.open .lm-dd-caret{transform:rotate(180deg)}
+    .lm-dd-panel{display:none;position:absolute;top:calc(100% + 6px);left:0;right:0;z-index:70;background:#fff;border:1px solid rgba(27,45,90,.12);border-radius:12px;box-shadow:0 12px 32px rgba(15,28,58,.16);padding:6px}
+    .lm-dd.open .lm-dd-panel{display:block}
+    .lm-dd-panel button{display:block;width:100%;text-align:left;padding:11px 14px;border:none;background:none;border-radius:8px;font-size:14.5px;font-weight:600;color:var(--navy);font-family:var(--font);cursor:pointer}
+    .lm-dd-panel button:hover{background:var(--off)}
+    .lm-dd-panel button.active{background:var(--teal-bg);color:var(--teal-d)}
+    /* Date picker kustom */
+    .lm-date{position:relative;display:inline-block}
+    .lm-date-btn{display:flex;align-items:center;justify-content:space-between;gap:10px;min-width:150px;padding:9px 12px;border:1.5px solid rgba(27,45,90,.14);border-radius:9px;background:#fff;color:var(--navy);font-size:14px;font-weight:600;font-family:var(--font);cursor:pointer}
+    .lm-cal{display:none;position:absolute;top:calc(100% + 6px);left:0;z-index:80;background:#fff;border:1px solid rgba(27,45,90,.12);border-radius:12px;box-shadow:0 12px 34px rgba(15,28,58,.18);padding:12px;width:264px}
+    .lm-cal.open{display:block}
+    .lm-cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+    .lm-cal-head button{border:none;background:var(--off);width:30px;height:30px;border-radius:8px;cursor:pointer;font-size:15px;color:var(--navy)}
+    .lm-cal-title{font-weight:800;font-size:14px;color:var(--navy)}
+    .lm-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+    .lm-cal-dow{font-size:10px;color:var(--gray);text-align:center;font-weight:700;padding:4px 0}
+    .lm-cal-day{border:none;background:none;aspect-ratio:1;border-radius:8px;font-size:13px;color:var(--navy);cursor:pointer;font-family:var(--font)}
+    .lm-cal-day:hover{background:var(--off)}
+    .lm-cal-day.today{outline:1.5px solid var(--teal)}
+    .lm-cal-day.sel{background:var(--teal);color:var(--navy-d);font-weight:800}
+    .lm-cal-day.empty{visibility:hidden;cursor:default}
 
     <div id="lrContent"><div class="empty">Pilih periode lalu klik "Hitung L/R"</div></div>
   </div>
@@ -768,6 +799,47 @@ tfoot td{padding:9px 12px;font-weight:700;font-size:13px}
 <script>
 const CAN_EXPORT_LAPORAN = <?= hasPermission('laporan.export') ? 'true' : 'false' ?>;
 
+// ── Dropdown kustom Jenis Laporan ──
+function repDDToggle(e){ if(e) e.stopPropagation(); document.getElementById('repDD').classList.toggle('open'); }
+function repPick(v, label){
+  document.getElementById('repDDLabel').textContent = label;
+  document.getElementById('repDD').classList.remove('open');
+  switchTab(v, null);
+}
+
+// ── Date picker kustom (kalender, bukan native OS) ──
+function lmFmtDMY(v){ if(!v) return 'Pilih tanggal'; const p=v.split('-'); const mo=['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des']; return (+p[2])+' '+mo[(+p[1])-1]+' '+p[0]; }
+function lmDateSet(id, val){ const h=document.getElementById(id); if(!h) return; h.value=val||''; const w=h.closest('.lm-date'); if(w){ const t=w.querySelector('.lm-date-txt'); if(t) t.textContent=lmFmtDMY(val); } }
+let _lmCalFor=null;
+function lmCalClose(){ document.querySelectorAll('.lm-cal').forEach(c=>c.remove()); _lmCalFor=null; }
+function lmDateOpen(id, btn){
+  if(_lmCalFor===id){ lmCalClose(); return; }
+  lmCalClose(); _lmCalFor=id;
+  const cur=(document.getElementById(id).value)||localDateStr();
+  const [y,m]=cur.split('-').map(Number);
+  const cal=document.createElement('div'); cal.className='lm-cal open';
+  btn.closest('.lm-date').appendChild(cal);
+  lmCalRender(cal, id, y, m);
+}
+function lmCalRender(cal, id, y, m){
+  const mo=['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+  const first=new Date(y, m-1, 1).getDay();
+  const days=new Date(y, m, 0).getDate();
+  const today=localDateStr(), sel=document.getElementById(id).value;
+  const pad=n=>String(n).padStart(2,'0');
+  let h='<div class="lm-cal-head"><button type="button" onclick="lmCalNav(this,\''+id+'\','+y+','+m+',-1)">‹</button><span class="lm-cal-title">'+mo[m-1]+' '+y+'</span><button type="button" onclick="lmCalNav(this,\''+id+'\','+y+','+m+',1)">›</button></div><div class="lm-cal-grid">';
+  ['M','S','S','R','K','J','S'].forEach(d=>h+='<div class="lm-cal-dow">'+d+'</div>');
+  for(let i=0;i<first;i++) h+='<button class="lm-cal-day empty"></button>';
+  for(let d=1;d<=days;d++){ const v=y+'-'+pad(m)+'-'+pad(d); h+='<button type="button" class="lm-cal-day'+(v===sel?' sel':'')+(v===today?' today':'')+'" onclick="lmCalPick(\''+id+'\',\''+v+'\')">'+d+'</button>'; }
+  cal.innerHTML=h+'</div>';
+}
+function lmCalNav(btn, id, y, m, delta){ m+=delta; if(m<1){m=12;y--;} if(m>12){m=1;y++;} lmCalRender(btn.closest('.lm-cal'), id, y, m); }
+function lmCalPick(id, v){ lmDateSet(id, v); lmCalClose(); }
+document.addEventListener('click', function(e){
+  if(!e.target.closest('#repDD')){ const d=document.getElementById('repDD'); if(d) d.classList.remove('open'); }
+  if(!e.target.closest('.lm-date')) lmCalClose();
+});
+
 let chartOmsetInstance = null;
 let harianData  = null;
 let bulananData = null;
@@ -789,10 +861,10 @@ document.addEventListener('DOMContentLoaded', () => {
   initFilter('lrFilter');
   const today = localDateStr();
   const bulan = today.substring(0,7);
-  document.getElementById('hTgl').value    = today;
+  lmDateSet('hTgl', today);
   document.getElementById('bBulan').value  = bulan;
-  document.getElementById('lrDari').value  = bulan + '-01';
-  document.getElementById('lrSampai').value= today;
+  lmDateSet('lrDari', bulan + '-01');
+  lmDateSet('lrSampai', today);
   loadHarian();
 });
 
@@ -807,7 +879,10 @@ function switchTab(name, el) {
   if (target) target.style.display = 'block';
   document.querySelectorAll('.ptab').forEach(b => b.classList.remove('active'));
   if (el && el.classList) el.classList.add('active');
-  var rsel = document.getElementById('reportSelect'); if (rsel && rsel.value !== name) rsel.value = name;
+  // Sync dropdown kustom Jenis Laporan
+  const _rl = {harian:'📅 Harian', bulanan:'📆 Bulanan', lr:'📈 Laba / Rugi', produktivitas:'👥 Produktivitas Karyawan'};
+  const _lbl = document.getElementById('repDDLabel'); if (_lbl && _rl[name]) _lbl.textContent = _rl[name];
+  document.querySelectorAll('#repDDPanel button').forEach(b => b.classList.toggle('active', b.dataset.v === name));
   if (name==='bulanan' && !bulananData) loadBulanan();
   if (name==='produktivitas') loadProd();
 }
