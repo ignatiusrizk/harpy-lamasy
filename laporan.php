@@ -8,6 +8,10 @@ require_once __DIR__ . '/components.php';
 $user = currentUser();
 requirePermission('laporan.view');
 
+// Jangan di-cache WebView/browser — layout & JS bisa berubah antar rilis
+header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+header('Pragma: no-cache');
+
 // ── API ───────────────────────────────────────────────
 $action = $_GET['action'] ?? '';
 if ($action) {
