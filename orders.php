@@ -1014,10 +1014,12 @@ textarea{resize:vertical;min-height:64px}
   .items-table tbody td input, .items-table tbody td select { text-align:right; flex:1; min-width:0; max-width:170px; width:auto }
   .items-table tbody td.item-sub { font-weight:700; color:var(--navy); font-family:var(--mono) }
   .items-table tbody td:last-child { justify-content:flex-end; padding-top:8px; border-top:1px dashed rgba(27,45,90,.08); margin-top:4px }
-  .action-btns{flex-wrap:wrap}
+  .action-btns{flex-wrap:wrap;justify-content:flex-end;gap:6px}
   .pay-opt{grid-template-columns:1fr 1fr}
-  /* Tombol di action col harus stack vertikal supaya readable */
-  .action-btns .btn{padding:8px 10px;font-size:11px;flex:1;min-width:0}
+  /* Tombol aksi menyesuaikan lebar teks (jangan dipaksa flex:1 → teks luber) */
+  .action-btns .btn{padding:8px 12px;font-size:12px;flex:0 0 auto;min-width:0;line-height:1;white-space:nowrap}
+  /* Tombol ikon (cetak/WA) dibuat kotak rapi */
+  .action-btns .btn-outline{min-width:40px;justify-content:center}
 }
 @media(max-width:400px){
   .main{padding:8px 8px 80px}
