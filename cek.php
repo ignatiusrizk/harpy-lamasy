@@ -233,7 +233,7 @@ form input:focus { outline:none; border-color:var(--teal); box-shadow:0 0 0 3px 
 
     <div style="margin-top:18px">
       <div class="row"><span class="l">Pelanggan</span><span class="r"><?= htmlspecialchars($order['nama_pelanggan']) ?></span></div>
-      <div class="row"><span class="l">Diterima</span><span class="r"><?= fmtDate($order['tanggal'] . ' ' . ($order['created_at'] ?? '')) ?></span></div>
+      <div class="row"><span class="l">Diterima</span><span class="r"><?= fmtDate($order['created_at'] ?? $order['tanggal']) ?></span></div>
       <?php if ($order['estimasi_selesai']): ?>
       <div class="row"><span class="l">Estimasi Selesai</span><span class="r" style="color:var(--teal);font-weight:700"><?= fmtDate($order['estimasi_selesai']) ?></span></div>
       <?php endif; ?>
