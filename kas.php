@@ -166,6 +166,15 @@ if ($action) {
 .tipe-btn.masuk.active{background:#D1FAE5;border-color:var(--green);color:#065F46}
 .tipe-btn.keluar.active{background:#FEE2E2;border-color:#EF4444;color:#991B1B}
 .tipe-btn:not(.active):hover{border-color:var(--teal)}
+/* Dropdown ber-chevron kustom teal — seragam & tak terlihat 'basic' */
+select.hl-input{
+  -webkit-appearance:none;appearance:none;cursor:pointer;padding-right:38px;line-height:1.3;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%231CC4B2' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 13px center;
+}
+#f_kategori{font-weight:600}
+#f_kategori optgroup{font-weight:700}
+#f_kategori option{font-weight:500;padding:4px}
 
 /* TABLE */
 .td-jumlah{font-family:var(--mono);font-weight:700;text-align:right;font-size:14px}
@@ -265,29 +274,29 @@ tfoot td.td-jumlah{font-family:var(--mono)}
             </div>
             <div class="hl-form-group">
               <label class="hl-label">Jumlah (Rp) <span class="req">*</span></label>
-              <input type="number" id="f_jumlah" class="hl-input" placeholder="0" min="0" step="500" oninput="updateJumlahPreview()"/>
+              <input type="text" inputmode="numeric" id="f_jumlah" class="hl-input" placeholder="0" oninput="fmtJumlah(this); updateJumlahPreview()"/>
             </div>
           </div>
 
           <div class="hl-form-group">
             <label class="hl-label">Kategori <span class="req">*</span></label>
-            <select id="f_kategori" class="hl-input">
+            <select id="f_kategori" class="hl-input hl-select-styled">
               <option value="">— Pilih Kategori —</option>
               <optgroup label="💚 Kas Masuk" id="optMasuk">
-                <option value="Penjualan Laundry">Penjualan Laundry</option>
-                <option value="Pelunasan Order">Pelunasan Order</option>
-                <option value="Pendapatan Lain">Pendapatan Lain</option>
-                <option value="Modal">Modal</option>
+                <option value="Penjualan Laundry">💰 Penjualan Laundry</option>
+                <option value="Pelunasan Order">🧾 Pelunasan Order</option>
+                <option value="Pendapatan Lain">➕ Pendapatan Lain</option>
+                <option value="Modal">🏦 Modal</option>
               </optgroup>
               <optgroup label="❤️ Kas Keluar" id="optKeluar">
-                <option value="Gaji Karyawan">Gaji Karyawan</option>
-                <option value="Bahan & Deterjen">Bahan &amp; Deterjen</option>
-                <option value="Listrik & Air">Listrik &amp; Air</option>
-                <option value="Sewa Tempat">Sewa Tempat</option>
-                <option value="Peralatan">Peralatan</option>
-                <option value="Transportasi">Transportasi</option>
-                <option value="Operasional">Operasional</option>
-                <option value="Lain-lain">Lain-lain</option>
+                <option value="Gaji Karyawan">👥 Gaji Karyawan</option>
+                <option value="Bahan & Deterjen">🧴 Bahan &amp; Deterjen</option>
+                <option value="Listrik & Air">⚡ Listrik &amp; Air</option>
+                <option value="Sewa Tempat">🏠 Sewa Tempat</option>
+                <option value="Peralatan">🔧 Peralatan</option>
+                <option value="Transportasi">🛵 Transportasi</option>
+                <option value="Operasional">⚙️ Operasional</option>
+                <option value="Lain-lain">📌 Lain-lain</option>
               </optgroup>
             </select>
           </div>
@@ -416,8 +425,17 @@ function setTipe(tipe) {
 }
 setTipe('masuk'); // init: default masuk → kategori keluar tersembunyi
 
+// Pemisah ribuan saat ketik (id-ID, hanya angka)
+function fmtJumlah(el){
+  const c = el.value.replace(/[^\d]/g,'');
+  el.value = c ? Number(c).toLocaleString('id-ID') : '';
+}
+// Nilai angka murni dari field jumlah (buang pemisah ribuan)
+function jumlahVal(){
+  return parseInt(String(document.getElementById('f_jumlah').value).replace(/[^\d]/g,''),10) || 0;
+}
 function updateJumlahPreview() {
-  const jumlah = parseFloat(document.getElementById('f_jumlah').value) || 0;
+  const jumlah = jumlahVal();
   const tipe   = document.getElementById('f_tipe').value;
   const el     = document.getElementById('jumlahPreview');
   if (jumlah <= 0) { el.style.display='none'; return; }
@@ -519,7 +537,7 @@ async function loadSaldoHarian() {
 }
 
 async function saveKas() {
-  const jumlah   = parseFloat(document.getElementById('f_jumlah').value)||0;
+  const jumlah   = jumlahVal();
   const ket      = document.getElementById('f_keterangan').value.trim();
   const kategori = document.getElementById('f_kategori').value;
   if (jumlah<=0)  { showToast('⚠️ Jumlah harus lebih dari 0','error'); return; }
@@ -553,7 +571,7 @@ async function editKas(id) {
   if (!row) return;
   document.getElementById('f_id').value         = row.id;
   document.getElementById('f_tanggal').value    = row.tanggal;
-  document.getElementById('f_jumlah').value     = row.jumlah;
+  document.getElementById('f_jumlah').value     = Number(row.jumlah||0).toLocaleString('id-ID');
   document.getElementById('f_keterangan').value = row.keterangan;
   document.getElementById('f_kategori').value   = row.kategori;
   document.getElementById('f_ref_order').value  = row.ref_order||'';
@@ -644,7 +662,7 @@ function kasStrukApply() {
   // Set tipe keluar via setTipe(), TIDAK auto-submit
   setTipe('keluar');
   document.getElementById('f_tanggal').value    = document.getElementById('ksTanggal').value;
-  document.getElementById('f_jumlah').value     = document.getElementById('ksJumlah').value;
+  document.getElementById('f_jumlah').value     = Number(String(document.getElementById('ksJumlah').value).replace(/[^\d]/g,'')||0).toLocaleString('id-ID');
   document.getElementById('f_keterangan').value = document.getElementById('ksKeterangan').value;
   // Kategori: coba set select; jika tidak match, biarkan user memilih
   const katEl = document.getElementById('f_kategori');
