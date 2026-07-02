@@ -9,5 +9,6 @@ $_aPage = $activePage ?? '';
   <a href="orders.php"        class="<?= $_aPage==='orders'   ? 'active':'' ?>"><span class="ico">📋</span>Order</a>
   <a href="komisi.php"        class="<?= $_aPage==='komisi'   ? 'active':'' ?>"><span class="ico">💰</span>Komisi</a>
 </nav>
+<?php require dirname(__DIR__) . '/ui_dialog.php'; ?>
 </body>
 </html>

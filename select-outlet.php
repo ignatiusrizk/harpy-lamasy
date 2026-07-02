@@ -341,11 +341,12 @@ html, body {
   <?php endif; ?>
 
   <div class="footer-link">
-    <a href="/logout" onclick="return confirm('Yakin ingin logout?')">
+    <a href="/logout" onclick="return lmAsk(event,'Yakin ingin logout?')">
       &#x2190; Logout
     </a>
   </div>
 
 </div>
+<?php require ROOT . '/ui_dialog.php'; ?>
 </body>
 </html>

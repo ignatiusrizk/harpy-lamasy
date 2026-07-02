@@ -227,7 +227,7 @@ function fmt_date(?string $d): string {
       <span class="badge-pending">Ada permintaan payout sedang diproses</span>
     <?php elseif ($saldoKomisi >= 50000): ?>
       <form method="POST" action="/affiliate/dashboard"
-            onsubmit="return confirm('Kirim permintaan payout Rp ' + '<?= number_format($saldoKomisi,0,',','.') ?>' + '?')">
+            onsubmit="return lmAskSubmit(event,'Kirim permintaan payout Rp ' + '<?= number_format($saldoKomisi,0,',','.') ?>' + '?')">
         <input type="hidden" name="aff_csrf" value="<?= htmlspecialchars($csrfToken) ?>">
         <input type="hidden" name="action" value="request_payout">
         <button type="submit" class="payout-btn">
@@ -293,5 +293,6 @@ function copyRefLink() {
   }
 }
 </script>
+<?php require dirname(__DIR__) . '/ui_dialog.php'; ?>
 </body>
 </html>
