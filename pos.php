@@ -1725,10 +1725,11 @@ function addLayananItem(id, nama, satuan, harga) {
   }
   const existWithNote = items.findIndex(i => i.layanan_id == id && i.catatan_item);
   if (existWithNote >= 0) {
-    if (confirm(nama + ' sudah ada di daftar.\n\nOK = Tambah baris baru\nBatal = Tidak jadi')) {
+    lmConfirm(nama + ' sudah ada di daftar (dengan catatan). Tambahkan sebagai baris baru?', {icon:'📋', okText:'Tambah baris', cancelText:'Tidak jadi'}).then(function(ok){
+      if (!ok) return;
       items.push({layanan_id:id,nama_layanan:nama,satuan,jumlah:defaultJml,harga_satuan:harga,catatan_item:'',express_tier_nama:null,biaya_express:0,qty_minimum:qMin,estimasi_jam:estJam});
       renderItems(); recalc(); applyMaxEstimasi();
-    }
+    });
     return;
   }
   items.push({layanan_id:id,nama_layanan:nama,satuan,jumlah:defaultJml,harga_satuan:harga,catatan_item:'',express_tier_nama:null,biaya_express:0,qty_minimum:qMin,estimasi_jam:estJam});
@@ -2668,7 +2669,7 @@ function closeModal()  { document.getElementById('modalStruk').classList.remove(
 // ── Kirim Nota via WA (150 koin) ──
 async function kirimNotaWA() {
   if (!lastSaved || !lastSaved.id) { showToast('⚠️ Order belum tersimpan', 'error'); return; }
-  if (!confirm('Kirim nota via WhatsApp ke pelanggan?\n\n💰 Biaya: 150 koin')) return;
+  if (!(await lmConfirm('Kirim nota via WhatsApp ke pelanggan?', {icon:'📲', cost:'150 koin', okText:'Kirim WA'}))) return;
 
   try {
     const r = await fetch('pos.php?action=wa_nota&id=' + lastSaved.id);
