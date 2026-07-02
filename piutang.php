@@ -18,6 +18,12 @@ $oid = TenantResolver::outletId();
 $action = $_GET['action'] ?? '';
 $db = Database::get();
 
+// Cegah WebView APK sajikan versi lama (perubahan UI tak ke-load) — pelajaran dari laporan.php
+if ($action === '') {
+    header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+    header('Pragma: no-cache');
+}
+
 // ── Helper: Generate invoice number INV/YYYY/MM/000N ──
 function generateInvoiceNo(PDO $db, int $tid): string {
     $ym = date('Y/m');
@@ -429,7 +435,7 @@ require_once ROOT . '/core/CoinLedger.php';
 .lmui-nav{border:0;background:#F1F5FB;border-radius:7px;width:28px;height:28px;font-size:16px;cursor:pointer;color:#374151;line-height:1}
 .lmui-dows{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:2px}
 .lmui-dow{text-align:center;font-size:10.5px;font-weight:700;color:#9CA3AF;padding:2px 0}
-.lmui-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.lmui-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:2px}
 .lmui-grid>span{height:30px}
 .lmui-day{height:30px;border:0;background:none;border-radius:7px;font-family:inherit;font-size:13px;cursor:pointer;color:#374151}
 .lmui-day:hover{background:#F1F5FB}
