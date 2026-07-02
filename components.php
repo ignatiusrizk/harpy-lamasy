@@ -123,6 +123,8 @@ function renderHead(string $title = 'LAMASY'): void {
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/harpy-erp.css?v=<?= @filemtime(__DIR__.'/harpy-erp.css') ?: date('Ymd') ?>">
+    <!-- Inline (bypass cache CSS file): matikan pull-to-refresh browser/WebView -->
+    <style>html,body{overscroll-behavior-y:contain!important}.ol-side-nav{overscroll-behavior:contain!important}</style>
     <?php renderGlobalJsHelpers(); ?>
     <?php
 }
