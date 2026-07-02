@@ -729,6 +729,7 @@ tfoot td{padding:9px 12px;font-weight:700;font-size:13px}
     .rep-primary{width:100%;justify-content:center}
     .rep-actions{width:100%;display:flex;gap:10px}
     .rep-actions .hl-btn{flex:1;justify-content:center}
+    .prod-controls{display:flex;flex-direction:column;gap:10px}
     /* Month picker (Bulanan & Produktivitas) — reuse .lm-cal */
     .lm-month-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
     .lm-month-cell{border:none;background:var(--off);border-radius:9px;padding:14px 6px;font-size:13px;font-weight:700;color:var(--navy);cursor:pointer;font-family:var(--font)}
@@ -744,13 +745,12 @@ tfoot td{padding:9px 12px;font-weight:700;font-size:13px}
   <!-- TAB PRODUKTIVITAS KARYAWAN -->
   <div id="tabProd" style="display:none">
     <div class="hl-card">
-      <div class="hl-card-header">
+      <div class="hl-card-header" style="flex-direction:column;align-items:stretch;gap:12px">
         <div class="hl-card-title">👥 Produktivitas Karyawan</div>
-        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-          <label style="font-size:12px;color:var(--gray);font-weight:600">Bulan:</label>
-          <div class="lm-date"><button type="button" class="lm-date-btn" onclick="lmMonthOpen('prodBulan',this,loadProd)"><span class="lm-date-txt">Pilih bulan</span> <span>📅</span></button><input type="hidden" id="prodBulan" value="<?= date('Y-m') ?>"></div>
+        <div class="prod-controls">
+          <span class="rep-field"><label>Bulan</label><div class="lm-date"><button type="button" class="lm-date-btn" onclick="lmMonthOpen('prodBulan',this,loadProd)"><span class="lm-date-txt">Pilih bulan</span> <span>📅</span></button><input type="hidden" id="prodBulan" value="<?= date('Y-m') ?>"></div></span>
           <?php if (hasPermission('laporan.export')): ?>
-          <button class="hl-btn hl-btn-outline hl-btn-sm" onclick="exportCSV('produktivitas')">📥 Export CSV</button>
+          <div class="rep-actions"><button class="hl-btn hl-btn-outline hl-btn-sm" onclick="exportCSV('produktivitas')">📥 Export CSV</button></div>
           <?php endif; ?>
         </div>
       </div>
