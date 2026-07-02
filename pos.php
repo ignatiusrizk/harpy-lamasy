@@ -2693,7 +2693,7 @@ function printStruk() {
 function printLabel() {
   const id = lastSaved?.id;
   if (!id) { showToast('❌ Order belum tersimpan', 'error'); return; }
-  window.open('/api/label.php?id=' + id, '_blank', 'width=380,height=520');
+  window.open('/api/label.php?id=' + id + '&_=' + Date.now(), '_blank', 'width=380,height=520');
 }
 function closeModal()  { document.getElementById('modalStruk').classList.remove('open'); var _aifab = document.getElementById('aiBubbleBtn'); if (_aifab) _aifab.style.display = ''; }
 

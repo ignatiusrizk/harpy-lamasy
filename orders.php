@@ -1983,7 +1983,7 @@ function debounce() {
 
 function printLabel() {
   if (!currentEditId) { showToast('❌ Order belum dipilih', 'error'); return; }
-  window.open('/api/label.php?id=' + currentEditId, '_blank', 'width=380,height=520');
+  window.open('/api/label.php?id=' + currentEditId + '&_=' + Date.now(), '_blank', 'width=380,height=520');
 }
 
 // ── HELPERS ───────────────────────────────────────────

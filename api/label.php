@@ -11,6 +11,10 @@ require_once ROOT . '/middleware/tenant_guard.php';
 require_once ROOT . '/core/TenantQuery.php';
 require_once ROOT . '/core/TenantResolver.php';
 
+// Jangan di-cache WebView/browser — layout label bisa berubah antar rilis
+header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+header('Pragma: no-cache');
+
 $id   = (int)($_GET['id'] ?? 0);
 $tid  = TenantResolver::id();
 $oid  = TenantResolver::outletId();
