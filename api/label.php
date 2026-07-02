@@ -24,7 +24,7 @@ if ($id <= 0) { http_response_code(400); exit('Bad id'); }
 
 $order = TenantQuery::rawOne(
     "SELECT t.no_order, t.nama_pelanggan, t.telepon, t.tanggal, t.estimasi_selesai,
-            t.estimasi_jam, t.status_bayar, t.sisa_bayar, t.total, t.parfum, t.catatan,
+            t.estimasi_jam, t.status_bayar, t.sisa_bayar, t.total, t.parfum, t.catatan, t.catatan_internal,
             t.tipe_order, t.express_tier_nama,
             o.nama_outlet, o.label_size
        FROM hl_transaksi t
@@ -62,6 +62,8 @@ $outlet  = $order['nama_outlet'] ?: '';
 $parfum  = trim((string)$order['parfum']);
 $catatan = trim((string)$order['catatan']);
 if (mb_strlen($catatan) > 90) $catatan = mb_substr($catatan, 0, 90) . '…';
+$catatanInt = trim((string)($order['catatan_internal'] ?? ''));
+if (mb_strlen($catatanInt) > 90) $catatanInt = mb_substr($catatanInt, 0, 90) . '…';
 
 $tglMasuk = $order['tanggal'] ? date('d M', strtotime($order['tanggal'])) : '-';
 // Ambil: estimasi_selesai; fallback tanggal + estimasi_jam (jangan tampil "-" kalau bisa dihitung)
@@ -202,6 +204,11 @@ $qrSrc  = "https://api.qrserver.com/v1/create-qr-code/?size={$qrPx}x{$qrPx}&data
     <?php if ($catatan): ?>
       <hr class="sep">
       <div class="catatan"><span class="t">Catatan:</span> <?= htmlspecialchars($catatan) ?></div>
+    <?php endif; ?>
+
+    <?php if ($catatanInt): ?>
+      <hr class="sep">
+      <div class="catatan"><span class="t">Catatan Tim:</span> <?= htmlspecialchars($catatanInt) ?></div>
     <?php endif; ?>
 
     <div class="bayar<?= $bayar === 'lunas' ? ' lunas' : '' ?>"><?= htmlspecialchars($bayarTxt) ?></div>
