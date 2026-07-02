@@ -1786,7 +1786,10 @@ async function openDetail(id) {
     const mb = document.getElementById('modalBody');
     mb.insertAdjacentHTML('afterbegin',
       '<div style="background:#FEF3C7;border:1px solid #FDE68A;color:#92400E;padding:10px 14px;border-radius:10px;margin-bottom:14px;font-size:13px;font-weight:600">🗑️ Order ini sedang <b>menunggu persetujuan hapus</b> — tidak bisa diedit sampai di-review owner.</div>');
-    mb.querySelectorAll('input, select, textarea, button.step-btn, .btn-remove').forEach(el => el.disabled = true);
+    // Kunci SEMUA kontrol di body: Tambah Item, katalog layanan, tambah catatan, status, hapus-item, dll
+    mb.querySelectorAll('input, select, textarea, button').forEach(el => {
+      el.disabled = true; el.style.pointerEvents = 'none'; el.style.opacity = '.55';
+    });
     ['btnSaveEdit', 'btnBayarDariDetail', 'btnMintaHapus'].forEach(bid => {
       const b = document.getElementById(bid);
       if (b) { b.disabled = true; b.style.opacity = '.45'; b.style.pointerEvents = 'none'; }
