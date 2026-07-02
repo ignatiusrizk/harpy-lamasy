@@ -8,6 +8,11 @@ $user = currentUser();
 requirePermission('layanan.view');
 
 $action = $_GET['action'] ?? '';
+if (!$action) {
+    // Cegah WebView APK sajikan versi lama halaman (perubahan UI tak ke-load)
+    header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+    header('Pragma: no-cache');
+}
 if ($action) {
     header('Content-Type: application/json');
     $tid = TenantResolver::id();
@@ -250,6 +255,16 @@ input:checked + .toggle-slider::before{transform:translateX(18px)}
   .layanan-harga{font-size:1.1rem}
 }
 @media(max-width:400px){.layanan-grid{grid-template-columns:1fr}}
+/* Dropdown custom (ganti select native) — pola sama dgn piutang.php */
+.lmui-trg{width:100%;padding:9px 12px;border:1.5px solid rgba(27,45,90,.14);border-radius:9px;font-family:inherit;font-size:14px;background:#fff;text-align:left;display:flex;align-items:center;justify-content:space-between;gap:8px;cursor:pointer;color:var(--navy);font-weight:600}
+.lmui-trg .lmui-lbl{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lmui-trg .lmui-car{color:var(--gray);font-size:12px;flex:0 0 auto}
+.lmui-trg.ph .lmui-lbl{color:var(--gray)}
+.hl-filter-bar .lmui-trg{width:auto;min-width:150px}
+.lmui-pop{position:fixed;background:#fff;border:1px solid rgba(27,45,90,.12);border-radius:10px;box-shadow:0 12px 32px rgba(15,28,58,.16);z-index:9000;max-height:280px;overflow-y:auto;padding:6px}
+.lmui-opt{display:block;width:100%;text-align:left;padding:10px 12px;border:0;background:none;font-family:inherit;font-size:14px;border-radius:7px;cursor:pointer;color:var(--navy);font-weight:600}
+.lmui-opt:hover{background:var(--off,#F1F5FB)}
+.lmui-opt.sel{background:#E8F0FE;color:#1E40AF;font-weight:700}
 </style>
 </head>
 <body>
@@ -290,10 +305,10 @@ input:checked + .toggle-slider::before{transform:translateX(18px)}
     </button>
     <div class="hl-filter-bar collapsed" id="layananFilter">
       <span class="hl-filter-label">Filter</span>
-      <select id="fKat" class="hl-input" style="width:auto" onchange="renderLayanan()">
+      <select id="fKat" class="hl-input lm-cust" style="width:auto" onchange="renderLayanan()">
         <option value="">Semua Kategori</option>
       </select>
-      <select id="fStatus" class="hl-input" style="width:auto" onchange="renderLayanan()">
+      <select id="fStatus" class="hl-input lm-cust" style="width:auto" onchange="renderLayanan()">
         <option value="">Semua Status</option>
         <option value="1">Aktif</option>
         <option value="0">Nonaktif</option>
@@ -329,7 +344,7 @@ input:checked + .toggle-slider::before{transform:translateX(18px)}
         </div>
         <div class="hl-form-group">
           <label class="hl-label">Satuan</label>
-          <select id="f_satuan" class="hl-input">
+          <select id="f_satuan" class="hl-input lm-cust">
             <option value="kg">kg (kiloan)</option>
             <option value="pcs">pcs (potong/satuan)</option>
             <option value="item">item</option>
@@ -344,7 +359,7 @@ input:checked + .toggle-slider::before{transform:translateX(18px)}
       <div class="hl-form-row">
         <div class="hl-form-group">
           <label class="hl-label">Harga / Satuan (Rp) <span class="req">*</span></label>
-          <input type="number" id="f_harga" class="hl-input" placeholder="0" min="0" step="500"/>
+          <input type="text" id="f_harga" class="hl-input" placeholder="0" inputmode="numeric" autocomplete="off"/>
         </div>
         <div class="hl-form-group">
           <label class="hl-label">Min. Order <span style="color:var(--gray);font-weight:400;font-size:11px;">— 0 = tidak ada minimum</span></label>
@@ -359,7 +374,7 @@ input:checked + .toggle-slider::before{transform:translateX(18px)}
       </div>
       <div class="hl-form-group">
         <label class="hl-label">Status</label>
-        <select id="f_active" class="hl-input">
+        <select id="f_active" class="hl-input lm-cust">
           <option value="1">✅ Aktif</option>
           <option value="0">⏸️ Nonaktif</option>
         </select>
@@ -404,7 +419,7 @@ input:checked + .toggle-slider::before{transform:translateX(18px)}
         <div class="hl-form-row">
           <div class="hl-form-group">
             <label class="hl-label">Tipe Biaya</label>
-            <select id="tf_tipe" class="hl-input" onchange="updateNilaiUnit()">
+            <select id="tf_tipe" class="hl-input lm-cust" onchange="updateNilaiUnit()">
               <option value="percent">Percent (% dari subtotal item)</option>
               <option value="flat">Flat (Rp tetap)</option>
             </select>
@@ -417,14 +432,14 @@ input:checked + .toggle-slider::before{transform:translateX(18px)}
         <div class="hl-form-row">
           <div class="hl-form-group">
             <label class="hl-label">Berlaku di Outlet <span style="font-size:11px;color:var(--gray);font-weight:400">— strategi per outlet</span></label>
-            <select id="tf_outlet" class="hl-input">
+            <select id="tf_outlet" class="hl-input lm-cust">
               <option value="">🌍 Semua outlet</option>
               <!-- populated by JS -->
             </select>
           </div>
           <div class="hl-form-group">
             <label class="hl-label">Status</label>
-            <select id="tf_active" class="hl-input">
+            <select id="tf_active" class="hl-input lm-cust">
               <option value="1">✅ Aktif</option>
               <option value="0">⏸️ Nonaktif</option>
             </select>
@@ -474,6 +489,7 @@ async function loadLayanan() {
   const kats = [...new Set(allLayanan.map(l=>l.kategori).filter(Boolean))].sort();
   const fKat = document.getElementById('fKat');
   fKat.innerHTML = '<option value="">Semua Kategori</option>' + kats.map(k=>`<option>${k}</option>`).join('');
+  lmSyncSel('fKat');
   // datalist input kategori: gabung rekomendasi + yang sudah dipakai (unik)
   const katOpts = [...new Set([...kats, ...KAT_REKOMENDASI])];
   document.getElementById('katList').innerHTML = katOpts.map(k=>`<option value="${k}">`).join('');
@@ -546,10 +562,11 @@ function openModal(data=null) {
   document.getElementById('f_nama').value   = data?.nama || '';
   document.getElementById('f_kat').value    = data?.kategori || '';
   document.getElementById('f_satuan').value = data?.satuan || 'kg';
-  document.getElementById('f_harga').value  = data?.harga || '';
-  document.getElementById('f_qty_min').value = data?.qty_minimum || 0;
+  document.getElementById('f_harga').value  = data?.harga ? grpRibu(data.harga) : '';
+  document.getElementById('f_qty_min').value = parseFloat(data?.qty_minimum) || 0;
   document.getElementById('f_urutan').value = data?.urutan || 0;
   document.getElementById('f_active').value = data?.is_active ?? 1;
+  lmSyncSel('f_satuan','f_active');
   document.getElementById('modalTitle').textContent = data ? '✏️ Edit Layanan' : '➕ Tambah Layanan';
   document.getElementById('modalLayanan').classList.add('open');
 }
@@ -568,6 +585,7 @@ async function loadOutletsForTier() {
     const sel = document.getElementById('tf_outlet');
     sel.innerHTML = '<option value="">🌍 Semua outlet</option>' +
       allOutlets.map(o => `<option value="${o.id}">🏪 ${esc(o.nama_outlet)}</option>`).join('');
+    lmSyncSel('tf_outlet');
   } catch(e) { /* silent */ }
 }
 
@@ -654,6 +672,7 @@ function resetTierForm() {
   document.getElementById('tf_urutan').value = 0;
   document.getElementById('tf_active').value = 1;
   document.getElementById('tf_outlet').value = '';
+  lmSyncSel('tf_tipe','tf_active','tf_outlet');
   document.getElementById('tierFormTitle').textContent = '➕ Tambah Tier Baru';
   updateNilaiUnit();
 }
@@ -667,6 +686,7 @@ function editTier(t) {
   document.getElementById('tf_urutan').value = t.urutan;
   document.getElementById('tf_active').value = t.is_active;
   document.getElementById('tf_outlet').value = t.outlet_id || '';
+  lmSyncSel('tf_tipe','tf_active','tf_outlet');
   document.getElementById('tierFormTitle').textContent = '✏️ Edit Tier';
   updateNilaiUnit();
 }
@@ -745,7 +765,7 @@ async function openAdjust(l){
 
 async function saveLayanan() {
   const nama  = document.getElementById('f_nama').value.trim();
-  const harga = document.getElementById('f_harga').value;
+  const harga = document.getElementById('f_harga').value.replace(/\./g,''); // buang separator ribuan
   if (!nama)  { showToast('⚠️ Nama wajib diisi','error'); return; }
   if (!harga) { showToast('⚠️ Harga wajib diisi','error'); return; }
 
@@ -783,6 +803,54 @@ async function deleteLayanan(id) {
 }
 
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+/* ── Format ribuan (WebView tak dukung toLocaleString grouping) ── */
+function grpRibu(n){ return String(Math.round(parseFloat(n)||0)).replace(/\B(?=(\d{3})+(?!\d))/g,'.'); }
+// Auto-separator saat ketik harga
+(function(){
+  const fh = document.getElementById('f_harga');
+  fh.addEventListener('input', () => {
+    const digits = fh.value.replace(/\D/g,'');
+    fh.value = digits ? grpRibu(digits) : '';
+  });
+})();
+
+/* ── Dropdown custom (ganti select native) — pola sama dgn piutang.php ── */
+let _pop=null,_popAnchor=null;
+function _closePop(){ if(_pop){_pop.remove();_pop=null;} _popAnchor=null;
+  document.removeEventListener('mousedown',_onOutside,true);
+  window.removeEventListener('scroll',_closePop,true); window.removeEventListener('resize',_closePop); }
+function _onOutside(e){ if(e.target.closest('.lmui-pop')||e.target.closest('.lmui-trg')) return; _closePop(); }
+function _placePop(anchor){
+  const r=anchor.getBoundingClientRect();
+  _pop.style.left=r.left+'px'; _pop.style.minWidth=r.width+'px';
+  const ph=_pop.offsetHeight; let top=r.bottom+4;
+  if(top+ph>window.innerHeight-8) top=Math.max(8,r.top-ph-4);
+  _pop.style.top=top+'px';
+  const pw=_pop.offsetWidth;
+  if(r.left+pw>window.innerWidth-8) _pop.style.left=Math.max(8,window.innerWidth-pw-8)+'px';
+}
+function _initSel(sel){
+  sel.classList.remove('lm-cust'); sel.style.display='none';
+  const trg=document.createElement('button'); trg.type='button'; trg.className='lmui-trg';
+  trg.innerHTML='<span class="lmui-lbl"></span><span class="lmui-car">▾</span>';
+  const lbl=trg.querySelector('.lmui-lbl');
+  const sync=()=>{ const o=sel.options[sel.selectedIndex]; lbl.textContent=o?o.textContent:'— Pilih —'; trg.classList.toggle('ph', !sel.value); };
+  sel._lmSync=sync; sel.addEventListener('change',sync);
+  trg.onclick=()=>{
+    if(_popAnchor===trg){ _closePop(); return; }
+    _closePop();
+    _pop=document.createElement('div'); _pop.className='lmui-pop';
+    _pop.innerHTML=Array.from(sel.options).map((o,i)=>`<button type="button" class="lmui-opt${i===sel.selectedIndex?' sel':''}" data-i="${i}">${esc(o.textContent)}</button>`).join('');
+    _pop.onclick=e=>{ const b=e.target.closest('.lmui-opt'); if(!b) return; sel.selectedIndex=+b.dataset.i; sel.dispatchEvent(new Event('change')); _closePop(); };
+    document.body.appendChild(_pop); _popAnchor=trg; _placePop(trg);
+    document.addEventListener('mousedown',_onOutside,true);
+    window.addEventListener('scroll',_closePop,true); window.addEventListener('resize',_closePop);
+  };
+  sel.after(trg); sync();
+}
+function lmSyncSel(...ids){ ids.forEach(id=>{ const el=document.getElementById(id); if(el&&el._lmSync) el._lmSync(); }); }
+document.querySelectorAll('select.lm-cust').forEach(_initSel);
 </script>
 </body>
 </html>
