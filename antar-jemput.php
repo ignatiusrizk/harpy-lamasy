@@ -184,6 +184,50 @@ $pageTitle = '🚚 Antar Jemput';
 renderHead($pageTitle);
 renderTopbar($activePage);
 ?>
+<style>
+/* ── Slot Waktu: chip hari + dropdown jam kustom (bukan native OS) ── */
+.slot-days{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
+.slot-chip{
+  padding:8px 14px;border:1.5px solid rgba(27,45,90,.12);border-radius:100px;
+  background:var(--white);font-family:var(--font);font-size:13px;font-weight:600;
+  color:var(--navy);cursor:pointer;transition:all .15s;
+}
+.slot-chip:hover{border-color:var(--teal)}
+.slot-chip.active{background:var(--teal);border-color:var(--teal);color:#0F1C3A}
+.kat-dd{position:relative}
+.kat-trigger{
+  width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px;
+  padding:11px 14px;border:1.5px solid rgba(27,45,90,.12);border-radius:var(--r);
+  background:var(--white);font-family:var(--font);font-size:14px;color:var(--navy);
+  cursor:pointer;text-align:left;transition:border-color .15s;
+}
+.kat-trigger:hover{border-color:var(--teal)}
+.kat-trigger.open{border-color:var(--teal-d);box-shadow:0 0 0 3px rgba(53,232,213,.18)}
+.kat-trigger .kat-ph{color:#9CA3AF}
+.kat-trigger::after{
+  content:"";width:16px;height:16px;flex-shrink:0;transition:transform .2s;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%231CC4B2' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") no-repeat center;
+}
+.kat-trigger.open::after{transform:rotate(180deg)}
+.kat-panel{
+  position:absolute;top:calc(100% + 6px);left:0;right:0;z-index:60;
+  background:#fff;border:1px solid #E5E9F2;border-radius:14px;padding:6px;
+  box-shadow:0 14px 38px rgba(15,28,58,.18);max-height:280px;overflow-y:auto;
+  animation:slotIn .14s ease;
+}
+@keyframes slotIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+.kat-group{font-size:10.5px;font-weight:800;color:#6B7280;text-transform:uppercase;letter-spacing:.06em;padding:9px 12px 5px}
+.kat-opt{
+  display:flex;align-items:center;gap:11px;width:100%;padding:11px 12px;border:0;
+  background:none;border-radius:9px;cursor:pointer;font-family:var(--font);font-size:14px;
+  color:var(--navy);text-align:left;
+}
+.kat-opt:hover{background:#F0FDFA}
+.kat-opt.is-active{background:#EAFBF8;font-weight:700}
+.kat-opt .kat-e{font-size:19px;line-height:1;flex-shrink:0;width:24px;text-align:center}
+.kat-opt .kat-l{flex:1}
+.kat-opt .kat-ck{color:var(--teal-d);font-weight:800;font-size:15px}
+</style>
 <div class="hl-main">
 <?php if ($view === 'report'): ?>
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px">
@@ -250,7 +294,20 @@ renderTopbar($activePage);
       <label class="hl-label">Catatan / Patokan (opsional)</label>
       <textarea id="c_catatan" class="hl-input" rows="2" placeholder="Dekat warung Bu Inah, pagar hitam..."></textarea>
       <label class="hl-label">Slot Waktu (opsional)</label>
-      <input type="datetime-local" id="c_slot" class="hl-input">
+      <input type="hidden" id="c_slot">
+      <div class="slot-days" id="slotDays">
+        <button type="button" class="slot-chip" data-day="0">Hari ini</button>
+        <button type="button" class="slot-chip" data-day="1">Besok</button>
+        <button type="button" class="slot-chip" data-day="2">Lusa</button>
+        <button type="button" class="slot-chip" data-day="pick">📅 Tanggal…</button>
+      </div>
+      <input type="date" id="slotDate" class="hl-input" style="display:none;margin-top:8px">
+      <div class="kat-dd" id="slotDD" style="margin-top:8px">
+        <button type="button" class="kat-trigger" id="slotTrigger" onclick="slotToggle(event)">
+          <span id="slotTriggerLabel" class="kat-ph">Pilih jam jemput…</span>
+        </button>
+        <div class="kat-panel" id="slotPanel" hidden></div>
+      </div>
       <label class="hl-label" id="lbl_zona" style="display:none">Zona</label>
       <select id="c_zona" class="hl-input" style="display:none"><option value="">-- Pilih zona --</option></select>
     </div>
@@ -342,8 +399,65 @@ async function loadZonaForCreate() {
   }
 }
 
+// ── Slot Waktu: pemilih hari + jam kustom ──
+const SLOTS = [
+  {v:8,  ico:'🌅', nm:'Pagi',  rg:'08–11'},
+  {v:11, ico:'☀️', nm:'Siang', rg:'11–14'},
+  {v:14, ico:'🌤️', nm:'Sore',  rg:'14–17'},
+  {v:17, ico:'🌙', nm:'Malam', rg:'17–20'},
+];
+let slotDay = null, slotHour = null;
+function slotDateStr(off){ const d=new Date(); d.setDate(d.getDate()+off);
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function slotRecompute(){
+  const c = document.getElementById('c_slot');
+  c.value = (slotDay && slotHour!=null) ? (slotDay+' '+String(slotHour).padStart(2,'0')+':00:00') : '';
+}
+function slotPickDay(chip){
+  document.querySelectorAll('#slotDays .slot-chip').forEach(x=>x.classList.remove('active'));
+  chip.classList.add('active');
+  const dp = document.getElementById('slotDate');
+  if (chip.dataset.day==='pick'){ dp.style.display='block'; slotDay = dp.value || null; if(!dp.value) dp.focus(); }
+  else { dp.style.display='none'; slotDay = slotDateStr(parseInt(chip.dataset.day,10)); }
+  slotRecompute();
+}
+function slotRender(){
+  document.getElementById('slotPanel').innerHTML = '<div class="kat-group">Jam Jemput</div>' + SLOTS.map(s=>{
+    const act = s.v===slotHour ? ' is-active':'';
+    return '<button type="button" class="kat-opt'+act+'" data-h="'+s.v+'"><span class="kat-e">'+s.ico+'</span>'
+         + '<span class="kat-l">'+s.nm+' <small style="color:#9CA3AF">'+s.rg+'</small></span>'
+         + (act?'<span class="kat-ck">✓</span>':'')+'</button>';
+  }).join('');
+}
+function slotToggle(e){ e.stopPropagation();
+  const p=document.getElementById('slotPanel');
+  if (p.hidden){ slotRender(); p.hidden=false; document.getElementById('slotTrigger').classList.add('open'); }
+  else slotCloseP();
+}
+function slotCloseP(){ const p=document.getElementById('slotPanel'); if(p)p.hidden=true;
+  document.getElementById('slotTrigger')?.classList.remove('open'); }
+function slotPickHour(h){
+  slotHour = h; const s = SLOTS.find(x=>x.v===h);
+  const lbl = document.getElementById('slotTriggerLabel');
+  lbl.textContent = s.ico+' '+s.nm+' ('+s.rg+')'; lbl.classList.remove('kat-ph');
+  // Jam dipilih tapi hari belum → default Hari ini
+  if (!slotDay){ const c0=document.querySelector('#slotDays .slot-chip[data-day="0"]'); if(c0) slotPickDay(c0); }
+  slotRecompute(); slotCloseP();
+}
+function slotResetUI(){
+  slotDay=null; slotHour=null;
+  document.querySelectorAll('#slotDays .slot-chip').forEach(x=>x.classList.remove('active'));
+  const dp=document.getElementById('slotDate'); if(dp){dp.style.display='none';dp.value='';}
+  const lbl=document.getElementById('slotTriggerLabel'); lbl.textContent='Pilih jam jemput…'; lbl.classList.add('kat-ph');
+}
+document.getElementById('slotPanel').addEventListener('click', e=>{ const b=e.target.closest('.kat-opt'); if(b) slotPickHour(parseInt(b.dataset.h,10)); });
+document.getElementById('slotDays').addEventListener('click', e=>{ const c=e.target.closest('.slot-chip'); if(c) slotPickDay(c); });
+document.getElementById('slotDate').addEventListener('change', e=>{ slotDay = e.target.value||null; slotRecompute(); });
+document.addEventListener('click', e=>{ if(!e.target.closest('#slotDD')) slotCloseP(); });
+
 function openCreate() {
   ['c_nama','c_hp','c_alamat','c_catatan','c_slot'].forEach(id => document.getElementById(id).value='');
+  slotResetUI();
   document.getElementById('c_zona').value = '';
   loadZonaForCreate();
   document.getElementById('modalCreate').classList.add('open');
