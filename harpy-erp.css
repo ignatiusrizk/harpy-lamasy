@@ -705,6 +705,7 @@ body { font-family: var(--font); background: var(--off); color: var(--dark); min
   flex: 1 1 auto;
   min-height: 0;          /* Wajib untuk flex child supaya overflow:auto bekerja */
   overflow-y: auto;
+  overscroll-behavior: contain;  /* scroll menu tak "bocor" ke dokumen → cegah pull-to-refresh */
   scrollbar-width: thin;  /* Firefox */
   scrollbar-color: rgba(27,45,90,.2) transparent;
 }
@@ -1036,8 +1037,8 @@ body { font-family: var(--font); background: var(--off); color: var(--dark); min
   .ol-top-chip span:first-child { max-width: 80px; }
 }
 
-/* Body: prevent horizontal scroll bleed */
-html, body { overflow-x: clip; }
+/* Body: prevent horizontal scroll bleed + matikan pull-to-refresh browser (APK/PWA) */
+html, body { overflow-x: clip; overscroll-behavior-y: contain; }
 
 /* ── GLOBAL MOBILE FIXES (semua page) ──────────────── */
 @media (max-width: 680px) {
