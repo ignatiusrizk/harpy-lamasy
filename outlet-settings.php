@@ -206,6 +206,8 @@ if ($action) {
 <?php renderHead('Outlet & Nota Settings'); ?>
 <link rel="stylesheet" href="/assets/vendor/leaflet.css">
 <script src="/assets/vendor/leaflet.js"></script>
+<script src="/assets/vendor/html2canvas.min.js?v=<?= @filemtime(__DIR__.'/assets/vendor/html2canvas.min.js') ?: '1' ?>"></script>
+<script src="/assets/js/thermal-print.js?v=<?= @filemtime(__DIR__.'/assets/js/thermal-print.js') ?: '1' ?>"></script>
 </head>
 <body>
 <?php renderTopbar('outlet-settings'); ?>
@@ -219,6 +221,23 @@ if ($action) {
   <div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:10px;padding:14px 18px;margin-bottom:18px;font-size:13.5px;color:#1E40AF;line-height:1.55">
     💡 <strong>Format Nomor Nota</strong> — atur prefix & template format nota per outlet. Default tiap outlet otomatis dapat prefix dari nama (mis. "Harpy Laundry" → <code>HARPY-</code>).
     Bisa di-customize untuk konsistensi branding (mis. <code>HL-2024-00001</code>, <code>JKT001/2026/06/</code>, dll).
+  </div>
+
+  <!-- ════ Printer Thermal (per perangkat) ════ -->
+  <div class="hl-card" style="margin-bottom:18px;padding:16px 18px">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+      <div>
+        <div style="font-weight:700;color:var(--navy);font-size:15px">🖨 Printer Thermal
+          <span style="font-size:11px;color:var(--gray);font-weight:500">— pengaturan per perangkat ini</span></div>
+        <div style="font-size:12.5px;color:var(--gray);margin-top:3px">Terpilih: <strong id="prnCurrent" style="color:var(--navy)">—</strong></div>
+      </div>
+      <button class="hl-btn hl-btn-primary hl-btn-sm" onclick="prnPick()">🔍 Cari / Ganti Printer</button>
+    </div>
+    <div id="prnList" style="margin-top:10px"></div>
+    <label style="display:flex;gap:8px;align-items:center;margin-top:12px;font-size:13px;cursor:pointer;color:var(--navy)">
+      <input type="checkbox" id="prnAuto" onchange="if(window.ThermalPrint)ThermalPrint.setAuto(this.checked)"> Auto-cetak struk setelah simpan order (POS)
+    </label>
+    <div style="font-size:11px;color:#9CA3AF;margin-top:8px">Printer harus sudah di-pair di Setelan Bluetooth HP. Cetak thermal hanya berfungsi di aplikasi (APK). Pilihan ini dipakai untuk Print Struk (POS) & Cetak Ulang Nota.</div>
   </div>
 
   <div id="outletList" style="min-height:150px">⏳ Memuat...</div>
@@ -690,9 +709,46 @@ async function saveAbsensiConfig(){
   if (d.success) showToast('Setting absensi tersimpan','success'); else showToast(d.error||'Gagal','error');
 }
 
+// ── Printer Thermal (client-side, per device via ThermalPrint) ──
+function prnRefresh() {
+  const cur = document.getElementById('prnCurrent');
+  if (!cur) return;
+  if (!window.ThermalPrint) { cur.textContent = '(plugin tak tersedia)'; return; }
+  const pr = ThermalPrint.getPrinter();
+  cur.textContent = (pr && pr.name) ? pr.name : 'Belum dipilih';
+  const au = document.getElementById('prnAuto'); if (au) au.checked = ThermalPrint.autoEnabled();
+}
+async function prnPick() {
+  if (!window.ThermalPrint || !ThermalPrint.isAvailable()) {
+    lmAlert('Cetak thermal hanya tersedia di aplikasi (APK) dengan plugin printer. Buka lewat APK, bukan browser.');
+    return;
+  }
+  const list = document.getElementById('prnList');
+  list.innerHTML = '⏳ Memindai printer Bluetooth…';
+  try {
+    const printers = await ThermalPrint.scanPrinters(6000);
+    if (!printers || !printers.length) {
+      list.innerHTML = '<div style="color:#991B1B;font-size:12px;padding:6px 0">Tak ada printer ditemukan. Pastikan printer sudah di-pair di Setelan Bluetooth HP.</div>';
+      return;
+    }
+    list.innerHTML = printers.map(p =>
+      '<button class="hl-btn hl-btn-outline hl-btn-sm" style="display:block;width:100%;text-align:left;margin-bottom:6px" onclick=\'prnSelect(' + JSON.stringify(p).replace(/'/g, "&#39;") + ')\'>🖨 ' + (p.name || '(tanpa nama)') + '</button>'
+    ).join('');
+  } catch (e) {
+    list.innerHTML = '<div style="color:#991B1B;font-size:12px;padding:6px 0">Gagal scan: ' + (e.message || e) + '</div>';
+  }
+}
+function prnSelect(p) {
+  ThermalPrint.setPrinter(p);
+  document.getElementById('prnList').innerHTML = '';
+  prnRefresh();
+  showToast('✅ Printer dipilih: ' + (p.name || ''), 'success');
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   loadOutlets();
   loadParfum();
+  prnRefresh();
 });
 </script>
 
