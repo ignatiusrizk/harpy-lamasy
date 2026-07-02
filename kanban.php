@@ -315,7 +315,7 @@ function renderCard(r){
   const t = timerClass(r.created_at, r.estimasi_selesai, r.estimasi_jam);
   const next = NEXT[r.status_proses];
   const isLast = r.status_proses === 'siap';
-  return `<div class="kb-card ${t.cls}" data-id="${r.id}">
+  return `<div class="kb-card ${t.cls}" data-id="${r.id}" style="cursor:pointer" onclick="location.href='/orders?open=${r.id}'" title="Ketuk untuk lihat detail order">
     <div class="kb-no">${esc(r.no_order)}</div>
     <div class="kb-nama">${esc(r.nama_pelanggan)}</div>
     <div class="kb-items">${esc(r.items_summary || '-')}</div>
@@ -323,7 +323,7 @@ function renderCard(r){
       <span class="kb-timer-txt">⏱ ${t.txt}</span>
       <span class="kb-total">Rp ${Number(r.total).toLocaleString('id-ID')}</span>
     </div>
-    <button class="kb-btn ${isLast?'siap':''}" onclick="advanceStatus(${r.id}, '${next}', this)">${LABEL_NEXT[r.status_proses]}</button>
+    <button class="kb-btn ${isLast?'siap':''}" onclick="event.stopPropagation();advanceStatus(${r.id}, '${next}', this)">${LABEL_NEXT[r.status_proses]}</button>
   </div>`;
 }
 

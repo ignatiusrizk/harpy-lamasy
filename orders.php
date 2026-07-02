@@ -1473,11 +1473,14 @@ const CAN_BAYAR      = <?= hasPermission('orders.bayar')         ? 'true' : 'fal
 const CAN_EDIT_ORDER = <?= hasPermission('orders.edit')           ? 'true' : 'false' ?>;
 const CAN_DEL_ORDER  = <?= hasPermission('orders.delete')         ? 'true' : 'false' ?>;
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   initFilter('orderFilter');
   loadSummary();
   loadOrders();
-  loadLayanan();
+  await loadLayanan();
+  // Auto-buka detail bila datang dari Kanban (/orders?open=<id>)
+  const openId = new URLSearchParams(location.search).get('open');
+  if (openId && /^\d+$/.test(openId)) openDetail(parseInt(openId, 10));
 });
 
 // ── LOAD ──────────────────────────────────────────────
