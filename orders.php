@@ -1016,6 +1016,10 @@ textarea{resize:vertical;min-height:64px}
   .items-table tbody td:last-child { justify-content:flex-end; padding-top:8px; border-top:1px dashed rgba(27,45,90,.08); margin-top:4px }
   .action-btns{flex-wrap:wrap;justify-content:flex-end;gap:6px}
   .pay-opt{grid-template-columns:1fr 1fr}
+  /* Footer modal detail: grid 2 kolom rapi (bukan wrap acak). Simpan Perubahan full-width */
+  #modalDetail .modal-footer{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  #modalDetail .modal-footer .btn{width:100%;margin:0;justify-content:center;font-size:12.5px;padding:11px 8px;white-space:nowrap}
+  #modalDetail .modal-footer #btnSaveEdit{grid-column:1/-1}
   /* Tombol aksi menyesuaikan lebar teks (jangan dipaksa flex:1 → teks luber) */
   .action-btns .btn{padding:8px 12px;font-size:12px;flex:0 0 auto;min-width:0;line-height:1;white-space:nowrap}
   /* Tombol ikon (cetak/WA) dibuat kotak rapi */
@@ -1164,7 +1168,7 @@ textarea{resize:vertical;min-height:64px}
 </div>
 
 <!-- MODAL PEMBAYARAN -->
-<div class="modal-overlay" id="modalBayar" style="align-items:center;justify-content:center;padding:20px">
+<div class="modal-overlay" id="modalBayar" style="align-items:center;justify-content:center;padding:20px;z-index:300">
   <div class="modal" style="height:auto;max-height:90vh;width:480px">
     <div class="modal-header">
       <span class="modal-title">💰 Update Pembayaran</span>
@@ -1262,7 +1266,7 @@ textarea{resize:vertical;min-height:64px}
 </div>
 
 <!-- MODAL CETAK ULANG NOTA -->
-<div class="modal-overlay" id="modalCetak" style="align-items:center;justify-content:center;padding:20px">
+<div class="modal-overlay" id="modalCetak" style="align-items:center;justify-content:center;padding:20px;z-index:300">
   <div class="modal" style="height:auto;max-height:90vh;width:480px">
     <div class="modal-header">
       <span class="modal-title">🖨️ Cetak Ulang Nota</span>
@@ -1282,7 +1286,7 @@ textarea{resize:vertical;min-height:64px}
 </div>
 
 <!-- MODAL WA REMINDER -->
-<div class="modal-overlay" id="modalWA" style="align-items:center;justify-content:center;padding:20px">
+<div class="modal-overlay" id="modalWA" style="align-items:center;justify-content:center;padding:20px;z-index:300">
   <div class="modal" style="height:auto;max-height:90vh;width:480px">
     <div class="modal-header">
       <span class="modal-title">📱 Kirim WhatsApp</span>
