@@ -194,6 +194,14 @@ tfoot td.td-jumlah{font-family:var(--mono)}
 .sc-btn:hover,.sc-btn.active{background:var(--teal);color:var(--navy);border-color:var(--teal)}
 @media(max-width:860px){.layout-2{grid-template-columns:1fr}.summary-grid{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:680px){.summary-grid{grid-template-columns:repeat(2,1fr);gap:10px}.sum-card{padding:14px}.sum-num{font-size:1.1rem}}
+/* Total Periode (tfoot) di mobile: kotak navy full-width rapi, bukan setengah */
+@media(max-width:900px){
+  .hl-stack-mobile tfoot tr{ background:var(--navy)!important; border:none!important; border-radius:10px; padding:14px 16px!important; margin-top:8px; display:block; width:100% }
+  .hl-stack-mobile tfoot td{ display:block!important; width:100%; padding:2px 0!important; border:none!important; color:#fff; text-align:left }
+  .hl-stack-mobile tfoot td:empty{ display:none!important }
+  .hl-stack-mobile tfoot td::before{ content:none!important }
+  #footTotal{ font-size:15px; font-family:var(--mono); font-weight:800 }
+}
 </style>
 </head>
 <body>
