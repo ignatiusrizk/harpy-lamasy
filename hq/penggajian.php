@@ -358,7 +358,7 @@ async function loadData(){
 
 async function generateAll(){
   const bulan = document.getElementById('fBulan').value;
-  if (!confirm(`Generate slip gaji untuk SEMUA outlet bulan ${bulan}?\nKaryawan yang sudah punya slip tidak akan dobel.`)) return;
+  if (!await lmConfirm(`Generate slip gaji untuk SEMUA outlet bulan ${bulan}?\nKaryawan yang sudah punya slip tidak akan dobel.`)) return;
   await doGenerate(bulan, 0);
 }
 async function genOutlet(oid){
@@ -379,7 +379,7 @@ async function doGenerate(bulan, oid){
 }
 async function markPaid(oid, nama){
   const bulan = document.getElementById('fBulan').value;
-  if (!confirm(`Tandai semua slip pending di "${nama}" bulan ${bulan} sebagai DIBAYAR?`)) return;
+  if (!await lmConfirm(`Tandai semua slip pending di "${nama}" bulan ${bulan} sebagai DIBAYAR?`)) return;
   try {
     const r = await fetch('/hq/penggajian.php?action=mark_paid', {method:'POST', headers:{'Content-Type':'application/json','X-CSRF-Token':CSRF}, body:JSON.stringify({bulan, outlet_id:oid})});
     const d = await r.json();
@@ -441,7 +441,7 @@ async function showKomponen(gajiId) {
 }
 
 async function reEvaluate(gajiId, oid) {
-  if (!confirm('Re-evaluate rules untuk gaji ini? Komponen manual tetap dipertahankan.')) return;
+  if (!await lmConfirm('Re-evaluate rules untuk gaji ini? Komponen manual tetap dipertahankan.')) return;
   try {
     const r = await fetch('/hq/penggajian.php?action=re_evaluate', {method:'POST', headers:{'Content-Type':'application/json','X-CSRF-Token':CSRF}, body:JSON.stringify({gaji_id: gajiId})});
     const d = await r.json();
@@ -452,13 +452,13 @@ async function reEvaluate(gajiId, oid) {
 }
 
 async function openAddKomponen(gajiId, oid) {
-  const nama = prompt('Nama komponen (e.g. THR, Bonus Project, Potongan Pinjaman):');
+  const nama = await lmPrompt('Nama komponen (e.g. THR, Bonus Project, Potongan Pinjaman):');
   if (!nama) return;
-  const amountStr = prompt('Amount (positif=bonus, negatif=potongan, e.g. 500000 atau -200000):');
+  const amountStr = await lmPrompt('Amount (positif=bonus, negatif=potongan, e.g. 500000 atau -200000):');
   if (amountStr === null) return;
   const amount = parseInt(amountStr);
   if (isNaN(amount) || amount === 0) { alert('Amount harus angka non-zero'); return; }
-  const ket = prompt('Keterangan (opsional):') || '';
+  const ket = await lmPrompt('Keterangan (opsional):') || '';
   try {
     const r = await fetch('/hq/penggajian.php?action=komponen_add', {method:'POST', headers:{'Content-Type':'application/json','X-CSRF-Token':CSRF}, body:JSON.stringify({gaji_id: gajiId, nama, amount, keterangan: ket})});
     const d = await r.json();

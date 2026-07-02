@@ -328,7 +328,7 @@ async function submitSupplier(e) {
 
 // ── Delete supplier ────────────────────────────────────────────
 async function deleteSupplier(id, nama) {
-  if (!confirm(`Hapus supplier "${nama}"? Data tidak dapat dipulihkan.`)) return;
+  if (!await lmConfirm(`Hapus supplier "${nama}"? Data tidak dapat dipulihkan.`)) return;
   try {
     const fd = new FormData();
     fd.append('id', id);

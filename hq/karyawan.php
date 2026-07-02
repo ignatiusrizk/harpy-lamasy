@@ -1061,7 +1061,7 @@ async function toggleActive(id, nama, activate){
   const msg = activate
     ? `Aktifkan kembali "${nama}"?`
     : `Nonaktifkan "${nama}"?\n\nKaryawan tidak bisa login. Semua penugasan outlet akan dicabut.\nHistori data tidak dihapus.`;
-  if (!confirm(msg)) return;
+  if (!await lmConfirm(msg)) return;
   const r = await fetch('/hq/karyawan.php?action=toggle_active', {
     method:'POST',
     headers:{'Content-Type':'application/json','X-CSRF-TOKEN':csrf},
@@ -1218,7 +1218,7 @@ async function submitAdd(){
 }
 
 async function removeAssignment(kid, oid, outletName){
-  if (!confirm(`Cabut penugasan karyawan dari outlet "${outletName}"?`)) return;
+  if (!await lmConfirm(`Cabut penugasan karyawan dari outlet "${outletName}"?`)) return;
   const r = await fetch('/hq/karyawan.php?action=remove_assignment', {
     method:'POST',
     headers:{'Content-Type':'application/json','X-CSRF-TOKEN':csrf},

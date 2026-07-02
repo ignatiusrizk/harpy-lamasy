@@ -262,7 +262,7 @@ async function saveRule() {
 }
 
 async function deleteRule(id) {
-  if (!confirm('Non-aktifkan rule ini?')) return;
+  if (!await lmConfirm('Non-aktifkan rule ini?')) return;
   const r = await fetch('?action=delete', {method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':CSRF},body:JSON.stringify({id})});
   const d = await r.json();
   if (d.error) { alert(d.error); return; }

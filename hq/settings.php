@@ -517,11 +517,10 @@ require __DIR__ . '/_layout_open.php';
           <img src="<?= htmlspecialchars(FileUpload::publicUrl($hqTenant['logo_path'])) ?>?v=<?= time() ?>"
                alt="Logo" style="width:96px;height:96px;object-fit:cover;border-radius:10px;
                                   border:1.5px solid #E5E7EB;background:#fff">
-          <form method="POST" style="margin-top:6px">
+          <form method="POST" style="margin-top:6px" onsubmit="return lmAskSubmit(event,'Hapus logo brand?')">
             <input type="hidden" name="_csrf" value="<?= htmlspecialchars($csrf) ?>">
             <input type="hidden" name="remove_logo" value="1">
             <button type="submit"
-                    onclick="return confirm('Hapus logo brand?')"
                     style="background:transparent;color:#EF4444;border:1px solid #FCA5A5;
                            padding:4px 10px;font-size:11px;font-weight:600;border-radius:6px;
                            cursor:pointer;font-family:inherit">

@@ -232,7 +232,7 @@ async function saveTpl(){
   } catch(e){ alert('Gagal: '+e.message); }
 }
 async function delTpl(id){
-  if (!confirm('Nonaktifkan template ini?')) return;
+  if (!await lmConfirm('Nonaktifkan template ini?')) return;
   const r = await fetch('/hq/checklist.php?action=delete', {method:'POST', body:JSON.stringify({id})});
   const d = await r.json();
   if (d.error){ alert('⚠️ '+d.error); return; }

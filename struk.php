@@ -662,7 +662,7 @@ async function saveTemplate() {
 // Reset ke default
 // ══════════════════════════════════════════════════
 async function resetTemplate() {
-  if (!confirm(`Reset template ${activeTab.toUpperCase()} ke pengaturan default?`)) return;
+  if (!await lmConfirm(`Reset template ${activeTab.toUpperCase()} ke pengaturan default?`)) return;
   const r = await fetch('/struk.php?action=reset', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF },

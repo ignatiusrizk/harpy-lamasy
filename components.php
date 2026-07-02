@@ -50,7 +50,7 @@ function renderObserverBanner(): void
                 text-decoration:none;font-size:12px;white-space:nowrap;transition:background .15s;"
          onmouseover="this.style.background='rgba(255,255,255,.25)'"
          onmouseout="this.style.background='rgba(255,255,255,.15)'"
-         onclick="return confirm('Akhiri sesi observasi?')">
+         onclick="return lmAsk(event,'Akhiri sesi observasi?')">
         🚪 Akhiri Observasi
       </a>
     </div>
@@ -78,7 +78,7 @@ function renderDemoBanner(): void {
           Daftar Gratis — Trial 30 Hari →
         </a>
         <a href="/demo-exit"
-           onclick="return confirm('Keluar dari mode demo?')"
+           onclick="return lmAsk(event,'Keluar dari mode demo?')"
            style="color:rgba(255,255,255,.5);text-decoration:none;font-size:18px;line-height:1;padding:2px 4px"
            title="Keluar demo">✕</a>
       </span>
@@ -1028,7 +1028,7 @@ function renderTopbar(string $activePage = '', bool $minimalMode = false): void 
                  title="Pindah ke HQ konsolidasi">HQ →</a>
             <?php endif; ?>
             <a href="/logout" class="ol-top-logout"
-               onclick="return confirm('Yakin logout?')">Logout</a>
+               onclick="return lmAsk(event,'Yakin logout?')">Logout</a>
           </div>
         </header>
 
@@ -1166,6 +1166,20 @@ function renderToast(): void { ?>
       window.lmAlert=function(msg,opts){ return window.lmDialog(Object.assign({type:'alert',message:msg},opts||{})); };
       window.lmConfirm=function(msg,opts){ return window.lmDialog(Object.assign({type:'confirm',message:msg},opts||{})); };
       window.lmPrompt=function(msg,def,opts){ return window.lmDialog(Object.assign({type:'prompt',message:msg,defaultValue:def},opts||{})); };
+      // Gate link/navigasi: onclick="return lmAsk(event,'Yakin?')"
+      window.lmAsk=function(ev, msg, opts){
+        ev.preventDefault(); if(ev.stopPropagation) ev.stopPropagation();
+        var a=ev.currentTarget||ev.target, href=(a && a.getAttribute)?a.getAttribute('href'):null;
+        window.lmConfirm(msg,opts).then(function(ok){ if(ok && href) window.location.href=href; });
+        return false;
+      };
+      // Gate submit form: onsubmit="return lmAskSubmit(event,'Yakin?')"
+      window.lmAskSubmit=function(ev, msg, opts){
+        ev.preventDefault();
+        var form=ev.currentTarget||ev.target;
+        window.lmConfirm(msg,opts).then(function(ok){ if(ok) HTMLFormElement.prototype.submit.call(form); });
+        return false;
+      };
       // Override alert native → cantik (non-blocking, tak butuh nilai balik)
       window.alert=function(m){ window.lmAlert(String(m==null?'':m)); };
     })();

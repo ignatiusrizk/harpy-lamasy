@@ -561,13 +561,13 @@ function getSelectedOutlets() {
 // Push ke outlet
 // ══════════════════════════════════════════════════
 async function pushToAll() {
-  if (!confirm(`Push template ${activeTab.toUpperCase()} ke SEMUA outlet aktif?`)) return;
+  if (!await lmConfirm(`Push template ${activeTab.toUpperCase()} ke SEMUA outlet aktif?`)) return;
   await doPush('all');
 }
 async function pushSelected() {
   const sel = getSelectedOutlets();
   if (!sel.length) { showAlert('Pilih minimal satu outlet', 'err'); return; }
-  if (!confirm(`Push template ${activeTab.toUpperCase()} ke ${sel.length} outlet dipilih?`)) return;
+  if (!await lmConfirm(`Push template ${activeTab.toUpperCase()} ke ${sel.length} outlet dipilih?`)) return;
   await doPush(sel);
 }
 async function doPush(targets) {

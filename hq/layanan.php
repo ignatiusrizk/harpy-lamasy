@@ -470,7 +470,7 @@ async function saveMaster(){
 }
 
 async function delMaster(id, nama){
-  if (!confirm(`Hapus layanan "${nama}" dari master?\nLayanan di outlet juga akan dinonaktifkan.`)) return;
+  if (!await lmConfirm(`Hapus layanan "${nama}" dari master?\nLayanan di outlet juga akan dinonaktifkan.`)) return;
   const fd = new FormData();
   fd.append('_csrf', document.querySelector('meta[name="csrf-token"]')?.content || '');
   fd.append('id', id); fd.append('remove_outlets', 1);

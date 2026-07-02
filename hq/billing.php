@@ -420,7 +420,7 @@ const CUR_MODE = <?= json_encode($curMode) ?>;
 const TENANT_POOL = <?= (int)$tinfo['coin_balance'] ?>;
 const OUTLETS_JSON = <?= json_encode(array_map(fn($o)=>['nama'=>$o['nama_outlet'],'bal'=>(int)$o['coin_balance'],'main'=>(int)$o['is_main']], $outletsList)) ?>;
 
-function toggleCoinMode() {
+async function toggleCoinMode() {
   const to = CUR_MODE === 'shared' ? 'per_outlet' : 'shared';
   let msg;
   if (to === 'per_outlet') {
@@ -430,7 +430,7 @@ function toggleCoinMode() {
     const sum = OUTLETS_JSON.reduce((a,o)=>a+o.bal,0);
     msg = `Ganti ke SHARED?\n\nTotal ${sum.toLocaleString('id-ID')} coin dari semua outlet akan digabung jadi saldo tenant.`;
   }
-  if (!confirm(msg)) return;
+  if (!await lmConfirm(msg)) return;
   fetch('/hq/billing.php?action=set_coin_mode', {
     method:'POST', headers:{'Content-Type':'application/json','X-CSRF-Token':COIN_CSRF},
     body: JSON.stringify({ mode: to })

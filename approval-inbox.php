@@ -250,8 +250,8 @@ async function doApprove(id, source) {
   const msg = source === 'refund'
     ? 'Approve & potong saldo customer? Cash harus diberikan ke customer.'
     : 'Approve & hapus permanen? Aksi tidak bisa di-undo.';
-  if (!confirm(msg)) return;
-  const note = prompt('Catatan (opsional):') || '';
+  if (!await lmConfirm(msg)) return;
+  const note = await lmPrompt('Catatan (opsional):') || '';
   const r = await fetch('?action=approve', {
     method:'POST', headers:{'Content-Type':'application/json','X-CSRF-Token':csrfToken()},
     body: JSON.stringify({id, source, note})
@@ -263,7 +263,7 @@ async function doApprove(id, source) {
 }
 
 async function doReject(id, source) {
-  const note = prompt('Alasan ditolak (wajib):');
+  const note = await lmPrompt('Alasan ditolak (wajib):');
   if (!note || note.trim().length < 3) { showToast('Alasan minimal 3 karakter', 'error'); return; }
   const r = await fetch('?action=reject', {
     method:'POST', headers:{'Content-Type':'application/json','X-CSRF-Token':csrfToken()},

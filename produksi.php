@@ -674,7 +674,7 @@ async function startScan() {
   } catch (e) {
     alert('Tidak bisa akses kamera: ' + e.message + '\n\nGunakan input manual no_order.');
     stopScan();
-    const kode = prompt('Input no_order manual:');
+    const kode = await lmPrompt('Input no_order manual:');
     if (kode) {
       const r = await fetch('/produksi.php?action=get_by_kode&kode=' + encodeURIComponent(kode));
       const order = await r.json();

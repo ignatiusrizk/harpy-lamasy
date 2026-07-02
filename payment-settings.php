@@ -314,7 +314,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'uploa
         <div style="color:#9ca3af;font-size:12px;margin-bottom:16px">
           Di-upload: <?= htmlspecialchars($outlet['qris_uploaded_at']) ?>
         </div>
-        <form method="POST" onsubmit="return confirm('Yakin hapus QRIS ini? Customer tidak bisa bayar via QRIS setelah dihapus.')">
+        <form method="POST" onsubmit="return lmAskSubmit(event,'Yakin hapus QRIS ini? Customer tidak bisa bayar via QRIS setelah dihapus.')">
           <input type="hidden" name="_csrf" value="<?= htmlspecialchars(getCsrfToken()) ?>">
           <input type="hidden" name="action" value="delete">
           <button type="submit" style="background:#ef4444;color:#fff;border:0;padding:10px 16px;border-radius:8px;cursor:pointer;font-weight:600">
@@ -510,7 +510,7 @@ async function saveMethod() {
 }
 
 async function deleteMethod(id, label) {
-  if (!confirm('Hapus metode "' + label + '"? Transaksi historis tidak terpengaruh.')) return;
+  if (!(await lmConfirm('Hapus metode "' + label + '"? Transaksi historis tidak terpengaruh.'))) return;
 
   const fd = new FormData();
   fd.append('_csrf', CSRF_TOKEN);

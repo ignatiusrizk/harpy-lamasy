@@ -298,7 +298,7 @@ async function saveReward() {
 }
 
 async function deleteReward(id) {
-  if (!confirm('Non-aktifkan reward ini?')) return;
+  if (!await lmConfirm('Non-aktifkan reward ini?')) return;
   await fetch('?action=delete', {method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':CSRF},body:JSON.stringify({id})});
   loadList();
 }

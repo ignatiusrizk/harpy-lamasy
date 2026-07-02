@@ -632,7 +632,7 @@ async function saveMitra(){
 }
 
 async function genAccount(dpId, nama, wa){
-  if (!confirm(`Buat/reset akun login untuk "${nama}"?\nPassword baru akan di-generate dan password lama tidak berlaku.`)) return;
+  if (!await lmConfirm(`Buat/reset akun login untuk "${nama}"?\nPassword baru akan di-generate dan password lama tidak berlaku.`)) return;
   try {
     const r = await fetch('droppoint_manager.php?action=gen_account', {
       method:'POST', headers:{'Content-Type':'application/json','X-CSRF-Token':CSRF},
@@ -660,7 +660,7 @@ async function genAccount(dpId, nama, wa){
 }
 
 async function toggleAccount(dpId, aktif){
-  if (!confirm(aktif==1?'Aktifkan akun mitra?':'Nonaktifkan akun mitra? Mitra tidak bisa login lagi.')) return;
+  if (!await lmConfirm(aktif==1?'Aktifkan akun mitra?':'Nonaktifkan akun mitra? Mitra tidak bisa login lagi.')) return;
   try {
     await fetch('droppoint_manager.php?action=toggle_account', {
       method:'POST', headers:{'Content-Type':'application/json','X-CSRF-Token':CSRF},
@@ -711,7 +711,7 @@ async function loadRekap(){
 async function generateRekap(){
   const start = document.getElementById('rStart').value;
   const end   = document.getElementById('rEnd').value;
-  if (!confirm(`Generate rekap komisi periode ${start} s/d ${end}?\nRekap yang sudah 'dibayar' tidak akan ditimpa.`)) return;
+  if (!await lmConfirm(`Generate rekap komisi periode ${start} s/d ${end}?\nRekap yang sudah 'dibayar' tidak akan ditimpa.`)) return;
   try {
     const r = await fetch('droppoint_manager.php?action=generate_rekap', {
       method:'POST', headers:{'Content-Type':'application/json','X-CSRF-Token':CSRF},
@@ -725,13 +725,13 @@ async function generateRekap(){
 }
 
 async function bayarSatu(rekapId){
-  if (!confirm('Bayar komisi mitra ini sekarang? Akan otomatis masuk Kas Keluar.')) return;
+  if (!await lmConfirm('Bayar komisi mitra ini sekarang? Akan otomatis masuk Kas Keluar.')) return;
   doBayar({rekap_id: rekapId});
 }
 async function bayarSemua(){
   const start = document.getElementById('rStart').value;
   const end   = document.getElementById('rEnd').value;
-  if (!confirm(`Bayar SEMUA komisi pending periode ${start} s/d ${end}?\nAkan masuk Kas Keluar kategori "Komisi Mitra".`)) return;
+  if (!await lmConfirm(`Bayar SEMUA komisi pending periode ${start} s/d ${end}?\nAkan masuk Kas Keluar kategori "Komisi Mitra".`)) return;
   doBayar({start, end});
 }
 async function doBayar(body){
@@ -778,7 +778,7 @@ async function loadOrders(){
 }
 
 async function confirmPickup(orderId){
-  if (!confirm('Konfirmasi pickup? Order akan masuk ke status "cuci".')) return;
+  if (!await lmConfirm('Konfirmasi pickup? Order akan masuk ke status "cuci".')) return;
   try {
     await fetch('droppoint_manager.php?action=confirm_pickup', {
       method:'POST', headers:{'Content-Type':'application/json','X-CSRF-Token':CSRF},

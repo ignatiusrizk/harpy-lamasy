@@ -537,7 +537,7 @@ async function saveInvestor() {
 
 // ── Delete investor (soft) ───────────────────────────────────────
 async function deleteInvestor(id, nama) {
-    if (!confirm(`Hapus investor "${nama}"?\nData tidak akan benar-benar dihapus (soft delete).`)) return;
+    if (!await lmConfirm(`Hapus investor "${nama}"?\nData tidak akan benar-benar dihapus (soft delete).`)) return;
     const d = await api('delete_investor', { id }, 'POST');
     if (d.ok) { toast('Investor dihapus'); loadInvestor(); }
     else toast(d.error || 'Gagal', false);
@@ -613,7 +613,7 @@ async function loadBagiHasil() {
 
 // ── Bayar 1 investor ────────────────────────────────────────────
 async function bayarInvestor(investorId, periode, nama) {
-    if (!confirm(`Distribusi bagi hasil ke "${nama}" untuk periode ${periode}?`)) return;
+    if (!await lmConfirm(`Distribusi bagi hasil ke "${nama}" untuk periode ${periode}?`)) return;
     const d = await api('distribusi', { investor_id: investorId, periode }, 'POST');
     if (d.ok) {
         toast(`Distribusi ${rp(d.jumlah)} ke ${nama} berhasil`);
@@ -626,7 +626,7 @@ async function bayarInvestor(investorId, periode, nama) {
 // ── Distribusi semua investor pending ──────────────────────────
 async function distribusiSemua() {
     const periode = document.getElementById('bhPeriode').value || '';
-    if (!confirm(`Distribusi semua bagi hasil pending untuk periode ${periode}?\nProses ini tidak bisa dibatalkan.`)) return;
+    if (!await lmConfirm(`Distribusi semua bagi hasil pending untuk periode ${periode}?\nProses ini tidak bisa dibatalkan.`)) return;
     document.getElementById('btnDistribusiSemua').disabled = true;
     const d = await api('distribusi_semua', { periode }, 'POST');
     if (d.ok) {

@@ -1665,7 +1665,7 @@ async function loadBriefing(){
         + `💰 Biaya: ${ss.next_price} coin (sebelumnya: ${ss.current_price} coin)\n`
         + `📊 Sisa setelah ini: ${remaining - 1}× panggilan\n\n`
         + `Lanjutkan generate?`;
-      if (!confirm(msg)) {
+      if (!await lmConfirm(msg)) {
         if (btn) { btn.disabled = false; btn.textContent = '↻'; }
         return;
       }

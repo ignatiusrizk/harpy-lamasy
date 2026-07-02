@@ -661,7 +661,7 @@ async function poSaveItems() {
 async function poDipesan() {
   // Auto-save items dulu
   await poSaveItems();
-  if (!confirm('Tandai PO ini sebagai "Dipesan"? Setelah ini item tidak bisa diubah.')) return;
+  if (!await lmConfirm('Tandai PO ini sebagai "Dipesan"? Setelah ini item tidak bisa diubah.')) return;
   const r = await fetch('/pembelian.php?action=po_dipesan', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': CSRF() },
@@ -676,7 +676,7 @@ async function poDipesan() {
 
 // ─── TERIMA BARANG ────────────────────────────────────
 async function poTerima() {
-  if (!confirm('Konfirmasi penerimaan barang? Stok akan otomatis ditambah ke inventori.')) return;
+  if (!await lmConfirm('Konfirmasi penerimaan barang? Stok akan otomatis ditambah ke inventori.')) return;
   const r = await fetch('/pembelian.php?action=po_terima', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': CSRF() },

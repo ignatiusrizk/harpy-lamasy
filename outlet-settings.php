@@ -544,7 +544,7 @@ async function addZona() {
 }
 
 async function deleteZona(id) {
-  if (!confirm('Hapus zona ini?')) return;
+  if (!await lmConfirm('Hapus zona ini?')) return;
   const outletId = document.getElementById('ed_id').value;
   await fetch('?action=zona_delete', {
     method:'POST', headers:{'Content-Type':'application/json','X-CSRF-Token':csrfToken()},
@@ -642,7 +642,7 @@ async function saveParfum() {
 }
 
 async function deleteParfum(id) {
-  if (!confirm('Hapus parfum ini?')) return;
+  if (!await lmConfirm('Hapus parfum ini?')) return;
   const r = await fetch('?action=parfum_delete', {
     method:'POST', headers:{'Content-Type':'application/json','X-CSRF-Token':csrfToken()},
     body: JSON.stringify({id})

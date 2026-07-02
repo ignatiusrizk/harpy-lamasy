@@ -1375,7 +1375,7 @@ async function applyBulkStatus() {
   if (!status) { showToast('Pilih status dulu','error'); return; }
   const ids = getBulkIds();
   if (!ids.length) { showToast('Tidak ada order dipilih','error'); return; }
-  if (!confirm('Update status ' + ids.length + ' order menjadi "' + status + '"?')) return;
+  if (!(await lmConfirm('Update status ' + ids.length + ' order menjadi "' + status + '"?'))) return;
   try {
     const r = await fetch('orders.php?action=bulk_status', {
       method:'POST',
@@ -1397,9 +1397,9 @@ function getBulkIds() {
 async function applyBulkPay() {
   const ids = getBulkIds();
   if (!ids.length) { showToast('Tidak ada order dipilih','error'); return; }
-  const metode = prompt('Metode bayar (cash/transfer/qris/ewallet):', 'cash');
+  const metode = await lmPrompt('Metode bayar (cash/transfer/qris/ewallet):', 'cash');
   if (!metode) return;
-  if (!confirm('Tandai LUNAS ' + ids.length + ' order dengan metode "' + metode + '"?\n(Sudah lunas akan di-skip.)')) return;
+  if (!(await lmConfirm('Tandai LUNAS ' + ids.length + ' order dengan metode "' + metode + '"?\n(Sudah lunas akan di-skip.)'))) return;
   try {
     const r = await fetch('orders.php?action=bulk_pay', {
       method:'POST',
@@ -1417,10 +1417,10 @@ async function applyBulkPay() {
   } catch (e) { showToast('Network error','error'); }
 }
 
-function applyBulkPrint() {
+async function applyBulkPrint() {
   const ids = getBulkIds();
   if (!ids.length) { showToast('Tidak ada order dipilih','error'); return; }
-  if (ids.length > 20 && !confirm('Print struk untuk ' + ids.length + ' order? Akan buka tab baru per order, browser bisa block popup.')) return;
+  if (ids.length > 20 && !(await lmConfirm('Print struk untuk ' + ids.length + ' order? Akan buka tab baru per order, browser bisa block popup.'))) return;
   let opened = 0, blocked = 0;
   ids.forEach((id, i) => {
     setTimeout(() => {
@@ -1805,7 +1805,7 @@ function shareToWA() {
 // ── REQUEST DELETE (Smartlink-style approval workflow) ──
 async function requestDelete() {
   if (!currentEditId) return;
-  const alasan = prompt('Alasan permintaan hapus order ini?\n\n(Wajib diisi, owner akan review)');
+  const alasan = await lmPrompt('Alasan permintaan hapus order ini?', '', {placeholder:'Wajib diisi, owner akan review', title:'Minta Hapus Order'});
   if (!alasan || alasan.trim().length < 3) {
     showToast('Alasan minimal 3 karakter', 'error');
     return;
@@ -1948,7 +1948,7 @@ async function saveEdit() {
     loadSummary();
     if (naikSiap && o.telepon) {
       const phone = String(o.telepon).replace(/[^0-9]/g,'').replace(/^0/,'62').replace(/^8/,'628');
-      if (/^[0-9]{9,15}$/.test(phone) && confirm('Kirim WA "siap diambil" ke pelanggan?')) {
+      if (/^[0-9]{9,15}$/.test(phone) && await lmConfirm('Kirim WA "siap diambil" ke pelanggan?', {icon:'📲'})) {
         const msg = `Halo ${o.nama_pelanggan} ✨\nPesanan #${o.no_order} sudah siap diambil di ${OUTLET_NAMA}.\nTotal: Rp ${Number(o.total||0).toLocaleString('id-ID')}\n\nDitunggu ya!`;
         window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(msg), '_blank');
       }

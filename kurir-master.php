@@ -192,7 +192,7 @@ async function saveKurir() {
 }
 
 async function createAkun(id) {
-  if (!confirm('Buat akun login untuk kurir ini?')) return;
+  if (!await lmConfirm('Buat akun login untuk kurir ini?')) return;
   const r = await fetch('?action=create_account', {method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':CSRF},body:JSON.stringify({id})});
   const d = await r.json();
   if (d.error) { showToast(d.error,'error'); return; }

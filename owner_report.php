@@ -421,7 +421,7 @@ function onOverlayClick(e){
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
 
 async function markAllRead(){
-  if (!confirm('Tandai semua notifikasi sebagai sudah dibaca?')) return;
+  if (!await lmConfirm('Tandai semua notifikasi sebagai sudah dibaca?')) return;
   try {
     await fetch('owner_report.php?action=mark_read', {method:'POST', body:JSON.stringify({all:true})});
     showToast('✅ Semua ditandai dibaca','success');
@@ -430,7 +430,7 @@ async function markAllRead(){
 }
 
 async function sendNow(){
-  if (!confirm('Kirim laporan harian sekarang? (deduct 100 coin)')) return;
+  if (!await lmConfirm('Kirim laporan harian sekarang? (deduct 100 coin)')) return;
   try {
     const r = await fetch('owner_report.php?action=send_now', {method:'POST'});
     const d = await r.json();

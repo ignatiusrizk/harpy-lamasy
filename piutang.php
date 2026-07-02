@@ -650,7 +650,7 @@ async function doBulkGen(){
     end:         document.getElementById('bulkEnd').value,
     jatuh_tempo: document.getElementById('bulkTempo').value,
   };
-  if (!confirm(`Generate tagihan massal untuk periode ${body.start} s/d ${body.end}?\nScope: ${body.scope === 'bulanan_only' ? 'Bulanan/B2B only' : 'Semua dengan order'}`)) return;
+  if (!await lmConfirm(`Generate tagihan massal untuk periode ${body.start} s/d ${body.end}?\nScope: ${body.scope === 'bulanan_only' ? 'Bulanan/B2B only' : 'Semua dengan order'}`)) return;
   try {
     const r = await fetch('piutang.php?action=generate_bulk', {method:'POST', headers:{'Content-Type':'application/json','X-CSRF-Token':CSRF}, body:JSON.stringify(body)});
     const d = await r.json();
@@ -664,10 +664,10 @@ async function doBulkGen(){
 }
 
 async function markInvoiced(id){
-  const pajakStr = prompt('PPN (%) untuk invoice ini?\n\nKosongkan atau 0 = tanpa PPN.\nContoh: 11 untuk PPN 11%', '0');
+  const pajakStr = await lmPrompt('PPN (%) untuk invoice ini?\n\nKosongkan atau 0 = tanpa PPN.\nContoh: 11 untuk PPN 11%', '0');
   if (pajakStr === null) return; // batal
   const pajak = Math.max(0, Math.min(100, parseFloat(pajakStr) || 0));
-  if (!confirm('Tandai sebagai sudah tagih? (deduct 200 coin + buka WA invoice)')) return;
+  if (!await lmConfirm('Tandai sebagai sudah tagih? (deduct 200 coin + buka WA invoice)')) return;
   try {
     const r = await fetch('piutang.php?action=mark_invoiced', {method:'POST', headers:{'Content-Type':'application/json','X-CSRF-Token':CSRF}, body:JSON.stringify({id, pajak_persen: pajak})});
     const d = await r.json();
@@ -678,7 +678,7 @@ async function markInvoiced(id){
 }
 
 async function reminder(id){
-  if (!confirm('Kirim reminder? (deduct 100 coin + buka WA)')) return;
+  if (!await lmConfirm('Kirim reminder? (deduct 100 coin + buka WA)')) return;
   try {
     const r = await fetch('piutang.php?action=reminder', {method:'POST', headers:{'Content-Type':'application/json','X-CSRF-Token':CSRF}, body:JSON.stringify({id})});
     const d = await r.json();

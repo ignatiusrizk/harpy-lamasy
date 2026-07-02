@@ -1050,11 +1050,11 @@ async function submitAset() {
 
 async function disposeAset(id, nama) {
     // Pilihan: dijual / rusak / dilepas (disimpan ke DB sbg dijual/rusak/disposed)
-    const pilihan = prompt(`Pelepasan aset "${nama}".\nKetik salah satu:\n• jual  — aset dijual\n• rusak — aset rusak/tidak terpakai\n• lepas — dihapuskan dari pembukuan`, 'lepas');
+    const pilihan = await lmPrompt(`Pelepasan aset "${nama}".\nKetik salah satu:\n• jual  — aset dijual\n• rusak — aset rusak/tidak terpakai\n• lepas — dihapuskan dari pembukuan`, 'lepas');
     if (!pilihan) return;
     const map = { jual: 'dijual', rusak: 'rusak', lepas: 'disposed' };
     const status = map[pilihan.trim().toLowerCase()] || 'disposed';
-    const nilaiJual = status === 'dijual' ? prompt('Nilai jual (Rp)?', '0') : '0';
+    const nilaiJual = status === 'dijual' ? await lmPrompt('Nilai jual (Rp)?', '0') : '0';
     const d = await api('dispose_aset', { id, status, nilai_jual: unFmt(nilaiJual), tanggal_dispose: new Date().toISOString().slice(0,10) }, 'POST');
     if (d.ok) { toast('Aset berhasil dilepas'); loadAset(); }
     else toast(d.error || 'Gagal', false);
@@ -1163,7 +1163,7 @@ async function submitJurnal() {
 }
 
 async function deleteJurnal(id) {
-    if (!confirm('Hapus jurnal ini?')) return;
+    if (!await lmConfirm('Hapus jurnal ini?')) return;
     const d = await api('delete_jurnal', { id }, 'POST');
     if (d.ok) { toast('Jurnal dihapus'); loadJurnal(); }
     else toast(d.error || 'Gagal', false);

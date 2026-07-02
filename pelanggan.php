@@ -336,7 +336,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 <script>
 const CSRF = '<?= $csrf ?>';
 async function regenToken() {
-  if (!confirm('Regenerate token akan invalidate semua struk lama. Lanjut?')) return;
+  if (!await lmConfirm('Regenerate token akan invalidate semua struk lama. Lanjut?')) return;
   const r = await fetch('?action=regen_token', {method:'POST', headers:{'Content-Type':'application/json','X-CSRF-Token':CSRF}});
   const d = await r.json();
   if (d.ok) {
@@ -346,7 +346,7 @@ async function regenToken() {
 }
 
 async function generateKupon(rewardId, btn) {
-  if (!confirm('Tukar poin sekarang? Kupon akan keluar dengan kode unik (berlaku 90 hari).')) return;
+  if (!await lmConfirm('Tukar poin sekarang? Kupon akan keluar dengan kode unik (berlaku 90 hari).')) return;
   btn.disabled = true; btn.textContent = '⏳ Generating...';
   try {
     const r = await fetch('?action=generate_coupon', {

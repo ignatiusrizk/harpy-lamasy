@@ -594,7 +594,7 @@ async function deleteRole(id, nama, userCount){
     alert(`Role "${nama}" masih dipakai ${userCount} karyawan aktif. Pindahkan dulu sebelum hapus.`);
     return;
   }
-  if (!confirm(`Hapus role "${nama}"?\nSemua permission yang ter-assign akan ikut terhapus.`)) return;
+  if (!await lmConfirm(`Hapus role "${nama}"?\nSemua permission yang ter-assign akan ikut terhapus.`)) return;
   const r = await fetch('/hq/roles.php?action=delete', {
     method:'POST',
     headers:{'Content-Type':'application/json','X-CSRF-TOKEN':csrf},

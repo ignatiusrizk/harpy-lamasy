@@ -1036,7 +1036,7 @@ async function loadOpnameList() {
 function fmtNilai(n) { n=parseInt(n)||0; const s=n<0?'−':(n>0?'+':''); return s+'Rp '+Math.abs(n).toLocaleString('id-ID'); }
 
 async function opnameCreate() {
-  if (!confirm('Mulai sesi opname baru? Stok sistem akan di-snapshot sekarang.')) return;
+  if (!await lmConfirm('Mulai sesi opname baru? Stok sistem akan di-snapshot sekarang.')) return;
   const r = await fetch('/inventori.php?action=opname_create', {
     method:'POST',
     headers:{'Content-Type':'application/json','X-CSRF-Token':CSRF()},
@@ -1109,7 +1109,7 @@ async function opnameSave(id) {
 
 async function opnameFinalize(id) {
   await opnameSave(id);
-  if (!confirm('Finalize opname? Selisih akan jadi penyesuaian stok permanen.')) return;
+  if (!await lmConfirm('Finalize opname? Selisih akan jadi penyesuaian stok permanen.')) return;
   const r = await fetch('/inventori.php?action=opname_finalize', {
     method:'POST',
     headers:{'Content-Type':'application/json','X-CSRF-Token':CSRF()},

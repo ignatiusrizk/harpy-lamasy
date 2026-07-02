@@ -796,7 +796,7 @@ async function submitForm(){
 }
 
 async function deletePromo(id, nama){
-  if (!confirm(`Non-aktifkan promo "${nama}"?\n(Promo akan tetap di history, tidak terhapus permanen)`)) return;
+  if (!await lmConfirm(`Non-aktifkan promo "${nama}"?\n(Promo akan tetap di history, tidak terhapus permanen)`)) return;
   const r = await fetch('/hq/promo.php?action=delete', {
     method:'POST',
     headers:{'Content-Type':'application/json','X-CSRF-TOKEN':csrf},

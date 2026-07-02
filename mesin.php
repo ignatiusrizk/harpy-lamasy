@@ -648,7 +648,7 @@ setInterval(() => {
 
 // ── ACTIONS ─────────────────────────────────────────
 async function startSesi(id) {
-  if (!confirm('Konfirmasi customer sudah bayar dan mesin sudah dinyalakan?')) return;
+  if (!await lmConfirm('Konfirmasi customer sudah bayar dan mesin sudah dinyalakan?')) return;
   const r = await fetch('/mesin.php?action=start_sesi', {
     method:'POST', headers:csrfHeaders(),
     body: JSON.stringify({ sesi_id: id })
@@ -659,7 +659,7 @@ async function startSesi(id) {
   loadLive();
 }
 async function doneSesi(id) {
-  if (!confirm('Tandai sesi selesai? Mesin akan kembali idle.')) return;
+  if (!await lmConfirm('Tandai sesi selesai? Mesin akan kembali idle.')) return;
   const r = await fetch('/mesin.php?action=done_sesi', {
     method:'POST', headers:csrfHeaders(),
     body: JSON.stringify({ sesi_id: id })
@@ -670,7 +670,7 @@ async function doneSesi(id) {
   loadLive();
 }
 async function cancelSesi(id) {
-  if (!confirm('Batalkan sesi ini?')) return;
+  if (!await lmConfirm('Batalkan sesi ini?')) return;
   const r = await fetch('/mesin.php?action=cancel_sesi', {
     method:'POST', headers:csrfHeaders(),
     body: JSON.stringify({ sesi_id: id })
@@ -760,7 +760,7 @@ async function saveMesin() {
   loadMaster();
 }
 async function deleteMesin(id, nama) {
-  if (!confirm(`Nonaktifkan mesin "${nama}"? Data riwayat tidak dihapus.`)) return;
+  if (!await lmConfirm(`Nonaktifkan mesin "${nama}"? Data riwayat tidak dihapus.`)) return;
   const r = await fetch('/mesin.php?action=delete_mesin', { method:'POST', headers:csrfHeaders(), body: JSON.stringify({ id }) });
   const j = await r.json();
   if (j.error) { showToast(j.error, 'error'); return; }
@@ -802,7 +802,7 @@ async function saveCycle() {
   loadMaster();
 }
 async function deleteCycle(id) {
-  if (!confirm('Hapus cycle ini?')) return;
+  if (!await lmConfirm('Hapus cycle ini?')) return;
   const r = await fetch('/mesin.php?action=delete_cycle', { method:'POST', headers:csrfHeaders(), body: JSON.stringify({ id }) });
   const j = await r.json();
   if (j.error) { showToast(j.error, 'error'); return; }

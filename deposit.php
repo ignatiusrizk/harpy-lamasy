@@ -673,7 +673,7 @@ async function saveBonusTier() {
 }
 
 async function deleteBonusTier(id) {
-  if (!confirm('Hapus tier ini?')) return;
+  if (!await lmConfirm('Hapus tier ini?')) return;
   const r = await fetch('?action=tier_delete', {
     method:'POST', headers:{'Content-Type':'application/json','X-CSRF-Token':csrfToken()},
     body: JSON.stringify({id})

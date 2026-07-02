@@ -539,7 +539,7 @@ async function editKas(id) {
 }
 
 async function deleteKas(id) {
-  if (!confirm('Hapus catatan kas ini?')) return;
+  if (!await lmConfirm('Hapus catatan kas ini?')) return;
   const r = await fetch('kas.php?action=delete', {
     method:'POST', headers:{'Content-Type':'application/json','X-CSRF-Token':csrfToken()},
     body: JSON.stringify({id})

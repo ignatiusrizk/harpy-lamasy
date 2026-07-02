@@ -701,7 +701,7 @@ async function saveTier() {
 }
 
 async function deleteTier(id) {
-  if (!confirm('Hapus tier ini? Aksi tidak bisa di-undo.')) return;
+  if (!await lmConfirm('Hapus tier ini? Aksi tidak bisa di-undo.')) return;
   try {
     const r = await fetch('?action=tier_delete', {
       method:'POST', headers:{'Content-Type':'application/json','X-CSRF-Token':csrfToken()},
@@ -726,7 +726,7 @@ async function openAdjust(l){
     ? `Rentang diizinkan: Rp ${min.toLocaleString('id-ID')} – Rp ${max.toLocaleString('id-ID')} (±${pct}%)`
     : `Default HQ: Rp ${base.toLocaleString('id-ID')}`;
 
-  const harga = prompt(
+  const harga = await lmPrompt(
     `Adjust harga "${l.nama}"\n${rangeTxt}\n\nHarga sekarang: Rp ${parseFloat(l.harga).toLocaleString('id-ID')}\nMasukkan harga baru:`,
     l.harga
   );
@@ -774,7 +774,7 @@ async function toggleLayanan(id, active) {
 }
 
 async function deleteLayanan(id) {
-  if (!confirm('Nonaktifkan layanan ini?')) return;
+  if (!await lmConfirm('Nonaktifkan layanan ini?')) return;
   await fetch('layanan.php?action=delete', {
     method:'POST', headers:{'Content-Type':'application/json','X-CSRF-Token':csrfToken()},
     body: JSON.stringify({id})

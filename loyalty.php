@@ -486,7 +486,7 @@ async function toggleReward(id){
 }
 
 async function deleteReward(id){
-  if (!confirm('Hapus reward ini?')) return;
+  if (!await lmConfirm('Hapus reward ini?')) return;
   try {
     const r = await fetch('loyalty.php?action=delete_reward', {
       method:'POST', headers:{'Content-Type':'application/json','X-CSRF-Token':csrfToken()},

@@ -709,7 +709,7 @@ async function savePromo() {
 }
 
 async function deletePromo(id) {
-  if (!confirm('Nonaktifkan promo ini?')) return;
+  if (!await lmConfirm('Nonaktifkan promo ini?')) return;
   const r = await fetch('promo.php?action=delete_promo', {
     method:'POST', headers:{'Content-Type':'application/json','X-CSRF-Token':csrfToken()},
     body: JSON.stringify({id})

@@ -582,7 +582,7 @@ function switchTab(name, el) {
 async function generateGaji() {
   const bulan = document.getElementById('gajiBulan').value;
   if (!bulan) return;
-  if (!confirm('Generate slip gaji untuk semua karyawan bulan '+bulan+'?')) return;
+  if (!await lmConfirm('Generate slip gaji untuk semua karyawan bulan '+bulan+'?')) return;
   const r = await fetch('karyawan.php?action=generate_gaji',{
     method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrfToken()},
     body:JSON.stringify({bulan})
@@ -651,7 +651,7 @@ async function saveGaji() {
   if (d.success) { showToast('✅ Gaji disimpan!','success'); closeGajiModal(); loadGaji(); loadStats(); }
 }
 async function bayarGaji(id) {
-  if (!confirm('Tandai gaji ini sudah dibayar? Akan otomatis tercatat di kas keluar.')) return;
+  if (!await lmConfirm('Tandai gaji ini sudah dibayar? Akan otomatis tercatat di kas keluar.')) return;
   const r = await fetch('karyawan.php?action=bayar_gaji',{
     method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrfToken()},
     body:JSON.stringify({id})

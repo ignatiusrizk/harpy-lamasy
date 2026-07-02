@@ -1188,7 +1188,7 @@ async function clockIn() {
 }
 
 async function clockOut() {
-  if (!confirm('Yakin clock out sekarang?')) return;
+  if (!await lmConfirm('Yakin clock out sekarang?')) return;
   const btn = document.getElementById('btnClockOut');
   btn.disabled = true; btn.textContent = '⏳...';
 
@@ -1479,7 +1479,7 @@ async function saveShift() {
 }
 
 async function deleteShift(id) {
-  if (!confirm('Hapus shift ini?')) return;
+  if (!await lmConfirm('Hapus shift ini?')) return;
   const r = await fetch('absensi.php?action=shift_delete', {
     method: 'POST',
     headers: {'Content-Type':'application/json','X-CSRF-Token':csrfToken()},

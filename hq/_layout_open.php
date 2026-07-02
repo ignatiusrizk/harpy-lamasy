@@ -241,7 +241,7 @@ $_canSwitch = !empty($hqIsOwner) || !empty($hqIsManager);
         <?php if ($_canSwitch): ?>
           <a href="/dashboard?to=outlet" class="hq-top-switch" title="Pindah ke Outlet View">Ke Outlet →</a>
         <?php endif; ?>
-        <a href="/logout" class="hq-top-logout" onclick="return confirm('Yakin logout?')">Logout</a>
+        <a href="/logout" class="hq-top-logout" onclick="return lmAsk(event,'Yakin logout?')">Logout</a>
       </div>
     </div>
 

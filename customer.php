@@ -417,7 +417,7 @@ function filterSegmen(seg) {
 }
 
 async function refreshSegmen() {
-  if (!confirm('Re-hitung segmen semua pelanggan sekarang?')) return;
+  if (!await lmConfirm('Re-hitung segmen semua pelanggan sekarang?')) return;
   showToast('⏳ Menghitung segmen...', 'success');
   try {
     const r = await fetch('customer.php?action=segmen_refresh', {
@@ -731,7 +731,7 @@ function openModal(data=null) {
 function closeModal() { document.getElementById('modalCust').classList.remove('open'); }
 
 async function regenToken(id) {
-  if (!confirm('Regenerate portal token? Struk lama dengan token lama tidak akan bisa login lagi.')) return;
+  if (!await lmConfirm('Regenerate portal token? Struk lama dengan token lama tidak akan bisa login lagi.')) return;
   const r = await fetch('customer.php?action=regen_token', {
     method:'POST', headers:{'Content-Type':'application/json','X-CSRF-Token':csrfToken()},
     body: JSON.stringify({id})

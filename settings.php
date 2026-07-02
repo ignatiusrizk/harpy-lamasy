@@ -535,7 +535,7 @@ async function saveRole() {
 
 async function duplicateRole(id) {
   const role = allRoles.find(r=>r.id==id);
-  if (!confirm('Duplikat role "'+role.nama+'" beserta semua permission-nya?')) return;
+  if (!await lmConfirm('Duplikat role "'+role.nama+'" beserta semua permission-nya?')) return;
   const r = await fetch('settings.php?action=duplicate_role', {
     method:'POST', headers:{'Content-Type':'application/json','X-CSRF-Token':csrfToken()},
     body: JSON.stringify({id})
@@ -547,7 +547,7 @@ async function duplicateRole(id) {
 
 async function deleteRole(id) {
   const role = allRoles.find(r=>r.id==id);
-  if (!confirm('Hapus role "'+role.nama+'"? Aksi ini tidak bisa dibatalkan.')) return;
+  if (!await lmConfirm('Hapus role "'+role.nama+'"? Aksi ini tidak bisa dibatalkan.')) return;
   const r = await fetch('settings.php?action=delete_role', {
     method:'POST', headers:{'Content-Type':'application/json','X-CSRF-Token':csrfToken()},
     body: JSON.stringify({id})

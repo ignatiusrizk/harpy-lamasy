@@ -218,7 +218,7 @@ function renderTask(r) {
 }
 
 async function doStatus(id, next) {
-  if (!confirm('Konfirmasi status: ' + next + '?')) return;
+  if (!await lmConfirm('Konfirmasi status: ' + next + '?')) return;
   const r = await fetch('?action=status', {method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':CSRF},body:JSON.stringify({id, next})});
   const d = await r.json();
   if (d.error) { showToast(d.error,'error'); return; }
