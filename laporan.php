@@ -381,6 +381,8 @@ if ($action) {
 <head>
 <?php renderHead('Laporan'); ?>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="/assets/vendor/html2canvas.min.js"></script>
+<script src="/assets/vendor/jspdf.umd.min.js"></script>
 <style>
 /* TABS */
 .page-tabs{display:flex;gap:4px;background:var(--white);border-radius:var(--r-lg);padding:6px;box-shadow:var(--shadow);margin-bottom:24px;border:1px solid rgba(27,45,90,.07)}
@@ -506,7 +508,7 @@ tfoot td{padding:9px 12px;font-weight:700;font-size:13px}
         <span class="rep-field"><label>Tanggal</label><div class="lm-date"><button type="button" class="lm-date-btn" onclick="lmDateOpen('hTgl',this)"><span class="lm-date-txt">Pilih tanggal</span> <span>📅</span></button><input type="hidden" id="hTgl"></div></span>
         <button class="hl-btn hl-btn-primary hl-btn-sm rep-primary" onclick="loadHarian()">🔍 Tampilkan</button>
         <div class="rep-actions">
-          <button class="hl-btn hl-btn-outline hl-btn-sm" onclick="window.print()">🖨️ Print</button>
+          <button class="hl-btn hl-btn-outline hl-btn-sm" onclick="printReport()">🖨️ Print</button>
           <?php if (hasPermission('laporan.export')): ?>
           <button class="hl-btn hl-btn-outline hl-btn-sm" onclick="exportCSV('harian')">📥 Export CSV</button>
           <?php endif; ?>
@@ -570,7 +572,7 @@ tfoot td{padding:9px 12px;font-weight:700;font-size:13px}
         <span class="rep-field"><label>Bulan</label><div class="lm-date"><button type="button" class="lm-date-btn" onclick="lmMonthOpen('bBulan',this)"><span class="lm-date-txt">Pilih bulan</span> <span>📅</span></button><input type="hidden" id="bBulan"></div></span>
         <button class="hl-btn hl-btn-primary hl-btn-sm rep-primary" onclick="loadBulanan()">🔍 Tampilkan</button>
         <div class="rep-actions">
-          <button class="hl-btn hl-btn-outline hl-btn-sm" onclick="window.print()">🖨️ Print</button>
+          <button class="hl-btn hl-btn-outline hl-btn-sm" onclick="printReport()">🖨️ Print</button>
           <?php if (hasPermission('laporan.export')): ?>
           <button class="hl-btn hl-btn-outline hl-btn-sm" onclick="exportCSV('bulanan')">📥 Export CSV</button>
           <?php endif; ?>
@@ -649,7 +651,7 @@ tfoot td{padding:9px 12px;font-weight:700;font-size:13px}
             <span style="font-size:10px;opacity:.85;margin-left:4px"><?= $rl_insight['remaining'] ?>/<?= $rl_insight['limit'] ?></span>
           <?php endif; ?>
         </button>
-        <button class="hl-btn hl-btn-outline hl-btn-sm" onclick="window.print()">🖨️ Print</button>
+        <button class="hl-btn hl-btn-outline hl-btn-sm" onclick="printReport()">🖨️ Print</button>
         </div>
       </div>
     </div>
@@ -1290,6 +1292,68 @@ function downloadCSV(rows, filename) {
   const csv = rows.map(r => r.map(c => '"' + String(c).replace(/"/g,'""') + '"').join(',')).join('\n');
   // lmSaveFile (global): di APK simpan/bagikan via native, di browser unduhan biasa. BOM utk Excel.
   window.lmSaveFile(filename, '﻿' + csv, 'text/csv');
+}
+
+// ── PRINT ─────────────────────────────────────────────
+// Browser/PWA: window.print() (native print dialog jalan normal).
+// APK (Capacitor WebView): window.print() tak memicu apa-apa → render tab aktif
+// jadi PDF (html2canvas + jsPDF) lalu bagikan via share sheet (reuse lmSaveFile).
+function printReport(){
+  var native = false;
+  try { native = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()); } catch(e){}
+  if (!native) { window.print(); return; }
+  sharePDF();
+}
+
+function _activeReportTab(){
+  var ids = ['tabHarian','tabBulanan','tabLR','tabProd'];
+  for (var i=0;i<ids.length;i++){
+    var el = document.getElementById(ids[i]);
+    if (el && getComputedStyle(el).display !== 'none') return { el: el, id: ids[i] };
+  }
+  return null;
+}
+
+async function sharePDF(){
+  var tab = _activeReportTab();
+  if (!tab){ if (window.showToast) showToast('Tidak ada laporan untuk dicetak','error'); return; }
+  if (typeof html2canvas === 'undefined' || !window.jspdf || !window.jspdf.jsPDF){
+    // Pustaka gagal load → jatuh ke print bawaan (better than nothing)
+    window.print(); return;
+  }
+  if (window.showToast) showToast('⏳ Menyiapkan PDF…','info');
+  try {
+    var canvas = await html2canvas(tab.el, {
+      scale: 2,
+      backgroundColor: '#ffffff',
+      useCORS: true,
+      ignoreElements: function(el){ return el.classList && el.classList.contains('no-print'); }
+    });
+    var imgData = canvas.toDataURL('image/jpeg', 0.92);
+    var pdf = new window.jspdf.jsPDF('p','pt','a4');
+    var pw = pdf.internal.pageSize.getWidth();
+    var ph = pdf.internal.pageSize.getHeight();
+    var m = 24; // margin kiri/kanan
+    var imgW = pw - m*2;
+    var imgH = canvas.height * imgW / canvas.width;
+    var pageContentH = ph - m*2;
+    var pos = m;
+    var heightLeft = imgH;
+    pdf.addImage(imgData, 'JPEG', m, pos, imgW, imgH);
+    heightLeft -= pageContentH;
+    while (heightLeft > 0){
+      pos = m - (imgH - heightLeft);
+      pdf.addPage();
+      pdf.addImage(imgData, 'JPEG', m, pos, imgW, imgH);
+      heightLeft -= pageContentH;
+    }
+    var stamp = new Date().toISOString().slice(0,10);
+    var name = 'laporan_' + tab.id.replace('tab','').toLowerCase() + '_' + stamp + '.pdf';
+    var blob = pdf.output('blob');
+    await window.lmSaveFile(name, blob, 'application/pdf');
+  } catch(e){
+    if (window.showToast) showToast('Gagal membuat PDF: ' + (e && e.message ? e.message : e), 'error');
+  }
 }
 
 // ── PRODUKTIVITAS KARYAWAN ────────────────────────────

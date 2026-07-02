@@ -143,16 +143,29 @@ function renderGlobalJsHelpers(): void { ?>
     window.capitalize = s => s ? s.charAt(0).toUpperCase() + s.slice(1) : '';
     window.katLabelInventori = k => ({deterjen:'🧴 Deterjen', parfum:'🌸 Parfum', pewangi:'💧 Pewangi', plastik_kemasan:'📦 Plastik', peralatan:'🔧 Peralatan', lainnya:'📋 Lainnya'}[k] || k);
 
-    // ── Simpan/bagikan file (CSV/teks). Di APK: Filesystem tulis + Share (unduhan blob
-    //    diblokir Android WebView). Di browser/PWA: unduhan biasa. Return true kalau tertangani.
+    // ── Simpan/bagikan file (CSV/teks ATAU Blob biner spt PDF). Di APK: Filesystem tulis +
+    //    Share (unduhan blob diblokir Android WebView). Di browser/PWA: unduhan biasa.
+    //    `content` boleh string (teks) atau Blob (biner). Return true kalau tertangani.
     window.lmSaveFile = async function(filename, content, mime){
       mime = mime || 'text/plain';
+      var isBlob = (typeof Blob !== 'undefined') && (content instanceof Blob);
+      async function _toB64(){
+        if (isBlob) {
+          return await new Promise(function(res, rej){
+            var r = new FileReader();
+            r.onloadend = function(){ res(String(r.result || '').split(',')[1] || ''); };
+            r.onerror = rej;
+            r.readAsDataURL(content);
+          });
+        }
+        return btoa(unescape(encodeURIComponent(content)));
+      }
       try {
         var Cap = window.Capacitor;
         if (Cap && Cap.isNativePlatform && Cap.isNativePlatform()) {
           var P = (Cap.Plugins) || {}, FS = P.Filesystem, SH = P.Share;
           if (FS) {
-            var b64 = btoa(unescape(encodeURIComponent(content)));
+            var b64 = await _toB64();
             var uri = null;
             try { var w = await FS.writeFile({ path: filename, data: b64, directory: 'CACHE' }); uri = w && w.uri; } catch(e){}
             if (!uri && FS.getUri) { try { var g = await FS.getUri({ path: filename, directory: 'CACHE' }); uri = g && g.uri; } catch(e){} }
@@ -163,7 +176,7 @@ function renderGlobalJsHelpers(): void { ?>
       } catch(e){}
       // Browser / PWA: unduhan blob biasa
       try {
-        var blob = new Blob([content], { type: mime + ';charset=utf-8' });
+        var blob = isBlob ? content : new Blob([content], { type: mime + ';charset=utf-8' });
         var url = URL.createObjectURL(blob);
         var a = document.createElement('a'); a.href = url; a.download = filename; a.rel = 'noopener';
         document.body.appendChild(a); a.click(); a.remove();
