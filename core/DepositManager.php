@@ -67,20 +67,29 @@ class DepositManager
         string $metode      = 'cash',
         string $catatan     = '',
         ?int   $createdBy   = null,
-        ?string $buktiBayar = null
+        ?string $buktiBayar = null,
+        bool   $applyBonus  = true
     ): array {
         if ($jumlah <= 0) return [0, 'Jumlah topup harus > 0'];
         $db = Database::get();
+        // Transaction-aware: bila pemanggil sudah dalam transaksi (mis. orders.php
+        // action=update), numpang — jangan begin/commit sendiri; error dilempar
+        // sebagai exception supaya transaksi luar rollback utuh.
+        $ownTx = !$db->inTransaction();
         try {
-            $db->beginTransaction();
+            if ($ownTx) $db->beginTransaction();
             // Lock pelanggan row
             $st = $db->prepare("SELECT saldo_deposit FROM hl_pelanggan WHERE id=? AND tenant_id=? FOR UPDATE");
             $st->execute([$pelangganId, $tenantId]);
             $saldoSebelum = (float)$st->fetchColumn();
 
-            // Hitung bonus
-            $bonusInfo = self::calcBonus($tenantId, $outletId, $jumlah);
-            $bonus     = (float)$bonusInfo['bonus'];
+            // Hitung bonus (skip utk refund)
+            if ($applyBonus) {
+                $bonusInfo = self::calcBonus($tenantId, $outletId, $jumlah);
+                $bonus     = (float)$bonusInfo['bonus'];
+            } else {
+                $bonus = 0.0;
+            }
             $kredit    = $jumlah + $bonus;
             $saldoSesudah = $saldoSebelum + $kredit;
 
@@ -123,13 +132,16 @@ class DepositManager
                 ]);
             }
             $topupId = (int)$db->lastInsertId();
-            $db->commit();
+            if ($ownTx) $db->commit();
             return [$topupId, null];
         } catch (Throwable $e) {
-            try { $db->rollBack(); } catch (Throwable $rbErr) {
-                if (class_exists('ErrorLogger')) ErrorLogger::logException('db_rollback', $rbErr);
+            if ($ownTx) {
+                try { $db->rollBack(); } catch (Throwable $rbErr) {
+                    if (class_exists('ErrorLogger')) ErrorLogger::logException('db_rollback', $rbErr);
+                }
+                return [0, 'Gagal topup: ' . $e->getMessage()];
             }
-            return [0, 'Gagal topup: ' . $e->getMessage()];
+            throw $e; // dalam transaksi luar → biarkan pemanggil rollback utuh
         }
     }
 
