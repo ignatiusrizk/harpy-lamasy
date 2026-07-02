@@ -567,7 +567,7 @@ tfoot td{padding:9px 12px;font-weight:700;font-size:13px}
       </button>
       <div class="hl-filter-bar" id="bulananFilter">
         <label>Bulan</label>
-        <input type="month" id="bBulan"/>
+        <div class="lm-date"><button type="button" class="lm-date-btn" onclick="lmMonthOpen('bBulan',this)"><span class="lm-date-txt">Pilih bulan</span> <span>📅</span></button><input type="hidden" id="bBulan"></div>
         <button class="hl-btn hl-btn-primary hl-btn-sm" onclick="loadBulanan()">🔍 Tampilkan</button>
         <button class="hl-btn hl-btn-outline hl-btn-sm" onclick="window.print()">🖨️ Print</button>
         <?php if (hasPermission('laporan.export')): ?>
@@ -719,6 +719,12 @@ tfoot td{padding:9px 12px;font-weight:700;font-size:13px}
     .lm-cal-day.today{outline:1.5px solid var(--teal)}
     .lm-cal-day.sel{background:var(--teal);color:var(--navy-d);font-weight:800}
     .lm-cal-day.empty{visibility:hidden;cursor:default}
+    /* Month picker (Bulanan & Produktivitas) — reuse .lm-cal */
+    .lm-month-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+    .lm-month-cell{border:none;background:var(--off);border-radius:9px;padding:14px 6px;font-size:13px;font-weight:700;color:var(--navy);cursor:pointer;font-family:var(--font)}
+    .lm-month-cell:hover{background:var(--teal-bg)}
+    .lm-month-cell.today{outline:1.5px solid var(--teal)}
+    .lm-month-cell.sel{background:var(--teal);color:var(--navy-d)}
     </style>
 
     <div id="lrContent"><div class="empty">Pilih periode lalu klik "Hitung L/R"</div></div>
@@ -732,8 +738,7 @@ tfoot td{padding:9px 12px;font-weight:700;font-size:13px}
         <div class="hl-card-title">👥 Produktivitas Karyawan</div>
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
           <label style="font-size:12px;color:var(--gray);font-weight:600">Bulan:</label>
-          <input type="month" id="prodBulan" value="<?= date('Y-m') ?>" onchange="loadProd()"
-                 style="padding:7px 10px;border:1px solid #E5E9F2;border-radius:7px;font-family:inherit">
+          <div class="lm-date"><button type="button" class="lm-date-btn" onclick="lmMonthOpen('prodBulan',this,loadProd)"><span class="lm-date-txt">Pilih bulan</span> <span>📅</span></button><input type="hidden" id="prodBulan" value="<?= date('Y-m') ?>"></div>
           <?php if (hasPermission('laporan.export')): ?>
           <button class="hl-btn hl-btn-outline hl-btn-sm" onclick="exportCSV('produktivitas')">📥 Export CSV</button>
           <?php endif; ?>
@@ -851,6 +856,34 @@ function lmCalRender(cal, id, y, m){
 }
 function lmCalNav(btn, id, y, m, delta){ m+=delta; if(m<1){m=12;y--;} if(m>12){m=1;y++;} lmCalRender(btn.closest('.lm-cal'), id, y, m); }
 function lmCalPick(id, v){ lmDateSet(id, v); lmCalClose(); }
+
+// ── Month picker (Bulanan & Produktivitas) — reuse .lm-cal container ──
+const LM_MO = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+let _lmMonthCb = null;
+function lmMonthFmt(v){ if(!v) return 'Pilih bulan'; const p=v.split('-'); return LM_MO[(+p[1])-1]+' '+p[0]; }
+function lmMonthSet(id, val){ const h=document.getElementById(id); if(!h) return; h.value=val||''; const w=h.closest('.lm-date'); if(w){ const t=w.querySelector('.lm-date-txt'); if(t) t.textContent=lmMonthFmt(val); } }
+function lmMonthOpen(id, btn, cb){
+  if(_lmCalFor===id){ lmCalClose(); return; }
+  lmCalClose(); _lmCalFor=id; _lmMonthCb = cb || null;
+  const cur=(document.getElementById(id).value)||'';
+  const y = cur ? parseInt(cur.split('-')[0],10) : new Date().getFullYear();
+  const cal=document.createElement('div'); cal.className='lm-cal';
+  document.body.appendChild(cal);
+  const r=btn.getBoundingClientRect();
+  cal.style.top=(r.bottom+6)+'px';
+  cal.style.left=Math.max(8, Math.min(r.left, window.innerWidth-272))+'px';
+  lmMonthRender(cal, id, y);
+}
+function lmMonthRender(cal, id, y){
+  const cur=document.getElementById(id).value;
+  const now=new Date(), curY=now.getFullYear(), curM=now.getMonth()+1;
+  let h='<div class="lm-cal-head"><button type="button" onclick="lmMonthNav(this,\''+id+'\','+y+',-1)">‹</button><span class="lm-cal-title">'+y+'</span><button type="button" onclick="lmMonthNav(this,\''+id+'\','+y+',1)">›</button></div><div class="lm-month-grid">';
+  for(let m=1;m<=12;m++){ const v=y+'-'+String(m).padStart(2,'0'); const sel=v===cur, tod=(y===curY&&m===curM); h+='<button type="button" class="lm-month-cell'+(sel?' sel':'')+(tod?' today':'')+'" onclick="lmMonthPick(\''+id+'\',\''+v+'\')">'+LM_MO[m-1]+'</button>'; }
+  cal.innerHTML=h+'</div>';
+}
+function lmMonthNav(btn, id, y, delta){ lmMonthRender(btn.closest('.lm-cal'), id, y+delta); }
+function lmMonthPick(id, v){ lmMonthSet(id, v); const cb=_lmMonthCb; lmCalClose(); if(cb) cb(); }
+
 document.addEventListener('click', function(e){
   if(!e.target.closest('#repDD')){ const d=document.getElementById('repDD'); if(d) d.classList.remove('open'); }
   if(!e.target.closest('.lm-date') && !e.target.closest('.lm-cal')) lmCalClose();
@@ -878,7 +911,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const today = localDateStr();
   const bulan = today.substring(0,7);
   lmDateSet('hTgl', today);
-  document.getElementById('bBulan').value  = bulan;
+  lmMonthSet('bBulan', bulan);
+  lmMonthSet('prodBulan', document.getElementById('prodBulan').value);
   lmDateSet('lrDari', bulan + '-01');
   lmDateSet('lrSampai', today);
   loadHarian();
