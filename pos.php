@@ -508,7 +508,14 @@ if ($action) {
                 ");
                 $_validate->execute([$oid, $tid, $_metodeIn]);
                 if (!$_validate->fetchColumn()) {
-                    throw new RuntimeException('Metode pembayaran tidak valid atau dinonaktifkan.');
+                    // Selaras dgn fallback render dropdown: outlet tanpa rows sama sekali
+                    // (pra-migrasi) tetap boleh pakai 3 builtin default — jangan tampilkan
+                    // Tunai di UI lalu tolak di server.
+                    $_cnt = $db->prepare("SELECT COUNT(*) FROM hl_payment_methods WHERE outlet_id=? AND tenant_id=?");
+                    $_cnt->execute([$oid, $tid]);
+                    if ((int)$_cnt->fetchColumn() > 0 || !in_array($_metodeIn, ['cash','transfer','qris'], true)) {
+                        throw new RuntimeException('Metode pembayaran tidak valid atau dinonaktifkan.');
+                    }
                 }
                 $_metodeStore = $_metodeIn;
             }

@@ -43,8 +43,11 @@ class TenantProvisioner
             // ── Step 3: Seed permissions + mapping ────
             self::seedPermissions($db, $tenantId, $roleIds);
 
-            // ── Step 4: Seed layanan default ──────────
-            self::seedLayanan($db, $tenantId);
+            // ── Step 4: Layanan default TIDAK di-seed di sini ──
+            // provision() belum punya outlet, sedangkan hl_layanan.outlet_id wajib
+            // (default kolom 1 = outlet orang lain → layanan tak tampil di POS).
+            // Layanan di-seed saat outlet dibuat (add-outlet → ServiceCatalog),
+            // atau panggil self::seedLayanan($db, $tenantId, $outletId) eksplisit.
 
             // ── Step 5: Buat user owner ───────────────
             $tempPassword = self::generatePassword();
@@ -284,7 +287,7 @@ class TenantProvisioner
     }
 
     // ── Internal: seed layanan default ────────────────
-    private static function seedLayanan(PDO $db, int $tenantId): void
+    public static function seedLayanan(PDO $db, int $tenantId, int $outletId): void
     {
         $layanan = [
             ['Cuci + Kering Reguler',  'Reguler', 'kg',   5000,  1],
@@ -300,11 +303,11 @@ class TenantProvisioner
         ];
 
         $stmt = $db->prepare(
-            "INSERT INTO hl_layanan (tenant_id, nama, kategori, satuan, harga, urutan, created_at)
-             VALUES (?,?,?,?,?,?,NOW())"
+            "INSERT INTO hl_layanan (tenant_id, outlet_id, nama, kategori, satuan, harga, urutan, created_at)
+             VALUES (?,?,?,?,?,?,?,NOW())"
         );
         foreach ($layanan as [$nama, $kat, $sat, $harga, $urut]) {
-            $stmt->execute([$tenantId, $nama, $kat, $sat, $harga, $urut]);
+            $stmt->execute([$tenantId, $outletId, $nama, $kat, $sat, $harga, $urut]);
         }
     }
 

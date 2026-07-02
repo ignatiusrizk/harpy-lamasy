@@ -64,6 +64,15 @@ if ($action) {
             'bukti_foto' => $buktiFoto,
         ];
 
+        // Kategori tak boleh milik tipe lawan (mis. 'Penjualan Laundry' pada kas keluar)
+        // — nilai custom/legacy di luar dua daftar ini tetap diterima.
+        $_katMasuk  = ['Penjualan Laundry','Pelunasan Order','Pendapatan Lain','Modal'];
+        $_katKeluar = ['Gaji Karyawan','Bahan & Deterjen','Listrik & Air','Sewa Tempat','Peralatan','Transportasi','Operasional','Lain-lain'];
+        if (($data['tipe'] === 'masuk'  && in_array($data['kategori'], $_katKeluar, true)) ||
+            ($data['tipe'] === 'keluar' && in_array($data['kategori'], $_katMasuk,  true))) {
+            echo json_encode(['error' => 'Kategori tidak sesuai tipe kas (masuk/keluar)']); exit;
+        }
+
         if (!empty($d['id'])) {
             TenantQuery::update('hl_kas', $data, 'id = ?', [intval($d['id'])]);
         } else {
@@ -386,8 +395,18 @@ function setTipe(tipe) {
   document.getElementById('f_tipe').value = tipe;
   document.getElementById('btnMasuk').classList.toggle('active', tipe==='masuk');
   document.getElementById('btnKeluar').classList.toggle('active', tipe==='keluar');
+  // Kategori mengikuti tipe: sembunyikan optgroup lawan, reset pilihan yg tak cocok
+  const om = document.getElementById('optMasuk'), ok = document.getElementById('optKeluar');
+  if (om && ok) {
+    om.hidden = (tipe !== 'masuk'); ok.hidden = (tipe !== 'keluar');
+    [...om.children].forEach(o => o.disabled = (tipe !== 'masuk'));
+    [...ok.children].forEach(o => o.disabled = (tipe !== 'keluar'));
+    const sel = document.getElementById('f_kategori');
+    if (sel.selectedOptions[0] && sel.selectedOptions[0].disabled) sel.value = '';
+  }
   updateJumlahPreview();
 }
+setTipe('masuk'); // init: default masuk → kategori keluar tersembunyi
 
 function updateJumlahPreview() {
   const jumlah = parseFloat(document.getElementById('f_jumlah').value) || 0;

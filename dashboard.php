@@ -1884,7 +1884,7 @@ function alertRow(o,tipe){
   const waMsg=tipe==='siap'?`Halo *${o.nama_pelanggan}*, laundry Anda order *${o.no_order}* sudah siap diambil. Total: Rp ${parseFloat(o.total).toLocaleString('id-ID')}. Terima kasih!`:tipe==='piutang'?`Halo *${o.nama_pelanggan}*, mengingatkan pembayaran order *${o.no_order}* sebesar Rp ${parseFloat(o.sisa_bayar).toLocaleString('id-ID')} belum lunas.`:`Halo *${o.nama_pelanggan}*, order *${o.no_order}* dijadwalkan selesai ${fmtDate(o.estimasi_selesai)}.`;
   const waUrl=phone?'https://wa.me/'+phone+'?text='+encodeURIComponent(waMsg):null;
   let badge='';
-  if(tipe==='mepet'){const est=new Date(o.estimasi_selesai+'T00:00:00'),today=new Date();today.setHours(0,0,0,0);const diff=Math.round((est-today)/86400000);badge=diff<=0?'<span class="hl-badge hl-badge-red" style="font-size:10px">Terlambat</span>':'<span class="hl-badge hl-badge-dp" style="font-size:10px">Besok</span>';}
+  if(tipe==='mepet'){const _es=String(o.estimasi_selesai||'');const est=new Date(_es.includes(' ')?_es.replace(' ','T'):_es+'T00:00:00'),today=new Date();today.setHours(0,0,0,0);const diff=Math.round((est-today)/86400000);badge=diff<=0?'<span class="hl-badge hl-badge-red" style="font-size:10px">Terlambat</span>':'<span class="hl-badge hl-badge-dp" style="font-size:10px">Besok</span>';}
   if(tipe==='piutang')badge=`<span class="hl-badge hl-badge-red" style="font-size:10px">${o.hari_lalu} hari lalu</span>`;
   return `<div class="alert-row">
     <div style="min-width:0;flex:1">
@@ -1919,7 +1919,7 @@ async function loadChart(){
 }
 
 function statusLabel(s){return{masuk:'Diterima',cuci:'Cuci',kering:'Kering',setrika:'Setrika',siap:'Siap',diambil:'Diambil'}[s]||s;}
-function fmtDate(d){if(!d)return'-';return new Date(d+'T00:00:00').toLocaleDateString('id-ID',{day:'2-digit',month:'short'});}
+function fmtDate(d){if(!d)return'-';const s=String(d);return new Date(s.includes(' ')?s.replace(' ','T'):s+'T00:00:00').toLocaleDateString('id-ID',{day:'2-digit',month:'short'});}
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 </script>
 </body>
