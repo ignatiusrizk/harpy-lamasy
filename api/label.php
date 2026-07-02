@@ -31,7 +31,8 @@ $size     = in_array(($order['label_size'] ?? '80'), ['58','80'], true) ? $order
 $widthMm  = $size === '58' ? 58 : 80;
 $qrMm     = $size === '58' ? 35 : 48;
 $qrPx     = $size === '58' ? 180 : 240;
-$kodeSize = $size === '58' ? 18 : 24;
+// No. order bisa panjang (ada prefix outlet) → font lebih kecil biar tak patah di tengah
+$kodeSize = $size === '58' ? 13 : 16;
 
 $nama   = $order['nama_pelanggan'] ?: '-';
 $kode   = $order['no_order'];
@@ -72,9 +73,12 @@ $qrSrc  = "https://api.qrserver.com/v1/create-qr-code/?size={$qrPx}x{$qrPx}&data
   .kode {
     font-size: <?= $kodeSize ?>pt;
     font-weight: 800;
-    letter-spacing: .02em;
+    letter-spacing: .01em;
+    line-height: 1.15;
     margin: 1mm 0 2mm;
-    word-break: break-all;
+    word-break: normal;          /* wrap natural di tanda hubung, jangan patah di tengah kata */
+    overflow-wrap: break-word;
+    hyphens: none;
   }
   .qr {
     margin: 1mm auto 2mm;
