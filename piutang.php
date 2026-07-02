@@ -430,16 +430,20 @@ require_once ROOT . '/core/CoinLedger.php';
 .lmui-opt{display:block;width:100%;text-align:left;padding:9px 11px;border:0;background:none;font-family:inherit;font-size:14px;border-radius:7px;cursor:pointer;color:#0F1C3A}
 .lmui-opt:hover{background:#F1F5FB}
 .lmui-opt.sel{background:#E8F0FE;font-weight:700;color:#1E40AF}
-.lmui-cal{width:250px;padding:10px;overflow:visible}
-.lmui-cal-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;font-weight:700;color:#0F1C3A;font-size:13.5px}
-.lmui-nav{border:0;background:#F1F5FB;border-radius:7px;width:28px;height:28px;font-size:16px;cursor:pointer;color:#374151;line-height:1}
-.lmui-dows{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:2px}
-.lmui-dow{text-align:center;font-size:10.5px;font-weight:700;color:#9CA3AF;padding:2px 0}
-.lmui-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:2px}
-.lmui-grid>span{height:30px}
-.lmui-day{height:30px;border:0;background:none;border-radius:7px;font-family:inherit;font-size:13px;cursor:pointer;color:#374151}
-.lmui-day:hover{background:#F1F5FB}
-.lmui-day.sel{background:#1E40AF;color:#fff;font-weight:700}
+/* Date picker — pola sama dgn laporan.php (terbukti jalan di WebView) */
+.lm-date{position:relative;display:block}
+.lm-date-btn{width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 12px;border:1px solid #E5E9F2;border-radius:8px;background:#fff;color:#0F1C3A;font-size:14px;font-weight:600;font-family:inherit;cursor:pointer}
+.lm-cal{position:fixed;z-index:9001;background:#fff;border:1px solid rgba(27,45,90,.12);border-radius:12px;box-shadow:0 12px 34px rgba(15,28,58,.18);padding:12px;width:264px}
+.lm-cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.lm-cal-head button{border:none;background:#F1F5FB;width:30px;height:30px;border-radius:8px;cursor:pointer;font-size:15px;color:#0F1C3A}
+.lm-cal-title{font-weight:800;font-size:14px;color:#0F1C3A}
+.lm-cal-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:2px}
+.lm-cal-dow{font-size:10px;color:#9CA3AF;text-align:center;font-weight:700;padding:4px 0}
+.lm-cal-day{border:none;background:none;height:32px;border-radius:8px;font-size:13px;color:#0F1C3A;cursor:pointer;font-family:inherit}
+.lm-cal-day:hover{background:#F1F5FB}
+.lm-cal-day.today{outline:1.5px solid #1E40AF}
+.lm-cal-day.sel{background:#1E40AF;color:#fff;font-weight:800}
+.lm-cal-day.empty{visibility:hidden;cursor:default}
 </style>
 </head>
 <body>
@@ -484,10 +488,10 @@ require_once ROOT . '/core/CoinLedger.php';
     <select id="genPel" class="lm-cust"><option value="">— Memuat —</option></select>
   </div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-    <div class="fld"><label>Periode Mulai</label><input type="date" id="genStart" class="lm-cust" value="<?= date('Y-m-01') ?>"></div>
-    <div class="fld"><label>Periode Akhir</label><input type="date" id="genEnd" class="lm-cust" value="<?= date('Y-m-d') ?>"></div>
+    <div class="fld"><label>Periode Mulai</label><div class="lm-date"><button type="button" class="lm-date-btn" onclick="lmDateOpen('genStart',this)"><span class="lm-date-txt">Pilih tanggal</span> <span>📅</span></button><input type="hidden" id="genStart" value="<?= date('Y-m-01') ?>"></div></div>
+    <div class="fld"><label>Periode Akhir</label><div class="lm-date"><button type="button" class="lm-date-btn" onclick="lmDateOpen('genEnd',this)"><span class="lm-date-txt">Pilih tanggal</span> <span>📅</span></button><input type="hidden" id="genEnd" value="<?= date('Y-m-d') ?>"></div></div>
   </div>
-  <div class="fld"><label>Jatuh Tempo</label><input type="date" id="genTempo" class="lm-cust" value="<?= date('Y-m-d', strtotime('+14 days')) ?>"></div>
+  <div class="fld"><label>Jatuh Tempo</label><div class="lm-date"><button type="button" class="lm-date-btn" onclick="lmDateOpen('genTempo',this)"><span class="lm-date-txt">Pilih tanggal</span> <span>📅</span></button><input type="hidden" id="genTempo" value="<?= date('Y-m-d', strtotime('+14 days')) ?>"></div></div>
   <div style="display:flex;gap:8px;justify-content:flex-end">
     <button class="hl-btn hl-btn-outline" onclick="closeModal('genModal')">Batal</button>
     <button class="hl-btn hl-btn-primary" onclick="doGen()">Buat Tagihan</button>
@@ -509,10 +513,10 @@ require_once ROOT . '/core/CoinLedger.php';
     </select>
   </div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-    <div class="fld"><label>Periode Mulai</label><input type="date" id="bulkStart" class="lm-cust" value="<?= date('Y-m-01') ?>"></div>
-    <div class="fld"><label>Periode Akhir</label><input type="date" id="bulkEnd" class="lm-cust" value="<?= date('Y-m-d') ?>"></div>
+    <div class="fld"><label>Periode Mulai</label><div class="lm-date"><button type="button" class="lm-date-btn" onclick="lmDateOpen('bulkStart',this)"><span class="lm-date-txt">Pilih tanggal</span> <span>📅</span></button><input type="hidden" id="bulkStart" value="<?= date('Y-m-01') ?>"></div></div>
+    <div class="fld"><label>Periode Akhir</label><div class="lm-date"><button type="button" class="lm-date-btn" onclick="lmDateOpen('bulkEnd',this)"><span class="lm-date-txt">Pilih tanggal</span> <span>📅</span></button><input type="hidden" id="bulkEnd" value="<?= date('Y-m-d') ?>"></div></div>
   </div>
-  <div class="fld"><label>Jatuh Tempo (semua)</label><input type="date" id="bulkTempo" class="lm-cust" value="<?= date('Y-m-d', strtotime('+14 days')) ?>"></div>
+  <div class="fld"><label>Jatuh Tempo (semua)</label><div class="lm-date"><button type="button" class="lm-date-btn" onclick="lmDateOpen('bulkTempo',this)"><span class="lm-date-txt">Pilih tanggal</span> <span>📅</span></button><input type="hidden" id="bulkTempo" value="<?= date('Y-m-d', strtotime('+14 days')) ?>"></div></div>
   <div style="background:#FEF3C7;border:1px solid #FDE68A;border-radius:6px;padding:8px 12px;margin-bottom:12px;font-size:11.5px;color:#92400E">
     💡 Yang sudah punya piutang di periode ini akan di-UPDATE (jumlah total/dibayar terbaru). Tidak duplikat.
   </div>
@@ -760,8 +764,6 @@ async function doBayar(){
 
 /* ── Kontrol custom: select & date native → UI konsisten ────────────────
    Native tetap ada (disembunyikan) sebagai sumber .value; UI custom sinkron. */
-const _MB=['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
-function _fmtDL(v){ if(!v) return '— Pilih —'; const d=new Date(v+'T00:00:00'); if(isNaN(d)) return '— Pilih —'; return `${d.getDate()} ${_MB[d.getMonth()]} ${d.getFullYear()}`; }
 let _pop=null,_popAnchor=null,_reposFn=null;
 function _closePop(){ if(_pop){_pop.remove();_pop=null;} _popAnchor=null;
   document.removeEventListener('mousedown',_onOutside,true);
@@ -801,41 +803,48 @@ function _initSel(sel){
   }, true);
   sel.after(trg); sync();
 }
-function _initDate(inp){
-  inp.classList.remove('lm-cust'); inp.style.display='none';
-  const trg=document.createElement('button'); trg.type='button'; trg.className='lmui-trg';
-  trg.innerHTML='<span class="lmui-lbl"></span><span class="lmui-car">📅</span>';
-  const lbl=trg.querySelector('.lmui-lbl');
-  const sync=()=>{ lbl.textContent=_fmtDL(inp.value); trg.classList.toggle('ph',!inp.value); };
-  inp._lmSync=sync; inp.addEventListener('change',sync);
-  trg.onclick=()=>{
-    let base=inp.value?new Date(inp.value+'T00:00:00'):new Date(); if(isNaN(base)) base=new Date();
-    let vy=base.getFullYear(),vm=base.getMonth();
-    _openPop(trg,'lmui-cal',pop=>{
-      const render=()=>{
-        const startDow=new Date(vy,vm,1).getDay();
-        const days=new Date(vy,vm+1,0).getDate();
-        const dows=['M','S','S','R','K','J','S'].map(d=>`<span class="lmui-dow">${d}</span>`).join('');
-        let cells=''; for(let i=0;i<startDow;i++) cells+='<span></span>';
-        for(let d=1;d<=days;d++){ const ds=`${vy}-${String(vm+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-          cells+=`<button type="button" class="lmui-day${ds===inp.value?' sel':''}" data-d="${ds}">${d}</button>`; }
-        pop.innerHTML=`<div class="lmui-cal-hd"><button type="button" class="lmui-nav" data-nav="-1">‹</button><span>${_MB[vm]} ${vy}</span><button type="button" class="lmui-nav" data-nav="1">›</button></div><div class="lmui-dows">${dows}</div><div class="lmui-grid">${cells}</div>`;
-        _placePop(false);
-      };
-      render();
-      pop.onclick=e=>{ const nav=e.target.closest('.lmui-nav');
-        if(nav){ vm+=+nav.dataset.nav; if(vm<0){vm=11;vy--;} if(vm>11){vm=0;vy++;} render(); return; }
-        const day=e.target.closest('.lmui-day'); if(!day) return;
-        inp.value=day.dataset.d; inp.dispatchEvent(new Event('change')); _closePop();
-      };
-    }, false);
-  };
-  inp.after(trg); sync();
-}
-function lmEnhance(root){ (root||document).querySelectorAll('select.lm-cust').forEach(_initSel);
-  (root||document).querySelectorAll('input.lm-cust[type=date]').forEach(_initDate); }
+function lmEnhance(root){ (root||document).querySelectorAll('select.lm-cust').forEach(_initSel); }
 function lmSyncModal(id){ document.getElementById(id).querySelectorAll('[id]').forEach(el=>el._lmSync&&el._lmSync()); }
 lmEnhance();
+
+/* ── Date picker: pola sama persis dgn laporan.php (terbukti jalan) ── */
+function localDateStr(d){ const dt=d||new Date(); return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0'); }
+function lmFmtDMY(v){ if(!v) return 'Pilih tanggal'; const p=v.split('-'); const mo=['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des']; return (+p[2])+' '+mo[(+p[1])-1]+' '+p[0]; }
+function lmDateSet(id, val){ const h=document.getElementById(id); if(!h) return; h.value=val||''; const w=h.closest('.lm-date'); if(w){ const t=w.querySelector('.lm-date-txt'); if(t) t.textContent=lmFmtDMY(val); } }
+let _lmCalFor=null;
+function lmCalClose(){ document.querySelectorAll('.lm-cal').forEach(c=>c.remove()); _lmCalFor=null; }
+function lmDateOpen(id, btn){
+  if(_lmCalFor===id){ lmCalClose(); return; }
+  lmCalClose(); _lmCalFor=id;
+  const cur=(document.getElementById(id).value)||localDateStr();
+  const [y,m]=cur.split('-').map(Number);
+  const cal=document.createElement('div'); cal.className='lm-cal';
+  document.body.appendChild(cal); // ke body → tak ke-clip modal
+  const r=btn.getBoundingClientRect();
+  const estH=300;
+  cal.style.top=Math.max(8, (r.bottom+estH>window.innerHeight-8 ? r.top-estH-6 : r.bottom+6))+'px';
+  cal.style.left=Math.max(8, Math.min(r.left, window.innerWidth-272))+'px';
+  lmCalRender(cal, id, y, m);
+}
+function lmCalRender(cal, id, y, m){
+  const mo=['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+  const first=new Date(y, m-1, 1).getDay();
+  const days=new Date(y, m, 0).getDate();
+  const today=localDateStr(), sel=document.getElementById(id).value;
+  const pad=n=>String(n).padStart(2,'0');
+  let h='<div class="lm-cal-head"><button type="button" onclick="lmCalNav(this,\''+id+'\','+y+','+m+',-1)">‹</button><span class="lm-cal-title">'+mo[m-1]+' '+y+'</span><button type="button" onclick="lmCalNav(this,\''+id+'\','+y+','+m+',1)">›</button></div><div class="lm-cal-grid">';
+  ['M','S','S','R','K','J','S'].forEach(d=>h+='<div class="lm-cal-dow">'+d+'</div>');
+  for(let i=0;i<first;i++) h+='<button class="lm-cal-day empty"></button>';
+  for(let d=1;d<=days;d++){ const v=y+'-'+pad(m)+'-'+pad(d); h+='<button type="button" class="lm-cal-day'+(v===sel?' sel':'')+(v===today?' today':'')+'" onclick="lmCalPick(\''+id+'\',\''+v+'\')">'+d+'</button>'; }
+  cal.innerHTML=h+'</div>';
+}
+function lmCalNav(btn, id, y, m, delta){ m+=delta; if(m<1){m=12;y--;} if(m>12){m=1;y++;} lmCalRender(btn.closest('.lm-cal'), id, y, m); }
+function lmCalPick(id, v){ lmDateSet(id, v); lmCalClose(); }
+document.addEventListener('click', function(e){
+  if(!e.target.closest('.lm-date') && !e.target.closest('.lm-cal')) lmCalClose();
+});
+// Init label tanggal dari nilai default hidden input (PHP)
+document.querySelectorAll('.lm-date input[type=hidden]').forEach(h=>lmDateSet(h.id, h.value));
 
 loadList();
 </script>
