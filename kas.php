@@ -166,15 +166,49 @@ if ($action) {
 .tipe-btn.masuk.active{background:#D1FAE5;border-color:var(--green);color:#065F46}
 .tipe-btn.keluar.active{background:#FEE2E2;border-color:#EF4444;color:#991B1B}
 .tipe-btn:not(.active):hover{border-color:var(--teal)}
-/* Dropdown ber-chevron kustom teal — seragam & tak terlihat 'basic' */
+/* Select native lain (filter tipe) — chevron kustom teal biar seragam */
 select.hl-input{
   -webkit-appearance:none;appearance:none;cursor:pointer;padding-right:38px;line-height:1.3;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%231CC4B2' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
   background-repeat:no-repeat;background-position:right 13px center;
 }
-#f_kategori{font-weight:600}
-#f_kategori optgroup{font-weight:700}
-#f_kategori option{font-weight:500;padding:4px}
+/* ── Dropdown kategori KUSTOM (panel sendiri, bukan native OS) ── */
+.kat-dd{position:relative}
+.kat-trigger{
+  width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px;
+  padding:11px 14px;border:1.5px solid rgba(27,45,90,.12);border-radius:var(--r);
+  background:var(--white);font-family:var(--font);font-size:14px;color:var(--navy);
+  cursor:pointer;text-align:left;transition:border-color .15s;
+}
+.kat-trigger:hover{border-color:var(--teal)}
+.kat-trigger.open{border-color:var(--teal-d);box-shadow:0 0 0 3px rgba(53,232,213,.18)}
+.kat-trigger .kat-ph{color:#9CA3AF}
+.kat-trigger::after{
+  content:"";width:16px;height:16px;flex-shrink:0;transition:transform .2s;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%231CC4B2' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") no-repeat center;
+}
+.kat-trigger.open::after{transform:rotate(180deg)}
+.kat-panel{
+  position:absolute;top:calc(100% + 6px);left:0;right:0;z-index:60;
+  background:#fff;border:1px solid #E5E9F2;border-radius:14px;padding:6px;
+  box-shadow:0 14px 38px rgba(15,28,58,.18);max-height:300px;overflow-y:auto;
+  animation:katIn .14s ease;
+}
+@keyframes katIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+.kat-group{
+  font-size:10.5px;font-weight:800;color:#6B7280;text-transform:uppercase;
+  letter-spacing:.06em;padding:9px 12px 5px;
+}
+.kat-opt{
+  display:flex;align-items:center;gap:11px;width:100%;padding:11px 12px;border:0;
+  background:none;border-radius:9px;cursor:pointer;font-family:var(--font);
+  font-size:14px;color:var(--navy);text-align:left;
+}
+.kat-opt:hover{background:#F0FDFA}
+.kat-opt.is-active{background:#EAFBF8;font-weight:700}
+.kat-opt .kat-e{font-size:19px;line-height:1;flex-shrink:0;width:24px;text-align:center}
+.kat-opt .kat-l{flex:1}
+.kat-opt .kat-ck{color:var(--teal-d);font-weight:800;font-size:15px}
 
 /* TABLE */
 .td-jumlah{font-family:var(--mono);font-weight:700;text-align:right;font-size:14px}
@@ -280,7 +314,8 @@ tfoot td.td-jumlah{font-family:var(--mono)}
 
           <div class="hl-form-group">
             <label class="hl-label">Kategori <span class="req">*</span></label>
-            <select id="f_kategori" class="hl-input hl-select-styled">
+            <!-- Native select disembunyikan: tetap sumber nilai (server & kode existing baca .value/.options) -->
+            <select id="f_kategori" style="display:none">
               <option value="">— Pilih Kategori —</option>
               <optgroup label="💚 Kas Masuk" id="optMasuk">
                 <option value="Penjualan Laundry">💰 Penjualan Laundry</option>
@@ -299,6 +334,13 @@ tfoot td.td-jumlah{font-family:var(--mono)}
                 <option value="Lain-lain">📌 Lain-lain</option>
               </optgroup>
             </select>
+            <!-- Dropdown kustom (panel bisa distyle penuh, bukan native OS) -->
+            <div class="kat-dd" id="katDD">
+              <button type="button" class="kat-trigger" id="katTrigger" onclick="katToggle(event)">
+                <span id="katTriggerLabel" class="kat-ph">— Pilih Kategori —</span>
+              </button>
+              <div class="kat-panel" id="katPanel" hidden></div>
+            </div>
           </div>
 
           <div class="hl-form-group">
@@ -408,22 +450,69 @@ document.addEventListener('DOMContentLoaded', () => {
   loadSaldoHarian();
 });
 
+// ── Dropdown kategori kustom ──
+const KAT = {
+  masuk: [
+    {v:'Penjualan Laundry', e:'💰'}, {v:'Pelunasan Order', e:'🧾'},
+    {v:'Pendapatan Lain', e:'➕'},  {v:'Modal', e:'🏦'},
+  ],
+  keluar: [
+    {v:'Gaji Karyawan', e:'👥'}, {v:'Bahan & Deterjen', e:'🧴'}, {v:'Listrik & Air', e:'⚡'},
+    {v:'Sewa Tempat', e:'🏠'},   {v:'Peralatan', e:'🔧'},        {v:'Transportasi', e:'🛵'},
+    {v:'Operasional', e:'⚙️'},   {v:'Lain-lain', e:'📌'},
+  ],
+};
+function katEsc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;'); }
+function katMeta(v){ for (const t of ['masuk','keluar']) { const o = KAT[t].find(x=>x.v===v); if (o) return o; } return null; }
+// Sinkron label trigger dari nilai hidden select (sumber kebenaran)
+function katSync(){
+  const v = document.getElementById('f_kategori').value;
+  const lbl = document.getElementById('katTriggerLabel');
+  const m = katMeta(v);
+  if (m) { lbl.textContent = m.e + ' ' + m.v; lbl.classList.remove('kat-ph'); }
+  else   { lbl.textContent = '— Pilih Kategori —'; lbl.classList.add('kat-ph'); }
+}
+function katRender(tipe){
+  const cur = document.getElementById('f_kategori').value;
+  const head = tipe === 'masuk' ? '💚 Kas Masuk' : '❤️ Kas Keluar';
+  let html = '<div class="kat-group">' + head + '</div>';
+  KAT[tipe].forEach(o => {
+    const act = o.v === cur ? ' is-active' : '';
+    html += '<button type="button" class="kat-opt' + act + '" data-v="' + katEsc(o.v) + '">'
+          + '<span class="kat-e">' + o.e + '</span><span class="kat-l">' + katEsc(o.v) + '</span>'
+          + (act ? '<span class="kat-ck">✓</span>' : '') + '</button>';
+  });
+  document.getElementById('katPanel').innerHTML = html;
+}
+function katToggle(e){
+  e.stopPropagation();
+  const p = document.getElementById('katPanel');
+  if (p.hidden) { katRender(document.getElementById('f_tipe').value); p.hidden = false;
+                  document.getElementById('katTrigger').classList.add('open'); }
+  else katClose();
+}
+function katClose(){
+  const p = document.getElementById('katPanel'); if (p) p.hidden = true;
+  document.getElementById('katTrigger')?.classList.remove('open');
+}
+function katPick(v){ document.getElementById('f_kategori').value = v; katSync(); katClose(); }
+document.getElementById('katPanel').addEventListener('click', e => {
+  const b = e.target.closest('.kat-opt'); if (b) katPick(b.dataset.v);
+});
+document.addEventListener('click', e => { if (!e.target.closest('#katDD')) katClose(); });
+
 function setTipe(tipe) {
   document.getElementById('f_tipe').value = tipe;
   document.getElementById('btnMasuk').classList.toggle('active', tipe==='masuk');
   document.getElementById('btnKeluar').classList.toggle('active', tipe==='keluar');
-  // Kategori mengikuti tipe: sembunyikan optgroup lawan, reset pilihan yg tak cocok
-  const om = document.getElementById('optMasuk'), ok = document.getElementById('optKeluar');
-  if (om && ok) {
-    om.hidden = (tipe !== 'masuk'); ok.hidden = (tipe !== 'keluar');
-    [...om.children].forEach(o => o.disabled = (tipe !== 'masuk'));
-    [...ok.children].forEach(o => o.disabled = (tipe !== 'keluar'));
-    const sel = document.getElementById('f_kategori');
-    if (sel.selectedOptions[0] && sel.selectedOptions[0].disabled) sel.value = '';
-  }
+  // Kategori mengikuti tipe: kosongkan pilihan bila milik tipe lawan, re-render panel bila terbuka
+  const sel = document.getElementById('f_kategori');
+  if (sel.value && !KAT[tipe].some(o => o.v === sel.value)) sel.value = '';
+  katSync();
+  const p = document.getElementById('katPanel'); if (p && !p.hidden) katRender(tipe);
   updateJumlahPreview();
 }
-setTipe('masuk'); // init: default masuk → kategori keluar tersembunyi
+setTipe('masuk'); // init: default masuk
 
 // Pemisah ribuan saat ketik (id-ID, hanya angka)
 function fmtJumlah(el){
@@ -574,6 +663,7 @@ async function editKas(id) {
   document.getElementById('f_jumlah').value     = Number(row.jumlah||0).toLocaleString('id-ID');
   document.getElementById('f_keterangan').value = row.keterangan;
   document.getElementById('f_kategori').value   = row.kategori;
+  katSync();
   document.getElementById('f_ref_order').value  = row.ref_order||'';
   document.getElementById('f_bukti_foto').value = row.bukti_foto||'';
   setTipe(row.tipe); updateJumlahPreview();
@@ -599,6 +689,7 @@ function resetForm() {
   document.getElementById('f_jumlah').value='';
   document.getElementById('f_keterangan').value='';
   document.getElementById('f_kategori').value='';
+  katSync();
   document.getElementById('f_ref_order').value='';
   document.getElementById('f_tanggal').value=localDateStr();
   document.getElementById('f_bukti_foto').value='';
@@ -672,6 +763,7 @@ function kasStrukApply() {
     if (katEl.options[i].value === katVal) { katEl.value = katVal; katFound = true; break; }
   }
   if (!katFound) katEl.value = '';
+  katSync();
   document.getElementById('f_bukti_foto').value = _strukPath || '';
   updateJumlahPreview();
   document.getElementById('kasStrukModal').style.display = 'none';
