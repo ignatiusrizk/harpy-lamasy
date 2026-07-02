@@ -632,7 +632,7 @@ tfoot td{padding:9px 12px;font-weight:700;font-size:13px}
       <div class="hl-filter-bar" id="lrFilter">
         <span class="lr-field"><label>Dari</label><div class="lm-date"><button type="button" class="lm-date-btn" onclick="lmDateOpen('lrDari',this)"><span class="lm-date-txt">Pilih tanggal</span> <span>📅</span></button><input type="hidden" id="lrDari"></div></span>
         <span class="lr-field"><label>s/d</label><div class="lm-date"><button type="button" class="lm-date-btn" onclick="lmDateOpen('lrSampai',this)"><span class="lm-date-txt">Pilih tanggal</span> <span>📅</span></button><input type="hidden" id="lrSampai"></div></span>
-        <button class="hl-btn hl-btn-primary hl-btn-sm" onclick="loadLR()">🔍 Hitung L/R</button>
+        <button class="hl-btn hl-btn-primary hl-btn-sm lr-hitung" onclick="loadLR()">🔍 Hitung L/R</button>
         <?php
           $rl_insight = AIRateLimiter::status('ai_insight_laporan');
           $insight_exhausted = !$rl_insight['unlimited'] && $rl_insight['remaining'] <= 0;
@@ -717,10 +717,12 @@ tfoot td{padding:9px 12px;font-weight:700;font-size:13px}
     .lm-cal-day.today{outline:1.5px solid var(--teal)}
     .lm-cal-day.sel{background:var(--teal);color:var(--navy-d);font-weight:800}
     .lm-cal-day.empty{visibility:hidden;cursor:default}
-    /* L/R periode: label+tanggal jadi 1 unit tak terpecah saat wrap */
-    #lrFilter .lr-field{display:inline-flex;align-items:center;gap:8px}
-    #lrFilter .lr-field label{margin:0;white-space:nowrap}
-    #lrFilter .lm-date-btn{min-width:0}
+    /* L/R periode: tiap field 1 baris penuh (tanggal lebar), tombol Hitung turun full-width */
+    #lrFilter .lr-field{width:100%;display:flex;align-items:center;gap:10px}
+    #lrFilter .lr-field label{margin:0;white-space:nowrap;min-width:34px;color:var(--gray);font-weight:600}
+    #lrFilter .lr-field .lm-date{flex:1}
+    #lrFilter .lr-field .lm-date-btn{width:100%;min-width:0;justify-content:space-between}
+    #lrFilter .lr-hitung{width:100%;justify-content:center}
     /* Month picker (Bulanan & Produktivitas) — reuse .lm-cal */
     .lm-month-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
     .lm-month-cell{border:none;background:var(--off);border-radius:9px;padding:14px 6px;font-size:13px;font-weight:700;color:var(--navy);cursor:pointer;font-family:var(--font)}
