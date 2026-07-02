@@ -1790,11 +1790,12 @@ async function openDetail(id) {
         <tbody id="editItemsBody"></tbody>
       </table>
     </div>
-    ${CAN_EDIT_ORDER ? '<button class="btn btn-teal-sm btn-sm" onclick="addEditRow()" style="margin-bottom:12px">+ Tambah Item</button>' : ''}
-
     ${CAN_EDIT_ORDER ? `<div style="margin-bottom:12px">
-      <input type="text" placeholder="🔍 Cari & tambah layanan..." oninput="filterEditLayanan(this.value)" id="editLayananSearch"
-        style="margin-bottom:6px;font-size:13px;padding:7px 10px"/>
+      <div style="display:flex;gap:6px;margin-bottom:6px">
+        <input type="text" placeholder="🔍 Cari & tambah layanan..." oninput="filterEditLayanan(this.value)" id="editLayananSearch"
+          style="flex:1;font-size:13px;padding:7px 10px"/>
+        <button type="button" class="btn btn-teal-sm btn-sm" onclick="openLayananQuick()" style="white-space:nowrap" title="Tambah layanan baru cepat">+ Layanan</button>
+      </div>
       <div id="editLayananGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:5px;max-height:150px;overflow-y:auto"></div>
     </div>` : ''}
 
@@ -2084,6 +2085,50 @@ function filterEditLayanan(q) {
 function addEditLayanan(id, nama, satuan, harga) {
   editItems.push({layanan_id:id,nama_layanan:nama,satuan,jumlah:1,harga_satuan:harga,catatan_item:''});
   renderEditItems(); recalcEdit();
+}
+
+// ── Quick-create layanan (samakan dgn POS) ──
+function lynUnitChanged() {
+  const el = document.getElementById('lyn_q_jam');
+  if (document.getElementById('lyn_q_unit').value === 'hari') { el.value = ''; el.placeholder = '1'; }
+  else if (!el.value) { el.value = '24'; el.placeholder = '24'; }
+}
+function openLayananQuick() {
+  const m = document.getElementById('lynQuickModal');
+  if (m) { m.style.display = 'flex'; document.getElementById('lyn_q_nama').focus(); }
+}
+function closeLayananQuick() {
+  const m = document.getElementById('lynQuickModal');
+  if (m) m.style.display = 'none';
+  ['lyn_q_nama','lyn_q_kategori','lyn_q_harga','lyn_q_min'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  const j = document.getElementById('lyn_q_jam'); if (j) j.value = '24';
+  const u = document.getElementById('lyn_q_unit'); if (u) u.value = 'jam';
+  const s = document.getElementById('lyn_q_satuan'); if (s) s.value = 'kg';
+}
+async function saveLayananQuick() {
+  const nama = document.getElementById('lyn_q_nama').value.trim();
+  if (!nama) { lmAlert('Nama layanan wajib diisi'); return; }
+  const payload = {
+    nama,
+    kategori: document.getElementById('lyn_q_kategori').value.trim() || 'Reguler',
+    satuan:   document.getElementById('lyn_q_satuan').value,
+    harga:    parseFloat(document.getElementById('lyn_q_harga').value) || 0,
+    estimasi_jam: (function(){ const hari = document.getElementById('lyn_q_unit').value === 'hari'; const n = parseInt(document.getElementById('lyn_q_jam').value) || (hari ? 1 : 24); return hari ? n * 24 : n; })(),
+    qty_minimum:  parseFloat(document.getElementById('lyn_q_min').value) || 0,
+  };
+  try {
+    const r = await fetch('/layanan.php?action=save', {
+      method: 'POST', headers: { 'Content-Type':'application/json', 'X-CSRF-Token': csrfToken() },
+      body: JSON.stringify(payload)
+    });
+    const d = await r.json();
+    if (d.error) { lmAlert('Gagal: ' + d.error); return; }
+    showToast('Layanan ditambahkan ✓', 'success');
+    closeLayananQuick();
+    await loadLayanan();
+    renderEditLayananGrid(layananAll);
+    if (d.id) { const lyn = (layananAll||[]).find(l => l.id == d.id); if (lyn) addEditLayanan(lyn.id, lyn.nama, lyn.satuan, lyn.harga); }
+  } catch (e) { lmAlert('Gagal koneksi: ' + e.message); }
 }
 
 function recalcEdit() {
@@ -2583,6 +2628,32 @@ async function submitBayar() {
   }
 }
 </script>
+
+<!-- Quick-create layanan (samakan dgn POS) -->
+<div id="lynQuickModal" style="display:none;position:fixed;inset:0;background:rgba(15,28,58,.65);z-index:99999;align-items:center;justify-content:center;padding:20px">
+  <div style="background:#fff;border-radius:14px;padding:22px;max-width:440px;width:100%;max-height:90vh;overflow-y:auto">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <h3 style="margin:0;font-size:16px;font-weight:800;color:var(--navy)">➕ Tambah Layanan Baru</h3>
+      <button onclick="closeLayananQuick()" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--gray)">×</button>
+    </div>
+    <style>#lynQuickModal .lq{width:100%;padding:9px 11px;border:1px solid rgba(27,45,90,.18);border-radius:8px;font-size:13px;font-family:inherit;box-sizing:border-box}#lynQuickModal label{font-size:11px;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:4px}</style>
+    <div style="margin-bottom:10px"><label>Nama Layanan *</label><input type="text" id="lyn_q_nama" class="lq" placeholder="Misal: Cuci Setrika Reguler"/></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+      <div><label>Kategori</label><input type="text" id="lyn_q_kategori" class="lq" placeholder="Reguler/Express"/></div>
+      <div><label>Satuan</label><select id="lyn_q_satuan" class="lq"><option value="kg">kg</option><option value="pcs">pcs</option><option value="set">set</option><option value="m2">m²</option></select></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+      <div><label>Harga / Satuan (Rp)</label><input type="number" id="lyn_q_harga" class="lq" placeholder="7000" min="0" step="500"/></div>
+      <div><label>Estimasi *</label><div style="display:flex;gap:6px"><input type="number" id="lyn_q_jam" class="lq" value="24" min="1" style="flex:1"/><select id="lyn_q_unit" class="lq" style="width:80px" onchange="lynUnitChanged()"><option value="jam">Jam</option><option value="hari">Hari</option></select></div></div>
+    </div>
+    <div style="margin-bottom:14px"><label>Min. Order (opsional)</label><input type="number" id="lyn_q_min" class="lq" value="0" min="0" step="0.5" placeholder="0 = tidak ada minimum"/></div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-outline" onclick="closeLayananQuick()" style="flex:1">Batal</button>
+      <button class="btn btn-primary" onclick="saveLayananQuick()" style="flex:1.5">💾 Simpan & Pakai</button>
+    </div>
+  </div>
+</div>
+
 <!-- Cetak thermal Bluetooth (dipakai doPrint di modal Cetak Ulang Nota) -->
 <script src="/assets/vendor/html2canvas.min.js?v=<?= @filemtime(__DIR__.'/assets/vendor/html2canvas.min.js') ?: '1' ?>"></script>
 <script src="/assets/js/thermal-print.js?v=<?= @filemtime(__DIR__.'/assets/js/thermal-print.js') ?: '1' ?>"></script>
