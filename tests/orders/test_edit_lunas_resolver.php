@@ -26,6 +26,7 @@ eqv($r['apply']['dp'], 50000.0, "tagih: dp dipertahankan");
 eqv($r['apply']['sisa'], 25000.0, "tagih: sisa = selisih");
 eqv($r['apply']['status'], 'dp', "tagih: status turun ke dp");
 eqv($r['apply']['aksi'], 'tagih', "tagih: aksi tercatat");
+eqv($r['apply']['selisih'], 25000.0, "tagih: selisih utk tagihan");
 
 // ── Naik + resolusi salah arah ──
 $r = OrderEditResolver::resolve(['resolusi'=>'refund_tunai'] + $base);
@@ -50,6 +51,9 @@ eqv($r['apply']['selisih'], 10000.0, "refund: selisih utk kas keluar");
 // ── Turun + ke_deposit ──
 $r = OrderEditResolver::resolve(['resolusi'=>'ke_deposit'] + $turun);
 eqv($r['apply']['aksi'], 'ke_deposit', "ke_deposit: aksi tercatat");
+eqv($r['apply']['dp'], 40000.0, "ke_deposit: dp = total baru");
+eqv($r['apply']['sisa'], 0.0, "ke_deposit: sisa 0");
+eqv($r['apply']['status'], 'lunas', "ke_deposit: tetap lunas");
 $r = OrderEditResolver::resolve(['resolusi'=>'ke_deposit','punya_pelanggan'=>false] + $turun);
 ok(isset($r['error']), "ke_deposit tanpa pelanggan → error");
 

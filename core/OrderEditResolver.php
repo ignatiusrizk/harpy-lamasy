@@ -16,10 +16,13 @@ class OrderEditResolver
         $punyaPel   = (bool)($ctx['punya_pelanggan'] ?? false);
 
         // Gerbang hanya utk order lunas yang komposisinya berubah & totalnya bergeser
-        if ($sbayarLama !== 'lunas' || !$berubah || $totalBaru == $totalLama) {
+        if ($sbayarLama !== 'lunas' || !$berubah || abs($totalBaru - $totalLama) < 0.001) {
             return ['gate' => false];
         }
 
+        // Baseline: dibandingkan dengan dp_lama (uang yang benar-benar dibayar pelanggan),
+        // bukan total_lama. Ini finansial benar meski data lama punya dp > total.
+        // naik = pelanggan masih kurang bayar setelah edit.
         $naik    = $totalBaru > $dpLama;
         $selisih = $naik ? $totalBaru - $dpLama : $dpLama - $totalBaru;
 
