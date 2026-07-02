@@ -1327,6 +1327,18 @@ let searchTimer = null;
 let currentEditId = null;
 let currentOrderData = null;
 let editItems = [];
+let editSnapshot = null;   // snapshot state form saat modal dibuka → deteksi "tidak ada perubahan"
+
+// Serialisasi state editable saat ini (dibandingkan utk cek ada/tidaknya perubahan)
+function editStateJSON() {
+  const g = id => { const el = document.getElementById(id); return el ? el.value : ''; };
+  return JSON.stringify({
+    s:  g('edit_status_proses'), c: g('edit_catatan'), ci: g('edit_catatan_internal'),
+    m:  g('edit_metode'), d: g('edit_diskon'), dp: g('edit_dp'), e: g('edit_estimasi'),
+    fp: (document.getElementById('edit_foto_pickup_path')?.value || ''),
+    items: (editItems || []).map(it => ({ l: it.nama_layanan, s: it.satuan, j: it.jumlah, h: it.harga_satuan, k: it.catatan_item || '' }))
+  });
+}
 let layananAll = [];
 const BRAND_NAME   = <?= json_encode($_brandName) ?>;
 const OUTLET_NAMA  = <?= json_encode($_outletNama) ?>;
@@ -1733,6 +1745,7 @@ async function openDetail(id) {
   renderEditLayananGrid(layananAll);
   recalcEdit();
   loadNotes(id);
+  editSnapshot = editStateJSON();   // rekam state awal utk deteksi perubahan
 }
 
 // ── CATATAN INTERNAL MULTI-ROW ────────────────────────
@@ -1932,6 +1945,12 @@ function recalcEdit() {
 // ── SAVE EDIT ─────────────────────────────────────────
 async function saveEdit() {
   if (!currentEditId) return;
+  // Tak ada perubahan → info & tutup, jangan kirim ke server
+  if (editSnapshot !== null && editStateJSON() === editSnapshot) {
+    showToast('ℹ️ Tidak ada perubahan untuk disimpan', 'info');
+    closeModal();
+    return;
+  }
   const btn = document.getElementById('btnSaveEdit');
   btn.disabled = true; btn.textContent = '⏳ Menyimpan...';
 
