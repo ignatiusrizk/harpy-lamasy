@@ -484,7 +484,7 @@ require_once ROOT . '/core/CoinLedger.php';
 <div class="modal-bg" id="genModal"><div class="modal">
   <h3>+ Buat Tagihan Piutang B2B</h3>
   <div class="fld">
-    <label>Pelanggan B2B (tipe bayar=bulanan / VIP)</label>
+    <label>Pelanggan B2B <span style="font-weight:500;color:#9CA3AF">— hanya pelanggan bertipe bayar Bulanan atau VIP</span></label>
     <select id="genPel" class="lm-cust"><option value="">— Memuat —</option></select>
   </div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
@@ -664,7 +664,7 @@ async function openGen(){
       const sel = document.getElementById('genPel');
       sel.innerHTML = pelangganList.length
         ? '<option value="">— Pilih —</option>' + pelangganList.map(p => `<option value="${p.id}">${esc(p.nama)} (${esc(p.telepon||'-')})</option>`).join('')
-        : '<option value="">⚠️ Belum ada pelanggan B2B (tipe_bayar=bulanan)</option>';
+        : '<option value="">Belum ada pelanggan B2B — atur tipe bayar pelanggan ke Bulanan dulu di menu Pelanggan</option>';
     } catch(e){ document.getElementById('genPel').innerHTML = '<option>⚠️ Gagal load</option>'; }
   }
   lmSyncModal('genModal');
@@ -695,7 +695,7 @@ async function doBulkGen(){
     end:         document.getElementById('bulkEnd').value,
     jatuh_tempo: document.getElementById('bulkTempo').value,
   };
-  if (!await lmConfirm(`Generate tagihan massal untuk periode ${body.start} s/d ${body.end}?\nScope: ${body.scope === 'bulanan_only' ? 'Bulanan/B2B only' : 'Semua dengan order'}`)) return;
+  if (!await lmConfirm(`Generate tagihan massal untuk periode ${body.start} s/d ${body.end}?\nCakupan: ${body.scope === 'bulanan_only' ? 'hanya pelanggan Bulanan/B2B' : 'semua pelanggan yang punya order'}`)) return;
   try {
     const r = await fetch('piutang.php?action=generate_bulk', {method:'POST', headers:{'Content-Type':'application/json','X-CSRF-Token':CSRF}, body:JSON.stringify(body)});
     const d = await r.json();
