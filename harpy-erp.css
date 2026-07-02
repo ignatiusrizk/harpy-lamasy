@@ -486,6 +486,8 @@ body { font-family: var(--font); background: var(--off); color: var(--dark); min
   background: var(--navy-d);
   border-right: 1px solid rgba(53,232,213,.15);
   z-index: 999; overflow-y: auto;
+  overscroll-behavior: contain;          /* scroll drawer tak "bocor" ke dokumen → cegah pull-to-refresh */
+  -webkit-overflow-scrolling: touch;
   transform: translateX(-100%);
   visibility: hidden;
   transition: transform .28s cubic-bezier(.4,0,.2,1), visibility .28s;
