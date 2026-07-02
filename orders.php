@@ -2081,7 +2081,7 @@ async function doPrint() {
       } catch (e) { showToast('❌ ' + (e.message || 'Gagal cetak'), 'error'); }
       return;
     }
-    showToast('Belum ada printer dipilih — pilih dulu di POS (⚙️ Printer)', 'error');
+    showToast('Belum ada printer dipilih — atur di Pengaturan → Outlet & Nota → 🖨 Printer Thermal', 'error');
     return;
   }
   // Di app tapi plugin tak terdeteksi
