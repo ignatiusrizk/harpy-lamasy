@@ -105,6 +105,8 @@ function statusColor($s) {
     return ['masuk'=>'#3B82F6','cuci'=>'#F59E0B','kering'=>'#F97316','setrika'=>'#8B5CF6','siap'=>'#10B981','diambil'=>'#6B7280'][$s] ?? '#6B7280';
 }
 function fmtDate($d) { if (!$d) return '-'; return date('d M Y H:i', strtotime($d)); }
+// Utk kolom UTC (created_at/timestamp via NOW()) → tampilkan WIB (+7)
+function fmtWib($d) { if (!$d) return '-'; return date('d M Y H:i', strtotime($d) + 7*3600); }
 function fmtMoney($n) { return 'Rp ' . number_format((float)$n, 0, ',', '.'); }
 ?>
 <!DOCTYPE html>
@@ -233,7 +235,7 @@ form input:focus { outline:none; border-color:var(--teal); box-shadow:0 0 0 3px 
 
     <div style="margin-top:18px">
       <div class="row"><span class="l">Pelanggan</span><span class="r"><?= htmlspecialchars($order['nama_pelanggan']) ?></span></div>
-      <div class="row"><span class="l">Diterima</span><span class="r"><?= fmtDate($order['created_at'] ?? $order['tanggal']) ?></span></div>
+      <div class="row"><span class="l">Diterima</span><span class="r"><?= $order['created_at'] ? fmtWib($order['created_at']) : fmtDate($order['tanggal']) ?></span></div>
       <?php if ($order['estimasi_selesai']): ?>
       <div class="row"><span class="l">Estimasi Selesai</span><span class="r" style="color:var(--teal);font-weight:700"><?= fmtDate($order['estimasi_selesai']) ?></span></div>
       <?php endif; ?>
@@ -282,7 +284,7 @@ form input:focus { outline:none; border-color:var(--teal); box-shadow:0 0 0 3px 
         <div class="tl-dot"></div>
         <div class="tl-text">
           <strong><?= htmlspecialchars(statusLabel($log['status_baru'])) ?></strong>
-          <small><?= fmtDate($log['created_at']) ?> · <?= htmlspecialchars($log['oleh'] ?? '-') ?></small>
+          <small><?= fmtWib($log['created_at']) ?> · <?= htmlspecialchars($log['oleh'] ?? '-') ?></small>
         </div>
       </div>
       <?php endforeach; ?>
