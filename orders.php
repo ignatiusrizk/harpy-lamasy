@@ -1293,7 +1293,7 @@ textarea{resize:vertical;min-height:64px}
       <button class="btn btn-sm" style="background:#25D366;color:#fff;border:none" onclick="shareToWA()" title="Kirim link tracking ke customer via WhatsApp">💬 Kirim Status WA</button>
       <button class="btn btn-sm btn-outline" onclick="printLabel()" title="Cetak label stiker (ukuran diatur di Outlet Settings)">🏷 Print Label</button>
       <?php if (hasPermission('orders.edit') || hasPermission('orders.delete')): ?>
-      <button class="btn btn-sm" style="background:#FEE2E2;color:#991B1B;border:1px solid #FCA5A5" onclick="requestDelete()" title="Submit permintaan hapus untuk persetujuan owner">🗑️ Minta Hapus</button>
+      <button id="btnMintaHapus" class="btn btn-sm" style="background:#FEE2E2;color:#991B1B;border:1px solid #FCA5A5" onclick="requestDelete()" title="Submit permintaan hapus untuk persetujuan owner">🗑️ Minta Hapus</button>
       <?php endif; ?>
     </div>
   </div>
@@ -1787,10 +1787,12 @@ async function openDetail(id) {
     mb.insertAdjacentHTML('afterbegin',
       '<div style="background:#FEF3C7;border:1px solid #FDE68A;color:#92400E;padding:10px 14px;border-radius:10px;margin-bottom:14px;font-size:13px;font-weight:600">🗑️ Order ini sedang <b>menunggu persetujuan hapus</b> — tidak bisa diedit sampai di-review owner.</div>');
     mb.querySelectorAll('input, select, textarea, button.step-btn, .btn-remove').forEach(el => el.disabled = true);
-    ['btnSaveEdit', 'btnBayarDariDetail'].forEach(bid => {
+    ['btnSaveEdit', 'btnBayarDariDetail', 'btnMintaHapus'].forEach(bid => {
       const b = document.getElementById(bid);
       if (b) { b.disabled = true; b.style.opacity = '.45'; b.style.pointerEvents = 'none'; }
     });
+    const bmh = document.getElementById('btnMintaHapus');
+    if (bmh) bmh.textContent = '⏳ Menunggu Persetujuan Hapus';
   }
 }
 
