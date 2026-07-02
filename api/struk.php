@@ -21,7 +21,7 @@ $action = $_GET['action'] ?? '';
 if ($action === 'check_coin') {
     header('Content-Type: application/json');
     $tipe    = $_GET['tipe'] ?? 'retail';
-    $feature = $tipe === 'b2b' ? 'generate_invoice' : 'generate_nota';
+    $feature = $tipe === 'b2b' ? 'invoice_b2b' : 'generate_nota';
     $cost    = CoinLedger::getHarga($feature);
     echo json_encode([
         'can_afford' => CoinLedger::canAfford($feature),
@@ -46,9 +46,12 @@ if ($action === 'generate') {
         exit;
     }
 
-    // Cek coin jika bukan preview
-    if (!$isPreview) {
-        $feature = $tipe === 'b2b' ? 'generate_invoice' : 'generate_nota';
+    // Cek coin jika bukan preview. B2B bayar sekali per transaksi —
+    // sudah pernah ke-charge → regenerate gratis, jangan blokir 402.
+    $_b2bPaid = $tipe === 'b2b'
+        && CoinLedger::hasCharged(['invoice_b2b', 'generate_invoice'], 'trx:' . $trxId);
+    if (!$isPreview && !$_b2bPaid) {
+        $feature = $tipe === 'b2b' ? 'invoice_b2b' : 'generate_nota';
         if (!CoinLedger::canAfford($feature)) {
             http_response_code(402);
             // Return HTML supaya iframe display friendly message, bukan raw JSON
@@ -96,10 +99,13 @@ if ($action === 'generate_invoice') {
         exit;
     }
 
-    if (!$isPreview && !CoinLedger::canAfford('generate_invoice')) {
+    // Bayar sekali per piutang: kalau sudah pernah ke-charge (kirim/download
+    // sebelumnya), download ulang gratis — jangan blokir 402.
+    $_invPaid = CoinLedger::hasCharged(['invoice_b2b', 'generate_invoice'], 'piutang:' . $piutangId);
+    if (!$isPreview && !$_invPaid && !CoinLedger::canAfford('invoice_b2b')) {
         http_response_code(402);
         header('Content-Type: application/json');
-        $cost = CoinLedger::getHarga('generate_invoice');
+        $cost = CoinLedger::getHarga('invoice_b2b');
         echo json_encode([
             'error'   => "Coin tidak cukup. Dibutuhkan {$cost} coin untuk generate invoice.",
             'code'    => 'insufficient_coin',

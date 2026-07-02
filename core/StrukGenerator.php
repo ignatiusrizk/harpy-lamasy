@@ -101,8 +101,13 @@ class StrukGenerator
     }
 
     // ── Coin cost per tipe ─────────────────────────────
-    const COIN_RETAIL  = 'generate_nota';    // 50 coin
-    const COIN_B2B     = 'generate_invoice'; // 200 coin
+    const COIN_RETAIL     = 'generate_nota'; // 50 coin — per generate (model lama, tetap)
+    // Kanonik invoice B2B: 'invoice_b2b'. Dulu dobel dgn 'generate_invoice'
+    // (1 invoice bisa ke-charge 2x: saat kirim di piutang + saat download PDF,
+    // dan tiap re-download ke-charge lagi). Kini bayar SEKALI per objek via
+    // CoinLedger::hasCharged — re-download gratis.
+    const COIN_B2B        = 'invoice_b2b';      // 200 coin
+    const COIN_B2B_LEGACY = 'generate_invoice'; // alias lama, ikut dicek di hasCharged
 
     // ══════════════════════════════════════════════════
     // PUBLIC: Generate dari transaksi real
@@ -174,8 +179,17 @@ class StrukGenerator
         // ── Deduct coin SETELAH render sukses ─────────
         // (kalau render gagal/exception, baris ini tidak tercapai → tidak potong)
         if ($deductCoin) {
-            $feature = ($tipe === 'b2b') ? self::COIN_B2B : self::COIN_RETAIL;
-            try { CoinLedger::deduct($feature, (string)$transaksiId); }
+            try {
+                if ($tipe === 'b2b') {
+                    // B2B: bayar sekali per transaksi — regenerate/re-download gratis
+                    $ref = 'trx:' . $transaksiId;
+                    if (!CoinLedger::hasCharged([self::COIN_B2B, self::COIN_B2B_LEGACY], $ref)) {
+                        CoinLedger::deduct(self::COIN_B2B, $ref);
+                    }
+                } else {
+                    CoinLedger::deduct(self::COIN_RETAIL, (string)$transaksiId);
+                }
+            }
             catch (Throwable $e) { if (class_exists('ErrorLogger')) ErrorLogger::logException('coin_deduct', $e); }
         }
         return $html;
@@ -325,10 +339,16 @@ class StrukGenerator
         $tmpl   = self::loadTemplate($tid, $oid, 'b2b');
         $outlet = TenantResolver::getOutlet();
 
-        // Render dulu — deduct hanya kalau invoice berhasil dibuat
+        // Render dulu — deduct hanya kalau invoice berhasil dibuat.
+        // Bayar sekali per piutang (kirim ATAU download pertama) — sesudahnya gratis.
         $html = self::render($trx, $items, $tmpl, $pelanggan, null, $outlet, $tmpl['format'] ?? 'a4');
         if ($deductCoin) {
-            try { CoinLedger::deduct(self::COIN_B2B, (string)$piutangId); }
+            try {
+                $ref = 'piutang:' . $piutangId;
+                if (!CoinLedger::hasCharged([self::COIN_B2B, self::COIN_B2B_LEGACY], $ref)) {
+                    CoinLedger::deduct(self::COIN_B2B, $ref);
+                }
+            }
             catch (Throwable $e) { if (class_exists('ErrorLogger')) ErrorLogger::logException('coin_deduct', $e); }
         }
         return $html;

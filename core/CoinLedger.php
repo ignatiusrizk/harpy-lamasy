@@ -242,6 +242,23 @@ class CoinLedger
         }
     }
 
+    // ── Idempotensi per-objek: sudah pernah ke-charge utk ref ini? ──
+    // Dipakai fitur "bayar sekali per dokumen" (mis. invoice B2B per piutang):
+    // charge pertama tercatat, panggilan berikutnya dgn ref sama di-skip gratis.
+    public static function hasCharged(array $features, string $refId): bool
+    {
+        if (!$features || $refId === '') return false;
+        try {
+            $in = implode(',', array_fill(0, count($features), '?'));
+            $st = Database::get()->prepare(
+                "SELECT 1 FROM coin_ledger
+                 WHERE tenant_id=? AND type='deduct' AND ref_id=? AND feature_used IN ($in) LIMIT 1"
+            );
+            $st->execute(array_merge([TenantResolver::id(), $refId], $features));
+            return (bool)$st->fetchColumn();
+        } catch (Throwable) { return false; }
+    }
+
     // ── Potong coin (atomic dengan transaction) ────────
     // Prioritas pemotongan:
     //   1. Jika outlet dalam status 'trial' → potong trial_coin_balance dulu

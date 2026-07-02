@@ -223,8 +223,13 @@ if ($action === 'mark_invoiced' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $d = json_decode(file_get_contents('php://input'), true) ?: [];
     $id = (int)($d['id'] ?? 0);
     try {
-        // Cek coin
-        if (!CoinLedger::canAfford('invoice_b2b')) { echo json_encode(['error'=>'Coin tidak cukup (butuh 200)']); exit; }
+        // Cek coin — skip kalau invoice ini sudah pernah ke-charge (mis. user
+        // download PDF-nya duluan): bayar sekali per piutang.
+        $_invRef     = 'piutang:' . $id;
+        $_invCharged = CoinLedger::hasCharged(['invoice_b2b', 'generate_invoice'], $_invRef);
+        if (!$_invCharged && !CoinLedger::canAfford('invoice_b2b')) {
+            echo json_encode(['error' => 'Coin tidak cukup (butuh ' . CoinLedger::getHarga('invoice_b2b') . ')']); exit;
+        }
 
         $s = $db->prepare("SELECT p.*, pl.nama, pl.telepon FROM hl_piutang p
                             JOIN hl_pelanggan pl ON pl.id=p.pelanggan_id AND pl.tenant_id=p.tenant_id
@@ -241,7 +246,7 @@ if ($action === 'mark_invoiced' && $_SERVER['REQUEST_METHOD'] === 'POST') {
                        WHERE id=? AND tenant_id=?")
            ->execute([$invoiceNo, $pajak, $id, $tid]);
 
-        try { CoinLedger::deduct('invoice_b2b', (string)$id); } catch (Throwable $e) {
+        try { if (!$_invCharged) CoinLedger::deduct('invoice_b2b', $_invRef); } catch (Throwable $e) {
             ErrorLogger::logException('coin_deduct', $e, $tid, $oid);
         }
 
