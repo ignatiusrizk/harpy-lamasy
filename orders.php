@@ -186,6 +186,17 @@ if ($action) {
             $oldRow = $oldRow->fetch();
             if (!$oldRow) { $db->rollBack(); echo json_encode(['error'=>'Order tidak ditemukan']); exit; }
 
+            // Deteksi apakah item benar-benar berubah (frontend selalu kirim items walau tak diubah)
+            $oldItemsStmt = $db->prepare("SELECT nama_layanan,satuan,jumlah,harga_satuan,catatan_item FROM hl_transaksi_item WHERE tenant_id=? AND outlet_id=? AND transaksi_id=? ORDER BY id");
+            $oldItemsStmt->execute([$tid, $oid, $id]);
+            $oldItems = $oldItemsStmt->fetchAll(PDO::FETCH_ASSOC);
+            $sigItems = function($items){ return array_map(function($it){ return [
+                trim((string)($it['nama_layanan'] ?? '')), trim((string)($it['satuan'] ?? '')),
+                (float)($it['jumlah'] ?? 0), (float)($it['harga_satuan'] ?? 0),
+                trim((string)($it['catatan_item'] ?? '')),
+            ]; }, $items ?? []); };
+            $itemsChanged = ($sigItems($oldItems) != $sigItems($data['items'] ?? []));
+
             // Recalc total jika ada items baru
             $subtotal = 0;
             if (!empty($data['items'])) {
@@ -244,8 +255,8 @@ if ($action) {
                  . " WHERE tenant_id=? AND outlet_id=? AND id=?");
             $stmt->execute($params);
 
-            // Update items jika ada
-            if (!empty($data['items'])) {
+            // Update items HANYA jika benar-benar berubah (hindari churn + log palsu)
+            if (!empty($data['items']) && $itemsChanged) {
                 $db->prepare("DELETE FROM hl_transaksi_item WHERE tenant_id=? AND outlet_id=? AND transaksi_id=?")->execute([$tid, $oid, $id]);
                 $istmt = $db->prepare("INSERT INTO hl_transaksi_item
                     (tenant_id,outlet_id,transaksi_id,layanan_id,nama_layanan,satuan,jumlah,harga_satuan,subtotal,catatan_item)
@@ -292,7 +303,7 @@ if ($action) {
                 ];
             }
 
-            if (!empty($data['items'])) {
+            if (!empty($data['items']) && $itemsChanged) {
                 $newItemNames = implode(', ', array_column($data['items'], 'nama_layanan'));
                 $logs_to_insert[] = [
                     'transaksi_id' => $id,
