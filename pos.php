@@ -1789,6 +1789,9 @@ function addEmptyRow() {
 
 function removeItem(idx) { items.splice(idx,1); renderItems(); recalc(); applyMaxEstimasi(); }
 
+// Pemisah ribuan manual (tak bergantung Intl locale — konsisten di WebView APK)
+function grpRibu(n){ return String(Math.round(n)||0).replace(/\B(?=(\d{3})+(?!\d))/g,'.'); }
+
 function renderItems() {
   const tbody = document.getElementById('itemsBody');
   const empty = document.getElementById('emptyItems');
@@ -1812,8 +1815,8 @@ function renderItems() {
           oninput="items[${i}].jumlah=parseFloat(this.value)||0;recalc()"/>
         ${item.qty_minimum > 0 ? `<div style="font-size:9px;color:${item.jumlah < item.qty_minimum ? '#DC2626' : '#6B7280'};margin-top:1px;">min ${item.qty_minimum}</div>` : ''}
       </td>
-      <td data-lbl="Harga"><input class="item-input" type="number" value="${item.harga_satuan}" min="0" step="500" style="width:96px"
-        oninput="items[${i}].harga_satuan=parseFloat(this.value)||0;recalc()"/></td>
+      <td data-lbl="Harga"><input class="item-input" type="text" inputmode="numeric" value="${grpRibu(Math.round(item.harga_satuan||0))}" style="width:96px"
+        oninput="const v=parseInt(this.value.replace(/\D/g,''))||0;items[${i}].harga_satuan=v;this.value=grpRibu(v);recalc()"/></td>
       <td data-lbl="Subtotal" class="item-subtotal">Rp ${(item.jumlah*item.harga_satuan).toLocaleString('id-ID')}</td>
       <td data-lbl="Express">
         <select class="item-input" style="width:130px;font-size:11px;" onchange="onItemTierChange(${i}, this.value)">
@@ -2902,15 +2905,15 @@ function voiceOrderApply() {
 </script>
 <!-- VOICE ORDER MODAL -->
 <div id="voiceModal" style="display:none;position:fixed;inset:0;background:rgba(15,28,58,.55);z-index:2001;align-items:center;justify-content:center;padding:20px">
-  <div style="background:#fff;border-radius:14px;padding:20px 22px;max-width:420px;width:100%;box-shadow:0 12px 40px rgba(15,28,58,.25)">
-    <h3 style="margin:0 0 8px;font-size:16px;font-weight:800;color:var(--navy)">🎤 Yang Saya Dengar</h3>
+  <div style="position:relative;background:#fff;border-radius:14px;padding:20px 22px;max-width:420px;width:100%;box-shadow:0 12px 40px rgba(15,28,58,.25)">
+    <button aria-label="Tutup" onclick="document.getElementById('voiceModal').style.display='none'" style="position:absolute;top:10px;right:12px;background:none;border:none;font-size:20px;line-height:1;color:#94A3B8;cursor:pointer;padding:4px">✕</button>
+    <h3 style="margin:0 0 8px;font-size:16px;font-weight:800;color:var(--navy);padding-right:24px">🎤 Yang Saya Dengar</h3>
     <div id="voiceHeard" style="font-size:12px;color:#6B7280;font-style:italic;margin-bottom:10px"></div>
     <div id="voiceFields" style="font-size:14px"></div>
     <div id="voiceUnmatched" style="display:none;background:#FEF3C7;color:#92400E;padding:8px;border-radius:8px;font-size:12px;margin-top:8px"></div>
     <div style="display:flex;gap:8px;margin-top:14px">
       <button class="btn btn-outline" style="flex:1" onclick="voiceOrderRetry()">🔄 Ulangi</button>
-      <button class="btn btn-outline" onclick="document.getElementById('voiceModal').style.display='none'">✕</button>
-      <button id="voiceApplyBtn" class="btn btn-green" style="flex:2" onclick="voiceOrderApply()">✓ Terapkan</button>
+      <button id="voiceApplyBtn" class="btn btn-green" style="flex:1" onclick="voiceOrderApply()">✓ Terapkan</button>
     </div>
   </div>
 </div>
