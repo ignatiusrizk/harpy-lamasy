@@ -292,12 +292,16 @@ $pageTitle  = '🧺 Produksi';
 .btn-primary{background:var(--teal);color:var(--navy-d);border-color:var(--teal)}
 .btn-primary:hover{background:var(--teal-d);box-shadow:0 4px 14px rgba(53,232,213,.3)}
 
-/* Stage selector — pill segmented (ganti native <select>) */
-.stage-tabs{display:flex;gap:8px;overflow-x:auto;padding:2px 0 6px;margin-bottom:14px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
-.stage-tabs::-webkit-scrollbar{display:none}
-.stage-pill{flex:0 0 auto;white-space:nowrap;padding:10px 16px;border-radius:999px;border:1.5px solid rgba(27,45,90,.12);background:#fff;color:var(--gray);font-weight:700;font-size:14px;font-family:var(--font);cursor:pointer;transition:background .15s,color .15s,border-color .15s}
-.stage-pill:hover{border-color:rgba(53,232,213,.5)}
-.stage-pill.active{background:var(--teal);color:var(--navy-d);border-color:var(--teal);box-shadow:0 2px 8px rgba(53,232,213,.35)}
+/* Stage selector — dropdown kustom (bukan picker OS native) */
+.stage-dd{position:relative;margin-bottom:14px}
+.stage-dd-btn{width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px 14px;border:1.5px solid rgba(27,45,90,.14);border-radius:10px;background:#fff;color:var(--navy);font-size:15px;font-weight:700;font-family:var(--font);cursor:pointer}
+.stage-dd-caret{color:var(--gray);font-size:13px;transition:transform .2s}
+.stage-dd.open .stage-dd-caret{transform:rotate(180deg)}
+.stage-dd-panel{display:none;position:absolute;top:calc(100% + 6px);left:0;right:0;z-index:60;background:#fff;border:1px solid rgba(27,45,90,.12);border-radius:12px;box-shadow:0 12px 32px rgba(15,28,58,.16);overflow:hidden;padding:6px}
+.stage-dd.open .stage-dd-panel{display:block}
+.stage-dd-panel button{display:block;width:100%;text-align:left;padding:11px 14px;border:none;background:none;border-radius:8px;font-size:14.5px;font-weight:600;color:var(--navy);font-family:var(--font);cursor:pointer}
+.stage-dd-panel button:hover{background:var(--off)}
+.stage-dd-panel button.active{background:var(--teal-bg);color:var(--teal-d)}
 
 /* Scan FAB — page signature element. Floating at thumb-reach for mobile worker. */
 .scan-fab{
@@ -332,13 +336,19 @@ $pageTitle  = '🧺 Produksi';
 
     <!-- Stage tabs -->
     <label style="display:block;font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px">Tahap Produksi</label>
-    <div id="stageTabs" class="stage-tabs">
-      <button type="button" class="stage-pill active" data-stage="terima"  onclick="switchStage('terima')">📥 Terima</button>
-      <button type="button" class="stage-pill"        data-stage="cuci"    onclick="switchStage('cuci')">🫧 Cuci</button>
-      <button type="button" class="stage-pill"        data-stage="kering"  onclick="switchStage('kering')">💨 Kering</button>
-      <button type="button" class="stage-pill"        data-stage="setrika" onclick="switchStage('setrika')">👔 Setrika</button>
-      <button type="button" class="stage-pill"        data-stage="siap"    onclick="switchStage('siap')">✅ Siap</button>
-      <button type="button" class="stage-pill"        data-stage="diambil" onclick="switchStage('diambil')">📦 Diambil</button>
+    <div id="stageDD" class="stage-dd">
+      <button type="button" class="stage-dd-btn" onclick="toggleStageDD(event)">
+        <span id="stageDDLabel">📥 Terima</span>
+        <span class="stage-dd-caret">▾</span>
+      </button>
+      <div class="stage-dd-panel" id="stageDDPanel">
+        <button type="button" data-stage="terima" class="active" onclick="switchStage('terima')">📥 Terima</button>
+        <button type="button" data-stage="cuci"    onclick="switchStage('cuci')">🫧 Cuci</button>
+        <button type="button" data-stage="kering"  onclick="switchStage('kering')">💨 Kering</button>
+        <button type="button" data-stage="setrika" onclick="switchStage('setrika')">👔 Setrika</button>
+        <button type="button" data-stage="siap"    onclick="switchStage('siap')">✅ Siap</button>
+        <button type="button" data-stage="diambil" onclick="switchStage('diambil')">📦 Diambil / Diantar</button>
+      </div>
     </div>
 
     <!-- Card list -->
@@ -376,11 +386,22 @@ function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').
 let currentStage = 'terima';
 const CSRF = document.querySelector('meta[name=csrf-token]')?.content || '';
 
+const STAGE_LABELS = {terima:'📥 Terima', cuci:'🫧 Cuci', kering:'💨 Kering', setrika:'👔 Setrika', siap:'✅ Siap', diambil:'📦 Diambil / Diantar'};
 function switchStage(stage) {
   currentStage = stage;
-  document.querySelectorAll('#stageTabs .stage-pill').forEach(p => p.classList.toggle('active', p.dataset.stage === stage));
+  const lbl = document.getElementById('stageDDLabel'); if (lbl) lbl.textContent = STAGE_LABELS[stage] || stage;
+  document.querySelectorAll('#stageDDPanel button').forEach(b => b.classList.toggle('active', b.dataset.stage === stage));
+  document.getElementById('stageDD').classList.remove('open'); // tutup panel
   loadCards();
 }
+function toggleStageDD(e) {
+  if (e) e.stopPropagation();
+  document.getElementById('stageDD').classList.toggle('open');
+}
+document.addEventListener('click', function(e){
+  const dd = document.getElementById('stageDD');
+  if (dd && !dd.contains(e.target)) dd.classList.remove('open');
+});
 
 async function loadCards() {
   const list = document.getElementById('cardList');
