@@ -38,13 +38,16 @@
           try { p.stopScan(); } catch (e) {}
           resolve(out);
         }
-        p.addListener('discoverDevices', function (data) {
+        // addListener bisa return Promise<handle> (Capacitor baru) ATAU handle langsung
+        // (plugin versi lama) → bungkus Promise.resolve biar aman keduanya.
+        var reg = p.addListener('discoverDevices', function (data) {
           var list = (data && data.devices) ? data.devices : (Array.isArray(data) ? data : []);
           list.forEach(function (d) {
             var addr = d.address || d.mac; if (!addr || seen[addr]) return;
             seen[addr] = 1; out.push({ address: addr, name: d.name || addr });
           });
-        }).then(function (h) {
+        });
+        Promise.resolve(reg).then(function (h) {
           handle = h;
           return p.startScan();
         }).catch(reject);
