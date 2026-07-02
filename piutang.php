@@ -409,6 +409,26 @@ require_once ROOT . '/core/CoinLedger.php';
 .fld{margin-bottom:12px}
 .fld label{display:block;font-size:12px;font-weight:700;color:#374151;margin-bottom:5px}
 .fld input,.fld select{width:100%;padding:9px 12px;border:1px solid #E5E9F2;border-radius:8px;font-family:inherit;font-size:14px}
+/* Kontrol custom (ganti select/date native) */
+.lm-cust{display:none!important}
+.lmui-trg{width:100%;padding:9px 12px;border:1px solid #E5E9F2;border-radius:8px;font-family:inherit;font-size:14px;background:#fff;text-align:left;display:flex;align-items:center;justify-content:space-between;gap:8px;cursor:pointer;color:#0F1C3A}
+.lmui-trg .lmui-lbl{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lmui-trg .lmui-car{color:#9CA3AF;font-size:12px;flex:0 0 auto}
+.lmui-trg.ph .lmui-lbl{color:#9CA3AF}
+.lmui-pop{position:fixed;background:#fff;border:1px solid #E5E9F2;border-radius:10px;box-shadow:0 8px 28px rgba(15,28,58,.18);z-index:1100;max-height:280px;overflow-y:auto;padding:6px}
+.lmui-opt{display:block;width:100%;text-align:left;padding:9px 11px;border:0;background:none;font-family:inherit;font-size:14px;border-radius:7px;cursor:pointer;color:#0F1C3A}
+.lmui-opt:hover{background:#F1F5FB}
+.lmui-opt.sel{background:#E8F0FE;font-weight:700;color:#1E40AF}
+.lmui-cal{width:250px;padding:10px;overflow:visible}
+.lmui-cal-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;font-weight:700;color:#0F1C3A;font-size:13.5px}
+.lmui-nav{border:0;background:#F1F5FB;border-radius:7px;width:28px;height:28px;font-size:16px;cursor:pointer;color:#374151;line-height:1}
+.lmui-dows{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:2px}
+.lmui-dow{text-align:center;font-size:10.5px;font-weight:700;color:#9CA3AF;padding:2px 0}
+.lmui-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.lmui-grid>span{height:30px}
+.lmui-day{height:30px;border:0;background:none;border-radius:7px;font-family:inherit;font-size:13px;cursor:pointer;color:#374151}
+.lmui-day:hover{background:#F1F5FB}
+.lmui-day.sel{background:#1E40AF;color:#fff;font-weight:700}
 </style>
 </head>
 <body>
@@ -450,13 +470,13 @@ require_once ROOT . '/core/CoinLedger.php';
   <h3>+ Buat Tagihan Piutang B2B</h3>
   <div class="fld">
     <label>Pelanggan B2B (tipe bayar=bulanan / VIP)</label>
-    <select id="genPel"><option value="">— Memuat —</option></select>
+    <select id="genPel" class="lm-cust"><option value="">— Memuat —</option></select>
   </div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-    <div class="fld"><label>Periode Mulai</label><input type="date" id="genStart" value="<?= date('Y-m-01') ?>"></div>
-    <div class="fld"><label>Periode Akhir</label><input type="date" id="genEnd" value="<?= date('Y-m-d') ?>"></div>
+    <div class="fld"><label>Periode Mulai</label><input type="date" id="genStart" class="lm-cust" value="<?= date('Y-m-01') ?>"></div>
+    <div class="fld"><label>Periode Akhir</label><input type="date" id="genEnd" class="lm-cust" value="<?= date('Y-m-d') ?>"></div>
   </div>
-  <div class="fld"><label>Jatuh Tempo</label><input type="date" id="genTempo" value="<?= date('Y-m-d', strtotime('+14 days')) ?>"></div>
+  <div class="fld"><label>Jatuh Tempo</label><input type="date" id="genTempo" class="lm-cust" value="<?= date('Y-m-d', strtotime('+14 days')) ?>"></div>
   <div style="display:flex;gap:8px;justify-content:flex-end">
     <button class="hl-btn hl-btn-outline" onclick="closeModal('genModal')">Batal</button>
     <button class="hl-btn hl-btn-primary" onclick="doGen()">Buat Tagihan</button>
@@ -472,16 +492,16 @@ require_once ROOT . '/core/CoinLedger.php';
   </p>
   <div class="fld">
     <label>Cakupan</label>
-    <select id="bulkScope">
+    <select id="bulkScope" class="lm-cust">
       <option value="bulanan_only">Hanya pelanggan bertipe Bulanan/B2B</option>
       <option value="all_with_orders">Semua pelanggan yang ada order di periode</option>
     </select>
   </div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-    <div class="fld"><label>Periode Mulai</label><input type="date" id="bulkStart" value="<?= date('Y-m-01') ?>"></div>
-    <div class="fld"><label>Periode Akhir</label><input type="date" id="bulkEnd" value="<?= date('Y-m-d') ?>"></div>
+    <div class="fld"><label>Periode Mulai</label><input type="date" id="bulkStart" class="lm-cust" value="<?= date('Y-m-01') ?>"></div>
+    <div class="fld"><label>Periode Akhir</label><input type="date" id="bulkEnd" class="lm-cust" value="<?= date('Y-m-d') ?>"></div>
   </div>
-  <div class="fld"><label>Jatuh Tempo (semua)</label><input type="date" id="bulkTempo" value="<?= date('Y-m-d', strtotime('+14 days')) ?>"></div>
+  <div class="fld"><label>Jatuh Tempo (semua)</label><input type="date" id="bulkTempo" class="lm-cust" value="<?= date('Y-m-d', strtotime('+14 days')) ?>"></div>
   <div style="background:#FEF3C7;border:1px solid #FDE68A;border-radius:6px;padding:8px 12px;margin-bottom:12px;font-size:11.5px;color:#92400E">
     💡 Yang sudah punya piutang di periode ini akan di-UPDATE (jumlah total/dibayar terbaru). Tidak duplikat.
   </div>
@@ -498,7 +518,7 @@ require_once ROOT . '/core/CoinLedger.php';
   <input type="hidden" id="bayarId">
   <div class="fld">
     <label>Tipe</label>
-    <select id="bayarTipe" onchange="bayarTipeChange()">
+    <select id="bayarTipe" class="lm-cust" onchange="bayarTipeChange()">
       <option value="sebagian">Sebagian</option>
       <option value="lunas">Lunas (sisa)</option>
     </select>
@@ -632,6 +652,7 @@ async function openGen(){
         : '<option value="">⚠️ Belum ada pelanggan B2B (tipe_bayar=bulanan)</option>';
     } catch(e){ document.getElementById('genPel').innerHTML = '<option>⚠️ Gagal load</option>'; }
   }
+  lmSyncModal('genModal');
 }
 async function doGen(){
   const body = {
@@ -650,7 +671,7 @@ async function doGen(){
   } catch(e){ alert('Gagal: '+e.message); }
 }
 
-function openBulkGen(){ document.getElementById('bulkGenModal').classList.add('open'); }
+function openBulkGen(){ document.getElementById('bulkGenModal').classList.add('open'); lmSyncModal('bulkGenModal'); }
 
 async function doBulkGen(){
   const body = {
@@ -704,6 +725,7 @@ function openBayar(id, nama, sisa){
   document.getElementById('bayarTipe').value = 'sebagian';
   document.getElementById('bayarJml').value = sisa;
   document.getElementById('bayarModal').classList.add('open');
+  lmSyncModal('bayarModal');
 }
 function bayarTipeChange(){
   if (document.getElementById('bayarTipe').value === 'lunas') {
@@ -724,6 +746,85 @@ async function doBayar(){
     closeModal('bayarModal'); loadList();
   } catch(e){ alert('Gagal: '+e.message); }
 }
+
+/* ── Kontrol custom: select & date native → UI konsisten ────────────────
+   Native tetap ada (disembunyikan) sebagai sumber .value; UI custom sinkron. */
+const _MB=['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+function _fmtDL(v){ if(!v) return '— Pilih —'; const d=new Date(v+'T00:00:00'); if(isNaN(d)) return '— Pilih —'; return `${d.getDate()} ${_MB[d.getMonth()]} ${d.getFullYear()}`; }
+let _pop=null,_popAnchor=null,_reposFn=null;
+function _closePop(){ if(_pop){_pop.remove();_pop=null;} _popAnchor=null;
+  document.removeEventListener('mousedown',_onOutside,true);
+  window.removeEventListener('scroll',_repos,true); window.removeEventListener('resize',_closePop);
+}
+function _onOutside(e){ if(e.target.closest('.lmui-pop')||e.target.closest('.lmui-trg')) return; _closePop(); }
+function _repos(){ if(_pop&&_reposFn) _reposFn(); }
+function _placePop(matchW){
+  const r=_popAnchor.getBoundingClientRect();
+  _pop.style.left=r.left+'px'; if(matchW) _pop.style.width=r.width+'px';
+  const ph=_pop.offsetHeight; let top=r.bottom+4;
+  if(top+ph>window.innerHeight-8) top=Math.max(8,r.top-ph-4);
+  _pop.style.top=top+'px';
+  const pw=_pop.offsetWidth;
+  if(r.left+pw>window.innerWidth-8) _pop.style.left=Math.max(8,window.innerWidth-pw-8)+'px';
+}
+function _openPop(anchor,cls,build,matchW){
+  if(_popAnchor===anchor){ _closePop(); return; }
+  _closePop();
+  _pop=document.createElement('div'); _pop.className='lmui-pop '+cls;
+  build(_pop);
+  document.body.appendChild(_pop); _popAnchor=anchor; _reposFn=()=>_placePop(matchW); _placePop(matchW);
+  document.addEventListener('mousedown',_onOutside,true);
+  window.addEventListener('scroll',_repos,true); window.addEventListener('resize',_closePop);
+}
+function _initSel(sel){
+  sel.classList.remove('lm-cust'); sel.style.display='none';
+  const trg=document.createElement('button'); trg.type='button'; trg.className='lmui-trg';
+  trg.innerHTML='<span class="lmui-lbl"></span><span class="lmui-car">▾</span>';
+  const lbl=trg.querySelector('.lmui-lbl');
+  const sync=()=>{ const o=sel.options[sel.selectedIndex]; const t=o?o.textContent:'— Pilih —';
+    lbl.textContent=t; trg.classList.toggle('ph', !sel.value); };
+  sel._lmSync=sync; sel.addEventListener('change',sync);
+  trg.onclick=()=>_openPop(trg,'lmui-sel',pop=>{
+    pop.innerHTML=Array.from(sel.options).map((o,i)=>`<button type="button" class="lmui-opt${i===sel.selectedIndex?' sel':''}" data-i="${i}">${esc(o.textContent)}</button>`).join('');
+    pop.onclick=e=>{ const b=e.target.closest('.lmui-opt'); if(!b) return; sel.selectedIndex=+b.dataset.i; sel.dispatchEvent(new Event('change')); _closePop(); };
+  }, true);
+  sel.after(trg); sync();
+}
+function _initDate(inp){
+  inp.classList.remove('lm-cust'); inp.style.display='none';
+  const trg=document.createElement('button'); trg.type='button'; trg.className='lmui-trg';
+  trg.innerHTML='<span class="lmui-lbl"></span><span class="lmui-car">📅</span>';
+  const lbl=trg.querySelector('.lmui-lbl');
+  const sync=()=>{ lbl.textContent=_fmtDL(inp.value); trg.classList.toggle('ph',!inp.value); };
+  inp._lmSync=sync; inp.addEventListener('change',sync);
+  trg.onclick=()=>{
+    let base=inp.value?new Date(inp.value+'T00:00:00'):new Date(); if(isNaN(base)) base=new Date();
+    let vy=base.getFullYear(),vm=base.getMonth();
+    _openPop(trg,'lmui-cal',pop=>{
+      const render=()=>{
+        const startDow=new Date(vy,vm,1).getDay();
+        const days=new Date(vy,vm+1,0).getDate();
+        const dows=['M','S','S','R','K','J','S'].map(d=>`<span class="lmui-dow">${d}</span>`).join('');
+        let cells=''; for(let i=0;i<startDow;i++) cells+='<span></span>';
+        for(let d=1;d<=days;d++){ const ds=`${vy}-${String(vm+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+          cells+=`<button type="button" class="lmui-day${ds===inp.value?' sel':''}" data-d="${ds}">${d}</button>`; }
+        pop.innerHTML=`<div class="lmui-cal-hd"><button type="button" class="lmui-nav" data-nav="-1">‹</button><span>${_MB[vm]} ${vy}</span><button type="button" class="lmui-nav" data-nav="1">›</button></div><div class="lmui-dows">${dows}</div><div class="lmui-grid">${cells}</div>`;
+        _placePop(false);
+      };
+      render();
+      pop.onclick=e=>{ const nav=e.target.closest('.lmui-nav');
+        if(nav){ vm+=+nav.dataset.nav; if(vm<0){vm=11;vy--;} if(vm>11){vm=0;vy++;} render(); return; }
+        const day=e.target.closest('.lmui-day'); if(!day) return;
+        inp.value=day.dataset.d; inp.dispatchEvent(new Event('change')); _closePop();
+      };
+    }, false);
+  };
+  inp.after(trg); sync();
+}
+function lmEnhance(root){ (root||document).querySelectorAll('select.lm-cust').forEach(_initSel);
+  (root||document).querySelectorAll('input.lm-cust[type=date]').forEach(_initDate); }
+function lmSyncModal(id){ document.getElementById(id).querySelectorAll('[id]').forEach(el=>el._lmSync&&el._lmSync()); }
+lmEnhance();
 
 loadList();
 </script>
