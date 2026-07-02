@@ -378,6 +378,9 @@ $pageTitle  = '🧺 Produksi';
 </main>
 
 <button class="scan-fab" onclick="startScan()" aria-label="Scan QR Order" title="Scan QR Order">📷</button>
+<!-- Kamera native utk scan QR (andal di WebView) + area decode tersembunyi -->
+<input type="file" id="qrPhoto" accept="image/*" capture="environment" style="display:none" onchange="onQrPhoto(this)">
+<div id="qrScanArea" style="display:none"></div>
 
 <script src="/assets/html5-qrcode.min.js?v=<?= @filemtime(__DIR__ . '/assets/html5-qrcode.min.js') ?: '1' ?>"></script>
 <script>
@@ -675,45 +678,42 @@ async function submitStage() {
 
 let qrInstance = null;
 
-async function startScan() {
-  document.getElementById('scanModal').classList.add('open');
+// Scan QR = ambil foto pakai kamera native (andal di WebView APK) lalu decode via html5-qrcode.
+// getUserMedia live-stream sering gagal di WebView → pakai capture foto seperti "Scan Struk" di Kas.
+function startScan() {
+  const inp = document.getElementById('qrPhoto');
+  if (inp) { inp.value = ''; inp.click(); }
+}
+
+async function onQrPhoto(input) {
+  const file = input.files && input.files[0];
+  if (!file) return;
   try {
-    qrInstance = new Html5Qrcode("scanArea");
-    await qrInstance.start(
-      {facingMode: "environment"},
-      {fps: 10, qrbox: 250},
-      async (decoded) => {
-        await stopScan();
-        // Extract no_order: URL param atau bare kode
-        const m = decoded.match(/order=([A-Z0-9-]+)/i) || decoded.match(/^([A-Z0-9-]{3,})$/i);
-        if (!m) { alert('QR tidak dikenali: ' + decoded.slice(0, 60)); return; }
-        const r = await fetch('/produksi.php?action=get_by_kode&kode=' + encodeURIComponent(m[1]));
-        const order = await r.json();
-        if (order.error) { alert('❌ ' + order.error); return; }
-        // Set currentStage berdasarkan status_proses order, lalu open modal
-        const stageMap = {'masuk':'terima','cuci':'kering','kering':'setrika','setrika':'siap','siap':'diambil'};
-        const nextStage = stageMap[order.status_proses] || order.status_proses;
-        currentStage = nextStage;
-        // Sync tab UI
-        document.querySelectorAll('.stage-tab').forEach(b => b.classList.toggle('active', b.dataset.stage === nextStage));
-        await openStageModal(order.id);
-      },
-      () => {} // silent scan errors
-    );
+    const scanner = new Html5Qrcode('qrScanArea');
+    const decoded = await scanner.scanFile(file, false);
+    try { await scanner.clear(); } catch (e) {}
+    await processScanned(decoded);
   } catch (e) {
-    alert('Tidak bisa akses kamera: ' + e.message + '\n\nGunakan input manual no_order.');
-    stopScan();
-    const kode = await lmPrompt('Input no_order manual:');
-    if (kode) {
-      const r = await fetch('/produksi.php?action=get_by_kode&kode=' + encodeURIComponent(kode));
-      const order = await r.json();
-      if (order.error) { alert(order.error); return; }
-      const stageMap = {'masuk':'terima','cuci':'kering','kering':'setrika','setrika':'siap','siap':'diambil'};
-      currentStage = stageMap[order.status_proses] || order.status_proses;
-      document.querySelectorAll('.stage-tab').forEach(b => b.classList.toggle('active', b.dataset.stage === currentStage));
-      await openStageModal(order.id);
-    }
+    // QR tak terbaca dari foto → tawarkan input manual
+    const kode = await lmPrompt('QR tak terbaca dari foto. Ketik no_order manual:');
+    if (kode) await lookupAndOpen(kode.trim());
   }
+}
+
+async function processScanned(decoded) {
+  const m = decoded.match(/order=([A-Z0-9-]+)/i) || decoded.match(/([A-Z0-9][A-Z0-9-]{4,})/i);
+  if (!m) { alert('QR tidak dikenali: ' + decoded.slice(0, 60)); return; }
+  await lookupAndOpen(m[1]);
+}
+
+async function lookupAndOpen(kode) {
+  const r = await fetch('/produksi.php?action=get_by_kode&kode=' + encodeURIComponent(kode));
+  const order = await r.json();
+  if (order.error) { alert('❌ ' + order.error); return; }
+  const stageMap = {'masuk':'terima','cuci':'kering','kering':'setrika','setrika':'siap','siap':'diambil'};
+  const nextStage = stageMap[order.status_proses] || order.status_proses;
+  switchStage(nextStage);
+  await openStageModal(order.id);
 }
 
 async function stopScan() {
