@@ -390,7 +390,7 @@ if ($action) {
                 ];
             }
 
-            if ($oldRow['status_bayar'] !== $sbayar) {
+            if ($oldRow['status_bayar'] !== $sbayar && $gateAksi === null) {
                 $logs_to_insert[] = [
                     'transaksi_id' => $id,
                     'status_lama'  => $oldRow['status_bayar'],
@@ -2178,8 +2178,7 @@ async function saveEdit() {
 
 async function saveEditWithResolution(res) {
   window.__editResolution = res;
-  await saveEdit();
-  window.__editResolution = null;
+  try { await saveEdit(); } finally { window.__editResolution = null; }
 }
 // Dialog pilihan kelebihan bayar: refund tunai / masuk deposit / batal
 function lmKelebihanDialog(selisih, bisaDeposit) {
