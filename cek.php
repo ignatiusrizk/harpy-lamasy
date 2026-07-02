@@ -17,6 +17,26 @@ header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
 
 $noOrder = trim($_GET['n'] ?? '');
 $phoneLast4 = trim($_POST['phone'] ?? '');
+
+// ── DIAG SEMENTARA (hapus setelah debug) — hanya aktif dgn token ──
+if (($_GET['__diag'] ?? '') === 'hl9x2') {
+    header('Content-Type: application/json');
+    $dOrder = lookupOrder($noOrder, $phoneLast4);
+    $st = Database::get()->prepare("SELECT id, telepon FROM hl_transaksi WHERE no_order=? LIMIT 1");
+    $st->execute([$noOrder]);
+    $raw = $st->fetch(PDO::FETCH_ASSOC);
+    echo json_encode([
+        'noOrder_in'   => $noOrder,
+        'phone_in'     => $phoneLast4,
+        'method'       => $_SERVER['REQUEST_METHOD'],
+        'db_name'      => defined('DB_NAME') ? DB_NAME : '?',
+        'raw_found'    => $raw ? true : false,
+        'raw_id'       => $raw['id'] ?? null,
+        'raw_last4'    => $raw ? substr(preg_replace('/[^0-9]/','',(string)$raw['telepon']),-4) : null,
+        'lookup_ok'    => $dOrder ? true : false,
+    ]);
+    exit;
+}
 $ajaxAction = $_GET['action'] ?? '';
 
 // ── AJAX: poll status (refresh tanpa reload) ──
