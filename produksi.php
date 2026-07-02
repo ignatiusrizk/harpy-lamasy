@@ -311,7 +311,9 @@ $pageTitle  = '🧺 Produksi';
   50%{box-shadow:0 8px 24px rgba(53,232,213,.7), 0 0 0 8px rgba(53,232,213,.08)}
 }
 @media (prefers-reduced-motion:reduce){.scan-fab{animation:none}}
-@media (max-width:480px){.scan-fab{right:16px;bottom:16px;width:58px;height:58px;font-size:24px}}
+/* Di HP ada bottom-nav (~70px) → angkat FAB scan biar tak menutupi menu */
+@media (max-width:900px){.scan-fab{bottom:calc(82px + env(safe-area-inset-bottom,0px))}}
+@media (max-width:480px){.scan-fab{right:16px;bottom:calc(80px + env(safe-area-inset-bottom,0px));width:56px;height:56px;font-size:23px}}
 </style>
 </head>
 <body>
