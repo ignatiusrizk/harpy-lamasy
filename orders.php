@@ -1781,6 +1781,14 @@ async function openDetail(id) {
   loadNotes(id);
   editSnapshot = editStateJSON();   // rekam state awal utk deteksi perubahan
 
+  // Reset tombol footer (statis & dipakai ulang antar modal) — jangan bawa state disabled dari order pending sebelumnya
+  ['btnSaveEdit', 'btnBayarDariDetail', 'btnMintaHapus'].forEach(bid => {
+    const b = document.getElementById(bid);
+    if (b) { b.disabled = false; b.style.opacity = ''; b.style.pointerEvents = ''; }
+  });
+  const bmhReset = document.getElementById('btnMintaHapus');
+  if (bmhReset) bmhReset.textContent = '🗑️ Minta Hapus';
+
   // Order dgn permintaan hapus pending → kunci semua editing
   if (d.pending_delete) {
     const mb = document.getElementById('modalBody');
