@@ -126,6 +126,21 @@ class DeleteRequest
         }
     }
 
+    /** Apakah entity punya permintaan hapus yg masih pending (utk kunci edit). */
+    public static function isPending(string $type, int $id, int $tenantId): bool
+    {
+        try {
+            $st = Database::get()->prepare(
+                "SELECT 1 FROM hl_delete_request
+                  WHERE tenant_id=? AND entity_type=? AND entity_id=? AND status='pending' LIMIT 1"
+            );
+            $st->execute([$tenantId, $type, $id]);
+            return (bool)$st->fetchColumn();
+        } catch (Throwable) {
+            return false;
+        }
+    }
+
     /** Count pending request untuk tenant ini (utk badge owner inbox). */
     public static function pendingCount(int $tenantId): int
     {

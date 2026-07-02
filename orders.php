@@ -132,6 +132,8 @@ if ($action) {
         if (!$t) { echo json_encode(['error'=>'Not found']); exit; }
         $t['items'] = TenantQuery::raw("SELECT * FROM hl_transaksi_item WHERE tenant_id=? AND outlet_id=? AND transaksi_id=? ORDER BY id", [$tid, $oid, $id]);
         $t['logs']  = TenantQuery::raw("SELECT * FROM hl_proses_log WHERE transaksi_id=? ORDER BY created_at DESC LIMIT 10", [$id]);
+        require_once ROOT . '/core/DeleteRequest.php';
+        $t['pending_delete'] = DeleteRequest::isPending('transaksi', $id, $tid);
         echo json_encode($t); exit;
     }
 
@@ -186,6 +188,12 @@ if ($action) {
         verifyCsrf();
         $data = json_decode(file_get_contents('php://input'), true);
         $id   = intval($data['id']);
+
+        // Kunci: order dgn permintaan hapus pending tak boleh diedit
+        require_once ROOT . '/core/DeleteRequest.php';
+        if (DeleteRequest::isPending('transaksi', $id, $tid)) {
+            echo json_encode(['error'=>'Order sedang menunggu persetujuan hapus — tidak bisa diedit sampai di-review owner.']); exit;
+        }
 
         $db = Database::get();
         $db->beginTransaction();
@@ -385,6 +393,11 @@ if ($action) {
         $id     = intval($_POST['id'] ?? 0);
         $tipe   = $_POST['tipe_bayar'] ?? 'sebagian';
         $jumlah = floatval($_POST['jumlah'] ?? 0);
+
+        require_once ROOT . '/core/DeleteRequest.php';
+        if (DeleteRequest::isPending('transaksi', $id, $tid)) {
+            echo json_encode(['error'=>'Order sedang menunggu persetujuan hapus — tidak bisa update bayar.']); exit;
+        }
 
         // Verify ownership & get current data
         $row = TenantQuery::rawOne("SELECT total, dp, sisa_bayar FROM hl_transaksi WHERE tenant_id=? AND outlet_id=? AND id=?", [$tid, $oid, $id]);
@@ -1767,6 +1780,18 @@ async function openDetail(id) {
   recalcEdit();
   loadNotes(id);
   editSnapshot = editStateJSON();   // rekam state awal utk deteksi perubahan
+
+  // Order dgn permintaan hapus pending → kunci semua editing
+  if (d.pending_delete) {
+    const mb = document.getElementById('modalBody');
+    mb.insertAdjacentHTML('afterbegin',
+      '<div style="background:#FEF3C7;border:1px solid #FDE68A;color:#92400E;padding:10px 14px;border-radius:10px;margin-bottom:14px;font-size:13px;font-weight:600">🗑️ Order ini sedang <b>menunggu persetujuan hapus</b> — tidak bisa diedit sampai di-review owner.</div>');
+    mb.querySelectorAll('input, select, textarea, button.step-btn, .btn-remove').forEach(el => el.disabled = true);
+    ['btnSaveEdit', 'btnBayarDariDetail'].forEach(bid => {
+      const b = document.getElementById(bid);
+      if (b) { b.disabled = true; b.style.opacity = '.45'; b.style.pointerEvents = 'none'; }
+    });
+  }
 }
 
 // ── CATATAN INTERNAL MULTI-ROW ────────────────────────
