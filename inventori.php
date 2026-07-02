@@ -478,6 +478,12 @@ if ($action) {
 
 @media(max-width:1100px){.inv-summary{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:680px){.inv-summary{grid-template-columns:repeat(2,1fr);gap:8px}.inv-card{padding:10px 12px}.inv-num{font-size:1.1rem}}
+/* Tab bar: scroll horizontal di HP biar semua tab kejangkau (Stok Opname tak kepotong) */
+@media(max-width:760px){
+  .inv-tabs{overflow-x:auto;flex-wrap:nowrap;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+  .inv-tabs::-webkit-scrollbar{display:none}
+  .inv-tab{flex:0 0 auto;white-space:nowrap;padding:10px 14px;font-size:13px}
+}
 </style>
 </head>
 <body>
@@ -525,7 +531,7 @@ if ($action) {
 
     <div class="hl-card">
       <div class="hl-table-wrap">
-        <table class="hl-table">
+        <table class="hl-table hl-stack-mobile">
           <thead>
             <tr>
               <th>Nama Bahan</th>
@@ -809,13 +815,13 @@ async function loadStok() {
       : '<span class="status-badge status-aman">✓ Aman</span>';
     return `
       <tr>
-        <td><strong>${esc(b.nama)}</strong></td>
-        <td><span class="kategori-badge">${katLabel(b.kategori)}</span></td>
-        <td class="td-num ${stokCls}">${b.stok_terkini} <small style="color:var(--gray);font-weight:500">${esc(b.satuan)}</small></td>
-        <td class="td-num">${b.stok_minimum}</td>
-        <td>${statusBadge}</td>
-        <td class="td-num">${b.harga_beli > 0 ? 'Rp ' + fmtNum(b.harga_beli) : '-'}</td>
-        <td>${esc(b.supplier || '-')}</td>
+        <td data-lbl="Nama Bahan"><strong>${esc(b.nama)}</strong></td>
+        <td data-lbl="Kategori"><span class="kategori-badge">${katLabel(b.kategori)}</span></td>
+        <td data-lbl="Stok" class="td-num ${stokCls}">${b.stok_terkini} <small style="color:var(--gray);font-weight:500">${esc(b.satuan)}</small></td>
+        <td data-lbl="Min" class="td-num">${b.stok_minimum}</td>
+        <td data-lbl="Status">${statusBadge}</td>
+        <td data-lbl="Harga Beli" class="td-num">${b.harga_beli > 0 ? 'Rp ' + fmtNum(b.harga_beli) : '-'}</td>
+        <td data-lbl="Supplier">${esc(b.supplier || '-')}</td>
         <td>
           ${CAN_MANAGE ? `<button class="hl-btn hl-btn-sm hl-btn-primary" onclick="openKelola(${b.id})">📋 Kelola</button>
                           <button class="hl-btn hl-btn-sm hl-btn-outline" onclick="editBahan(${b.id})" title="Edit master">✏️</button>` : '-'}
