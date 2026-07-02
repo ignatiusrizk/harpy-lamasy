@@ -38,6 +38,7 @@ class BannerLoader
         if (empty($banners)) return '';
 
         $h = '<div class="banner-carousel" id="bannerCarousel">';
+        $h .= '<div class="bn-track" id="bnTrack">';
         foreach ($banners as $i => $b) {
             $color = htmlspecialchars($b['text_color']  ?? '#fff');
             // Image takes priority over gradient if uploaded
@@ -64,6 +65,7 @@ class BannerLoader
                 . $cta
                 . '</div></div>';
         }
+        $h .= '</div>'; // /bn-track
         // Pagination dots
         if (count($banners) > 1) {
             $h .= '<div class="bn-dots">';
@@ -83,9 +85,9 @@ class BannerLoader
     {
         return <<<HTML
 <style>
-.banner-carousel{position:relative;border-radius:18px;overflow:hidden;margin-bottom:22px;box-shadow:0 8px 32px rgba(15,123,108,.22),0 2px 8px rgba(0,0,0,.06);min-height:160px}
-.bn-slide{display:none;padding:32px 36px 38px;min-height:160px;align-items:center;animation:bnFade .4s ease;position:relative;overflow:hidden}
-.bn-slide.active{display:flex}
+.banner-carousel{position:relative;border-radius:18px;overflow:hidden;margin-bottom:22px;box-shadow:0 8px 32px rgba(15,123,108,.22),0 2px 8px rgba(0,0,0,.06);min-height:160px;touch-action:pan-y}
+.bn-track{display:flex;align-items:stretch;transition:transform .32s cubic-bezier(.22,.61,.36,1);will-change:transform}
+.bn-slide{flex:0 0 100%;display:flex;padding:32px 36px 38px;min-height:160px;align-items:center;position:relative;overflow:hidden}
 .bn-slide::after{content:'';position:absolute;inset:0;background:radial-gradient(circle at 85% 30%,rgba(255,255,255,.12),transparent 55%);pointer-events:none}
 /* Image-mode banners get dark gradient overlay for text legibility */
 .bn-slide.bn-has-img::after{background:linear-gradient(90deg,rgba(0,0,0,.55) 0%,rgba(0,0,0,.32) 55%,rgba(0,0,0,.18) 100%)}
@@ -99,46 +101,55 @@ class BannerLoader
 .bn-dots{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);display:flex;gap:7px;z-index:2}
 .bn-dot{width:9px;height:9px;border-radius:50%;border:none;background:rgba(255,255,255,.45);cursor:pointer;padding:0;transition:all .2s ease}
 .bn-dot.active{background:rgba(255,255,255,.98);width:28px;border-radius:5px}
-@keyframes bnFade{from{opacity:0;transform:translateY(6px) scale(.99)}to{opacity:1;transform:translateY(0) scale(1)}}
-/* Arah animasi saat digeser manual */
-.bn-slide.active.bn-from-r{animation:bnInR .28s ease}
-.bn-slide.active.bn-from-l{animation:bnInL .28s ease}
-@keyframes bnInR{from{opacity:.35;transform:translateX(46px)}to{opacity:1;transform:none}}
-@keyframes bnInL{from{opacity:.35;transform:translateX(-46px)}to{opacity:1;transform:none}}
 @media (max-width:640px){.bn-slide{padding:22px 22px 30px;min-height:140px}.bn-title{font-size:17px}.bn-desc{font-size:13px}.bn-icon{font-size:38px}.bn-cta{font-size:12.5px;padding:8px 16px}.bn-content{gap:14px}}
 </style>
 <script>
 (function(){
   const total = $count;
-  if (total < 2) return;
-  let cur = 0, timer;
-  const restart = () => { clearInterval(timer); timer = setInterval(()=>bnGoto((cur+1)%total), 6000); };
-  window.bnGoto = function(i, dir){
-    document.querySelectorAll('.bn-slide').forEach((el,idx)=>{
-      el.classList.remove('bn-from-r','bn-from-l');
-      el.classList.toggle('active', idx===i);
-    });
-    if (dir) document.querySelectorAll('.bn-slide')[i].classList.add(dir>0?'bn-from-r':'bn-from-l');
-    document.querySelectorAll('.bn-dot').forEach((el,idx)=>el.classList.toggle('active',idx===i));
-    cur = i;
-    restart();
-  };
-  // Geser manual (swipe) — pause auto saat disentuh, lanjut lagi setelahnya
-  const box = document.getElementById('bannerCarousel');
-  let sx=0, sy=0;
-  box.addEventListener('touchstart', e=>{
-    sx = e.touches[0].clientX; sy = e.touches[0].clientY;
-    clearInterval(timer);
-  }, {passive:true});
-  box.addEventListener('touchend', e=>{
-    const dx = e.changedTouches[0].clientX - sx;
-    const dy = e.changedTouches[0].clientY - sy;
-    if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)*1.5) {
-      dx < 0 ? bnGoto((cur+1)%total, 1) : bnGoto((cur-1+total)%total, -1);
-    } else {
-      restart(); // bukan swipe → lanjutkan auto
-    }
-  }, {passive:true});
+  const box   = document.getElementById('bannerCarousel');
+  const track = document.getElementById('bnTrack');
+  if (!box || !track) return;
+  let cur = 0, timer = null;
+  const W    = () => box.clientWidth;
+  const setX = (px, anim) => { track.style.transition = anim ? '' : 'none'; track.style.transform = 'translateX(' + px + 'px)'; };
+  const snap = () => setX(-cur * W(), true);
+  const dots = () => document.querySelectorAll('.bn-dot').forEach((el,idx)=>el.classList.toggle('active', idx===cur));
+  const restart = () => { clearInterval(timer); if (total > 1) timer = setInterval(()=>{ cur=(cur+1)%total; snap(); dots(); }, 6000); };
+  window.bnGoto = function(i){ cur = i; snap(); dots(); restart(); };
+
+  if (total > 1) {
+    // Drag mengikuti jari (spt scroll native), snap saat lepas
+    let sx=0, sy=0, dx=0, axis=null, dragging=false, swiped=false;
+    box.addEventListener('touchstart', e=>{
+      sx = e.touches[0].clientX; sy = e.touches[0].clientY;
+      dx = 0; axis = null; dragging = true; swiped = false;
+      clearInterval(timer);
+      setX(-cur * W(), false); // hentikan animasi yg sedang jalan di posisi target
+    }, {passive:true});
+    box.addEventListener('touchmove', e=>{
+      if (!dragging) return;
+      const mx = e.touches[0].clientX - sx, my = e.touches[0].clientY - sy;
+      if (!axis && (Math.abs(mx) > 6 || Math.abs(my) > 6)) axis = Math.abs(mx) > Math.abs(my) ? 'x' : 'y';
+      if (axis !== 'x') return;
+      dx = mx;
+      // rubber-band di banner pertama/terakhir
+      if ((cur === 0 && dx > 0) || (cur === total-1 && dx < 0)) dx = dx / 3;
+      setX(-cur * W() + dx, false);
+    }, {passive:true});
+    const end = () => {
+      if (!dragging) return; dragging = false;
+      if (axis === 'x' && Math.abs(dx) > W() * 0.18) {
+        cur = dx < 0 ? Math.min(cur+1, total-1) : Math.max(cur-1, 0);
+        swiped = true;
+      } else if (axis === 'x' && Math.abs(dx) > 8) { swiped = true; }
+      snap(); dots(); restart();
+    };
+    box.addEventListener('touchend', end, {passive:true});
+    box.addEventListener('touchcancel', end, {passive:true});
+    // Setelah drag, jangan sampai tap CTA ikut ke-trigger
+    box.addEventListener('click', e=>{ if (swiped) { e.preventDefault(); e.stopPropagation(); swiped = false; } }, true);
+    window.addEventListener('resize', ()=>setX(-cur * W(), false));
+  }
   restart();
 })();
 </script>
