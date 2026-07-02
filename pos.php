@@ -1061,6 +1061,17 @@ textarea{resize:vertical;min-height:64px}
   /* Extra bottom padding biar content gak ketutup sticky bar */
   .main { padding-bottom: 90px !important; }
 }
+/* AI bubble jangan nabrak bottom-nav (≤900) & sticky CTA Simpan (≤680) */
+@media (max-width: 900px) {
+  #aiBubbleBtn { bottom: calc(84px + env(safe-area-inset-bottom,0px)) !important; }
+  #aiNotifDot  { bottom: calc(126px + env(safe-area-inset-bottom,0px)) !important; }
+  #aiChatPanel { bottom: calc(150px + env(safe-area-inset-bottom,0px)) !important; max-height: 60vh !important; }
+}
+@media (max-width: 680px) {
+  #aiBubbleBtn { bottom: calc(140px + env(safe-area-inset-bottom,0px)) !important; }
+  #aiNotifDot  { bottom: calc(182px + env(safe-area-inset-bottom,0px)) !important; }
+  #aiChatPanel { bottom: calc(206px + env(safe-area-inset-bottom,0px)) !important; }
+}
 </style>
 </head>
 <body>
