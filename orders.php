@@ -2061,14 +2061,34 @@ async function cetakUlang(id) {
 }
 
 function closeCetakModal() { document.getElementById('modalCetak').classList.remove('open'); }
-function doPrint() {
+async function doPrint() {
   const frame = document.getElementById('cetakFrame');
-  if (frame && frame.contentWindow) {
-    frame.contentWindow.focus();
-    frame.contentWindow.print();
-  } else {
-    window.print();
+  const hasTP = !!window.ThermalPrint;
+  const avail = hasTP && ThermalPrint.isAvailable();
+  const inApp = !!(window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform());
+  const pr    = hasTP ? ThermalPrint.getPrinter() : null;
+
+  // Di app + plugin aktif → cetak ke printer thermal Bluetooth (sama seperti POS)
+  if (avail) {
+    if (pr && pr.address) {
+      let node = null;
+      try { const doc = frame && frame.contentDocument; if (doc) node = doc.querySelector('.struk') || doc.body; } catch (e) {}
+      if (!node) { showToast('Struk belum siap', 'error'); return; }
+      try {
+        showToast('🖨 Mencetak…', 'info');
+        await ThermalPrint.print(node, 576); // 80mm default (sama dgn POS)
+        showToast('✅ Struk tercetak', 'success');
+      } catch (e) { showToast('❌ ' + (e.message || 'Gagal cetak'), 'error'); }
+      return;
+    }
+    showToast('Belum ada printer dipilih — pilih dulu di POS (⚙️ Printer)', 'error');
+    return;
   }
+  // Di app tapi plugin tak terdeteksi
+  if (inApp) { showToast('Plugin printer thermal tak terdeteksi. Pakai APK terbaru / restart app.', 'error'); return; }
+  // Browser desktop → dialog cetak biasa
+  if (frame && frame.contentWindow) { frame.contentWindow.focus(); frame.contentWindow.print(); }
+  else window.print();
 }
 
 // ── WA REMINDER ───────────────────────────────────────
@@ -2309,6 +2329,9 @@ async function submitBayar() {
   }
 }
 </script>
+<!-- Cetak thermal Bluetooth (dipakai doPrint di modal Cetak Ulang Nota) -->
+<script src="/assets/vendor/html2canvas.min.js?v=<?= @filemtime(__DIR__.'/assets/vendor/html2canvas.min.js') ?: '1' ?>"></script>
+<script src="/assets/js/thermal-print.js?v=<?= @filemtime(__DIR__.'/assets/js/thermal-print.js') ?: '1' ?>"></script>
 <?php renderToast(); ?>
 </body>
 </html>
