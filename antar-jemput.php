@@ -227,6 +227,19 @@ renderTopbar($activePage);
 .kat-opt .kat-e{font-size:19px;line-height:1;flex-shrink:0;width:24px;text-align:center}
 .kat-opt .kat-l{flex:1}
 .kat-opt .kat-ck{color:var(--teal-d);font-weight:800;font-size:15px}
+/* Kalender kustom (pengganti native date picker) */
+.aj-cal{padding:12px;max-height:none}
+.aj-cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.aj-cal-head button{width:32px;height:32px;border:0;background:#F0FDFA;border-radius:8px;cursor:pointer;font-size:17px;color:var(--teal-d);font-weight:800;line-height:1}
+.aj-cal-title{font-weight:800;color:var(--navy);font-size:14px}
+.aj-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.aj-cal-dow{text-align:center;font-size:10px;font-weight:800;color:#9CA3AF;padding:4px 0}
+.aj-cal-day{aspect-ratio:1;border:0;background:none;border-radius:8px;cursor:pointer;font-size:13px;color:var(--navy);font-family:var(--font)}
+.aj-cal-day:hover:not(:disabled){background:#F0FDFA}
+.aj-cal-day:disabled{color:#D1D5DB;cursor:default}
+.aj-cal-day.empty{visibility:hidden}
+.aj-cal-day.today{font-weight:800;color:var(--teal-d)}
+.aj-cal-day.sel{background:var(--teal);color:#0F1C3A;font-weight:800}
 </style>
 <div class="hl-main">
 <?php if ($view === 'report'): ?>
@@ -301,7 +314,9 @@ renderTopbar($activePage);
         <button type="button" class="slot-chip" data-day="2">Lusa</button>
         <button type="button" class="slot-chip" data-day="pick">📅 Tanggal…</button>
       </div>
-      <input type="date" id="slotDate" class="hl-input" style="display:none;margin-top:8px">
+      <div id="ajCalWrap" style="position:relative">
+        <div class="kat-panel aj-cal" id="ajCalPanel" hidden></div>
+      </div>
       <div class="kat-dd" id="slotDD" style="margin-top:8px">
         <button type="button" class="kat-trigger" id="slotTrigger" onclick="slotToggle(event)">
           <span id="slotTriggerLabel" class="kat-ph">Pilih jam jemput…</span>
@@ -416,11 +431,51 @@ function slotRecompute(){
 function slotPickDay(chip){
   document.querySelectorAll('#slotDays .slot-chip').forEach(x=>x.classList.remove('active'));
   chip.classList.add('active');
-  const dp = document.getElementById('slotDate');
-  if (chip.dataset.day==='pick'){ dp.style.display='block'; slotDay = dp.value || null; if(!dp.value) dp.focus(); }
-  else { dp.style.display='none'; slotDay = slotDateStr(parseInt(chip.dataset.day,10)); }
+  if (chip.dataset.day==='pick'){ ajCalOpen(); return; }   // buka kalender kustom, tanggal di-set saat pilih
+  ajCalClose();
+  document.querySelector('#slotDays .slot-chip[data-day="pick"]').textContent = '📅 Tanggal…'; // reset label chip
+  slotDay = slotDateStr(parseInt(chip.dataset.day,10));
   slotRecompute();
 }
+// ── Kalender kustom (pengganti native date picker) ──
+let ajCalY, ajCalM;
+function ajCalOpen(){
+  const base = slotDay ? new Date(slotDay+'T00:00:00') : new Date();
+  ajCalY = base.getFullYear(); ajCalM = base.getMonth();
+  ajCalRender(); document.getElementById('ajCalPanel').hidden = false;
+}
+function ajCalClose(){ const p=document.getElementById('ajCalPanel'); if(p) p.hidden = true; }
+function ajCalRender(){
+  const mo=['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+  const today=new Date(); today.setHours(0,0,0,0);
+  const first=new Date(ajCalY, ajCalM, 1).getDay();
+  const days=new Date(ajCalY, ajCalM+1, 0).getDate();
+  const pad=n=>String(n).padStart(2,'0');
+  let h='<div class="aj-cal-head"><button type="button" data-nav="-1">‹</button>'
+      + '<span class="aj-cal-title">'+mo[ajCalM]+' '+ajCalY+'</span>'
+      + '<button type="button" data-nav="1">›</button></div><div class="aj-cal-grid">';
+  ['M','S','S','R','K','J','S'].forEach(d=>h+='<div class="aj-cal-dow">'+d+'</div>');
+  for(let i=0;i<first;i++) h+='<button class="aj-cal-day empty" disabled></button>';
+  for(let d=1;d<=days;d++){
+    const dt=new Date(ajCalY,ajCalM,d); dt.setHours(0,0,0,0);
+    const v=ajCalY+'-'+pad(ajCalM+1)+'-'+pad(d);
+    const cls=['aj-cal-day']; if(+dt===+today)cls.push('today'); if(v===slotDay)cls.push('sel');
+    h+='<button type="button" class="'+cls.join(' ')+'" data-d="'+v+'"'+(dt<today?' disabled':'')+'>'+d+'</button>';
+  }
+  document.getElementById('ajCalPanel').innerHTML = h+'</div>';
+}
+document.getElementById('ajCalPanel').addEventListener('click', e=>{
+  const nav=e.target.closest('[data-nav]');
+  if(nav){ ajCalM+=parseInt(nav.dataset.nav,10); if(ajCalM<0){ajCalM=11;ajCalY--;} if(ajCalM>11){ajCalM=0;ajCalY++;} ajCalRender(); return; }
+  const day=e.target.closest('.aj-cal-day');
+  if(day && !day.disabled && day.dataset.d){
+    slotDay=day.dataset.d;
+    const dd=new Date(slotDay+'T00:00:00');
+    document.querySelector('#slotDays .slot-chip[data-day="pick"]').textContent =
+      '📅 '+dd.toLocaleDateString('id-ID',{day:'numeric',month:'short'});
+    ajCalClose(); slotRecompute();
+  }
+});
 function slotRender(){
   document.getElementById('slotPanel').innerHTML = '<div class="kat-group">Jam Jemput</div>' + SLOTS.map(s=>{
     const act = s.v===slotHour ? ' is-active':'';
@@ -447,13 +502,17 @@ function slotPickHour(h){
 function slotResetUI(){
   slotDay=null; slotHour=null;
   document.querySelectorAll('#slotDays .slot-chip').forEach(x=>x.classList.remove('active'));
-  const dp=document.getElementById('slotDate'); if(dp){dp.style.display='none';dp.value='';}
+  document.querySelector('#slotDays .slot-chip[data-day="pick"]').textContent = '📅 Tanggal…';
+  ajCalClose();
   const lbl=document.getElementById('slotTriggerLabel'); lbl.textContent='Pilih jam jemput…'; lbl.classList.add('kat-ph');
 }
 document.getElementById('slotPanel').addEventListener('click', e=>{ const b=e.target.closest('.kat-opt'); if(b) slotPickHour(parseInt(b.dataset.h,10)); });
 document.getElementById('slotDays').addEventListener('click', e=>{ const c=e.target.closest('.slot-chip'); if(c) slotPickDay(c); });
-document.getElementById('slotDate').addEventListener('change', e=>{ slotDay = e.target.value||null; slotRecompute(); });
-document.addEventListener('click', e=>{ if(!e.target.closest('#slotDD')) slotCloseP(); });
+document.addEventListener('click', e=>{
+  if(!e.target.closest('#slotDD')) slotCloseP();
+  // Tutup kalender bila klik di luar area chip & kalender
+  if(!e.target.closest('#ajCalWrap') && !e.target.closest('#slotDays')) ajCalClose();
+});
 
 function openCreate() {
   ['c_nama','c_hp','c_alamat','c_catatan','c_slot'].forEach(id => document.getElementById(id).value='');
