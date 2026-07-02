@@ -293,7 +293,7 @@ function renderGlobalJsHelpers(): void { ?>
       function overlayOpen(){
         // Side menu (drawer) terbuka: penanda 'open' ada di parent .ol-shell (backdrop-nya
         // tak punya class/inline-display sendiri) → deteksi eksplisit supaya scroll di menu tak memicu reload.
-        if (document.querySelector('.ol-shell.open, .hl-nav-drawer.open')) return true;
+        if (document.querySelector('.ol-shell.open, .hq-shell.open, .hl-nav-drawer.open')) return true;
         var n = document.querySelectorAll('[class*="modal"],[class*="overlay"],[class*="backdrop"],[class*="drawer"],[class*="sheet"],[class*="popup"]');
         for (var i=0;i<n.length;i++){
           var e = n[i], c = (e.className && e.className.toString) ? e.className.toString() : '';
