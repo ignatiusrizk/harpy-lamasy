@@ -630,10 +630,8 @@ tfoot td{padding:9px 12px;font-weight:700;font-size:13px}
         📅 Pilih Periode <span class="hl-toggle-arrow">▼</span>
       </button>
       <div class="hl-filter-bar" id="lrFilter">
-        <label>Dari</label>
-        <div class="lm-date"><button type="button" class="lm-date-btn" onclick="lmDateOpen('lrDari',this)"><span class="lm-date-txt">Pilih tanggal</span> <span>📅</span></button><input type="hidden" id="lrDari"></div>
-        <label>s/d</label>
-        <div class="lm-date"><button type="button" class="lm-date-btn" onclick="lmDateOpen('lrSampai',this)"><span class="lm-date-txt">Pilih tanggal</span> <span>📅</span></button><input type="hidden" id="lrSampai"></div>
+        <span class="lr-field"><label>Dari</label><div class="lm-date"><button type="button" class="lm-date-btn" onclick="lmDateOpen('lrDari',this)"><span class="lm-date-txt">Pilih tanggal</span> <span>📅</span></button><input type="hidden" id="lrDari"></div></span>
+        <span class="lr-field"><label>s/d</label><div class="lm-date"><button type="button" class="lm-date-btn" onclick="lmDateOpen('lrSampai',this)"><span class="lm-date-txt">Pilih tanggal</span> <span>📅</span></button><input type="hidden" id="lrSampai"></div></span>
         <button class="hl-btn hl-btn-primary hl-btn-sm" onclick="loadLR()">🔍 Hitung L/R</button>
         <?php
           $rl_insight = AIRateLimiter::status('ai_insight_laporan');
@@ -719,6 +717,10 @@ tfoot td{padding:9px 12px;font-weight:700;font-size:13px}
     .lm-cal-day.today{outline:1.5px solid var(--teal)}
     .lm-cal-day.sel{background:var(--teal);color:var(--navy-d);font-weight:800}
     .lm-cal-day.empty{visibility:hidden;cursor:default}
+    /* L/R periode: label+tanggal jadi 1 unit tak terpecah saat wrap */
+    #lrFilter .lr-field{display:inline-flex;align-items:center;gap:8px}
+    #lrFilter .lr-field label{margin:0;white-space:nowrap}
+    #lrFilter .lm-date-btn{min-width:0}
     /* Month picker (Bulanan & Produktivitas) — reuse .lm-cal */
     .lm-month-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
     .lm-month-cell{border:none;background:var(--off);border-radius:9px;padding:14px 6px;font-size:13px;font-weight:700;color:var(--navy);cursor:pointer;font-family:var(--font)}
