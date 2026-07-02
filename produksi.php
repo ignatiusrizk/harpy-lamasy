@@ -292,6 +292,13 @@ $pageTitle  = '🧺 Produksi';
 .btn-primary{background:var(--teal);color:var(--navy-d);border-color:var(--teal)}
 .btn-primary:hover{background:var(--teal-d);box-shadow:0 4px 14px rgba(53,232,213,.3)}
 
+/* Stage selector — pill segmented (ganti native <select>) */
+.stage-tabs{display:flex;gap:8px;overflow-x:auto;padding:2px 0 6px;margin-bottom:14px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.stage-tabs::-webkit-scrollbar{display:none}
+.stage-pill{flex:0 0 auto;white-space:nowrap;padding:10px 16px;border-radius:999px;border:1.5px solid rgba(27,45,90,.12);background:#fff;color:var(--gray);font-weight:700;font-size:14px;font-family:var(--font);cursor:pointer;transition:background .15s,color .15s,border-color .15s}
+.stage-pill:hover{border-color:rgba(53,232,213,.5)}
+.stage-pill.active{background:var(--teal);color:var(--navy-d);border-color:var(--teal);box-shadow:0 2px 8px rgba(53,232,213,.35)}
+
 /* Scan FAB — page signature element. Floating at thumb-reach for mobile worker. */
 .scan-fab{
   position:fixed;right:20px;bottom:20px;z-index:150;
@@ -325,14 +332,14 @@ $pageTitle  = '🧺 Produksi';
 
     <!-- Stage tabs -->
     <label style="display:block;font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px">Tahap Produksi</label>
-    <select id="stageSelect" onchange="switchStage(this.value)" style="width:100%;padding:12px 14px;border:1.5px solid var(--off);border-radius:10px;font-size:15px;font-weight:600;background:#fff;color:var(--navy);font-family:var(--font);margin-bottom:14px;cursor:pointer">
-      <option value="terima">📥 Terima</option>
-      <option value="cuci">🫧 Cuci</option>
-      <option value="kering">💨 Kering</option>
-      <option value="setrika">👔 Setrika</option>
-      <option value="siap">✅ Siap</option>
-      <option value="diambil">📦 Diambil / Diantar</option>
-    </select>
+    <div id="stageTabs" class="stage-tabs">
+      <button type="button" class="stage-pill active" data-stage="terima"  onclick="switchStage('terima')">📥 Terima</button>
+      <button type="button" class="stage-pill"        data-stage="cuci"    onclick="switchStage('cuci')">🫧 Cuci</button>
+      <button type="button" class="stage-pill"        data-stage="kering"  onclick="switchStage('kering')">💨 Kering</button>
+      <button type="button" class="stage-pill"        data-stage="setrika" onclick="switchStage('setrika')">👔 Setrika</button>
+      <button type="button" class="stage-pill"        data-stage="siap"    onclick="switchStage('siap')">✅ Siap</button>
+      <button type="button" class="stage-pill"        data-stage="diambil" onclick="switchStage('diambil')">📦 Diambil</button>
+    </div>
 
     <!-- Card list -->
     <div id="cardList" style="display:grid;gap:10px;grid-template-columns:1fr">
@@ -371,8 +378,7 @@ const CSRF = document.querySelector('meta[name=csrf-token]')?.content || '';
 
 function switchStage(stage) {
   currentStage = stage;
-  var sel = document.getElementById('stageSelect');
-  if (sel && sel.value !== stage) sel.value = stage;
+  document.querySelectorAll('#stageTabs .stage-pill').forEach(p => p.classList.toggle('active', p.dataset.stage === stage));
   loadCards();
 }
 
