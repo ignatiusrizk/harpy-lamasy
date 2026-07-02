@@ -379,7 +379,12 @@ require_once ROOT . '/core/CoinLedger.php';
 <?php renderHead('Piutang B2B'); ?>
 <style>
 .summary{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px}
-@media(max-width:680px){.summary{gap:8px}.sum-card{padding:11px 8px}.sum-card .v{font-size:1.1rem}.sum-card .l{font-size:10.5px}}
+@media(max-width:680px){
+  .summary{grid-template-columns:1fr;gap:8px;margin-bottom:14px}
+  .sum-card{flex-direction:row;justify-content:space-between;text-align:left;min-height:0;padding:12px 14px}
+  .sum-card .l{font-size:12px;order:1}
+  .sum-card .v{font-size:1.2rem;order:2;text-align:right}
+}
 .sum-card{background:#fff;border:1px solid #E5E9F2;border-radius:12px;padding:14px 10px;box-shadow:0 1px 4px rgba(0,0,0,.04);text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:86px}
 .sum-card .v{font-size:1.4rem;font-weight:800;color:#0F1C3A;font-family:var(--mono);line-height:1}
 .sum-card .l{font-size:12px;color:#6B7280;font-weight:600;line-height:1.25}
