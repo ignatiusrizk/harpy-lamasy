@@ -2690,10 +2690,29 @@ function printStruk() {
     catch (_) { alert('Print error: ' + e); }
   }
 }
-function printLabel() {
+async function printLabel() {
   const id = lastSaved?.id;
   if (!id) { showToast('❌ Order belum tersimpan', 'error'); return; }
-  window.open('/api/label.php?id=' + id + '&_=' + Date.now(), '_blank', 'width=380,height=520');
+  const url = '/api/label.php?id=' + id + '&_=' + Date.now();
+  if (window.ThermalPrint && ThermalPrint.isAvailable()) {
+    const pr = ThermalPrint.getPrinter();
+    if (!pr || !pr.address) { showToast('Belum ada printer dipilih — atur di Pengaturan → Outlet & Nota → 🖨 Printer Thermal', 'error'); return; }
+    let f = document.getElementById('lblFrame');
+    if (!f) { f = document.createElement('iframe'); f.id = 'lblFrame'; f.style.cssText = 'position:fixed;left:-9999px;top:0;width:420px;height:800px;border:0'; document.body.appendChild(f); }
+    showToast('🖨 Mencetak label…', 'info');
+    f.onload = () => {
+      const doc = f.contentDocument;
+      const node = doc.querySelector('.label') || doc.body;
+      const w = (f.contentWindow && f.contentWindow.LABEL_WIDTH_PX) || 576;
+      const go = async () => { try { await ThermalPrint.print(node, w); showToast('✅ Label tercetak', 'success'); } catch (e) { showToast('❌ ' + (e.message || 'Gagal cetak label'), 'error'); } };
+      const img = doc.querySelector('.qr img');
+      if (img && !img.complete) { img.addEventListener('load', go); img.addEventListener('error', go); setTimeout(go, 2500); }
+      else go();
+    };
+    f.src = url + '&embed=1';
+    return;
+  }
+  window.open(url, '_blank', 'width=380,height=520');
 }
 function closeModal()  { document.getElementById('modalStruk').classList.remove('open'); var _aifab = document.getElementById('aiBubbleBtn'); if (_aifab) _aifab.style.display = ''; }
 

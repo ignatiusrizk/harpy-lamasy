@@ -209,6 +209,8 @@ $qrSrc  = "https://api.qrserver.com/v1/create-qr-code/?size={$qrPx}x{$qrPx}&data
   </div>
 </div>
 
+<script>window.LABEL_WIDTH_PX = <?= ($widthMm === 58) ? 384 : 576 ?>;</script>
+<?php if (empty($_GET['embed'])): // embed=1 → dicetak via thermal BT (iframe), jangan window.print ?>
 <script>
   // Auto print setelah QR image siap (atau timeout 1.5s kalau lambat)
   const img = document.querySelector('.qr img');
@@ -218,5 +220,6 @@ $qrSrc  = "https://api.qrserver.com/v1/create-qr-code/?size={$qrPx}x{$qrPx}&data
   else if (img) { img.addEventListener('load', goPrint); img.addEventListener('error', goPrint); }
   setTimeout(goPrint, 1500); // safety net
 </script>
+<?php endif; ?>
 </body>
 </html>
