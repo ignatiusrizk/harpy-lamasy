@@ -1003,10 +1003,17 @@ textarea{resize:vertical;min-height:64px}
   /* Bulk toolbar wrap di HP */
   #bulkToolbar{flex-direction:column;align-items:stretch!important;gap:8px}
   #bulkToolbar select,#bulkToolbar button{width:100%}
-  /* Tabel edit item: scroll horizontal (jangan paksa-fit → klip). Sembunyikan kolom subtotal utk hemat ruang. */
-  .items-table{min-width:440px}
-  .items-table th:nth-child(5),.items-table td:nth-child(5){display:none !important}
-  .items-table td input,.items-table td select{width:100%;min-width:0}
+  /* Tabel edit item: stacked card per baris di HP (UX > scroll horizontal) */
+  .items-table, .items-table thead, .items-table tbody,
+  .items-table tr, .items-table th, .items-table td { display:block; width:100% }
+  .items-table thead { display:none }
+  .items-table tbody tr { border:1px solid rgba(27,45,90,.1); border-radius:10px; margin-bottom:10px; padding:8px 12px; background:#fff }
+  .items-table tbody td { display:flex; justify-content:space-between; align-items:center; padding:5px 0; border:none; font-size:13px; gap:8px }
+  .items-table tbody td::before { content:attr(data-lbl); font-size:11px; color:var(--gray); font-weight:600; text-transform:uppercase; letter-spacing:.05em; flex-shrink:0 }
+  .items-table tbody td:empty::before { content:'' }
+  .items-table tbody td input, .items-table tbody td select { text-align:right; flex:1; min-width:0; max-width:170px; width:auto }
+  .items-table tbody td.item-sub { font-weight:700; color:var(--navy); font-family:var(--mono) }
+  .items-table tbody td:last-child { justify-content:flex-end; padding-top:8px; border-top:1px dashed rgba(27,45,90,.08); margin-top:4px }
   .action-btns{flex-wrap:wrap}
   .pay-opt{grid-template-columns:1fr 1fr}
   /* Tombol di action col harus stack vertikal supaya readable */
@@ -1862,13 +1869,13 @@ function renderEditItems() {
   if (!tbody) return;
   tbody.innerHTML = editItems.map((item, i) => `
     <tr>
-      <td>${CAN_EDIT_ORDER ? `<input class="item-input" value="${esc(item.nama_layanan)}" style="width:110px" oninput="editItems[${i}].nama_layanan=this.value;recalcEdit()"/>` : `<span style="font-size:13px">${esc(item.nama_layanan)}</span>`}</td>
-      <td>${CAN_EDIT_ORDER ? `<select class="item-input" style="width:52px" onchange="editItems[${i}].satuan=this.value">${['kg','pcs','set','pasang'].map(s=>`<option value="${s}" ${item.satuan===s?'selected':''}>${s}</option>`).join('')}</select>` : `<span style="font-size:13px">${item.satuan}</span>`}</td>
-      <td>${CAN_EDIT_ORDER ? `<input class="item-input" type="number" value="${item.jumlah}" step="0.1" min="0" style="width:52px" oninput="editItems[${i}].jumlah=parseFloat(this.value)||0;recalcEdit()"/>` : `<span style="font-family:var(--mono);font-size:13px">${item.jumlah}</span>`}</td>
-      <td>${CAN_EDIT_ORDER ? `<input class="item-input" type="text" inputmode="numeric" value="${grpRibu(item.harga_satuan)}" style="width:80px" oninput="const v=parseInt(this.value.replace(/\\D/g,''))||0;editItems[${i}].harga_satuan=v;this.value=grpRibu(v);recalcEdit()"/>` : `<span style="font-family:var(--mono);font-size:13px">Rp ${grpRibu(item.harga_satuan)}</span>`}</td>
-      <td class="item-sub">Rp ${grpRibu(item.jumlah*item.harga_satuan)}</td>
-      <td>${CAN_EDIT_ORDER ? `<input class="item-input" value="${esc(item.catatan_item||'')}" placeholder="..." style="width:60px" oninput="editItems[${i}].catatan_item=this.value"/>` : `<span style="font-size:12px;color:var(--gray)">${esc(item.catatan_item||'-')}</span>`}</td>
-      <td>${CAN_EDIT_ORDER ? `<button class="btn-remove" onclick="removeEditItem(${i})">✕</button>` : ''}</td>
+      <td data-lbl="Layanan">${CAN_EDIT_ORDER ? `<input class="item-input" value="${esc(item.nama_layanan)}" style="width:110px" oninput="editItems[${i}].nama_layanan=this.value;recalcEdit()"/>` : `<span style="font-size:13px">${esc(item.nama_layanan)}</span>`}</td>
+      <td data-lbl="Satuan">${CAN_EDIT_ORDER ? `<select class="item-input" style="width:52px" onchange="editItems[${i}].satuan=this.value">${['kg','pcs','set','pasang'].map(s=>`<option value="${s}" ${item.satuan===s?'selected':''}>${s}</option>`).join('')}</select>` : `<span style="font-size:13px">${item.satuan}</span>`}</td>
+      <td data-lbl="Jumlah">${CAN_EDIT_ORDER ? `<input class="item-input" type="number" value="${item.jumlah}" step="0.1" min="0" style="width:52px" oninput="editItems[${i}].jumlah=parseFloat(this.value)||0;recalcEdit()"/>` : `<span style="font-family:var(--mono);font-size:13px">${item.jumlah}</span>`}</td>
+      <td data-lbl="Harga">${CAN_EDIT_ORDER ? `<input class="item-input" type="text" inputmode="numeric" value="${grpRibu(item.harga_satuan)}" style="width:80px" oninput="const v=parseInt(this.value.replace(/\\D/g,''))||0;editItems[${i}].harga_satuan=v;this.value=grpRibu(v);recalcEdit()"/>` : `<span style="font-family:var(--mono);font-size:13px">Rp ${grpRibu(item.harga_satuan)}</span>`}</td>
+      <td data-lbl="Subtotal" class="item-sub">Rp ${grpRibu(item.jumlah*item.harga_satuan)}</td>
+      <td data-lbl="Ket">${CAN_EDIT_ORDER ? `<input class="item-input" value="${esc(item.catatan_item||'')}" placeholder="..." style="width:60px" oninput="editItems[${i}].catatan_item=this.value"/>` : `<span style="font-size:12px;color:var(--gray)">${esc(item.catatan_item||'-')}</span>`}</td>
+      <td>${CAN_EDIT_ORDER ? `<button class="btn-remove" onclick="removeEditItem(${i})">✕ Hapus</button>` : ''}</td>
     </tr>`).join('');
 }
 
