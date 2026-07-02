@@ -1650,9 +1650,9 @@ async function openDetail(id) {
 
     <div class="total-box" id="editTotalBox">
       <div class="tb-row"><span class="tb-label">Subtotal</span><span class="tb-value" id="etSubtotal">-</span></div>
-      <div class="tb-row"><span class="tb-label">Diskon</span><span class="tb-value">- Rp ${CAN_EDIT_ORDER ? `<input type="number" id="edit_diskon" value="${d.diskon||0}" min="0" step="500" oninput="recalcEdit()" style="width:80px;background:transparent;border:none;border-bottom:1px solid rgba(255,255,255,.3);color:white;font-family:var(--mono);font-size:13px;padding:0;outline:none"/>` : `<span id="edit_diskon" style="font-family:var(--mono);color:white">${(d.diskon||0).toLocaleString('id-ID')}</span>`}</span></div>
+      <div class="tb-row"><span class="tb-label">Diskon</span><span class="tb-value">- Rp ${CAN_EDIT_ORDER ? `<input type="number" id="edit_diskon" value="${d.diskon||0}" min="0" step="500" oninput="recalcEdit()" style="width:80px;background:transparent;border:none;border-bottom:1px solid rgba(255,255,255,.3);color:white;font-family:var(--mono);font-size:13px;padding:0;outline:none"/>` : `<span id="edit_diskon" style="font-family:var(--mono);color:white">${grpRibu(d.diskon||0)}</span>`}</span></div>
       <div class="tb-row tb-total"><span style="color:white;font-weight:700">TOTAL</span><span class="tb-value tb-big" id="etTotal">-</span></div>
-      <div class="tb-row"><span class="tb-label">DP/Bayar</span><span class="tb-value">Rp ${CAN_EDIT_ORDER ? `<input type="number" id="edit_dp" value="${d.dp||0}" min="0" step="1000" oninput="recalcEdit()" style="width:90px;background:transparent;border:none;border-bottom:1px solid rgba(255,255,255,.3);color:white;font-family:var(--mono);font-size:13px;padding:0;outline:none"/>` : `<span id="edit_dp" style="font-family:var(--mono);color:white">${parseFloat(d.dp||0).toLocaleString('id-ID')}</span>`}</span></div>
+      <div class="tb-row"><span class="tb-label">DP/Bayar</span><span class="tb-value">Rp ${CAN_EDIT_ORDER ? `<input type="number" id="edit_dp" value="${d.dp||0}" min="0" step="1000" oninput="recalcEdit()" style="width:90px;background:transparent;border:none;border-bottom:1px solid rgba(255,255,255,.3);color:white;font-family:var(--mono);font-size:13px;padding:0;outline:none"/>` : `<span id="edit_dp" style="font-family:var(--mono);color:white">${grpRibu(d.dp||0)}</span>`}</span></div>
       <div class="tb-row"><span class="tb-label">Sisa Bayar</span><span class="tb-value tb-sisa" id="etSisa">-</span></div>
     </div>
 
@@ -1853,6 +1853,9 @@ async function uploadFotoPickup(input) {
   }
 }
 
+// Pemisah ribuan manual (tak bergantung Intl locale — konsisten di WebView APK)
+function grpRibu(n){ return String(Math.round(parseFloat(n)||0)).replace(/\B(?=(\d{3})+(?!\d))/g,'.'); }
+
 // ── EDIT ITEMS ────────────────────────────────────────
 function renderEditItems() {
   const tbody = document.getElementById('editItemsBody');
@@ -1862,8 +1865,8 @@ function renderEditItems() {
       <td>${CAN_EDIT_ORDER ? `<input class="item-input" value="${esc(item.nama_layanan)}" style="width:110px" oninput="editItems[${i}].nama_layanan=this.value;recalcEdit()"/>` : `<span style="font-size:13px">${esc(item.nama_layanan)}</span>`}</td>
       <td>${CAN_EDIT_ORDER ? `<select class="item-input" style="width:52px" onchange="editItems[${i}].satuan=this.value">${['kg','pcs','set','pasang'].map(s=>`<option value="${s}" ${item.satuan===s?'selected':''}>${s}</option>`).join('')}</select>` : `<span style="font-size:13px">${item.satuan}</span>`}</td>
       <td>${CAN_EDIT_ORDER ? `<input class="item-input" type="number" value="${item.jumlah}" step="0.1" min="0" style="width:52px" oninput="editItems[${i}].jumlah=parseFloat(this.value)||0;recalcEdit()"/>` : `<span style="font-family:var(--mono);font-size:13px">${item.jumlah}</span>`}</td>
-      <td>${CAN_EDIT_ORDER ? `<input class="item-input" type="number" value="${item.harga_satuan}" step="500" min="0" style="width:80px" oninput="editItems[${i}].harga_satuan=parseFloat(this.value)||0;recalcEdit()"/>` : `<span style="font-family:var(--mono);font-size:13px">Rp ${item.harga_satuan.toLocaleString('id-ID')}</span>`}</td>
-      <td class="item-sub">Rp ${(item.jumlah*item.harga_satuan).toLocaleString('id-ID')}</td>
+      <td>${CAN_EDIT_ORDER ? `<input class="item-input" type="text" inputmode="numeric" value="${grpRibu(item.harga_satuan)}" style="width:80px" oninput="const v=parseInt(this.value.replace(/\\D/g,''))||0;editItems[${i}].harga_satuan=v;this.value=grpRibu(v);recalcEdit()"/>` : `<span style="font-family:var(--mono);font-size:13px">Rp ${grpRibu(item.harga_satuan)}</span>`}</td>
+      <td class="item-sub">Rp ${grpRibu(item.jumlah*item.harga_satuan)}</td>
       <td>${CAN_EDIT_ORDER ? `<input class="item-input" value="${esc(item.catatan_item||'')}" placeholder="..." style="width:60px" oninput="editItems[${i}].catatan_item=this.value"/>` : `<span style="font-size:12px;color:var(--gray)">${esc(item.catatan_item||'-')}</span>`}</td>
       <td>${CAN_EDIT_ORDER ? `<button class="btn-remove" onclick="removeEditItem(${i})">✕</button>` : ''}</td>
     </tr>`).join('');
@@ -1883,7 +1886,7 @@ function renderEditLayananGrid(list) {
       onmouseover="this.style.borderColor='var(--teal)'" onmouseout="this.style.borderColor='rgba(27,45,90,.1)'"
       onclick="addEditLayanan(${l.id},'${esc(l.nama)}','${l.satuan}',${l.harga})">
       <div style="font-size:11px;font-weight:600;color:var(--navy)">${esc(l.nama)}</div>
-      <div style="font-size:10px;color:var(--teal-d);font-family:var(--mono)">Rp ${parseFloat(l.harga).toLocaleString('id-ID')}</div>
+      <div style="font-size:10px;color:var(--teal-d);font-family:var(--mono)">Rp ${grpRibu(l.harga)}</div>
     </button>`).join('');
 }
 
@@ -1906,11 +1909,11 @@ function recalcEdit() {
   const subEl = document.getElementById('etSubtotal');
   const totEl = document.getElementById('etTotal');
   const sisEl = document.getElementById('etSisa');
-  if (subEl) subEl.textContent = 'Rp ' + sub.toLocaleString('id-ID');
-  if (totEl) totEl.textContent = 'Rp ' + tot.toLocaleString('id-ID');
-  if (sisEl) sisEl.textContent = 'Rp ' + sisa.toLocaleString('id-ID');
+  if (subEl) subEl.textContent = 'Rp ' + grpRibu(sub);
+  if (totEl) totEl.textContent = 'Rp ' + grpRibu(tot);
+  if (sisEl) sisEl.textContent = 'Rp ' + grpRibu(sisa);
   const cells = document.querySelectorAll('.item-sub');
-  editItems.forEach((item,i) => { if(cells[i]) cells[i].textContent = 'Rp ' + (item.jumlah*item.harga_satuan).toLocaleString('id-ID'); });
+  editItems.forEach((item,i) => { if(cells[i]) cells[i].textContent = 'Rp ' + grpRibu(item.jumlah*item.harga_satuan); });
 }
 
 // ── SAVE EDIT ─────────────────────────────────────────
