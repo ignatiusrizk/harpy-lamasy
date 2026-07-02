@@ -27,6 +27,7 @@ if ($action) {
     }
 
     if ($action === 'save' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+        saVerifyCsrf();
         $d = json_decode(file_get_contents('php://input'), true);
         $id      = (int)($d['id'] ?? 0);
         $judul   = substr(trim((string)($d['judul'] ?? '')), 0, 100);
@@ -66,6 +67,7 @@ if ($action) {
     }
 
     if ($action === 'upload' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+        saVerifyCsrf();
         if (empty($_FILES['file']) || $_FILES['file']['error'] !== UPLOAD_ERR_OK) {
             echo json_encode(['error' => 'File upload gagal']); exit;
         }
@@ -101,6 +103,7 @@ if ($action) {
     }
 
     if ($action === 'delete' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+        saVerifyCsrf();
         $d = json_decode(file_get_contents('php://input'), true);
         $id = (int)($d['id'] ?? 0);
         $db->prepare("DELETE FROM saas_banners WHERE id=?")->execute([$id]);
@@ -291,6 +294,7 @@ if ($action) {
 </style>
 
 <script>
+const CSRF = <?= json_encode(saGetCsrf()) ?>;
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 
 async function loadBanners() {
@@ -395,7 +399,7 @@ async function uploadImg(file) {
   const fd = new FormData();
   fd.append('file', file);
   try {
-    const r = await fetch('?action=upload', { method: 'POST', body: fd });
+    const r = await fetch('?action=upload', { method: 'POST', headers:{'X-CSRF-Token':CSRF}, body: fd });
     const d = await r.json();
     if (d.error) { alert(d.error); }
     else { setImage(d.url, d.width, d.height); }
@@ -467,7 +471,7 @@ async function saveBanner() {
     is_active: parseInt(document.getElementById('f_active').value),
   };
   if (!payload.judul) { alert('Judul wajib'); return; }
-  const r = await fetch('?action=save', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+  const r = await fetch('?action=save', { method:'POST', headers:{'Content-Type':'application/json','X-CSRF-Token':CSRF}, body: JSON.stringify(payload) });
   const d = await r.json();
   if (d.error) { alert(d.error); return; }
   closeModal();
@@ -476,7 +480,7 @@ async function saveBanner() {
 
 async function delBanner(id) {
   if (!await lmConfirm('Hapus banner ini?')) return;
-  const r = await fetch('?action=delete', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({id}) });
+  const r = await fetch('?action=delete', { method:'POST', headers:{'Content-Type':'application/json','X-CSRF-Token':CSRF}, body: JSON.stringify({id}) });
   const d = await r.json();
   if (d.error) { alert(d.error); return; }
   loadBanners();

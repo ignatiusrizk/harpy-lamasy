@@ -286,7 +286,7 @@ if ($action) {
       <a href="/superadmin/support.php" class="sa-btn sa-btn-sm sa-btn-outline">Kelola Tiket →</a>
     </div>
     <div class="sa-card-body">
-      <div class="sa-mini-grid" style="grid-template-columns:repeat(4,1fr);">
+      <div class="sa-mini-grid" style="grid-template-columns:repeat(auto-fit,minmax(120px,1fr));">
         <div class="sa-mini-stat red">
           <div class="val" id="sw-open">—</div>
           <div class="lbl">Open</div>
