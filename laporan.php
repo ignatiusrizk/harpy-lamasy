@@ -719,6 +719,7 @@ tfoot td{padding:9px 12px;font-weight:700;font-size:13px}
     .lm-cal-day.today{outline:1.5px solid var(--teal)}
     .lm-cal-day.sel{background:var(--teal);color:var(--navy-d);font-weight:800}
     .lm-cal-day.empty{visibility:hidden;cursor:default}
+    </style>
 
     <div id="lrContent"><div class="empty">Pilih periode lalu klik "Hitung L/R"</div></div>
   </div>
