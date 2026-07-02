@@ -380,9 +380,13 @@ require_once ROOT . '/core/CoinLedger.php';
 <style>
 .summary{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px}
 @media(max-width:680px){.summary{gap:8px}.sum-card{padding:11px 8px}.sum-card .v{font-size:1.1rem}.sum-card .l{font-size:10.5px}}
-.sum-card{background:#fff;border:1px solid #E5E9F2;border-radius:12px;padding:16px;box-shadow:0 1px 4px rgba(0,0,0,.04);text-align:center}
-.sum-card .v{font-size:1.4rem;font-weight:800;color:#0F1C3A;font-family:var(--mono)}
-.sum-card .l{font-size:12px;color:#6B7280;font-weight:600;margin-top:4px}
+.sum-card{background:#fff;border:1px solid #E5E9F2;border-radius:12px;padding:14px 10px;box-shadow:0 1px 4px rgba(0,0,0,.04);text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:86px}
+.sum-card .v{font-size:1.4rem;font-weight:800;color:#0F1C3A;font-family:var(--mono);line-height:1}
+.sum-card .l{font-size:12px;color:#6B7280;font-weight:600;line-height:1.25}
+/* Filter: satu baris scroll horizontal (tak wrap acak) */
+.pfilters{display:flex;gap:8px;overflow-x:auto;flex-wrap:nowrap;-webkit-overflow-scrolling:touch;scrollbar-width:none;margin-bottom:14px;padding-bottom:2px}
+.pfilters::-webkit-scrollbar{display:none}
+.pfilters .hl-btn{flex:0 0 auto;white-space:nowrap}
 .sum-card.warn .v{color:#F59E0B}
 .sum-card.danger .v{color:#EF4444}
 .tbl{width:100%;border-collapse:collapse;font-size:13px;background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.04)}
@@ -430,7 +434,7 @@ require_once ROOT . '/core/CoinLedger.php';
     <div class="sum-card danger"><div class="v" id="sumOver">-</div><div class="l">🚨 Sudah Lewat Tempo</div></div>
   </div>
 
-  <div style="margin-bottom:10px;display:flex;gap:6px;flex-wrap:wrap">
+  <div class="pfilters">
     <button class="hl-btn hl-btn-outline hl-btn-sm" data-filter="" onclick="setFilter('')">Semua</button>
     <button class="hl-btn hl-btn-outline hl-btn-sm" data-filter="belum_tagih" onclick="setFilter('belum_tagih')">Belum Tagih</button>
     <button class="hl-btn hl-btn-outline hl-btn-sm" data-filter="sudah_tagih" onclick="setFilter('sudah_tagih')">Sudah Tagih</button>
