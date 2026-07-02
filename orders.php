@@ -149,6 +149,16 @@ if ($action) {
         $own = TenantQuery::rawOne("SELECT id FROM hl_transaksi WHERE id=? AND tenant_id=? AND outlet_id=?", [$id, $tid, $oid]);
         if (!$own) { echo json_encode(['error'=>'Transaksi tidak ditemukan']); exit; }
         [$reqId, $err] = DeleteRequest::submit('transaksi', $id, $alasan, (int)$user['id']);
+        // Catat di riwayat status order supaya terlihat di detail
+        if (!$err) {
+            try {
+                Database::get()->prepare(
+                    "INSERT INTO hl_proses_log (transaksi_id,status_lama,status_baru,tipe,catatan,oleh) VALUES (?,?,?,?,?,?)"
+                )->execute([$id, null, 'delete_requested', 'delete_request',
+                    '🗑️ Minta hapus diajukan' . ($alasan !== '' ? ': ' . $alasan : '') . ' (menunggu persetujuan owner)',
+                    $user['nama'] ?? '-']);
+            } catch (Throwable $e) { /* log opsional — jangan gagalkan request */ }
+        }
         echo json_encode($err ? ['error'=>$err] : ['success'=>true, 'request_id'=>$reqId]);
         exit;
     }
