@@ -143,6 +143,35 @@ function renderGlobalJsHelpers(): void { ?>
     window.capitalize = s => s ? s.charAt(0).toUpperCase() + s.slice(1) : '';
     window.katLabelInventori = k => ({deterjen:'🧴 Deterjen', parfum:'🌸 Parfum', pewangi:'💧 Pewangi', plastik_kemasan:'📦 Plastik', peralatan:'🔧 Peralatan', lainnya:'📋 Lainnya'}[k] || k);
 
+    // ── Simpan/bagikan file (CSV/teks). Di APK: Filesystem tulis + Share (unduhan blob
+    //    diblokir Android WebView). Di browser/PWA: unduhan biasa. Return true kalau tertangani.
+    window.lmSaveFile = async function(filename, content, mime){
+      mime = mime || 'text/plain';
+      try {
+        var Cap = window.Capacitor;
+        if (Cap && Cap.isNativePlatform && Cap.isNativePlatform()) {
+          var P = (Cap.Plugins) || {}, FS = P.Filesystem, SH = P.Share;
+          if (FS) {
+            var b64 = btoa(unescape(encodeURIComponent(content)));
+            var uri = null;
+            try { var w = await FS.writeFile({ path: filename, data: b64, directory: 'CACHE' }); uri = w && w.uri; } catch(e){}
+            if (!uri && FS.getUri) { try { var g = await FS.getUri({ path: filename, directory: 'CACHE' }); uri = g && g.uri; } catch(e){} }
+            if (SH && uri) { try { await SH.share({ title: filename, text: filename, files: [uri] }); return true; } catch(e){ if (e && e.name === 'AbortError') return true; } }
+            try { await FS.writeFile({ path: filename, data: b64, directory: 'DOCUMENTS' }); if (window.showToast) window.showToast('📥 Tersimpan di Files (Documents)', 'success'); return true; } catch(e){}
+          }
+        }
+      } catch(e){}
+      // Browser / PWA: unduhan blob biasa
+      try {
+        var blob = new Blob([content], { type: mime + ';charset=utf-8' });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a'); a.href = url; a.download = filename; a.rel = 'noopener';
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
+        return true;
+      } catch(e){ return false; }
+    };
+
     // ── Status bar (native app): jangan overlay — webview turun di bawah status bar (fix konten terpotong) ──
     (function(){
       try {

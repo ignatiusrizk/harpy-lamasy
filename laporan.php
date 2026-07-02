@@ -1287,12 +1287,9 @@ async function exportProdCSV(){
 }
 
 function downloadCSV(rows, filename) {
-  const csv  = rows.map(r => r.map(c => '"' + String(c).replace(/"/g,'""') + '"').join(',')).join('\n');
-  const blob = new Blob(['﻿'+csv], {type:'text/csv;charset=utf-8'});
-  const a    = document.createElement('a');
-  a.href     = URL.createObjectURL(blob);
-  a.download = filename;
-  a.click();
+  const csv = rows.map(r => r.map(c => '"' + String(c).replace(/"/g,'""') + '"').join(',')).join('\n');
+  // lmSaveFile (global): di APK simpan/bagikan via native, di browser unduhan biasa. BOM utk Excel.
+  window.lmSaveFile(filename, '﻿' + csv, 'text/csv');
 }
 
 // ── PRODUKTIVITAS KARYAWAN ────────────────────────────
