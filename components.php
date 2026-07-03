@@ -232,6 +232,13 @@ function renderGlobalJsHelpers(): void { ?>
         btn.innerHTML = '<span class="lmx-lbl"></span><span class="lmx-car">▾</span>';
         elm.after(btn);
         elm.classList.add('lmx-native-hide');
+        // inline+important: CSS page ber-!important (mis. .hl-filter-bar select{width:100%!important})
+        // bisa mengalahkan class → paksa via style inline (menang selalu). fixed = nol dampak layout,
+        // tetap 'focusable' utk validasi required (jangan display:none — validation error).
+        [['position','fixed'],['top','0'],['left','0'],['width','2px'],['height','2px'],
+         ['opacity','0'],['pointer-events','none'],['margin','0'],['padding','0'],
+         ['border','0'],['z-index','-1'],['min-width','0'],['max-width','2px']
+        ].forEach(function(kv){ elm.style.setProperty(kv[0], kv[1], 'important'); });
         return btn;
       }
       function watchSync(elm, btn, syncFn){
