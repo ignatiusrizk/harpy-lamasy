@@ -18,6 +18,10 @@ $user = currentUser();
 requirePermission('owner');
 
 $action = $_GET['action'] ?? '';
+if ($action === '') {
+    header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+    header('Pragma: no-cache');
+}
 if ($action) {
     header('Content-Type: application/json');
     $tid = TenantResolver::id();
@@ -134,7 +138,10 @@ if ($action) {
     exit;
 }
 
-$pendingCount = DeleteRequest::pendingCount(TenantResolver::id());
+// Badge awal harus cocok dgn API count & isi list (delete request + refund deposit),
+// biar tak salah tampil kalau AJAX refresh gagal.
+$pendingCount = DeleteRequest::pendingCount(TenantResolver::id())
+              + DepositManager::pendingRefundCount(TenantResolver::id());
 ?>
 <!DOCTYPE html>
 <html lang="id">
