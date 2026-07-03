@@ -201,6 +201,18 @@ if ($action) {
 <head>
 <?php renderHead('Customer'); ?>
 <style>
+/* SEGMEN bar — header sendiri + chips grid rapi di HP (desktop tetap sebaris) */
+.seg-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;gap:8px}
+.seg-title{font-size:12px;color:var(--gray);font-weight:700;letter-spacing:.05em}
+.seg-note{font-size:11px;color:var(--gray)}
+.seg-pills{display:flex;gap:8px;flex-wrap:wrap}
+.seg-pill{cursor:pointer;padding:7px 11px;border-radius:8px;font-size:12px;font-weight:600;display:flex;align-items:center;gap:6px}
+.seg-pill strong{margin-left:2px}
+@media(max-width:680px){
+  .seg-pills{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+  .seg-pill{justify-content:space-between;padding:9px 12px}
+  .seg-pill strong{margin-left:auto;font-size:13px}
+}
 .cust-card{background:var(--white);border-radius:var(--r-lg);border:1px solid rgba(27,45,90,.07);padding:18px;transition:all .2s;cursor:pointer}
 .cust-card:hover{box-shadow:var(--shadow-lg);transform:translateY(-1px);border-color:var(--teal)}
 .cust-nama{font-size:15px;font-weight:700;color:var(--navy);margin-bottom:4px}
@@ -252,14 +264,16 @@ if ($action) {
   </div>
 
   <!-- SEGMEN STATS -->
-  <div id="segmenStatsBar" style="display:none;background:#fff;border:1px solid rgba(27,45,90,.07);border-radius:12px;padding:10px 14px;margin-bottom:16px">
-    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-      <span style="font-size:12px;color:var(--gray);font-weight:700">SEGMEN:</span>
-      <div class="seg-pill" data-seg="baru" onclick="filterSegmen('baru')" style="cursor:pointer;background:#DBEAFE;color:#1E40AF;padding:6px 11px;border-radius:8px;font-size:12px;font-weight:600">🆕 Baru <strong id="segCntBaru">0</strong></div>
-      <div class="seg-pill" data-seg="regular" onclick="filterSegmen('regular')" style="cursor:pointer;background:#F1F5F9;color:#475569;padding:6px 11px;border-radius:8px;font-size:12px;font-weight:600">Regular <strong id="segCntRegular">0</strong></div>
-      <div class="seg-pill" data-seg="vip" onclick="filterSegmen('vip')" style="cursor:pointer;background:#FEF3C7;color:#92400E;padding:6px 11px;border-radius:8px;font-size:12px;font-weight:600">⭐ VIP <strong id="segCntVip">0</strong></div>
-      <div class="seg-pill" data-seg="dormant" onclick="filterSegmen('dormant')" style="cursor:pointer;background:#FEE2E2;color:#991B1B;padding:6px 11px;border-radius:8px;font-size:12px;font-weight:600">😴 Dormant <strong id="segCntDormant">0</strong></div>
-      <span style="margin-left:auto;font-size:11px;color:var(--gray)">Update otomatis 1x/hari</span>
+  <div id="segmenStatsBar" style="display:none;background:#fff;border:1px solid rgba(27,45,90,.07);border-radius:12px;padding:12px 14px;margin-bottom:16px">
+    <div class="seg-head">
+      <span class="seg-title">SEGMEN</span>
+      <span class="seg-note">Update otomatis 1x/hari</span>
+    </div>
+    <div class="seg-pills">
+      <div class="seg-pill" data-seg="baru" onclick="filterSegmen('baru')" style="background:#DBEAFE;color:#1E40AF">🆕 Baru <strong id="segCntBaru">0</strong></div>
+      <div class="seg-pill" data-seg="regular" onclick="filterSegmen('regular')" style="background:#F1F5F9;color:#475569">Regular <strong id="segCntRegular">0</strong></div>
+      <div class="seg-pill" data-seg="vip" onclick="filterSegmen('vip')" style="background:#FEF3C7;color:#92400E">⭐ VIP <strong id="segCntVip">0</strong></div>
+      <div class="seg-pill" data-seg="dormant" onclick="filterSegmen('dormant')" style="background:#FEE2E2;color:#991B1B">😴 Dormant <strong id="segCntDormant">0</strong></div>
     </div>
   </div>
 
