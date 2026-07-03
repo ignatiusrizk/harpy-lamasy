@@ -1,0 +1,71 @@
+<svg width="1024" height="500" viewBox="0 0 1024 500" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0F1C3A"/>
+      <stop offset="0.55" stop-color="#123246"/>
+      <stop offset="1" stop-color="#0F7B6C"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.82" cy="0.25" r="0.6">
+      <stop offset="0" stop-color="#35E8D5" stop-opacity="0.28"/>
+      <stop offset="1" stop-color="#35E8D5" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="pill" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#35E8D5"/>
+      <stop offset="1" stop-color="#0F7B6C"/>
+    </linearGradient>
+  </defs>
+
+  <!-- background diberikan magick (gradient native); SVG ini foreground transparan -->
+  <g fill="#35E8D5" opacity="0.12">
+    <circle cx="880" cy="400" r="120"/>
+    <circle cx="980" cy="300" r="70"/>
+    <circle cx="800" cy="470" r="55"/>
+  </g>
+  <g fill="none" stroke="#FFFFFF" stroke-opacity="0.10" stroke-width="2">
+    <circle cx="120" cy="90" r="60"/>
+    <circle cx="70" cy="180" r="30"/>
+  </g>
+
+  <!-- logo mark: rounded droplet + spark -->
+  <g transform="translate(66,148)">
+    <rect x="0" y="0" width="96" height="96" rx="26" fill="#19B5A4"/>
+    <path d="M48 20 C60 36 70 46 70 60 a22 22 0 0 1 -44 0 C26 46 36 36 48 20 Z" fill="#0F1C3A"/>
+    <circle cx="48" cy="58" r="7" fill="#35E8D5"/>
+  </g>
+
+  <text x="182" y="205" font-family="Arial" font-weight="bold" font-size="78" fill="#FFFFFF" letter-spacing="1">LAMASY</text>
+  <text x="184" y="248" font-family="Arial" font-size="26" fill="#9FE7DE">ERP Laundry dengan AI Terintegrasi</text>
+
+  <!-- feature pills (teks polos, tanpa emoji) -->
+  <g font-family="Arial" font-weight="bold" font-size="21" fill="#0F1C3A">
+    <g transform="translate(184,296)">
+      <rect x="0" y="0" width="150" height="46" rx="23" fill="#FFFFFF"/>
+      <text x="75" y="30" text-anchor="middle">Kasir POS</text>
+    </g>
+    <g transform="translate(348,296)">
+      <rect x="0" y="0" width="160" height="46" rx="23" fill="#FFFFFF"/>
+      <text x="80" y="30" text-anchor="middle">Keuangan</text>
+    </g>
+    <g transform="translate(522,296)">
+      <rect x="0" y="0" width="150" height="46" rx="23" fill="#FFFFFF"/>
+      <text x="75" y="30" text-anchor="middle">Absensi</text>
+    </g>
+    <g transform="translate(184,358)">
+      <rect x="0" y="0" width="150" height="46" rx="23" fill="#FFFFFF"/>
+      <text x="75" y="30" text-anchor="middle">Laporan</text>
+    </g>
+    <g transform="translate(348,358)">
+      <rect x="0" y="0" width="190" height="46" rx="23" fill="#FFFFFF"/>
+      <text x="95" y="30" text-anchor="middle">Antar-Jemput</text>
+    </g>
+  </g>
+
+  <!-- right badge -->
+  <g transform="translate(724,150)">
+    <rect x="0" y="0" width="250" height="200" rx="24" fill="#FFFFFF" opacity="0.06" stroke="#35E8D5" stroke-opacity="0.35"/>
+    <text x="125" y="78" text-anchor="middle" font-family="Arial" font-weight="bold" font-size="66" fill="#35E8D5">1</text>
+    <text x="125" y="116" text-anchor="middle" font-family="Arial" font-weight="bold" font-size="22" fill="#FFFFFF">aplikasi untuk</text>
+    <text x="125" y="146" text-anchor="middle" font-family="Arial" font-weight="bold" font-size="22" fill="#FFFFFF">seluruh outlet</text>
+    <text x="125" y="180" text-anchor="middle" font-family="Arial" font-size="16" fill="#9FE7DE">POS - HQ - Multi-cabang</text>
+  </g>
+</svg>
