@@ -41,7 +41,20 @@
 2. **Audit HQ infra** — `hq_guard.logAudit()` ditulis ulang: insert ke `hl_audit_log` dengan scope tenant + `outlet_id NULL` + tangkap `ref_id` (param ke-4 yang dipanggil HQ pages). Diverifikasi (audit id tercatat).
 3. **Audit 4 halaman HQ** — tambah `logAudit()` di titik sukses handler tulis `supplier`/`promo`/`pelanggan`/`struk`. Diverifikasi (supplier tercatat).
 4. **CSRF `select-outlet.php`** — token disimpan di `$_SESSION['csrf_token']` (konsisten dengan tenant_guard), hidden field di form, verify sebelum ubah session outlet.
-5. **no-store header** — `if ($action==='') { Cache-Control: no-store...; Pragma: no-cache; }` di 8 halaman outlet. Dikonfirmasi header live di `/pos`.
+5. **no-store header** — `if ($action==='') { Cache-Control: no-store...; Pragma: no-cache; }` di 8 halaman outlet. Dikonfirmasi header live di `/pos`. (Catatan: no-store kemudian dijadikan global di `tenant_guard.php` oleh sesi lain.)
+6. **Audit SA `banners.php`** — tambah `logSuperAdminAction()` di save/delete (perubahan banner ke semua tenant sebelumnya tak terekam).
+7. **Badge approval-inbox** — SSR count ikutkan `DepositManager::pendingRefundCount` (samakan dgn API & isi list) + no-store.
+
+### 3b. Perbaikan UI/UX (lanjutan)
+- **Piutang B2B**: kartu metrik mobile stack 1-kolom (label kiri/angka kanan), filter jadi 1-baris scroll, modal select+date → custom.
+- **Layanan**: harga auto-separator ribuan, dropdown Satuan/Status custom.
+- **Banner dashboard**: swipe manual ikut jari (sliding track translateX + snap), auto-geser pause saat disentuh.
+- **Side menu**: default grup TERBUKA lagi (bukan tertutup); label panjang WRAP ke bawah (bukan ellipsis); collapse manual diingat.
+- **Approval Inbox**: tab overflow (grid 3-kolom → flex konten + scroll) + matikan tap-highlight WebView.
+- **Absensi**: tab bar overflow (`.hl-tab{flex:1}` → flex konten + scroll).
+- **Empty-state tabel**: `td[colspan]` di `hl-stack-mobile` dipaksa block+center (global — semua tabel).
+- **Audit Log**: kartu "Modul Tersibuk" font normal+kapital; filter (2 select + 2 date) → custom + lebar seragam di mobile.
+- **Drawer** (outlet + HQ): header tak lagi kepotong status bar APK (`env(safe-area-inset-top)`).
 
 ---
 
@@ -84,6 +97,21 @@
 - **Jalur uang** (payments confirm/cancel/refund, coin_pricing, packages, billing-config, affiliates): permission gate + CSRF + audit `logSuperAdminAction()`. `billing.php` read-only.
 - Audit SA via helper `logSuperAdminAction()` (`superadmin/middleware/superadmin_guard.php`).
 
+## 4c. Sweep UI/UX Mobile Final (static, 11 halaman)
+
+Halaman yang belum sempat dilihat via screenshot: customer, member, deposit, pembelian, mesin, produksi, kurir, outlet-settings, payment-settings, droppoint_manager, kurir-master.
+
+Dicek untuk tiap vektor defect mobile yang ditemukan sepanjang sesi — **semua CLEAN, tak ada temuan**:
+- Tabel overflow → tidak ada tabel; semua daftar berbasis kartu JS.
+- Tab bar equal-width (biang overflow di absensi/approval) → tidak ada.
+- `<select>`/`<input type=date>` native → ditangani global **lmx** otomatis.
+- `input type=time` (tidak dicakup lmx) → tidak ada di 11 halaman ini.
+- Grid kolom fixed / `repeat(N)` → tidak ada; pakai `hl-stat-grid` global responsif.
+- Emoji-dobel di label/tombol (kasus Approval Inbox) → tidak ada.
+- `width:###px` fixed / `white-space:nowrap` di container → tidak ada.
+
+Kesimpulan: 11 halaman ini konsisten memakai sistem responsif global (lmx + kartu + hl-stat-grid) → **tidak ada perbaikan yang diperlukan**.
+
 ## 5. Belum Diuji (butuh input / manual)
 
 | Area | Alasan |
@@ -91,6 +119,12 @@
 | **SuperAdmin fungsional (C1–C5)** | Butuh login SA; pembuatan akun SA otomatis diblok guardrail (grant privilege owner-level di produksi). Menunggu kredensial / akun dummy dari user |
 | Thermal print, scan kamera, GPS clock-in, swipe banner | Butuh perangkat fisik (manual di HP) |
 | Referral E2E, notif email/push, checklist submission wajib-foto | Butuh setup kompleks (2 pelanggan+kode / cron / foto device) |
+| Offline order (airplane mode) E2E | Butuh device fisik |
+
+### Backlog parkir (bukan blocker — catatan sesi lain)
+- **Voice Order Task 5** — plugin STT butuh build APK baru (server-side sudah live & aman).
+- **lmx** belum menyentuh halaman SuperAdmin (desktop, tak pakai renderHead) & `input type=time` (absensi) — **sengaja**.
+- **QRIS + WA gateway** masih di-hold (keputusan produk).
 
 ---
 
