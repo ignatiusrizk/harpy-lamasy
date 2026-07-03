@@ -7,6 +7,10 @@ $user = currentUser();
 requirePermission('audit.view');
 
 $action = $_GET['action'] ?? '';
+if ($action === '') {
+    header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+    header('Pragma: no-cache');
+}
 if ($action) {
     header('Content-Type: application/json');
     $tid = TenantResolver::id();
@@ -94,7 +98,7 @@ if ($action) {
     <div class="hl-stat-card green"><div class="hl-stat-num" id="sHari">-</div><div class="hl-stat-label">Aktivitas Hari Ini</div></div>
     <div class="hl-stat-card navy"><div class="hl-stat-num" id="sUsers">-</div><div class="hl-stat-label">User Aktif Hari Ini</div></div>
     <div class="hl-stat-card purple">
-      <div class="hl-stat-num" id="sTopModul" style="font-size:1rem">-</div>
+      <div class="hl-stat-num" id="sTopModul" style="font-size:1.1rem;font-family:var(--font);text-transform:capitalize;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">-</div>
       <div class="hl-stat-label">Modul Tersibuk</div>
     </div>
   </div>
