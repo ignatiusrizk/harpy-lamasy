@@ -25,6 +25,7 @@
 | 2b | Medium | `hq/supplier.php`, `hq/promo.php`, `hq/pelanggan.php`, `hq/struk.php` | Handler tulis tak pernah memanggil `logAudit` sama sekali → aksi tak terekam | ✅ Fixed & verified |
 | 3 | Low | `select-outlet.php` | POST ganti outlet tanpa proteksi CSRF (validasi kepemilikan sudah ada, jadi risiko kecil) | ✅ Fixed & verified |
 | 4 | Minor | `pos/orders/kanban/kas/inventori/produksi/antar-jemput/mesin` | Tak ada `no-store` header → potensi cache basi di WebView APK bila shell PHP berubah | ✅ Fixed & verified |
+| 5 | Low-Med | `superadmin/banners.php` | Handler `save`/`delete` tak panggil `logSuperAdminAction` → perubahan banner (tampil ke semua tenant) tak terekam | ✅ Fixed (verify E2E menunggu login SA) |
 
 ### Catatan verifikasi audit HQ (bukan bug)
 - `hq/roles.php` — teraudit via `logRoleAction()` → tabel `superadmin_logs`.
@@ -75,11 +76,19 @@
 
 ---
 
+## 4b. SuperAdmin — Static & Keamanan (LULUS, tanpa login)
+
+- **Guard:** 31 halaman SA semua ada proteksi session/`sa_guard` (0 gap).
+- **CSRF:** semua handler POST SA pakai `saVerifyCsrf()` (0 gap).
+- **Impersonate:** permission gate `clients.impersonate` + CSRF + POST-only + cegah impersonate berlapis + log `saas_impersonation_log`.
+- **Jalur uang** (payments confirm/cancel/refund, coin_pricing, packages, billing-config, affiliates): permission gate + CSRF + audit `logSuperAdminAction()`. `billing.php` read-only.
+- Audit SA via helper `logSuperAdminAction()` (`superadmin/middleware/superadmin_guard.php`).
+
 ## 5. Belum Diuji (butuh input / manual)
 
 | Area | Alasan |
 |------|--------|
-| **SuperAdmin C1–C5** | Butuh kredensial SA + 2FA (tak bisa bypass auth produksi) |
+| **SuperAdmin fungsional (C1–C5)** | Butuh login SA; pembuatan akun SA otomatis diblok guardrail (grant privilege owner-level di produksi). Menunggu kredensial / akun dummy dari user |
 | Thermal print, scan kamera, GPS clock-in, swipe banner | Butuh perangkat fisik (manual di HP) |
 | Referral E2E, notif email/push, checklist submission wajib-foto | Butuh setup kompleks (2 pelanggan+kode / cron / foto device) |
 
