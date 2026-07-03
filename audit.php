@@ -110,7 +110,10 @@ if ($action) {
 .lm-cal-day.today{outline:1.5px solid var(--teal)}
 .lm-cal-day.sel{background:var(--navy);color:#fff;font-weight:800}
 .lm-cal-day.empty{visibility:hidden}
-@media(max-width:680px){.lmui-trg,.lm-date,.lm-date-btn{width:100%}}
+@media(max-width:680px){
+  .hl-filter-bar .lmui-trg,.hl-filter-bar .lm-date,.hl-filter-bar .lm-date-btn{width:100%!important}
+  #fSearch{max-width:none!important;flex:1 1 100%!important}
+}
 </style>
 </head>
 <body>
