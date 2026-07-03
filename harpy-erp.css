@@ -1865,3 +1865,35 @@ html, body { overflow-x: clip; overscroll-behavior-y: contain; }
 
 /* Bar hitam untuk area status bar / notch (di belakang notif bar OS) */
 body::before{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area-inset-top,0px);background:#000;z-index:10000;pointer-events:none}
+
+/* ══ LMX de-native controls (select/date/month custom — components.php) ══ */
+.lmx-native-hide{position:absolute !important;width:1px !important;height:1px !important;opacity:0 !important;pointer-events:none !important;margin:0 !important;padding:0 !important;border:0 !important;clip:rect(0 0 0 0);overflow:hidden}
+.lmx-btn{display:inline-flex;align-items:center;justify-content:space-between;gap:8px;cursor:pointer;text-align:left;background:#fff}
+.lmx-btn .lmx-lbl{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lmx-btn .lmx-lbl.ph{color:var(--gray,#6B7280);font-weight:500}
+.lmx-btn .lmx-car{flex-shrink:0;font-size:11px;color:var(--gray,#6B7280)}
+.lmx-btn:disabled{opacity:.55;cursor:not-allowed}
+.lmx-panel{position:fixed;z-index:12000;background:#fff;border:1px solid rgba(27,45,90,.12);border-radius:12px;box-shadow:0 12px 34px rgba(15,28,58,.18);padding:6px;max-height:320px;overflow:auto;min-width:150px;max-width:calc(100vw - 16px)}
+.lmx-opt{display:block;width:100%;border:none;background:none;text-align:left;padding:9px 12px;border-radius:8px;font-size:14px;color:var(--navy,#1B2D5A);cursor:pointer;font-family:inherit}
+.lmx-opt:hover{background:var(--off,#F1F5F9)}
+.lmx-opt.sel{background:var(--teal,#2DD4BF);color:var(--navy-d,#0F1C3A);font-weight:700}
+.lmx-opt.dis{opacity:.4;cursor:not-allowed}
+.lmx-empty{padding:14px;text-align:center;color:var(--gray,#6B7280);font-size:13px}
+/* kalender & bulan */
+.lmx-panel.lmx-panel-cal{width:264px;overflow:visible;max-height:none;padding:12px}
+.lmx-cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.lmx-cal-head button{border:none;background:var(--off,#F1F5F9);width:30px;height:30px;border-radius:8px;cursor:pointer;font-size:15px;color:var(--navy,#1B2D5A)}
+.lmx-cal-title{font-weight:800;font-size:14px;color:var(--navy,#1B2D5A)}
+.lmx-cal-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:2px}
+.lmx-cal-dow{font-size:10px;color:var(--gray,#6B7280);text-align:center;font-weight:700;padding:4px 0}
+.lmx-cal-day{border:none;background:none;aspect-ratio:1;border-radius:8px;font-size:13px;color:var(--navy,#1B2D5A);cursor:pointer;font-family:inherit}
+.lmx-cal-day:hover{background:var(--off,#F1F5F9)}
+.lmx-cal-day.today{outline:1.5px solid var(--teal,#2DD4BF)}
+.lmx-cal-day.sel{background:var(--teal,#2DD4BF);color:var(--navy-d,#0F1C3A);font-weight:800}
+.lmx-cal-day.empty{visibility:hidden}
+.lmx-cal-day.dis{opacity:.3;cursor:not-allowed}
+.lmx-mo-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.lmx-mo{border:none;background:var(--off,#F1F5F9);padding:10px 0;border-radius:9px;font-size:13px;font-weight:600;color:var(--navy,#1B2D5A);cursor:pointer;font-family:inherit}
+.lmx-mo:hover{background:#E2E8F0}
+.lmx-mo.sel{background:var(--teal,#2DD4BF);color:var(--navy-d,#0F1C3A);font-weight:800}
+.lmx-mo.dis{opacity:.3;cursor:not-allowed}

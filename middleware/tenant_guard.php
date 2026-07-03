@@ -37,6 +37,10 @@ if (!headers_sent()) {
     header('X-Frame-Options: SAMEORIGIN');
     header('X-XSS-Protection: 1; mode=block');
     header('Referrer-Policy: strict-origin-when-cross-origin');
+    // WebView APK cache full page HTML → perubahan UI "seolah tak jalan" tanpa ini.
+    // Asset statis (css/js) tetap ter-cache normal (versioned via ?v=filemtime).
+    header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+    header('Pragma: no-cache');
 }
 
 // ── Load config & core ────────────────────────────────
