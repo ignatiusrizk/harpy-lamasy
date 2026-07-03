@@ -645,7 +645,7 @@ function saRenderHead(string $title = 'Super Admin'): void {
       .sa-sidebar.open { transform: translateX(0); box-shadow: 8px 0 40px rgba(0,0,0,.5); }
       .sa-main { margin-left: 0; }
       .sa-hamburger { display: flex; }
-      .sa-content { padding: 18px 18px 36px; }
+      .sa-content { padding: 28px 18px 36px; }  /* beri jarak dari sticky topbar (60px) */
       .sa-stats-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
       .sa-grid-2, .sa-grid-3, .sa-grid-4 { grid-template-columns: 1fr; }
       .sa-topbar { padding: 0 18px; }
