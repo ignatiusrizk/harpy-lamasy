@@ -54,6 +54,7 @@ if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && ($_SERVER['HTTP_SEC_FETCH_MODE'
                    ->execute([$tid,$nama,$kontak,$telp,$alamat,$term,$cat]);
                 $id = (int)$db->lastInsertId();
             }
+            logAudit(((int)($_POST['id'] ?? 0)) ? 'update' : 'create', 'supplier', "Supplier: $nama", (string)$id);
             echo json_encode(['ok'=>true, 'id'=>$id]); exit;
         }
 
@@ -61,6 +62,7 @@ if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && ($_SERVER['HTTP_SEC_FETCH_MODE'
             verifyCsrf();
             $id = (int)($_POST['id'] ?? 0);
             $db->prepare("UPDATE hl_supplier SET is_active=0 WHERE id=? AND tenant_id=?")->execute([$id,$tid]);
+            logAudit('delete', 'supplier', "Nonaktifkan supplier #$id", (string)$id);
             echo json_encode(['ok'=>true]); exit;
         }
 

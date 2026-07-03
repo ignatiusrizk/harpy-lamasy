@@ -222,6 +222,7 @@ if ($action) {
             }
 
             $db->commit();
+            logAudit(((int)($d['id'] ?? 0)) ? 'update' : 'create', 'promo', "Promo: $nama", (string)$promoId);
             echo json_encode(['success'=>true, 'id'=>$promoId]);
         } catch (Throwable $e) {
             $db->rollBack();
@@ -246,6 +247,7 @@ if ($action) {
                 echo json_encode(['error'=>'Promo tidak ditemukan atau bukan promo HQ']);
                 exit;
             }
+            logAudit('delete', 'promo', "Nonaktifkan promo #$id", (string)$id);
             echo json_encode(['success'=>true]);
         } catch (Throwable $e) {
             error_log('[hq promo delete] '.$e->getMessage());

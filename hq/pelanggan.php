@@ -245,6 +245,7 @@ if ($action) {
                     SET nama=?, telepon=?, alamat=?, catatan=?, tipe=?, is_active=?
                   WHERE id=? AND tenant_id=?"
             )->execute([$nama, $telepon ?: null, $alamat ?: null, $catatan ?: null, $tipe, $isActive, $pid, $tid]);
+            logAudit('update', 'pelanggan', "Update pelanggan: $nama", (string)$pid);
             echo json_encode(['success'=>true]);
         } catch (Throwable $e) {
             error_log('[hq pelanggan update] '.$e->getMessage());

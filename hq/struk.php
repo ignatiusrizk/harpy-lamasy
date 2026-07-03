@@ -123,6 +123,7 @@ if ($action) {
             }
         }
 
+        logAudit('push', 'struk', "Push template struk ke $pushed dari " . count($outletIds) . " outlet");
         echo json_encode(['success' => true, 'pushed' => $pushed, 'total' => count($outletIds)]);
         exit;
     }
