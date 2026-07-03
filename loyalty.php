@@ -283,7 +283,7 @@ if ($action) {
       </div>
       <div class="hl-form-group">
         <label class="hl-label">Nilai <span class="req">*</span></label>
-        <input type="number" id="r_nilai" class="hl-input" min="0" placeholder="10000"/>
+        <input type="number" id="r_nilai" class="lm-rp hl-input" min="0" placeholder="10000"/>
         <small id="r_nilai_hint" style="font-size:11px;color:var(--gray)">Nominal diskon dalam Rupiah</small>
       </div>
       <div class="hl-form-row">

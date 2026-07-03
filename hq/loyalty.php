@@ -171,7 +171,7 @@ require ROOT . '/hq/_layout_open.php';
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
         <div>
           <label>Nilai</label>
-          <input type="number" id="e_nilai" class="hl-input" min="0">
+          <input type="number" id="e_nilai" class="lm-rp hl-input" min="0">
         </div>
         <div>
           <label>Min Transaksi (Rp)</label>

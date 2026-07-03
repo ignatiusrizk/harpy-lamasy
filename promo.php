@@ -514,7 +514,7 @@ if ($action) {
         </div>
         <div class="hl-form-group">
           <label class="hl-label" id="nilaiLabel">Nilai Diskon (%) <span class="req">*</span></label>
-          <input type="number" id="p_nilai" class="hl-input" placeholder="0" min="0" step="1"/>
+          <input type="number" id="p_nilai" class="lm-rp hl-input" placeholder="0" min="0" step="1"/>
         </div>
       </div>
       <div class="hl-form-row" id="extraFields">
