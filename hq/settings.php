@@ -398,10 +398,10 @@ require __DIR__ . '/_layout_open.php';
   .alert.error{background:#FEE2E2;color:#991B1B;border:1px solid #FECACA}
   .alert.success{background:#D1FAE5;color:#065F46;border:1px solid #6EE7B7}
 
-  .info-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:14px}
+  .info-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:14px}
   .info-card{background:linear-gradient(135deg,#F0FDFB,#fff);border:1px solid rgba(53,232,213,.2);
              border-radius:10px;padding:14px}
-  .info-num{font-size:1.4rem;font-weight:800;color:#0F1C3A;font-family:var(--mono);margin-bottom:2px}
+  .info-num{font-size:clamp(0.9rem,5vw,1.4rem);white-space:nowrap;letter-spacing:-0.02em;font-weight:800;color:#0F1C3A;font-family:var(--mono);margin-bottom:2px}
   .info-label{font-size:11px;color:#6B7280;font-weight:700;text-transform:uppercase;letter-spacing:.05em}
 
   .outlet-coin-row{display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:12px;

@@ -196,7 +196,7 @@ $secondsRemaining = max(0, strtotime($payment['expires_at']) - time());
   h1{ font-size:20px; font-weight:800; color:var(--navy); margin:0 0 4px; }
   h3{ font-size:15px; font-weight:800; color:var(--navy); margin:0 0 14px; }
   .item{ color:var(--ash); font-size:13px; margin-bottom:18px; }
-  .amount{ font-size:30px; font-weight:800; font-family:'DM Mono',monospace; color:var(--navy); margin:14px 0; }
+  .amount{ font-size:clamp(18px,7vw,30px); white-space:nowrap;letter-spacing:-0.02em; font-weight:800; font-family:'DM Mono',monospace; color:var(--navy); margin:14px 0; }
   .timer{ background:#FFF7ED; border:1px solid #FED7AA; color:#B45309; padding:10px 14px; border-radius:10px; font-size:13px; text-align:center; font-weight:600; }
   .timer.expired{ background:#FEE2E2; border-color:#FCA5A5; color:#B91C1C; }
   .pay-dim{ opacity:.35; pointer-events:none; filter:grayscale(.6); }

@@ -610,12 +610,12 @@ require __DIR__ . '/_layout_open.php';
               display:inline-flex;align-items:center;gap:5px}
   .btn-export:hover{opacity:.9}
 
-  .metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px}
+  .metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:18px}
   .metric{background:#fff;border-radius:12px;padding:18px;box-shadow:0 1px 6px rgba(0,0,0,.05);border-top:3px solid #35E8D5;text-align:center}
   .metric.green{border-top-color:#34D399}.metric.red{border-top-color:#EF4444}
   .metric.purple{border-top-color:#8B5CF6}.metric.orange{border-top-color:#F59E0B}
   .metric.blue{border-top-color:#3B82F6}
-  .metric-num{font-size:1.4rem;font-weight:800;color:#0F1C3A;font-family:var(--mono);margin-bottom:3px}
+  .metric-num{font-size:clamp(0.8rem,3.4vw,1.4rem);white-space:nowrap;letter-spacing:-0.02em;font-weight:800;color:#0F1C3A;font-family:var(--mono);margin-bottom:3px}
   .metric-label{font-size:12px;color:#6B7280;font-weight:600}
   .metric-sub{font-size:11px;color:#9CA3AF;margin-top:4px}
   .metric-growth{font-size:11px;font-weight:700;padding:2px 8px;border-radius:100px;display:inline-block;margin-top:4px}
@@ -660,7 +660,7 @@ require __DIR__ . '/_layout_open.php';
   .grid-2{display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:18px}
 
   @media(max-width:980px){
-    .metrics{grid-template-columns:repeat(2,1fr)}
+    .metrics{grid-template-columns:repeat(2,minmax(0,1fr))}
     .metrics > *{min-width:0}
     .metric-growth{white-space:normal;overflow-wrap:anywhere}
     .grid-2{grid-template-columns:1fr}

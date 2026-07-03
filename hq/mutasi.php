@@ -107,9 +107,9 @@ require __DIR__ . '/_layout_open.php';
   .row-by{text-align:right;font-size:11px;color:#6B7280;white-space:nowrap;line-height:1.4}
   .row-by strong{display:block;color:#0F1C3A;font-weight:700;font-size:12px}
 
-  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}
+  .stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:16px}
   .stat{background:#fff;border-radius:10px;padding:12px 14px;box-shadow:0 1px 6px rgba(0,0,0,.05);text-align:center}
-  .stat-num{font-size:1.4rem;font-weight:800;color:#0F1C3A;font-family:var(--mono)}
+  .stat-num{font-size:clamp(0.62rem,2.6vw,1.4rem);white-space:nowrap;letter-spacing:-0.02em;font-weight:800;color:#0F1C3A;font-family:var(--mono)}
   .stat-lbl{font-size:11px;color:#6B7280;text-transform:uppercase;letter-spacing:.05em;font-weight:700}
 
   .empty{text-align:center;padding:60px 20px;color:#9CA3AF;font-size:13px}
@@ -123,7 +123,7 @@ require __DIR__ . '/_layout_open.php';
     .filter-bar button{flex:1 1 100%;justify-content:center}
     .stats{gap:8px}
     .stat{padding:10px 9px}
-    .stat-num{font-size:1.15rem}
+    .stat-num{font-size:clamp(0.6rem,2.6vw,1.15rem)}
     .stat-lbl{font-size:10px;letter-spacing:.02em}
     .row{grid-template-columns:1fr;gap:6px}
     .row-date,.row-by{text-align:left}

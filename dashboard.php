@@ -424,7 +424,7 @@ if ($action) {
 <?php renderHead('Dashboard'); ?>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
-.dash-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; margin-bottom: 20px; }
+.dash-grid { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 14px; margin-bottom: 20px; }
 .dash-card {
   background: var(--white); border-radius: var(--r-lg);
   border: 1px solid rgba(27,45,90,.07); box-shadow: var(--shadow);
@@ -436,7 +436,7 @@ if ($action) {
 .dash-card.red::before    { background: linear-gradient(90deg,var(--red),#F87171); }
 .dash-card.navy::before   { background: linear-gradient(90deg,var(--navy),#2D4A8A); }
 .dash-card.purple::before { background: linear-gradient(90deg,var(--purple),#A78BFA); }
-.dash-num   { font-size: 1.6rem; font-weight: 900; color: var(--navy); font-family: var(--mono); line-height: 1; margin-bottom: 4px; }
+.dash-num   { font-size: clamp(0.85rem,3.4vw,1.6rem); white-space:nowrap;letter-spacing:-0.02em; font-weight: 900; color: var(--navy); font-family: var(--mono); line-height: 1; margin-bottom: 4px; }
 .dash-label { font-size: 12px; color: var(--gray); font-weight: 500; }
 .dash-sub   { font-size: 11px; color: var(--gray); margin-top: 6px; }
 .pipeline   { display: flex; gap: 8px; }
@@ -464,15 +464,15 @@ if ($action) {
 .chart-wrap { position: relative; height: 200px; }
 
 @media(max-width:900px) {
-  .dash-grid { grid-template-columns: repeat(2,1fr); }
+  .dash-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
   .pipeline  { flex-wrap: wrap; }
   .pipe-item { flex: 1 1 calc(33% - 8px); min-width: 80px; }
 }
 @media(max-width:680px) {
-  .dash-grid { grid-template-columns: repeat(2,1fr); gap: 10px; }
+  .dash-grid { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; }
   #extrasGrid { grid-template-columns: 1fr !important; }
   .dash-card { padding: 12px; }
-  .dash-num  { font-size: 1.1rem; }
+  .dash-num  { font-size: clamp(0.75rem,3.4vw,1.1rem); }
   .dash-sub  { font-size: 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .pipeline  { overflow-x: auto; flex-wrap: nowrap; padding-bottom: 4px; }
   .pipe-item { flex: 0 0 auto; min-width: 62px; padding: 9px 7px; }

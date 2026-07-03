@@ -318,15 +318,15 @@ $baseUrl = $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'lamasy.harpy.id');
 <?php renderHead('Mesin Self-Service'); ?>
 <style>
 /* Summary */
-.ms-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
-@media(max-width:680px){.ms-summary{grid-template-columns:repeat(2,1fr);gap:10px}}
+.ms-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:20px}
+@media(max-width:680px){.ms-summary{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}}
 .ms-card{background:var(--white);border-radius:14px;padding:14px 16px;border:1px solid rgba(27,45,90,.07);position:relative;overflow:hidden;text-align:center}
 .ms-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
 .ms-card.idle::before{background:linear-gradient(90deg,#9CA3AF,#D1D5DB)}
 .ms-card.running::before{background:linear-gradient(90deg,#3B82F6,#60A5FA)}
 .ms-card.booked::before{background:linear-gradient(90deg,#F59E0B,#FBBF24)}
 .ms-card.rev::before{background:linear-gradient(90deg,#10B981,#34D399)}
-.ms-num{font-size:1.5rem;font-weight:800;color:var(--navy);font-family:var(--mono);margin-bottom:4px}
+.ms-num{font-size:clamp(0.8rem,3.4vw,1.5rem);white-space:nowrap;letter-spacing:-0.02em;font-weight:800;color:var(--navy);font-family:var(--mono);margin-bottom:4px}
 .ms-num.blue{color:#3B82F6}.ms-num.amber{color:#D97706}.ms-num.green{color:#10B981}
 .ms-label{font-size:11px;color:var(--gray);font-weight:600;text-transform:uppercase;letter-spacing:.3px}
 

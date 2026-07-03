@@ -144,14 +144,14 @@ if ($action) {
 <?php renderHead('Kas'); ?>
 <style>
 /* SUMMARY CARDS */
-.summary-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px}
+.summary-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:24px}
 .sum-card{background:var(--white);border-radius:var(--r-lg);padding:18px 20px;border:1px solid rgba(27,45,90,.07);box-shadow:var(--shadow);position:relative;overflow:hidden;text-align:center}
 .sum-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
 .sum-card.masuk::before{background:linear-gradient(90deg,var(--green),#34D399)}
 .sum-card.keluar::before{background:linear-gradient(90deg,#EF4444,#F87171)}
 .sum-card.saldo::before{background:linear-gradient(90deg,var(--teal),var(--teal-d))}
 .sum-card.order::before{background:linear-gradient(90deg,#8B5CF6,#A78BFA)}
-.sum-num{font-size:1.4rem;font-weight:800;color:var(--navy);line-height:1;font-family:var(--mono);margin-bottom:4px}
+.sum-num{font-size:clamp(0.8rem,3.4vw,1.4rem);white-space:nowrap;letter-spacing:-0.02em;font-weight:800;color:var(--navy);line-height:1;font-family:var(--mono);margin-bottom:4px}
 .sum-num.green{color:var(--green)}
 .sum-num.red{color:#EF4444}
 .sum-num.teal{color:var(--teal-d)}
@@ -235,8 +235,8 @@ tfoot td.td-jumlah{font-family:var(--mono)}
 .shortcut-btns{display:flex;gap:6px}
 .sc-btn{padding:6px 12px;border-radius:8px;font-size:12px;font-weight:600;border:1.5px solid rgba(27,45,90,.12);background:var(--off);cursor:pointer;font-family:var(--font);transition:all .2s;color:var(--navy)}
 .sc-btn:hover,.sc-btn.active{background:var(--teal);color:var(--navy);border-color:var(--teal)}
-@media(max-width:860px){.layout-2{grid-template-columns:1fr}.summary-grid{grid-template-columns:repeat(2,1fr)}}
-@media(max-width:680px){.summary-grid{grid-template-columns:repeat(2,1fr);gap:10px}.sum-card{padding:14px}.sum-num{font-size:1.1rem}}
+@media(max-width:860px){.layout-2{grid-template-columns:1fr}.summary-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:680px){.summary-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.sum-card{padding:14px}.sum-num{font-size:1.1rem}}
 /* Total Periode (tfoot) di mobile: kotak navy full-width rapi, bukan setengah */
 @media(max-width:900px){
   .hl-stack-mobile tfoot tr{ background:var(--navy)!important; border:none!important; border-radius:10px; padding:14px 16px!important; margin-top:8px; display:block; width:100% }

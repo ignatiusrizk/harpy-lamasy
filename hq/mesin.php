@@ -109,8 +109,8 @@ require __DIR__ . '/_layout_open.php';
 ?>
 
 <style>
-.hq-ms-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
-@media(max-width:640px){.hq-ms-summary{grid-template-columns:repeat(2,1fr);gap:10px}
+.hq-ms-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:20px}
+@media(max-width:640px){.hq-ms-summary{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
   .hq-tabs{flex-wrap:wrap}.hq-tab{flex:1 1 0;padding:10px 8px;text-align:center;font-size:13px;white-space:nowrap}}
 .hq-ms-card{background:#fff;border-radius:14px;padding:14px 16px;border:1px solid #E5E7EB;position:relative;overflow:hidden;text-align:center}
 .hq-ms-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
@@ -118,7 +118,7 @@ require __DIR__ . '/_layout_open.php';
 .hq-ms-card.mesin::before{background:linear-gradient(90deg,#8B5CF6,#A78BFA)}
 .hq-ms-card.running::before{background:linear-gradient(90deg,#10B981,#34D399)}
 .hq-ms-card.rev::before{background:linear-gradient(90deg,#F59E0B,#FBBF24)}
-.hq-ms-num{font-size:1.5rem;font-weight:800;color:#0F1C3A;font-family:'DM Mono',monospace;margin-bottom:4px}
+.hq-ms-num{font-size:clamp(0.8rem,3.4vw,1.5rem);white-space:nowrap;letter-spacing:-0.02em;font-weight:800;color:#0F1C3A;font-family:'DM Mono',monospace;margin-bottom:4px}
 
 .hq-tabs{display:flex;gap:4px;margin-bottom:18px;border-bottom:2px solid #E5E7EB}
 .hq-tab{padding:10px 18px;cursor:pointer;font-weight:600;font-size:14px;color:#6B7280;background:none;border:none;border-bottom:3px solid transparent;margin-bottom:-2px}

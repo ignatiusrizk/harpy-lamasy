@@ -277,9 +277,9 @@ require __DIR__ . '/_layout_open.php';
   h1{font-size:1.4rem;font-weight:800;color:#0F1C3A}
   h1 small{display:block;font-size:13px;font-weight:400;color:#6B7280;margin-top:2px}
 
-  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}
+  .stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:16px}
   .stat-card{background:#fff;border-radius:12px;padding:16px 18px;box-shadow:0 1px 6px rgba(0,0,0,.05);border-top:3px solid #35E8D5;text-align:center}
-  .stat-num{font-size:1.5rem;font-weight:800;color:#0F1C3A;font-family:var(--mono)}
+  .stat-num{font-size:clamp(0.8rem,3.4vw,1.5rem);white-space:nowrap;letter-spacing:-0.02em;font-weight:800;color:#0F1C3A;font-family:var(--mono)}
   .stat-label{font-size:12px;color:#6B7280;font-weight:600}
 
   .toolbar{background:#fff;border-radius:12px;padding:14px 18px;display:flex;gap:10px;align-items:center;
@@ -379,7 +379,7 @@ require __DIR__ . '/_layout_open.php';
     .pl-name,.pl-name small,.pl-outlet,.pl-outlet strong{overflow-wrap:anywhere}
     .pl-num{text-align:left}
     .toolbar input,.toolbar select{min-width:0}
-    .stats{grid-template-columns:repeat(2,1fr)}
+    .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
     /* Chip segmen rapi 2×2, label kiri & badge kanan */
     .seg-tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px}
     .seg-btn{justify-content:space-between;padding:10px 12px;min-width:0;text-align:left}

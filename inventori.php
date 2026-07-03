@@ -425,7 +425,7 @@ if ($action) {
 <?php renderHead('Inventori Bahan'); ?>
 <style>
 /* SUMMARY CARDS */
-.inv-summary{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px}
+.inv-summary{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin-bottom:20px}
 .inv-card{background:var(--white);border-radius:var(--r-lg);padding:14px 16px;border:1px solid rgba(27,45,90,.07);box-shadow:var(--shadow);position:relative;overflow:hidden;text-align:center}
 .inv-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
 .inv-card.total::before  {background:linear-gradient(90deg,var(--teal),var(--teal-d))}
@@ -433,7 +433,7 @@ if ($action) {
 .inv-card.minim::before  {background:linear-gradient(90deg,#F59E0B,#FBBF24)}
 .inv-card.habis::before  {background:linear-gradient(90deg,#EF4444,#F87171)}
 .inv-card.nilai::before  {background:linear-gradient(90deg,#8B5CF6,#A78BFA)}
-.inv-num{font-size:1.4rem;font-weight:800;color:var(--navy);line-height:1;font-family:var(--mono);margin-bottom:4px}
+.inv-num{font-size:clamp(0.8rem,3.4vw,1.4rem);white-space:nowrap;letter-spacing:-0.02em;font-weight:800;color:var(--navy);line-height:1;font-family:var(--mono);margin-bottom:4px}
 .inv-num.green{color:var(--green)}
 .inv-num.amber{color:#D97706}
 .inv-num.red{color:#EF4444}
@@ -476,8 +476,8 @@ if ($action) {
 .mut-tipe-adjust  {color:#92400E;font-weight:700}
 .mut-tipe-transfer{color:#1E40AF;font-weight:700}
 
-@media(max-width:1100px){.inv-summary{grid-template-columns:repeat(3,1fr)}}
-@media(max-width:680px){.inv-summary{grid-template-columns:repeat(2,1fr);gap:8px}.inv-card{padding:10px 12px}.inv-num{font-size:1.1rem}}
+@media(max-width:1100px){.inv-summary{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:680px){.inv-summary{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.inv-card{padding:10px 12px}.inv-num{font-size:1.1rem}}
 /* Tab bar: scroll horizontal di HP biar semua tab kejangkau (Stok Opname tak kepotong) */
 @media(max-width:760px){
   .inv-tabs{overflow-x:auto;flex-wrap:nowrap;-webkit-overflow-scrolling:touch;scrollbar-width:none}

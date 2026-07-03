@@ -391,7 +391,7 @@ if ($action) {
 .ptab.active{background:var(--navy);color:var(--white)}
 
 /* STAT CARDS */
-.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+.stat-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:20px}
 .stat-card{background:var(--white);border-radius:var(--r-lg);padding:18px 20px;border:1px solid rgba(27,45,90,.07);box-shadow:var(--shadow);position:relative;overflow:hidden;text-align:center}
 .stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
 .sc-green::before{background:linear-gradient(90deg,var(--green),#34D399)}
@@ -464,11 +464,11 @@ tfoot td{padding:9px 12px;font-weight:700;font-size:13px}
 .loading{text-align:center;padding:24px;color:var(--gray);font-size:14px}
 
 @media(max-width:900px){
-  .stat-grid{grid-template-columns:repeat(2,1fr)}
+  .stat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
   .grid-2,.grid-3{grid-template-columns:1fr}
 }
 @media(max-width:680px){
-  .stat-grid{grid-template-columns:repeat(2,1fr);gap:10px}
+  .stat-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
   .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
   thead th{font-size:11px;padding:8px 8px}
   tbody td{font-size:12px;padding:8px 8px}

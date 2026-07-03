@@ -283,7 +283,7 @@ if ($action) {
 .po-item-row .subtotal-cell{font-family:var(--mono);font-weight:700;color:var(--navy);text-align:right;font-size:13px}
 .po-total-bar{display:flex;justify-content:flex-end;align-items:center;gap:12px;margin-top:12px;padding-top:12px;border-top:2px solid rgba(27,45,90,.08)}
 .po-total-label{font-size:13px;font-weight:700;color:var(--gray)}
-.po-total-amount{font-size:20px;font-weight:800;font-family:var(--mono);color:var(--navy)}
+.po-total-amount{font-size:clamp(14px,4.5vw,20px);white-space:nowrap;letter-spacing:-0.02em;font-weight:800;font-family:var(--mono);color:var(--navy)}
 
 /* ACTION ROW */
 .po-action-row{display:flex;gap:8px;margin-top:14px;justify-content:flex-end;flex-wrap:wrap}

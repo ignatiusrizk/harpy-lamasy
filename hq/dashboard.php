@@ -613,12 +613,12 @@ require __DIR__ . '/_layout_open.php';
   .btn-light{background:#fff;color:#0F1C3A;border:1px solid #E5E7EB}
   .btn-sm{padding:6px 12px;font-size:11px}
 
-  .metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px}
+  .metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:18px}
   .metric{background:#fff;border-radius:12px;padding:18px;box-shadow:0 1px 6px rgba(0,0,0,.05);
           border-top:3px solid #35E8D5;text-align:center}
   .metric.blue{border-top-color:#3B82F6}.metric.purple{border-top-color:#8B5CF6}
   .metric.orange{border-top-color:#F59E0B}
-  .metric-num{font-size:1.6rem;font-weight:800;color:#0F1C3A;font-family:var(--mono);margin-bottom:2px}
+  .metric-num{font-size:clamp(0.85rem,3.4vw,1.6rem);white-space:nowrap;letter-spacing:-0.02em;font-weight:800;color:#0F1C3A;font-family:var(--mono);margin-bottom:2px}
   .metric-label{font-size:12px;color:#6B7280;font-weight:600}
   .metric-sub{font-size:11px;color:#9CA3AF;margin-top:3px}
 
@@ -661,7 +661,7 @@ require __DIR__ . '/_layout_open.php';
   .pl-stage.proses{background:linear-gradient(135deg,#EFF6FF,#fff);border-color:#BFDBFE}
   .pl-stage.siap{background:linear-gradient(135deg,#F0FDF4,#fff);border-color:#BBF7D0}
   .pl-stage.selesai{background:linear-gradient(135deg,#F9FAFB,#fff);border-color:#E5E7EB}
-  .pl-num{font-size:1.9rem;font-weight:800;color:#0F1C3A;font-family:var(--mono);line-height:1}
+  .pl-num{font-size:clamp(1rem,5.5vw,1.9rem);white-space:nowrap;letter-spacing:-0.02em;font-weight:800;color:#0F1C3A;font-family:var(--mono);line-height:1}
   .pl-label{font-size:12px;color:#6B7280;font-weight:600;margin-top:6px}
   .pl-arrow{font-size:20px;color:#CBD5E1;font-weight:800}
   @media(max-width:640px){.pl-arrow{display:none}.pl-stage{min-width:100%}}
@@ -708,7 +708,7 @@ require __DIR__ . '/_layout_open.php';
   .st-grace{background:#FEF3C7;color:#92400E}
   .st-active{background:#D1FAE5;color:#065F46}
   .ocard-main{margin-bottom:14px;padding:12px 14px;background:#F9FAFB;border-radius:10px;text-align:center}
-  .ocard-main-num{font-size:1.55rem;font-weight:800;color:#0F1C3A;font-family:var(--mono);line-height:1}
+  .ocard-main-num{font-size:clamp(0.9rem,4.5vw,1.55rem);white-space:nowrap;letter-spacing:-0.02em;font-weight:800;color:#0F1C3A;font-family:var(--mono);line-height:1}
   .ocard-main-label{font-size:11px;color:#6B7280;font-weight:600;margin-top:4px}
   .ocard-stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;font-size:12px}
   .ocard-stat{background:#F9FAFB;border-radius:8px;padding:9px 11px;text-align:center}
@@ -731,14 +731,14 @@ require __DIR__ . '/_layout_open.php';
   .empty-state .ico{font-size:56px;margin-bottom:12px}
 
   @media(max-width:980px){
-    .metrics{grid-template-columns:repeat(2,1fr)}
+    .metrics{grid-template-columns:repeat(2,minmax(0,1fr))}
     .ranking{grid-template-columns:1fr}
   }
   @media(max-width:640px){
     /* 2-col tetap di mobile — halving vertical scroll, num+label cukup di ~170px width */
-    .metrics{grid-template-columns:repeat(2,1fr);gap:10px}
+    .metrics{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
     .metric{padding:14px}
-    .metric-num{font-size:1.3rem}
+    .metric-num{font-size:clamp(0.75rem,3.4vw,1.3rem)}
   }
 </style>
 

@@ -874,7 +874,7 @@ textarea{resize:vertical;min-height:64px}
 .sum-row.total{border-top:1px solid rgba(255,255,255,.15);margin-top:8px;padding-top:12px}
 .sum-label{color:rgba(255,255,255,.6)}
 .sum-value{font-family:var(--mono);font-weight:700;white-space:nowrap}
-.sum-value.big{font-size:1.4rem;color:var(--teal)}
+.sum-value.big{font-size:clamp(1rem,5vw,1.4rem);white-space:nowrap;letter-spacing:-0.02em;color:var(--teal)}
 .sum-value.sisa{color:#FCA5A5}
 
 /* BUTTONS */
