@@ -942,7 +942,7 @@ function renderTopbar(string $activePage = '', bool $minimalMode = false): void 
                 'customer'     => ['label'=>'Customer',       'url'=>'/customer',     'perm'=>'pelanggan.view'],
                 'member'   => ['label'=>'Member Tier',    'url'=>'/member',    'perm'=>'pelanggan.view'],
                 'deposit'  => ['label'=>'Deposit Wallet', 'url'=>'/deposit',   'perm'=>'pelanggan.view'],
-                'approval-inbox' => ['label'=>'⏳ Approval Inbox', 'url'=>'/approval-inbox', 'perm'=>'owner'],
+                'approval-inbox' => ['label'=>'Approval Inbox', 'url'=>'/approval-inbox', 'perm'=>'owner'],
                 'loyalty'  => ['label'=>'Sistem Poin',    'url'=>'/loyalty',   'perm'=>'pelanggan.view'],
                 'retention'=> ['label'=>'Retensi Dormant','url'=>'/retention', 'perm'=>'pelanggan.view'],
             ],
@@ -1105,7 +1105,7 @@ function renderTopbar(string $activePage = '', bool $minimalMode = false): void 
           <a href="<?= $item['url'] ?>"
              data-tour="<?= htmlspecialchars($key) ?>"
              class="ol-side-link <?= $isEmph ? 'emphasis' : '' ?> <?= $isActive ? 'active' : '' ?>">
-            <span class="ico"><?= $iconMap[$key] ?? '•' ?></span> <?= htmlspecialchars($item['label']) ?>
+            <span class="ico"><?= $iconMap[$key] ?? '•' ?></span> <span class="lbl"><?= htmlspecialchars($item['label']) ?></span>
           </a>
           <?php endforeach; ?>
           </div>

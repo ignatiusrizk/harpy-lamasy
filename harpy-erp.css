@@ -771,7 +771,8 @@ body { font-family: var(--font); background: var(--off); color: var(--dark); min
 }
 .ol-side-link.emphasis { color: var(--navy); }
 .ol-side-link.emphasis.active { color: var(--teal); }
-.ol-side-link .ico { font-size: 15px; width: 18px; text-align: center; }
+.ol-side-link .ico { font-size: 15px; width: 18px; text-align: center; flex: 0 0 auto; }
+.ol-side-link .lbl { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 
 .ol-side-group { display: flex; flex-direction: column; }
 .ol-side-group-btn .arr { margin-left: auto; font-size: 9px; opacity: .6; transition: transform .15s; }
