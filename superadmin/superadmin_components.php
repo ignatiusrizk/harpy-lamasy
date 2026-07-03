@@ -833,6 +833,52 @@ function saRenderNavClose(): void { ?>
         if (SB.setStyle) SB.setStyle({ style: 'DARK' }); // DARK = ikon PUTIH
       } catch(e) {}
     })();
+
+    /* ── Pull-to-refresh (perangkat sentuh): tarik dari atas → reload ── */
+    (function(){
+      if (!('ontouchstart' in window) && !(navigator.maxTouchPoints > 0)) return;
+      var THRESHOLD = 70, MAX = 90, RESIST = 0.5, startY = 0, pull = 0, armed = false;
+      var css = document.createElement('style');
+      css.textContent =
+        '#saPtr{position:fixed;top:calc(env(safe-area-inset-top,0px) + 68px);left:50%;transform:translate(-50%,-60px);z-index:120;opacity:0;pointer-events:none;transition:opacity .15s}'
+        + '#saPtr .r{width:30px;height:30px;border-radius:50%;border:3px solid rgba(255,255,255,.18);border-top-color:#35E8D5;animation:saPtrSpin .7s linear infinite;background:#141B2D;box-shadow:0 4px 16px rgba(0,0,0,.5)}'
+        + '@keyframes saPtrSpin{to{transform:rotate(360deg)}}';
+      document.head.appendChild(css);
+      var el = document.createElement('div'); el.id = 'saPtr'; el.innerHTML = '<div class="r"></div>';
+      function mount(){ if (document.body && !document.body.contains(el)) document.body.appendChild(el); }
+      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', mount); else mount();
+
+      function overlayOpen(){
+        if (document.querySelector('.sa-sidebar.open, .sa-overlay-mobile.open')) return true; // drawer SA
+        if (document.querySelector('.lmx-panel')) return true; // dropdown/kalender custom
+        var n = document.querySelectorAll('[class*="modal"],[class*="overlay"],[class*="backdrop"],[class*="drawer"],[class*="sheet"],[class*="popup"]');
+        for (var i=0;i<n.length;i++){
+          var e = n[i], c = (e.className && e.className.toString) ? e.className.toString() : '';
+          if (!/\b(open|active|show|visible)\b/.test(c) && e.style.display!=='flex' && e.style.display!=='block') continue;
+          var cs = window.getComputedStyle(e);
+          if (cs.display!=='none' && cs.visibility!=='hidden' && e.getClientRects().length) return true;
+        }
+        return false;
+      }
+      function setPull(p){ pull = p; el.style.transform = 'translate(-50%,' + (Math.min(p, MAX) - 60) + 'px)'; el.style.opacity = p > 6 ? '1' : '0'; }
+      function snapBack(){ el.style.transition = 'transform .2s, opacity .2s'; setPull(0); setTimeout(function(){ el.style.transition = 'opacity .15s'; }, 220); }
+
+      document.addEventListener('touchstart', function(e){
+        armed = (window.scrollY <= 0) && e.touches.length === 1 && !overlayOpen();
+        startY = e.touches[0].clientY; pull = 0;
+      }, { passive: true });
+      document.addEventListener('touchmove', function(e){
+        if (!armed) return;
+        var dy = e.touches[0].clientY - startY;
+        if (dy <= 0 || window.scrollY > 0) { if (pull > 0) snapBack(); armed = false; return; }
+        e.preventDefault(); setPull(dy * RESIST);
+      }, { passive: false });
+      document.addEventListener('touchend', function(){
+        if (!armed) return; armed = false;
+        if (pull >= THRESHOLD) { el.style.transform = 'translate(-50%,24px)'; el.style.opacity = '1'; location.reload(); }
+        else if (pull > 0) { snapBack(); }
+      }, { passive: true });
+    })();
     </script>
     <script>
     function saCsrf(){ return document.querySelector('meta[name="csrf-token"]')?.content||''; }
