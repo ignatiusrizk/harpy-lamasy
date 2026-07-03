@@ -1142,6 +1142,31 @@ html, body { overflow-x: clip; overscroll-behavior-y: contain; }
   }
   .hl-stack-mobile tbody td.empty::before,
   .hl-stack-mobile tbody td.loading::before { content: none !important; }
+
+  /* tfoot (baris total) — dulu ketinggalan dari daftar display:block di atas,
+     jadi shrink-to-fit setengah lebar. Render sbg kartu full-width: label kiri,
+     nilai kanan. Warna ikut konteks (.hl-table navy / lokal page). */
+  .hl-stack-mobile tfoot { display: block; width: 100%; }
+  .hl-stack-mobile tfoot tr {
+    display: flex !important;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 4px 12px;
+    width: 100%;
+    border-radius: 10px;
+    padding: 11px 14px !important;
+    margin-top: 8px;
+  }
+  .hl-stack-mobile tfoot td {
+    display: inline-block !important;
+    width: auto !important;
+    border: none !important;
+    padding: 0 !important;
+    font-size: 13px;
+    font-weight: 700;
+  }
+  .hl-stack-mobile tfoot td:empty { display: none !important; }
 }
 
 /* ══════════════════════════════════════════════════════
