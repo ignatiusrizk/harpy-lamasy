@@ -13,6 +13,10 @@ if (!hasPermission('absensi.view') && !hasPermission('absensi.clock')) {
 
 // ── API ───────────────────────────────────────────────
 $action = $_GET['action'] ?? '';
+if ($action === '') {
+    header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+    header('Pragma: no-cache');
+}
 if ($action) {
     header('Content-Type: application/json');
     $tid = TenantResolver::id();
@@ -560,8 +564,9 @@ if ($action) {
 .cal-dot{width:5px;height:5px;border-radius:50%;background:currentColor;margin-top:2px}
 
 /* ── TABS ── */
-.hl-tabs{display:flex;gap:4px;background:var(--white);border-radius:var(--r-lg);padding:6px;box-shadow:var(--shadow);margin-bottom:20px;border:1px solid rgba(27,45,90,.07)}
-.hl-tab{flex:1;padding:10px 16px;border-radius:var(--r);font-size:14px;font-weight:600;color:var(--gray);cursor:pointer;text-align:center;transition:all .2s;border:none;background:transparent;font-family:var(--font)}
+.hl-tabs{display:flex;gap:4px;background:var(--white);border-radius:var(--r-lg);padding:6px;box-shadow:var(--shadow);margin-bottom:20px;border:1px solid rgba(27,45,90,.07);overflow-x:auto;-webkit-overflow-scrolling:touch}
+.hl-tabs::-webkit-scrollbar{display:none}
+.hl-tab{flex:0 0 auto;white-space:nowrap;padding:10px 16px;border-radius:var(--r);font-size:14px;font-weight:600;color:var(--gray);cursor:pointer;text-align:center;transition:all .2s;border:none;background:transparent;font-family:var(--font)}
 .hl-tab:hover{color:var(--navy)}
 .hl-tab.active{background:var(--navy);color:var(--white)}
 
