@@ -398,6 +398,12 @@ if ($action) {
 .dp-tabs{display:flex;gap:6px;margin-bottom:16px;background:#fff;border-radius:10px;padding:5px;box-shadow:0 1px 4px rgba(0,0,0,.04);width:fit-content;max-width:100%;overflow-x:auto}
 .dp-tab{padding:8px 18px;border-radius:7px;font-size:13px;font-weight:700;color:#6B7280;cursor:pointer;border:none;background:transparent;font-family:inherit;white-space:nowrap}
 .dp-tab.active{background:#0F1C3A;color:#fff}
+@media(max-width:680px){
+  .dp-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));width:100%;gap:4px}
+  .dp-tab{padding:8px 2px;font-size:12px;text-align:center}
+  .dp-tab .dp-tab-x{display:none}
+  .panel-head{flex-wrap:wrap;gap:8px}
+}
 .panel{background:#fff;border-radius:12px;padding:18px 20px;box-shadow:0 1px 4px rgba(0,0,0,.05);margin-bottom:16px}
 .panel-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px}
 .panel-head h2{font-size:15px;font-weight:800;color:#0F1C3A}
@@ -435,8 +441,8 @@ if ($action) {
 
 <div class="dp-tabs">
   <button class="dp-tab active" id="tabMitra"  onclick="switchTab('mitra')">👥 Mitra</button>
-  <button class="dp-tab" id="tabRekap"  onclick="switchTab('rekap')">💰 Rekap Komisi</button>
-  <button class="dp-tab" id="tabOrders" onclick="switchTab('orders')">📋 Order Hari Ini</button>
+  <button class="dp-tab" id="tabRekap"  onclick="switchTab('rekap')">💰 <span class="dp-tab-x">Rekap </span>Komisi</button>
+  <button class="dp-tab" id="tabOrders" onclick="switchTab('orders')">📋 Order<span class="dp-tab-x"> Hari Ini</span></button>
 </div>
 
 <!-- TAB MITRA -->
