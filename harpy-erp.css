@@ -1870,7 +1870,9 @@ body::before{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area
 
 /* ══ LMX de-native controls (select/date/month custom — components.php) ══ */
 .lmx-native-hide{position:absolute !important;width:1px !important;height:1px !important;opacity:0 !important;pointer-events:none !important;margin:0 !important;padding:0 !important;border:0 !important;clip:rect(0 0 0 0);overflow:hidden}
-.lmx-btn{display:inline-flex;align-items:center;justify-content:space-between;gap:8px;cursor:pointer;text-align:left;background:#fff}
+/* default look via :where (spesifisitas 0) — page tanpa class di elemen (mis. POS: input,select{...} selector elemen) tetap dapat gaya app; class page (hl-input dkk) menang normal */
+:where(.lmx-btn){padding:9px 12px;border:1.5px solid rgba(27,45,90,.14);border-radius:9px;font-size:14px;color:var(--navy,#1B2D5A);background:#fff;width:100%;font-weight:500}
+.lmx-btn{display:inline-flex;align-items:center;justify-content:space-between;gap:8px;cursor:pointer;text-align:left;font-family:inherit}
 .lmx-btn .lmx-lbl{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .lmx-btn .lmx-lbl.ph{color:var(--gray,#6B7280);font-weight:500}
 .lmx-btn .lmx-car{flex-shrink:0;font-size:11px;color:var(--gray,#6B7280)}
