@@ -206,7 +206,7 @@ if ($action) {
             exit;
         }
     } catch (Throwable $e) {
-        echo json_encode(['error' => 'Error: ' . $e->getMessage()]);
+        apiErr($e, 'Error. Silakan coba lagi.');
         exit;
     }
 }

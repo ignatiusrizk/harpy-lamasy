@@ -249,7 +249,7 @@ if ($action) {
             echo json_encode(['success'=>true]);
         } catch (Throwable $e) {
             error_log('[hq pelanggan update] '.$e->getMessage());
-            echo json_encode(['error'=>'Gagal update: '.$e->getMessage()]);
+            apiErr($e, 'Gagal update. Silakan coba lagi.');
         }
         exit;
     }

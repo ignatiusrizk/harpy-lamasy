@@ -72,7 +72,7 @@ if ($action) {
             logAudit('update', 'outlet', "Update outlet #$id: prefix=$prefix, format=$format, label=$labelSize");
             echo json_encode(['success'=>true]);
         } catch (Throwable $e) {
-            echo json_encode(['error'=>'Gagal: '.$e->getMessage()]);
+            apiErr($e, 'Gagal. Silakan coba lagi.');
         }
         exit;
     }
@@ -214,7 +214,7 @@ if ($action) {
             $st->execute([$selfie, $geofence, $lat, $lng, $radius, $id, $tid]);
             logAudit('update', 'outlet', "Absensi config #$id: selfie=$selfie geofence=$geofence r=$radius");
             echo json_encode(['success'=>true]);
-        } catch (Throwable $e) { echo json_encode(['error'=>'Gagal: '.$e->getMessage()]); }
+        } catch (Throwable $e) { apiErr($e, 'Gagal. Silakan coba lagi.'); }
         exit;
     }
 

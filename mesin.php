@@ -172,7 +172,7 @@ if ($action) {
             if (str_contains($e->getMessage(), 'Duplicate')) {
                 echo json_encode(['error'=>"Kode '$kode' sudah dipakai mesin lain di outlet ini"]);
             } else {
-                echo json_encode(['error'=>'Gagal: '.$e->getMessage()]);
+                apiErr($e, 'Gagal. Silakan coba lagi.');
             }
         }
         exit;

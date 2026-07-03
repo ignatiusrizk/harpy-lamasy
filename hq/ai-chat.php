@@ -34,7 +34,7 @@ if ($action === 'ask' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
     try { AIBudget::checkOrThrow($tid, 'ai_chat_data'); }
-    catch (RuntimeException $e) { echo json_encode(['error' => $e->getMessage(), 'kind' => 'chat']); exit; }
+    catch (RuntimeException $e) { error_log('[apiErr] ' . $e->getMessage()); echo json_encode(['error' => 'Terjadi kesalahan sistem. Silakan coba lagi.', 'kind' => 'chat']); exit; }
 
     $question = trim($_POST['question'] ?? '');
     if (!$question) {
@@ -66,10 +66,10 @@ if ($action === 'ask' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         ]);
     } catch (RuntimeException $e) {
         // AI conversational refusal (validateSql / AI's ERROR: prefix) — friendly redirect
-        echo json_encode(['error' => $e->getMessage(), 'kind' => 'chat']);
+        error_log('[apiErr] ' . $e->getMessage()); echo json_encode(['error' => 'Terjadi kesalahan sistem. Silakan coba lagi.', 'kind' => 'chat']);
     } catch (Throwable $e) {
         // System error (DB down, API timeout, etc.) — actual warning
-        echo json_encode(['error' => $e->getMessage(), 'kind' => 'system']);
+        error_log('[apiErr] ' . $e->getMessage()); echo json_encode(['error' => 'Terjadi kesalahan sistem. Silakan coba lagi.', 'kind' => 'system']);
     }
     exit;
 }

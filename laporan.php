@@ -287,7 +287,7 @@ if ($action) {
             ]);
         } catch (Throwable $e) {
             http_response_code(500);
-            echo json_encode(['error' => 'AI Insight gagal: ' . $e->getMessage()]);
+            apiErr($e, 'AI Insight gagal. Silakan coba lagi.');
         }
         exit;
     }

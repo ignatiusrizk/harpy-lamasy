@@ -170,7 +170,7 @@ if ($action) {
         } catch (Throwable $e) {
             $db->rollBack();
             error_log('[hq outlet update] '.$e->getMessage());
-            echo json_encode(['error'=>'Gagal update: '.$e->getMessage()]);
+            apiErr($e, 'Gagal update. Silakan coba lagi.');
         }
         exit;
     }

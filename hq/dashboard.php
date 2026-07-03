@@ -214,7 +214,7 @@ if (($_GET['action'] ?? '') === 'ai_briefing') {
             header('Content-Type: application/json');
         }
         error_log('[hq/ai_briefing] ' . $e->getMessage() . "\n" . $e->getTraceAsString());
-        echo json_encode(['error' => 'Briefing gagal: ' . $e->getMessage()]);
+        apiErr($e, 'Briefing gagal. Silakan coba lagi.');
     }
     exit;
 }

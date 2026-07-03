@@ -214,7 +214,7 @@ if ((!empty($_SERVER['HTTP_X_REQUESTED_WITH']) || !empty($_GET['action'])) && ($
             ]);
         } catch (Throwable $e) {
             if ($db->inTransaction()) $db->rollBack();
-            echo json_encode(['error' => 'Transfer gagal: ' . $e->getMessage()]);
+            apiErr($e, 'Transfer gagal. Silakan coba lagi.');
         }
         exit;
     }

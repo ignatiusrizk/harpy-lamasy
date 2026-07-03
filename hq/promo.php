@@ -227,7 +227,7 @@ if ($action) {
         } catch (Throwable $e) {
             $db->rollBack();
             error_log('[hq promo save] '.$e->getMessage());
-            echo json_encode(['error'=>'Gagal simpan: '.$e->getMessage()]);
+            apiErr($e, 'Gagal simpan. Silakan coba lagi.');
         }
         exit;
     }
@@ -251,7 +251,7 @@ if ($action) {
             echo json_encode(['success'=>true]);
         } catch (Throwable $e) {
             error_log('[hq promo delete] '.$e->getMessage());
-            echo json_encode(['error'=>'Gagal hapus: '.$e->getMessage()]);
+            apiErr($e, 'Gagal hapus. Silakan coba lagi.');
         }
         exit;
     }
@@ -309,7 +309,7 @@ if ($action) {
             }
             echo json_encode(['success'=>true, 'generated'=>$generated]);
         } catch (Throwable $e) {
-            echo json_encode(['error'=>'Gagal: '.$e->getMessage()]);
+            apiErr($e, 'Gagal. Silakan coba lagi.');
         }
         exit;
     }

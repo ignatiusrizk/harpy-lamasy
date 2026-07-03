@@ -144,7 +144,7 @@ if ($action !== '') {
         }
         echo json_encode(['ok'=>false, 'error'=>'Unknown action']); exit;
     } catch (Throwable $e) {
-        echo json_encode(['ok'=>false, 'error'=>$e->getMessage()]); exit;
+        error_log('[apiErr] ' . $e->getMessage()); echo json_encode(['ok'=>false, 'error'=>'Terjadi kesalahan sistem. Silakan coba lagi.']); exit;
     }
 }
 

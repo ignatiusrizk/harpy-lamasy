@@ -110,7 +110,7 @@ if ($action) {
         try {
             $rows = TenantQuery::raw($sql, $params);
         } catch (Throwable $e) {
-            echo json_encode(['error'=>'Query gagal: '.$e->getMessage()]); exit;
+            apiErr($e, 'Query gagal. Silakan coba lagi.'); exit;
         }
 
         try {
@@ -827,7 +827,7 @@ if ($action) {
             logAudit('note_add', 'order#'.$oidv, mb_substr($catatan,0,80));
             echo json_encode(['ok'=>true, 'id'=>(int)$db->lastInsertId()]);
         } catch (Throwable $e) {
-            echo json_encode(['error'=>'Gagal simpan catatan: '.$e->getMessage()]);
+            apiErr($e, 'Gagal simpan catatan. Silakan coba lagi.');
         }
         exit;
     }

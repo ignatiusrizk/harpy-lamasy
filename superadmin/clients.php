@@ -183,7 +183,7 @@ if ($action) {
             echo json_encode(['success' => true, 'new_balance' => $newBal]);
         } catch (Throwable $e) {
             $db->rollBack();
-            echo json_encode(['error' => 'Gagal topup: ' . $e->getMessage()]);
+            apiErr($e, 'Gagal topup. Silakan coba lagi.');
         }
         exit;
     }
@@ -226,7 +226,7 @@ if ($action) {
             echo json_encode(['success' => true, 'new_balance' => $newBal]);
         } catch (Throwable $e) {
             $db->rollBack();
-            echo json_encode(['error' => 'Gagal: ' . $e->getMessage()]);
+            apiErr($e, 'Gagal. Silakan coba lagi.');
         }
         exit;
     }
@@ -278,7 +278,7 @@ if ($action) {
             ]);
         } catch (Throwable $e) {
             $db->rollBack();
-            echo json_encode(['error' => 'Gagal: ' . $e->getMessage()]);
+            apiErr($e, 'Gagal. Silakan coba lagi.');
         }
         exit;
     }

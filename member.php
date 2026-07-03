@@ -93,7 +93,7 @@ if ($action) {
             $db->prepare("DELETE FROM hl_member_tier WHERE id=? AND tenant_id=?")->execute([$tierId, $tid]);
             echo json_encode(['success'=>true]);
         } catch (Throwable $e) {
-            echo json_encode(['error'=>'Gagal: '.$e->getMessage()]);
+            apiErr($e, 'Gagal. Silakan coba lagi.');
         }
         exit;
     }

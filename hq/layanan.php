@@ -148,7 +148,7 @@ if ($action === 'import' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         try { logAudit('import', 'layanan_master', "Import {$res['imported']} layanan dari Excel"); } catch (Throwable) {}
         echo json_encode(['ok'=>true, 'result'=>$res]);
     } catch (Throwable $e) {
-        echo json_encode(['error'=>'Gagal baca file: '.$e->getMessage()]);
+        apiErr($e, 'Gagal baca file. Silakan coba lagi.');
     }
     exit;
 }

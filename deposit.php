@@ -171,7 +171,7 @@ if ($action) {
             }
             echo json_encode(['success'=>true]);
         } catch (Throwable $e) {
-            echo json_encode(['error'=>'Gagal: '.$e->getMessage()]);
+            apiErr($e, 'Gagal. Silakan coba lagi.');
         }
         exit;
     }

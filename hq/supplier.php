@@ -68,7 +68,7 @@ if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && ($_SERVER['HTTP_SEC_FETCH_MODE'
 
         echo json_encode(['ok'=>false, 'error'=>'Unknown action']);
     } catch (Throwable $e) {
-        echo json_encode(['ok'=>false, 'error'=>$e->getMessage()]);
+        error_log('[apiErr] ' . $e->getMessage()); echo json_encode(['ok'=>false, 'error'=>'Terjadi kesalahan sistem. Silakan coba lagi.']);
     }
     exit;
 }

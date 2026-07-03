@@ -84,7 +84,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'metho
 
         echo json_encode(['ok' => true, 'id' => $db->lastInsertId(), 'code' => $code]);
     } catch (Throwable $e) {
-        echo json_encode(['ok' => false, 'error' => $e->getMessage()]);
+        error_log('[apiErr] ' . $e->getMessage()); echo json_encode(['ok' => false, 'error' => 'Terjadi kesalahan sistem. Silakan coba lagi.']);
     }
     exit;
 }
@@ -117,7 +117,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'metho
 
         echo json_encode(['ok' => true]);
     } catch (Throwable $e) {
-        echo json_encode(['ok' => false, 'error' => $e->getMessage()]);
+        error_log('[apiErr] ' . $e->getMessage()); echo json_encode(['ok' => false, 'error' => 'Terjadi kesalahan sistem. Silakan coba lagi.']);
     }
     exit;
 }
@@ -145,7 +145,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'metho
 
         echo json_encode(['ok' => true]);
     } catch (Throwable $e) {
-        echo json_encode(['ok' => false, 'error' => $e->getMessage()]);
+        error_log('[apiErr] ' . $e->getMessage()); echo json_encode(['ok' => false, 'error' => 'Terjadi kesalahan sistem. Silakan coba lagi.']);
     }
     exit;
 }
@@ -165,7 +165,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'metho
 
         echo json_encode(['ok' => true]);
     } catch (Throwable $e) {
-        echo json_encode(['ok' => false, 'error' => $e->getMessage()]);
+        error_log('[apiErr] ' . $e->getMessage()); echo json_encode(['ok' => false, 'error' => 'Terjadi kesalahan sistem. Silakan coba lagi.']);
     }
     exit;
 }

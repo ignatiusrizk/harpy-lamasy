@@ -209,7 +209,7 @@ if ($action) {
             echo json_encode(['success'=>true, 'id'=>$rid]);
         } catch (Throwable $e) {
             $db->rollBack();
-            echo json_encode(['error'=>'Gagal: ' . $e->getMessage()]);
+            apiErr($e, 'Gagal. Silakan coba lagi.');
         }
         exit;
     }
@@ -244,7 +244,7 @@ if ($action) {
             logRoleAction($db, $tid, $uid, 'delete_role', $rid);
             echo json_encode(['success'=>true]);
         } catch (Throwable $e) {
-            echo json_encode(['error'=>'Gagal: '.$e->getMessage()]);
+            apiErr($e, 'Gagal. Silakan coba lagi.');
         }
         exit;
     }

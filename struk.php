@@ -74,7 +74,7 @@ if ($action) {
             echo json_encode(['success' => true]);
         } catch (Throwable $e) {
             error_log('[struk.php save] ' . $e->getMessage());
-            echo json_encode(['error' => 'Gagal simpan: ' . $e->getMessage()]);
+            apiErr($e, 'Gagal simpan. Silakan coba lagi.');
         }
         exit;
     }

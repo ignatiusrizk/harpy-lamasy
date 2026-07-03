@@ -308,7 +308,7 @@ if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && ($_SERVER['HTTP_SEC_FETCH_MODE'
             $s->execute([$tid]);
             echo json_encode(['ok'=>true, 'data'=>$s->fetchAll(PDO::FETCH_ASSOC)]);
         } catch (Throwable $e) {
-            echo json_encode(['ok'=>false, 'error'=>$e->getMessage()]);
+            error_log('[apiErr] ' . $e->getMessage()); echo json_encode(['ok'=>false, 'error'=>'Terjadi kesalahan sistem. Silakan coba lagi.']);
         }
         exit;
     }
@@ -342,7 +342,7 @@ if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && ($_SERVER['HTTP_SEC_FETCH_MODE'
             logAudit('tambah','keuangan_coa',"Akun COA: $kode $nama ($tipe)");
             echo json_encode(['ok'=>true, 'data'=>['id'=>$newId,'kode'=>$kode,'nama'=>$nama,'tipe'=>$tipe]]);
         } catch (Throwable $e) {
-            echo json_encode(['error'=>'Gagal: '.$e->getMessage()]);
+            apiErr($e, 'Gagal. Silakan coba lagi.');
         }
         exit;
     }
@@ -360,7 +360,7 @@ if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && ($_SERVER['HTTP_SEC_FETCH_MODE'
         require_once ROOT . '/core/MigrationImporter.php';
         try {
             $rows = MigrationImporter::parseFile($f['tmp_name'], $ext);
-        } catch (Throwable $e) { echo json_encode(['error'=>'Gagal baca file: '.$e->getMessage()]); exit; }
+        } catch (Throwable $e) { apiErr($e, 'Gagal baca file. Silakan coba lagi.'); exit; }
         if (empty($rows)) { echo json_encode(['error'=>'File kosong.']); exit; }
 
         // COA aset tetap & outlet untuk matching

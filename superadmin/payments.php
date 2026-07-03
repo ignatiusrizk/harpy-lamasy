@@ -360,7 +360,7 @@ if ($action) {
 
         } catch (Throwable $e) {
             $db->rollBack();
-            echo json_encode(['error' => 'Gagal konfirmasi: ' . $e->getMessage()]);
+            apiErr($e, 'Gagal konfirmasi. Silakan coba lagi.');
         }
         exit;
     }
@@ -466,7 +466,7 @@ if ($action) {
             $db->commit();
         } catch (Throwable $e) {
             $db->rollBack();
-            echo json_encode(['error' => 'DB error: ' . $e->getMessage()]); exit;
+            apiErr($e, 'DB error. Silakan coba lagi.'); exit;
         }
 
         logSuperAdminAction('payment_refund', (int)$payment['tenant_id'], "Refund $orderId");

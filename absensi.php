@@ -396,7 +396,7 @@ if ($action) {
             logAudit('handover_submit', 'shift', "$tgl/$shift");
             echo json_encode(['ok'=>true, 'id'=>(int)$db->lastInsertId()]);
         } catch (Throwable $e) {
-            echo json_encode(['error'=>'Gagal simpan handover: '.$e->getMessage()]);
+            apiErr($e, 'Gagal simpan handover. Silakan coba lagi.');
         }
         exit;
     }

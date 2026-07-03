@@ -149,7 +149,7 @@ if ($action) {
             hqAudit($db, $tid, $uid, $newState ? 'activate_karyawan' : 'deactivate_karyawan', "karyawan=$kid");
             echo json_encode(['success'=>true]);
         } catch (Throwable $e) {
-            echo json_encode(['error'=>'Gagal: '.$e->getMessage()]);
+            apiErr($e, 'Gagal. Silakan coba lagi.');
         }
         exit;
     }
@@ -308,7 +308,7 @@ if ($action) {
         } catch (Throwable $e) {
             $db->rollBack();
             error_log('[hq mutasi] '.$e->getMessage());
-            echo json_encode(['error'=>'Gagal mutasi: '.$e->getMessage()]);
+            apiErr($e, 'Gagal mutasi. Silakan coba lagi.');
         }
         exit;
     }
@@ -365,7 +365,7 @@ if ($action) {
             echo json_encode(['success'=>true]);
         } catch (Throwable $e) {
             error_log('[hq add_assignment] '.$e->getMessage());
-            echo json_encode(['error'=>'Gagal: '.$e->getMessage()]);
+            apiErr($e, 'Gagal. Silakan coba lagi.');
         }
         exit;
     }
@@ -466,7 +466,7 @@ if ($action) {
         } catch (Throwable $e) {
             $db->rollBack();
             error_log('[hq create karyawan] '.$e->getMessage());
-            echo json_encode(['error'=>'Gagal simpan: '.$e->getMessage()]);
+            apiErr($e, 'Gagal simpan. Silakan coba lagi.');
         }
         exit;
     }
@@ -488,7 +488,7 @@ if ($action) {
             echo json_encode(['success'=>true]);
         } catch (Throwable $e) {
             error_log('[hq remove_assignment] '.$e->getMessage());
-            echo json_encode(['error'=>'Gagal: '.$e->getMessage()]);
+            apiErr($e, 'Gagal. Silakan coba lagi.');
         }
         exit;
     }

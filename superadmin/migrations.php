@@ -144,7 +144,7 @@ if ($action) {
             $db->prepare("UPDATE hl_migration_jobs SET raw_headers=?, total_rows=? WHERE id=?")
                ->execute([json_encode($headers), count($all), $jobId]);
         } catch (Throwable $e) {
-            echo json_encode(['error'=>'Parse file gagal: '.$e->getMessage()]); exit;
+            apiErr($e, 'Parse file gagal. Silakan coba lagi.'); exit;
         }
 
         logSuperAdminAction('migration_assisted_create', $tenantId,
