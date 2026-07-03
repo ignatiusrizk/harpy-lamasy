@@ -19,7 +19,7 @@
   border-right: 1px solid rgba(53,232,213,.12);
 }
 .hq-side-brand {
-  padding: 14px 16px 12px;
+  padding: calc(14px + env(safe-area-inset-top, 0px)) 16px 12px;
   display: flex; flex-direction: column; gap: 2px;
   border-bottom: 1px solid rgba(255,255,255,.06);
 }

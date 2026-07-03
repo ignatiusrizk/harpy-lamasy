@@ -646,7 +646,7 @@ body { font-family: var(--font); background: var(--off); color: var(--dark); min
   box-shadow: 1px 0 0 rgba(27,45,90,.02);
 }
 .ol-side-brand {
-  padding: 16px 16px 14px;
+  padding: calc(16px + env(safe-area-inset-top, 0px)) 16px 14px;
   border-bottom: 1px solid #EEF1F8;
 }
 .ol-side-logo {
