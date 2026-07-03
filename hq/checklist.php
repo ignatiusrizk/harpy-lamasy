@@ -26,6 +26,7 @@ if ($action === 'templates') {
 // ── API: save template ───────────────────────────────
 if ($action === 'save' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     header('Content-Type: application/json');
+    verifyCsrf();
     if (!$canEdit) { echo json_encode(['error'=>'Akses ditolak']); exit; }
     $d = json_decode(file_get_contents('php://input'), true) ?: [];
     try {
@@ -40,6 +41,7 @@ if ($action === 'save' && $_SERVER['REQUEST_METHOD'] === 'POST') {
 // ── API: delete template ─────────────────────────────
 if ($action === 'delete' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     header('Content-Type: application/json');
+    verifyCsrf();
     if (!$canEdit) { echo json_encode(['error'=>'Akses ditolak']); exit; }
     $d = json_decode(file_get_contents('php://input'), true) ?: [];
     try {
