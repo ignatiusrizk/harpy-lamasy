@@ -145,14 +145,13 @@ $pendingCount = DeleteRequest::pendingCount(TenantResolver::id());
 <?php renderTopbar('approval-inbox'); ?>
 
 <div class="hl-main">
-  <div style="background:#FEF3C7;border:1px solid #FDE68A;border-radius:10px;padding:14px 18px;margin-bottom:18px;font-size:13.5px;color:#92400E;line-height:1.55">
-    💡 <strong>Approval Inbox</strong> — pusatkan semua permintaan yang butuh persetujuan owner.
-    Saat ini menampilkan permintaan hapus transaksi/kas/pelanggan dari kasir.
-    Approve = data dihapus permanen. Reject = data tetap, request ditandai ditolak.
+  <div class="inbox-hint">
+    💡 <strong>Permintaan hapus dari kasir</strong> (transaksi/kas/pelanggan) menunggu keputusanmu.
+    <span class="inbox-hint-more">Approve = data dihapus permanen · Reject = data tetap ada.</span>
   </div>
 
   <!-- Tabs status -->
-  <div style="display:flex;gap:8px;margin-bottom:14px;border-bottom:2px solid #E5E7EB;flex-wrap:wrap">
+  <div class="inbox-tabs">
     <button class="tab-btn active" data-status="pending" onclick="switchTab('pending')">
       ⏳ Menunggu <span class="tab-count" id="cntPending"><?= $pendingCount ?></span>
     </button>
@@ -168,9 +167,12 @@ $pendingCount = DeleteRequest::pendingCount(TenantResolver::id());
 </div>
 
 <style>
-.tab-btn{background:none;border:none;padding:10px 14px;font-size:13px;color:#6B7280;cursor:pointer;border-bottom:3px solid transparent;font-weight:600}
+.inbox-hint{background:#FEF3C7;border:1px solid #FDE68A;border-radius:10px;padding:12px 14px;margin-bottom:16px;font-size:12.5px;color:#92400E;line-height:1.5}
+.inbox-hint-more{display:block;margin-top:3px;font-size:11.5px;color:#B45309}
+.inbox-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));margin-bottom:14px;border-bottom:2px solid #E5E7EB}
+.tab-btn{background:none;border:none;padding:10px 4px;font-size:13px;color:#6B7280;cursor:pointer;border-bottom:3px solid transparent;font-weight:600;white-space:nowrap;text-align:center}
 .tab-btn.active{color:#0F7B6C;border-bottom-color:#0F7B6C}
-.tab-count{display:inline-block;background:#DC2626;color:white;border-radius:100px;padding:1px 8px;font-size:11px;margin-left:4px;font-weight:700}
+.tab-count{display:inline-block;background:#DC2626;color:white;border-radius:100px;padding:1px 7px;font-size:11px;margin-left:3px;font-weight:700}
 .tab-btn.active .tab-count{background:#0F7B6C}
 .req-card{border:1px solid #E5E7EB;border-radius:10px;padding:14px 16px;margin-bottom:10px;background:#fff}
 .req-card.pending{border-left:4px solid #F59E0B}

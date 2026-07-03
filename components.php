@@ -1119,27 +1119,27 @@ function renderTopbar(string $activePage = '', bool $minimalMode = false): void 
         <?php endif; ?>
 
         <script>
-        // ── Side menu collapsible groups (persist in localStorage) ──
+        // ── Side menu collapsible groups — DEFAULT TERTUTUP (menu kepanjangan kalau
+        //    semua kebuka). Yang terbuka: group halaman aktif + yang user buka manual
+        //    (disimpan sbg set "expanded" di localStorage; key lama _collapsed_v1 diabaikan). ──
         (function() {
-          const STORAGE_KEY = 'lamasy_sidemenu_collapsed_v1';
-          // Get collapsed set
-          function getCollapsed() {
+          const STORAGE_KEY = 'lamasy_sidemenu_expanded_v2';
+          function getExpanded() {
             try { return new Set(JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]')); }
             catch (e) { return new Set(); }
           }
-          function saveCollapsed(set) {
+          function saveExpanded(set) {
             try { localStorage.setItem(STORAGE_KEY, JSON.stringify([...set])); } catch (e) {}
           }
-          // Apply state pada load
-          const collapsed = getCollapsed();
+          const expanded = getExpanded();
           document.querySelectorAll('.ol-side-group-toggle').forEach(btn => {
             const groupKey = btn.dataset.group;
             const items = document.querySelector(`[data-group-items="${groupKey}"]`);
             if (!items) return;
-            // Auto-expand kalau group punya active page (override saved collapsed)
+            // Terbuka hanya kalau: punya active page ATAU user pernah buka manual
             const hasActive = btn.classList.contains('has-active');
-            const isCollapsed = collapsed.has(groupKey) && !hasActive;
-            if (isCollapsed) {
+            const isOpen = hasActive || expanded.has(groupKey);
+            if (!isOpen) {
               items.classList.add('ol-side-collapsed');
               btn.setAttribute('aria-expanded', 'false');
               btn.classList.add('is-collapsed');
@@ -1149,9 +1149,9 @@ function renderTopbar(string $activePage = '', bool $minimalMode = false): void 
               items.classList.toggle('ol-side-collapsed', willCollapse);
               btn.classList.toggle('is-collapsed', willCollapse);
               btn.setAttribute('aria-expanded', willCollapse ? 'false' : 'true');
-              const s = getCollapsed();
-              willCollapse ? s.add(groupKey) : s.delete(groupKey);
-              saveCollapsed(s);
+              const s = getExpanded();
+              willCollapse ? s.delete(groupKey) : s.add(groupKey);
+              saveExpanded(s);
             });
           });
         })();
