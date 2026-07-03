@@ -644,7 +644,12 @@ async function refreshPreview() {
     // Scale agar muat wadah + tinggi wadah mengikuti hasil scale
     const wrap = frame.closest('.preview-iframe-wrap');
     function fitPreview(){
+      // Ukur lebar wadah SAAT iframe menyusut — kalau tidak, wadah/card ikut melar
+      // oleh iframe lebar (clientWidth terukur 794 padahal layar 360).
+      frame.style.width = '10px';
+      void wrap.offsetWidth; // force reflow
       const availW = Math.max(100, wrap.clientWidth - 2);
+      frame.style.width = pxW + 'px';
       const scale = Math.min(1, availW / pxW);
       frame.style.transform = 'scale(' + scale + ')';
       frame.style.transformOrigin = 'top center';
