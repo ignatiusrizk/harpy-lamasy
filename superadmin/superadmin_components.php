@@ -680,7 +680,14 @@ function saRenderHead(string $title = 'Super Admin'): void {
     }
     /* ── Safe-area (APK/notch) — jangan ketutup status bar ── */
     .sa-sidebar-brand { padding-top: calc(18px + env(safe-area-inset-top, 0px)); }
-    .sa-topbar { padding-top: env(safe-area-inset-top, 0px); }
+    /* Topbar: tumbuh setinggi status bar (safe-area) supaya isi (hamburger/judul)
+       tak mepet/ketutup status bar saat webview edge-to-edge (viewport-fit=cover). */
+    .sa-topbar {
+      box-sizing: border-box;
+      height: auto;
+      min-height: calc(60px + env(safe-area-inset-top, 0px));
+      padding-top: env(safe-area-inset-top, 0px);
+    }
     /* ── lmx de-native controls — override tema GELAP SA (panel default light) ── */
     .lmx-btn {
       background: rgba(28,37,64,.5) !important; border: 1px solid var(--crease) !important;
