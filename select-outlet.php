@@ -25,6 +25,10 @@ $tid  = (int)$_SESSION['tenant_id'];
 $uid  = (int)$_SESSION['user_id'];
 $isOwnerOrManager = TenantResolver::isAdminLevel();
 
+// CSRF token (pakai key yg sama dgn tenant_guard supaya konsisten pasca-pilih outlet)
+if (empty($_SESSION['csrf_token'])) $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+$csrfToken = $_SESSION['csrf_token'];
+
 // ── Ambil outlet sesuai role ──────────────────────────
 // getAssignedOutlets() handle owner vs non-owner automatically
 $outlets = TenantResolver::getAssignedOutlets();
@@ -37,6 +41,11 @@ if (empty($outlets) && !$isOwnerOrManager) {
 
 // ── Handle outlet selection POST ──────────────────────
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['outlet_id'])) {
+    // Verify CSRF sebelum ubah session outlet
+    if (!hash_equals($_SESSION['csrf_token'] ?? '', $_POST['_csrf'] ?? '')) {
+        http_response_code(403);
+        $postError = 'Sesi tidak valid, coba muat ulang halaman.';
+    } else {
     $oid = (int)$_POST['outlet_id'];
     // Validasi: outlet harus ada di list yang user diizinkan akses
     $allowedIds = array_column($outlets, 'id');
@@ -47,6 +56,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['outlet_id'])) {
         header('Location: /dashboard'); exit;
     }
     $postError = 'Outlet tidak valid atau Anda tidak ditugaskan ke outlet ini.';
+    }
 }
 
 // Tambah orders_today untuk display
@@ -303,6 +313,7 @@ html, body {
     <div class="outlet-grid">
       <?php foreach ($outlets as $o): ?>
       <form method="POST" action="">
+        <input type="hidden" name="_csrf" value="<?= htmlspecialchars($csrfToken) ?>"/>
         <input type="hidden" name="outlet_id" value="<?= (int)$o['id'] ?>"/>
         <button type="submit" class="outlet-card <?= $o['is_main'] ? 'is-main' : '' ?>">
           <?php if ($o['is_main']): ?>

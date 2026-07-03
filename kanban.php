@@ -19,6 +19,7 @@ if (!hasPermission('orders.view_all') && !hasPermission('orders.view_own')) {
 $tid = TenantResolver::id();
 $oid = TenantResolver::outletId();
 $action = $_GET['action'] ?? '';
+if ($action === '') { header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0'); header('Pragma: no-cache'); }
 
 // ══════════════════════════════════════════════════════
 // API HANDLERS

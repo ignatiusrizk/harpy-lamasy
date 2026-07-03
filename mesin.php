@@ -27,6 +27,7 @@ $canOperate = hasPermission('mesin.operate') || hasPermission('pos.create');
 $canManage  = hasPermission('mesin.manage') || hasPermission('layanan.edit');
 
 $action = $_GET['action'] ?? '';
+if ($action === '') { header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0'); header('Pragma: no-cache'); }
 if ($action) {
     header('Content-Type: application/json');
     $tid = TenantResolver::id();

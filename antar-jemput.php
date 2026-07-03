@@ -14,6 +14,7 @@ $oid = TenantResolver::outletId();
 $db  = Database::get();
 
 $action = $_GET['action'] ?? '';
+if ($action === '') { header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0'); header('Pragma: no-cache'); }
 $view = $_GET['view'] ?? '';
 $reportDate = $_GET['date'] ?? date('Y-m-d');
 

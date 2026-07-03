@@ -28,6 +28,7 @@ if (!function_exists('getDataFilter')) {
 
 // ── API ───────────────────────────────────────────────
 $action = $_GET['action'] ?? '';
+if ($action === '') { header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0'); header('Pragma: no-cache'); }
 if ($action) {
     // Tangkap PHP fatal supaya tetap return JSON (bukan empty 500)
     register_shutdown_function(function() {
