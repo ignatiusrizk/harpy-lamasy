@@ -59,6 +59,7 @@ if ($action) {
                     VALUES (?,?,?,?,?, ?,?,?,?, ?,?,?)");
                 $st->execute([$judul, $desk, $ctaL, $ctaU, $bg, $imgUrl ?: null, $color, $icon, $aktif, $urut, $starts, $ends]);
             }
+            logSuperAdminAction($id > 0 ? 'banner_update' : 'banner_create', null, "Banner: $judul");
             echo json_encode(['success'=>true]);
         } catch (Throwable $e) {
             echo json_encode(['error'=>'Gagal: '.$e->getMessage()]);
@@ -107,6 +108,7 @@ if ($action) {
         $d = json_decode(file_get_contents('php://input'), true);
         $id = (int)($d['id'] ?? 0);
         $db->prepare("DELETE FROM saas_banners WHERE id=?")->execute([$id]);
+        logSuperAdminAction('banner_delete', null, "Hapus banner #$id");
         echo json_encode(['success'=>true]);
         exit;
     }
