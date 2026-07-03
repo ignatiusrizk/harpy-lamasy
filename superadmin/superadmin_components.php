@@ -7,7 +7,7 @@
 function saRenderHead(string $title = 'Super Admin'): void {
     $csrf = saGetCsrf(); ?>
     <meta charset="UTF-8"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
     <meta name="csrf-token" content="<?= htmlspecialchars($csrf) ?>"/>
     <link rel="icon" type="image/png" href="/assets/icon-192.png?v=<?= @filemtime(dirname(__DIR__).'/assets/icon-192.png') ?: '3' ?>"/>
     <link rel="apple-touch-icon" href="/assets/apple-touch-icon-180.png?v=<?= @filemtime(dirname(__DIR__).'/assets/apple-touch-icon-180.png') ?: '3' ?>"/>
@@ -678,6 +678,31 @@ function saRenderHead(string $title = 'Super Admin'): void {
       border-radius: 6px;
       animation: saSkeleton .9s ease-in-out alternate infinite;
     }
+    /* ── Safe-area (APK/notch) — jangan ketutup status bar ── */
+    .sa-sidebar-brand { padding-top: calc(18px + env(safe-area-inset-top, 0px)); }
+    .sa-topbar { padding-top: env(safe-area-inset-top, 0px); }
+    /* ── lmx de-native controls — override tema GELAP SA (panel default light) ── */
+    .lmx-btn {
+      background: rgba(28,37,64,.5) !important; border: 1px solid var(--crease) !important;
+      color: var(--glow) !important; border-radius: 8px; font-family: var(--font);
+    }
+    .lmx-btn .lmx-car { color: var(--ash) !important; }
+    .lmx-btn .lmx-lbl.ph { color: var(--ash-dim) !important; }
+    .lmx-panel {
+      background: var(--slate) !important; border: 1px solid var(--crease) !important;
+      box-shadow: 0 12px 40px rgba(0,0,0,.55) !important;
+    }
+    .lmx-opt { color: var(--ink-soft) !important; }
+    .lmx-opt:hover { background: var(--slate-elev) !important; color: var(--glow) !important; }
+    .lmx-opt.sel { background: var(--teal-faint) !important; color: var(--teal) !important; }
+    .lmx-empty { color: var(--ash-dim) !important; }
+    .lmx-cal-head, .lmx-cal-title { color: var(--glow) !important; }
+    .lmx-cal-head button { background: var(--slate-elev) !important; color: var(--glow) !important; }
+    .lmx-cal-dow { color: var(--ash-dim) !important; }
+    .lmx-cal-day { color: var(--ink-soft) !important; }
+    .lmx-cal-day:hover { background: var(--slate-elev) !important; }
+    .lmx-cal-day.sel { background: var(--teal) !important; color: var(--obsidian) !important; }
+    .lmx-cal-day.today { outline: 1.5px solid var(--teal) !important; }
     </style>
     <?php
 }
@@ -795,6 +820,7 @@ function saRenderNavClose(): void { ?>
     </div><!-- /.sa-main -->
 
     <div class="sa-toast" id="saToast"></div>
+    <?php include dirname(__DIR__) . '/lmx_enhancer.php'; /* de-native select/date → custom (tema gelap via override di saRenderHead) */ ?>
     <script>
     function saCsrf(){ return document.querySelector('meta[name="csrf-token"]')?.content||''; }
     function saShowToast(msg, type='success'){
