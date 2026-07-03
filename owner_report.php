@@ -152,6 +152,11 @@ if ($action === 'preview') {
 <head>
 <?php renderHead('Laporan Owner'); ?>
 <style>
+.or-actions{display:flex;gap:8px;flex-wrap:wrap}
+@media(max-width:680px){
+  .or-actions{width:100%;flex-direction:column}
+  .or-actions .hl-btn{width:100%;justify-content:center}
+}
 .feed-item{background:#fff;border:1px solid #E5E9F2;border-radius:10px;padding:14px 16px;margin-bottom:10px;cursor:pointer;transition:box-shadow .15s,transform .1s}
 .feed-item:hover{box-shadow:0 2px 8px rgba(0,0,0,.06)}
 .feed-item.unread{background:#FEF9E7;border-left:4px solid #F59E0B}
@@ -198,7 +203,7 @@ if ($action === 'preview') {
       <h1 style="font-size:1.3rem;font-weight:800;color:var(--navy)">📨 Notifikasi & Laporan</h1>
       <p style="font-size:13px;color:var(--gray)">Feed laporan harian + alert anomali outlet <span id="unreadBadge"></span></p>
     </div>
-    <div style="display:flex;gap:8px">
+    <div class="or-actions">
       <button class="hl-btn hl-btn-outline hl-btn-sm" onclick="markAllRead()">✓ Tandai semua dibaca</button>
       <button class="hl-btn hl-btn-outline hl-btn-sm" onclick="openPrefs()">⚙️ Pengaturan Notifikasi</button>
       <button class="hl-btn hl-btn-primary hl-btn-sm" onclick="sendNow()">📊 Kirim Laporan Sekarang</button>
@@ -311,7 +316,7 @@ async function loadFeed(){
     const d = await r.json();
     if (d.error){ box.innerHTML = `<div style="text-align:center;padding:40px;color:#EF4444">⚠️ ${esc(d.error)}</div>`; return; }
     document.getElementById('unreadBadge').innerHTML = d.unread > 0
-      ? `<span style="background:#EF4444;color:#fff;font-size:11px;font-weight:700;padding:2px 8px;border-radius:100px;margin-left:6px">${d.unread} belum dibaca</span>` : '';
+      ? `<span style="background:#EF4444;color:#fff;font-size:11px;font-weight:700;padding:2px 8px;border-radius:100px;margin-left:6px;display:inline-block;white-space:nowrap">${d.unread} belum dibaca</span>` : '';
     if (!d.rows.length){
       box.innerHTML = `<div class="hl-empty-v2">
         <div class="e-icon">📭</div>
