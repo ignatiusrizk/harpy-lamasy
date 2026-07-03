@@ -191,8 +191,34 @@ if (!function_exists('requirePermission')) {
     }
 }
 if (!function_exists('logAudit')) {
-    function logAudit(string $aksi, string $modul, string $ket = ''): void {
-        // HQ context tidak punya audit log per-outlet — silent no-op.
+    function logAudit(string $aksi, string $modul, string $ket = '', ?string $refId = null): void {
+        // Aksi HQ = master-data lintas outlet (katalog, harga, payroll, checklist).
+        // Justru paling perlu jejak audit → tulis dgn scope tenant, outlet_id NULL.
+        global $hqTenant;
+        $tid  = (int)($hqTenant['id'] ?? (class_exists('TenantResolver') ? TenantResolver::id() : 0));
+        if (!$tid) return;
+        $user = $_SESSION['hl_user'] ?? [];
+        try {
+            $st = Database::get()->prepare(
+                "INSERT INTO hl_audit_log
+                   (tenant_id, outlet_id, user_id, user_nama, user_role, modul, aksi, keterangan, ref_id, ip_address, user_agent, created_at)
+                 VALUES (?, NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())"
+            );
+            $st->execute([
+                $tid,
+                $user['id']        ?? null,
+                $user['nama']      ?? null,
+                $user['role_nama'] ?? $user['role'] ?? null,
+                $modul,
+                $aksi,
+                $ket,
+                $refId,
+                $_SERVER['REMOTE_ADDR'] ?? null,
+                substr($_SERVER['HTTP_USER_AGENT'] ?? '-', 0, 255),
+            ]);
+        } catch (Throwable) {
+            // Jangan gagalkan request karena audit gagal
+        }
     }
 }
 if (!function_exists('requireNotGrace')) {
