@@ -520,11 +520,11 @@ if ($action) {
       <div class="hl-form-row" id="extraFields">
         <div class="hl-form-group">
           <label class="hl-label">Min. Transaksi (Rp)</label>
-          <input type="number" id="p_min" class="hl-input" placeholder="0" min="0" step="1000"/>
+          <input type="number" id="p_min" class="lm-rp hl-input" placeholder="0" min="0" step="1000"/>
         </div>
         <div class="hl-form-group" id="maksDiskontWrap">
           <label class="hl-label">Maks. Diskon (Rp) <span style="color:var(--gray);font-weight:400">(0=unlimited)</span></label>
-          <input type="number" id="p_maks" class="hl-input" placeholder="0" min="0" step="1000"/>
+          <input type="number" id="p_maks" class="lm-rp hl-input" placeholder="0" min="0" step="1000"/>
         </div>
       </div>
       <div class="hl-form-row">

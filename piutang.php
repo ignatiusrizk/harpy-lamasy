@@ -540,7 +540,7 @@ require_once ROOT . '/core/CoinLedger.php';
   </div>
   <div class="fld">
     <label>Jumlah Rp</label>
-    <input type="number" id="bayarJml" min="0" step="1000">
+    <input class="lm-rp" type="number" id="bayarJml" min="0" step="1000">
   </div>
   <div style="display:flex;gap:8px;justify-content:flex-end">
     <button class="hl-btn hl-btn-outline" onclick="closeModal('bayarModal')">Batal</button>

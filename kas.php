@@ -420,7 +420,7 @@ tfoot td.td-jumlah{font-family:var(--mono)}
     <h3 style="margin:0 0 10px">🧾 Hasil Baca Struk</h3>
     <img id="ksImg" style="max-width:100%;max-height:180px;border-radius:8px;display:block;margin:0 auto 10px" src="" alt="Struk"/>
     <label class="hl-label">Jumlah (Rp)</label>
-    <input type="number" id="ksJumlah" class="hl-input" min="1" style="margin-bottom:8px">
+    <input type="number" id="ksJumlah" class="lm-rp hl-input" min="1" style="margin-bottom:8px">
     <label class="hl-label">Tanggal</label>
     <input type="date" id="ksTanggal" class="hl-input" style="margin-bottom:8px">
     <label class="hl-label">Keterangan</label>

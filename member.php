@@ -212,7 +212,7 @@ if ($action) {
       <div class="hl-form-row">
         <div class="hl-form-group">
           <label class="hl-label">Biaya Pendaftaran (Rp) <span style="font-size:11px;color:var(--gray);font-weight:400">— 0 = gratis</span></label>
-          <input type="number" id="tf_biaya" class="hl-input" value="0" min="0" step="1000"/>
+          <input type="number" id="tf_biaya" class="lm-rp hl-input" value="0" min="0" step="1000"/>
         </div>
         <div class="hl-form-group">
           <label class="hl-label">Diskon Otomatis (%)</label>

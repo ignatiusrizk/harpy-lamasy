@@ -351,7 +351,7 @@ if ($action) {
           <div id="zonaList" style="margin-bottom:10px">⏳</div>
           <div style="display:flex;gap:6px">
             <input type="text" id="zona_nama_new" placeholder="Zona 1 - radius 3km" class="hl-input" style="flex:1">
-            <input type="number" id="zona_fee_new" placeholder="Rp" class="hl-input" style="width:120px">
+            <input type="number" id="zona_fee_new" placeholder="Rp" class="lm-rp hl-input" style="width:120px">
             <button class="hl-btn hl-btn-primary hl-btn-sm" onclick="addZona()">+ Tambah</button>
           </div>
         </div>

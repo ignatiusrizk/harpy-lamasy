@@ -185,6 +185,32 @@ function renderGlobalJsHelpers(): void { ?>
       } catch(e){ return false; }
     };
 
+    // ── Separator ribuan: WebView Android tanpa ICU lengkap men-format
+    //    (1000).toLocaleString('id-ID') jadi "1000" polos (commit 2b71a1e). Polyfill
+    //    prototype HANYA saat rusak → semua pemakaian toLocaleString('id-ID') di
+    //    seluruh app langsung benar tanpa edit per-file. Browser normal tak tersentuh. ──
+    window.grpRibu = function(n){ return String(Math.round(parseFloat(n) || 0)).replace(/\B(?=(\d{3})+(?!\d))/g, '.'); };
+    (function(){
+      try {
+        if ((1000).toLocaleString('id-ID').indexOf('.') !== -1) return; // ICU sehat
+        var orig = Number.prototype.toLocaleString;
+        Number.prototype.toLocaleString = function(loc){
+          if (loc && String(loc).toLowerCase().indexOf('id') === 0) {
+            var n = Number(this);
+            if (!isFinite(n)) return String(n);
+            var neg = n < 0 ? '-' : '';
+            n = Math.abs(n);
+            var i = Math.floor(n);
+            var s = String(i).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+            var d = n - i;
+            if (d > 0) s += ',' + String(d.toFixed(2)).slice(2).replace(/0+$/, '');
+            return neg + s;
+          }
+          return orig.apply(this, arguments);
+        };
+      } catch(e){}
+    })();
+
     // ── LMX de-native controls: auto-ganti <select> & <input type=date/month> native OS
     //    jadi kontrol custom (panel fixed di body, gaya app) di SEMUA page. Native element
     //    disembunyikan tapi tetap di DOM & sinkron 2 arah → kode existing (.value/onchange)
@@ -381,6 +407,52 @@ function renderGlobalJsHelpers(): void { ?>
         });
       }
 
+      // ── INPUT UANG (.lm-rp): tampilkan separator ribuan live saat ketik.
+      //    Input asli disembunyikan tapi tetap pegang nilai MENTAH (digit polos) —
+      //    kode existing yang baca/set .value tak berubah (pola sama dgn select di atas). ──
+      function rpFmt(v){
+        v = String(v == null ? '' : v).replace(/\D/g, '');
+        return v ? v.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : '';
+      }
+      function enhanceRp(inp){
+        if (inp.dataset.lmrp) return;
+        inp.dataset.lmrp = '1';
+        var vis = document.createElement('input');
+        vis.type = 'text'; vis.inputMode = 'numeric'; vis.autocomplete = 'off';
+        vis.className = (inp.className || '').replace(/\blm-rp\b/, '').trim();
+        if (inp.style && inp.style.cssText) vis.style.cssText = inp.style.cssText;
+        if (inp.placeholder) vis.placeholder = inp.placeholder;
+        inp.after(vis);
+        [['position','fixed'],['top','0'],['left','0'],['width','2px'],['height','2px'],
+         ['opacity','0'],['pointer-events','none'],['margin','0'],['padding','0'],
+         ['border','0'],['z-index','-1'],['min-width','0'],['max-width','2px']
+        ].forEach(function(kv){ inp.style.setProperty(kv[0], kv[1], 'important'); });
+        var lastRaw = null;
+        function fromRaw(){
+          var raw = String(inp.value == null ? '' : inp.value).replace(/\D/g, '');
+          if (raw === lastRaw) return;
+          lastRaw = raw;
+          vis.value = rpFmt(raw);
+          vis.disabled = !!inp.disabled;
+        }
+        fromRaw();
+        inp.addEventListener('change', fromRaw);
+        var iv = setInterval(function(){
+          if (!document.contains(inp)){ clearInterval(iv); vis.remove(); return; }
+          if (document.activeElement !== vis) fromRaw();
+        }, 600);
+        vis.addEventListener('input', function(){
+          var raw = vis.value.replace(/\D/g, '');
+          vis.value = rpFmt(raw);
+          lastRaw = raw;
+          inp.value = raw;
+          inp.dispatchEvent(new Event('input', { bubbles: true }));
+        });
+        vis.addEventListener('blur', function(){
+          inp.dispatchEvent(new Event('change', { bubbles: true }));
+        });
+      }
+
       var scanQueued = false;
       function scan(){
         scanQueued = false;
@@ -388,6 +460,7 @@ function renderGlobalJsHelpers(): void { ?>
           document.querySelectorAll('select').forEach(enhanceSelect);
           document.querySelectorAll('input[type=date]').forEach(enhanceDate);
           document.querySelectorAll('input[type=month]').forEach(enhanceMonth);
+          document.querySelectorAll('input.lm-rp, input[data-rp]').forEach(enhanceRp);
         } catch(e){}
       }
       window.lmxScan = scan;

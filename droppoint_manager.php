@@ -498,11 +498,11 @@ if ($action) {
       </select>
     </div>
     <div class="fld-row">
-      <div class="fld" data-fld="per_kg"><label>Komisi per kg (Rp)</label><input type="number" id="mPerKg" min="0" value="0"></div>
+      <div class="fld" data-fld="per_kg"><label>Komisi per kg (Rp)</label><input class="lm-rp" type="number" id="mPerKg" min="0" value="0"></div>
       <div class="fld" data-fld="persen"><label>Persen (%)</label><input type="number" id="mPersen" min="0" max="100" step="0.5" value="0"></div>
     </div>
     <div class="fld-row">
-      <div class="fld" data-fld="flat"><label>Flat per order (Rp)</label><input type="number" id="mFlat" min="0" value="0"></div>
+      <div class="fld" data-fld="flat"><label>Flat per order (Rp)</label><input class="lm-rp" type="number" id="mFlat" min="0" value="0"></div>
       <div class="fld"><label>Periode Rekap</label><select id="mPeriode"><option value="bulanan">Bulanan</option><option value="mingguan">Mingguan</option></select></div>
     </div>
     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px">

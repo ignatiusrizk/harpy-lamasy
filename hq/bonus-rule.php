@@ -125,11 +125,11 @@ require ROOT . '/hq/_layout_open.php';
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
         <div>
           <label id="e_threshold_label">Threshold</label>
-          <input type="number" id="e_threshold" class="hl-input" min="0" value="0">
+          <input type="number" id="e_threshold" class="lm-rp hl-input" min="0" value="0">
         </div>
         <div>
           <label>Amount (Rp)</label>
-          <input type="number" id="e_amount" class="hl-input" value="0">
+          <input type="number" id="e_amount" class="lm-rp hl-input" value="0">
         </div>
       </div>
       <label style="margin-top:10px;display:flex;align-items:center;gap:8px;cursor:pointer">

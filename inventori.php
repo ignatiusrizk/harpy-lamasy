@@ -677,7 +677,7 @@ if ($action) {
       <div class="hl-form-row">
         <div class="hl-form-group">
           <label class="hl-label">Harga Beli (Rp)</label>
-          <input type="number" id="b_harga" class="hl-input" value="0" min="0" step="500"/>
+          <input type="number" id="b_harga" class="lm-rp hl-input" value="0" min="0" step="500"/>
         </div>
         <div class="hl-form-group">
           <label class="hl-label">Supplier</label>
@@ -722,7 +722,7 @@ if ($action) {
           </div>
           <div class="hl-form-group">
             <label class="hl-label">Harga Beli/Satuan (Rp)</label>
-            <input type="number" id="m_harga" class="hl-input" value="0" min="0" step="500"/>
+            <input type="number" id="m_harga" class="lm-rp hl-input" value="0" min="0" step="500"/>
           </div>
         </div>
         <div class="hl-form-group">

@@ -235,7 +235,7 @@ if ($action) {
       </div>
       <div class="hl-form-group">
         <label class="hl-label">Jumlah Topup (Rp) <span class="req">*</span></label>
-        <input type="number" id="tu_jumlah" class="hl-input" min="1000" step="10000" placeholder="100000" oninput="previewBonus()"/>
+        <input type="number" id="tu_jumlah" class="lm-rp hl-input" min="1000" step="10000" placeholder="100000" oninput="previewBonus()"/>
         <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap">
           <button type="button" class="hl-btn hl-btn-outline hl-btn-sm" onclick="setJml(50000)">50k</button>
           <button type="button" class="hl-btn hl-btn-outline hl-btn-sm" onclick="setJml(100000)">100k</button>
@@ -283,7 +283,7 @@ if ($action) {
       </div>
       <div class="hl-form-group">
         <label class="hl-label">Jumlah Refund (Rp) <span class="req">*</span></label>
-        <input type="number" id="rf_jumlah" class="hl-input" min="1000" step="1000" placeholder="50000"/>
+        <input type="number" id="rf_jumlah" class="lm-rp hl-input" min="1000" step="1000" placeholder="50000"/>
         <div style="font-size:11px;color:#6B7280;margin-top:4px">Max: saldo customer</div>
       </div>
       <div class="hl-form-group">
@@ -345,7 +345,7 @@ if ($action) {
         <div class="hl-form-row">
           <div class="hl-form-group">
             <label class="hl-label">Min Topup (Rp) <span class="req">*</span></label>
-            <input type="number" id="bt_min" class="hl-input" placeholder="100000" min="1000" step="10000"/>
+            <input type="number" id="bt_min" class="lm-rp hl-input" placeholder="100000" min="1000" step="10000"/>
           </div>
           <div class="hl-form-group">
             <label class="hl-label">Label (opsional)</label>
@@ -362,7 +362,7 @@ if ($action) {
           </div>
           <div class="hl-form-group">
             <label class="hl-label">Nilai <span id="btUnit" style="color:var(--gray)">(%)</span></label>
-            <input type="number" id="bt_nilai" class="hl-input" placeholder="10" min="0" step="0.5"/>
+            <input type="number" id="bt_nilai" class="lm-rp hl-input" placeholder="10" min="0" step="0.5"/>
           </div>
         </div>
         <div class="hl-form-row">

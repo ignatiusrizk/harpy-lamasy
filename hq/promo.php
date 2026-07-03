@@ -526,11 +526,11 @@ require __DIR__ . '/_layout_open.php';
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
         <div>
           <label>Min Transaksi (Rp)</label>
-          <input type="number" id="fMin" min="0" placeholder="0">
+          <input class="lm-rp" type="number" id="fMin" min="0" placeholder="0">
         </div>
         <div>
           <label>Maks Diskon (Rp)</label>
-          <input type="number" id="fMaks" min="0" placeholder="0 = no limit">
+          <input class="lm-rp" type="number" id="fMaks" min="0" placeholder="0 = no limit">
         </div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">

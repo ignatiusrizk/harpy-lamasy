@@ -1275,7 +1275,7 @@ function posSelectPrinter(p) {
               <div class="form-row" style="margin-bottom:10px">
                 <div class="form-group">
                   <label>Harga / Satuan (Rp)</label>
-                  <input type="number" id="lyn_q_harga" class="input" placeholder="7000" min="0" step="500"/>
+                  <input type="number" id="lyn_q_harga" class="lm-rp input" placeholder="7000" min="0" step="500"/>
                 </div>
                 <div class="form-group">
                   <label>Estimasi *</label>
@@ -1436,7 +1436,7 @@ function posSelectPrinter(p) {
               </div>
               <div class="form-group">
                 <label>DP / Bayar</label>
-                <input type="number" id="f_dp" value="0" min="0" oninput="recalc()"/>
+                <input class="lm-rp" type="number" id="f_dp" value="0" min="0" oninput="recalc()"/>
               </div>
               <div class="form-group">
                 <label>Metode</label>
@@ -1469,7 +1469,7 @@ window.outletQris = <?= json_encode([
               </div>
               <div id="depositAmountWrap" style="display:none;margin-top:8px">
                 <label style="font-size:11px;color:#166534">Jumlah dari Saldo (max sesuai saldo & total):</label>
-                <input type="number" id="f_deposit_amount" value="0" min="0" oninput="recalc()" style="width:100%;padding:6px 10px;border:1px solid #BBF7D0;border-radius:6px;font-size:13px"/>
+                <input class="lm-rp" type="number" id="f_deposit_amount" value="0" min="0" oninput="recalc()" style="width:100%;padding:6px 10px;border:1px solid #BBF7D0;border-radius:6px;font-size:13px"/>
               </div>
             </div>
 

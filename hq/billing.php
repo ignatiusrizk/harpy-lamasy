@@ -263,7 +263,7 @@ $csrf = getCsrfToken();
     </div>
     <div class="fld">
       <label>Jumlah Coin</label>
-      <input type="number" id="trAmount" min="1" placeholder="1000">
+      <input class="lm-rp" type="number" id="trAmount" min="1" placeholder="1000">
     </div>
     <div class="fld">
       <label>Catatan (opsional)</label>
@@ -284,7 +284,7 @@ $csrf = getCsrfToken();
     <p id="bdOutletName" style="font-size:13px;color:#6B7280;margin-bottom:12px"></p>
     <div class="fld">
       <label>Budget per Bulan (coin) — 0 = unlimited</label>
-      <input type="number" id="bdBudget" min="0" placeholder="0">
+      <input class="lm-rp" type="number" id="bdBudget" min="0" placeholder="0">
     </div>
     <div class="modal-actions">
       <button class="btn btn-light" onclick="closeModal('budgetModal')">Batal</button>

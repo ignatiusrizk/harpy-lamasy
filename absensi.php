@@ -651,7 +651,7 @@ if ($action) {
           <div class="hl-form-row" style="margin-bottom:10px">
             <div class="hl-form-group">
               <label class="hl-label">Saldo Kas Akhir (Rp)</label>
-              <input type="number" id="ho_kas" class="hl-input" step="500" min="0"/>
+              <input type="number" id="ho_kas" class="lm-rp hl-input" step="500" min="0"/>
             </div>
             <div class="hl-form-group">
               <label class="hl-label">Diserahkan ke (opsional)</label>

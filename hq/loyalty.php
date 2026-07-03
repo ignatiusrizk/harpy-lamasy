@@ -175,11 +175,11 @@ require ROOT . '/hq/_layout_open.php';
         </div>
         <div>
           <label>Min Transaksi (Rp)</label>
-          <input type="number" id="e_min" class="hl-input" min="0" value="0">
+          <input type="number" id="e_min" class="lm-rp hl-input" min="0" value="0">
         </div>
       </div>
       <label style="margin-top:10px">Max Redeem per Bulan (0 = unlimited)</label>
-      <input type="number" id="e_max" class="hl-input" min="0" value="0">
+      <input type="number" id="e_max" class="lm-rp hl-input" min="0" value="0">
 
       <div style="margin-top:14px;padding:12px;background:#F9FAFB;border:1px solid #E5E7EB;border-radius:8px">
         <label style="font-weight:700;margin-bottom:8px;display:block">Berlaku di Outlet</label>

@@ -518,7 +518,7 @@ $baseUrl = $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'lamasy.harpy.id');
         </div>
         <div class="hl-form-group">
           <label class="hl-label">Tarif (Rp) <span class="req">*</span></label>
-          <input type="number" id="cy_tarif" class="hl-input" min="0" step="500" placeholder="5000"/>
+          <input type="number" id="cy_tarif" class="lm-rp hl-input" min="0" step="500" placeholder="5000"/>
         </div>
       </div>
     </div>

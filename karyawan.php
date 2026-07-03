@@ -399,7 +399,7 @@ function localMonthStr() {
       <div class="hl-form-row">
         <div class="hl-form-group">
           <label class="hl-label">Gaji Pokok (Rp)</label>
-          <input type="number" id="f_gaji" class="hl-input" placeholder="0" min="0" step="50000"/>
+          <input type="number" id="f_gaji" class="lm-rp hl-input" placeholder="0" min="0" step="50000"/>
         </div>
         <div class="hl-form-group">
           <label class="hl-label">Tanggal Masuk</label>
@@ -436,16 +436,16 @@ function localMonthStr() {
       <input type="hidden" id="gf_id"/>
       <div class="hl-form-group">
         <label class="hl-label">Gaji Pokok (Rp)</label>
-        <input type="number" id="gf_pokok" class="hl-input" min="0" step="50000" oninput="recalcGaji()"/>
+        <input type="number" id="gf_pokok" class="lm-rp hl-input" min="0" step="50000" oninput="recalcGaji()"/>
       </div>
       <div class="hl-form-row">
         <div class="hl-form-group">
           <label class="hl-label">Bonus (Rp)</label>
-          <input type="number" id="gf_bonus" class="hl-input" value="0" min="0" step="10000" oninput="recalcGaji()"/>
+          <input type="number" id="gf_bonus" class="lm-rp hl-input" value="0" min="0" step="10000" oninput="recalcGaji()"/>
         </div>
         <div class="hl-form-group">
           <label class="hl-label">Potongan (Rp)</label>
-          <input type="number" id="gf_potongan" class="hl-input" value="0" min="0" step="10000" oninput="recalcGaji()"/>
+          <input type="number" id="gf_potongan" class="lm-rp hl-input" value="0" min="0" step="10000" oninput="recalcGaji()"/>
         </div>
       </div>
       <div style="background:linear-gradient(135deg,#0F1C3A,var(--navy));border-radius:var(--r);padding:14px;text-align:center;margin-bottom:12px">

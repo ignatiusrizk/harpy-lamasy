@@ -1324,7 +1324,7 @@ textarea{resize:vertical;min-height:64px}
 
       <div id="nominalWrap" class="form-group">
         <label>Jumlah Dibayar (Rp) <span class="req">*</span></label>
-        <input type="number" id="bayarJumlah" placeholder="0" min="0" step="500"
+        <input class="lm-rp" type="number" id="bayarJumlah" placeholder="0" min="0" step="500"
           oninput="updateBayarPreview()"/>
         <div id="quickNominal" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px"></div>
         <div id="bayarPreview" style="margin-top:8px;border-radius:var(--r);padding:10px 12px;display:none;font-size:13px"></div>
@@ -1813,7 +1813,7 @@ async function openDetail(id) {
       <div class="tb-row"><span class="tb-label">Subtotal</span><span class="tb-value" id="etSubtotal">-</span></div>
       <div class="tb-row"><span class="tb-label">Diskon</span><span class="tb-value">- Rp ${CAN_EDIT_ORDER ? `<input type="number" id="edit_diskon" value="${Math.round(d.diskon||0)}" min="0" step="500" oninput="recalcEdit()" style="width:80px;background:transparent;border:none;border-bottom:1px solid rgba(255,255,255,.3);color:white;font-family:var(--mono);font-size:13px;padding:0;outline:none"/>` : `<span id="edit_diskon" style="font-family:var(--mono);color:white">${grpRibu(d.diskon||0)}</span>`}</span></div>
       <div class="tb-row tb-total"><span style="color:white;font-weight:700">TOTAL</span><span class="tb-value tb-big" id="etTotal">-</span></div>
-      <div class="tb-row"><span class="tb-label">DP/Bayar</span><span class="tb-value">Rp ${CAN_EDIT_ORDER ? `<input type="number" id="edit_dp" value="${Math.round(d.dp||0)}" min="0" step="1000" oninput="recalcEdit()" style="width:90px;background:transparent;border:none;border-bottom:1px solid rgba(255,255,255,.3);color:white;font-family:var(--mono);font-size:13px;padding:0;outline:none"/>` : `<span id="edit_dp" style="font-family:var(--mono);color:white">${grpRibu(d.dp||0)}</span>`}</span></div>
+      <div class="tb-row"><span class="tb-label">DP/Bayar</span><span class="tb-value">Rp ${CAN_EDIT_ORDER ? `<input class="lm-rp" type="number" id="edit_dp" value="${Math.round(d.dp||0)}" min="0" step="1000" oninput="recalcEdit()" style="width:90px;background:transparent;border:none;border-bottom:1px solid rgba(255,255,255,.3);color:white;font-family:var(--mono);font-size:13px;padding:0;outline:none"/>` : `<span id="edit_dp" style="font-family:var(--mono);color:white">${grpRibu(d.dp||0)}</span>`}</span></div>
       <div class="tb-row"><span class="tb-label">Sisa Bayar</span><span class="tb-value tb-sisa" id="etSisa">-</span></div>
     </div>
 
@@ -2657,7 +2657,7 @@ async function submitBayar() {
       <div><label>Satuan</label><select id="lyn_q_satuan" class="lq"><option value="kg">kg</option><option value="pcs">pcs</option><option value="set">set</option><option value="m2">m²</option></select></div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
-      <div><label>Harga / Satuan (Rp)</label><input type="number" id="lyn_q_harga" class="lq" placeholder="7000" min="0" step="500"/></div>
+      <div><label>Harga / Satuan (Rp)</label><input type="number" id="lyn_q_harga" class="lm-rp lq" placeholder="7000" min="0" step="500"/></div>
       <div><label>Estimasi *</label><div style="display:flex;gap:6px"><input type="number" id="lyn_q_jam" class="lq" value="24" min="1" style="flex:1"/><select id="lyn_q_unit" class="lq" style="width:80px" onchange="lynUnitChanged()"><option value="jam">Jam</option><option value="hari">Hari</option></select></div></div>
     </div>
     <div style="margin-bottom:14px"><label>Min. Order (opsional)</label><input type="number" id="lyn_q_min" class="lq" value="0" min="0" step="0.5" placeholder="0 = tidak ada minimum"/></div>

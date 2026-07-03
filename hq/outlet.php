@@ -352,11 +352,11 @@ require __DIR__ . '/_layout_open.php';
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
         <div>
           <label>🎯 Target Omset Harian (Rp)</label>
-          <input type="number" id="edTargetHarian" min="0" step="50000" value="0" placeholder="1500000">
+          <input class="lm-rp" type="number" id="edTargetHarian" min="0" step="50000" value="0" placeholder="1500000">
         </div>
         <div>
           <label>🎯 Target Omset Bulanan (Rp)</label>
-          <input type="number" id="edTargetBulanan" min="0" step="500000" value="0" placeholder="40000000">
+          <input class="lm-rp" type="number" id="edTargetBulanan" min="0" step="500000" value="0" placeholder="40000000">
         </div>
       </div>
       <?php endif; ?>

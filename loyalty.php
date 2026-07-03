@@ -222,7 +222,7 @@ if ($action) {
       </div>
       <div class="hl-form-group" style="margin:0">
         <label class="hl-label">Rp/poin (earn)</label>
-        <input type="number" id="cfgRpp" class="hl-input" min="100" step="500" placeholder="8000"/>
+        <input type="number" id="cfgRpp" class="lm-rp hl-input" min="100" step="500" placeholder="8000"/>
       </div>
       <div class="hl-form-group" style="margin:0">
         <label class="hl-label">Nilai poin (redeem Rp)</label>
@@ -289,7 +289,7 @@ if ($action) {
       <div class="hl-form-row">
         <div class="hl-form-group">
           <label class="hl-label">Min. Transaksi (Rp)</label>
-          <input type="number" id="r_mintrx" class="hl-input" min="0" placeholder="0 = tanpa min"/>
+          <input type="number" id="r_mintrx" class="lm-rp hl-input" min="0" placeholder="0 = tanpa min"/>
         </div>
         <div class="hl-form-group">
           <label class="hl-label">Max Redeem / Bulan</label>
