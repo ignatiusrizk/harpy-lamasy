@@ -652,9 +652,9 @@ async function refreshPreview() {
       frame.style.width = pxW + 'px';
       const scale = Math.min(1, availW / pxW);
       frame.style.transform = 'scale(' + scale + ')';
-      frame.style.transformOrigin = 'top center';
+      frame.style.transformOrigin = 'top left';
       frame.style.display = 'block';
-      frame.style.margin = '0 auto';
+      frame.style.margin = '0';
       const h = (doc.body && doc.body.scrollHeight) ? doc.body.scrollHeight : 700;
       frame.style.height = h + 'px';
       wrap.style.height = Math.ceil(h * scale) + 'px';
