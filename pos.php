@@ -865,6 +865,11 @@ textarea{resize:vertical;min-height:64px}
 .items-table tbody td{padding:6px 6px;vertical-align:middle}
 .items-table tbody tr:last-child{border-bottom:none}
 .item-input{padding:7px 9px;font-size:13px}
+/* hint "min N" DI DALAM kotak Jumlah, nempel kiri (bukan teks lepas di sebelah input) */
+.qty-wrap{position:relative;display:inline-flex;align-items:center}
+.qty-wrap input{width:84px;padding-left:40px}
+.qty-wrap .qty-min{position:absolute;left:9px;font-size:9px;font-weight:700;color:var(--gray);pointer-events:none;letter-spacing:.02em}
+.qty-wrap .qty-min.bad{color:#DC2626}
 .item-subtotal{font-family:var(--mono);font-weight:600;color:var(--navy);text-align:right;white-space:nowrap;font-size:13px;min-width:90px}
 .btn-remove{background:#FEE2E2;color:var(--red);border:none;border-radius:6px;padding:5px 9px;cursor:pointer;font-size:13px;transition:all .2s}
 .btn-remove:hover{background:var(--red);color:white}
@@ -1002,6 +1007,9 @@ textarea{resize:vertical;min-height:64px}
     max-width:160px; width:auto !important;
   }
   .items-table tbody td .lmx-btn .lmx-lbl { text-align:right; }
+  /* wrapper Jumlah ikut melebar spt input lain; input di dalamnya isi penuh */
+  .items-table tbody td .qty-wrap { flex:1 1 auto; min-width:0; max-width:160px; }
+  .items-table tbody td .qty-wrap input { width:100% !important; max-width:none; }
   .items-table tbody td .item-sub { font-weight:700; color:var(--navy); }
   /* Tombol remove di pojok kanan atas card */
   .items-table tbody td:last-child {
@@ -1849,9 +1857,11 @@ function renderItems() {
         ${['kg','pcs','set','pasang'].map(s=>`<option value="${s}" ${item.satuan===s?'selected':''}>${s}</option>`).join('')}
       </select></td>
       <td data-lbl="Jumlah">
-        <input class="item-input" type="number" value="${item.jumlah}" min="0.1" step="0.1" style="width:64px;${item.qty_minimum > 0 && item.jumlah < item.qty_minimum ? 'border:1px solid #DC2626;background:#FEF2F2;' : ''}"
-          oninput="items[${i}].jumlah=parseFloat(this.value)||0;recalc()"/>
-        ${item.qty_minimum > 0 ? `<div style="font-size:9px;color:${item.jumlah < item.qty_minimum ? '#DC2626' : '#6B7280'};margin-top:1px;">min ${item.qty_minimum}</div>` : ''}
+        <span class="qty-wrap">
+          ${item.qty_minimum > 0 ? `<span class="qty-min${item.jumlah < item.qty_minimum ? ' bad' : ''}">min ${item.qty_minimum}</span>` : ''}
+          <input class="item-input" type="number" value="${item.jumlah}" min="0.1" step="0.1" style="${item.qty_minimum > 0 && item.jumlah < item.qty_minimum ? 'border:1px solid #DC2626;background:#FEF2F2;' : ''}"
+            oninput="items[${i}].jumlah=parseFloat(this.value)||0;recalc()"/>
+        </span>
       </td>
       <td data-lbl="Harga"><input class="item-input" type="text" inputmode="numeric" value="${grpRibu(Math.round(item.harga_satuan||0))}" style="width:96px"
         oninput="const v=parseInt(this.value.replace(/\D/g,''))||0;items[${i}].harga_satuan=v;this.value=grpRibu(v);recalc()"/></td>
