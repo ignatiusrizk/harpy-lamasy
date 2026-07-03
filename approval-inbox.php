@@ -177,7 +177,7 @@ $pendingCount = DeleteRequest::pendingCount(TenantResolver::id())
 .inbox-hint{background:#FEF3C7;border:1px solid #FDE68A;border-radius:10px;padding:12px 14px;margin-bottom:16px;font-size:12.5px;color:#92400E;line-height:1.5}
 .inbox-hint-more{display:block;margin-top:3px;font-size:11.5px;color:#B45309}
 .inbox-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));margin-bottom:14px;border-bottom:2px solid #E5E7EB}
-.tab-btn{background:none;border:none;padding:10px 4px;font-size:13px;color:#6B7280;cursor:pointer;border-bottom:3px solid transparent;font-weight:600;white-space:nowrap;text-align:center}
+.tab-btn{background:none;border:none;padding:10px 4px;font-size:13px;color:#6B7280;cursor:pointer;border-bottom:3px solid transparent;font-weight:600;white-space:nowrap;text-align:center;-webkit-tap-highlight-color:transparent;outline:none;-webkit-appearance:none}
 .tab-btn.active{color:#0F7B6C;border-bottom-color:#0F7B6C}
 .tab-count{display:inline-block;background:#DC2626;color:white;border-radius:100px;padding:1px 7px;font-size:11px;margin-left:3px;font-weight:700}
 .tab-btn.active .tab-count{background:#0F7B6C}
