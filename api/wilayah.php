@@ -17,6 +17,17 @@ if (empty($_SESSION['user_id']) && empty($_SESSION['tenant_id'])) {
     exit;
 }
 
+// Rate-limit anti-abuse: max 60 request / 60 detik per sesi. Sliding window di
+// session (bukan DB — endpoint read ringan; nulis DB tiap hit malah nambah beban).
+$_wlNow = time();
+$_SESSION['wl_hits'] = array_values(array_filter($_SESSION['wl_hits'] ?? [], fn($t) => $t > $_wlNow - 60));
+if (count($_SESSION['wl_hits']) >= 60) {
+    http_response_code(429);
+    echo json_encode(['ok' => false, 'error' => 'Terlalu banyak permintaan. Coba lagi sebentar.', 'data' => []]);
+    exit;
+}
+$_SESSION['wl_hits'][] = $_wlNow;
+
 require_once ROOT . '/master/config/db.php';
 require_once ROOT . '/core/Database.php';
 
