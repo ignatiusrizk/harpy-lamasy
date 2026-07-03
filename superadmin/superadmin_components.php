@@ -822,6 +822,19 @@ function saRenderNavClose(): void { ?>
     <div class="sa-toast" id="saToast"></div>
     <?php include dirname(__DIR__) . '/lmx_enhancer.php'; /* de-native select/date → custom (tema gelap via override di saRenderHead) */ ?>
     <script>
+    /* Native app (APK SA): webview turun di bawah status bar (jangan overlay) →
+       topbar tak mepet/ketutup. Status bar hitam + ikon putih (tema gelap SA). */
+    (function(){
+      try {
+        var SB = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.StatusBar;
+        if (!SB) return;
+        if (SB.setOverlaysWebView) SB.setOverlaysWebView({ overlay: false });
+        if (SB.setBackgroundColor) SB.setBackgroundColor({ color: '#0A0F1F' });
+        if (SB.setStyle) SB.setStyle({ style: 'DARK' }); // DARK = ikon PUTIH
+      } catch(e) {}
+    })();
+    </script>
+    <script>
     function saCsrf(){ return document.querySelector('meta[name="csrf-token"]')?.content||''; }
     function saShowToast(msg, type='success'){
       const t=document.getElementById('saToast');
