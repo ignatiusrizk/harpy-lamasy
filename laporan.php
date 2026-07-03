@@ -400,7 +400,7 @@ if ($action) {
 .sc-purple::before{background:linear-gradient(90deg,var(--purple),#A78BFA)}
 .sc-navy::before{background:linear-gradient(90deg,var(--navy),#2D4A8A)}
 .sc-yellow::before{background:linear-gradient(90deg,var(--yellow),#FCD34D)}
-.stat-num{font-size:1.4rem;font-weight:800;color:var(--navy);font-family:var(--mono);margin-bottom:4px;line-height:1}
+.stat-num{font-size:clamp(0.8rem,3.4vw,1.4rem);font-weight:800;color:var(--navy);font-family:var(--mono);margin-bottom:4px;line-height:1.05;white-space:nowrap;letter-spacing:-0.02em}
 .stat-label{font-size:12px;color:var(--gray);font-weight:500}
 
 /* CARD */
@@ -440,7 +440,7 @@ tfoot td{padding:9px 12px;font-weight:700;font-size:13px}
 .lr-box.laba{background:linear-gradient(135deg,#064E3B,#065F46);border:1px solid #6EE7B7}
 .lr-box.rugi{background:linear-gradient(135deg,#7F1D1D,#991B1B);border:1px solid #FCA5A5}
 .lr-title{font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px;opacity:.7;color:white}
-.lr-num{font-size:2.2rem;font-weight:900;font-family:var(--mono);color:white;line-height:1}
+.lr-num{font-size:clamp(1.15rem,6vw,2.2rem);font-weight:900;font-family:var(--mono);color:white;line-height:1.05;white-space:nowrap;letter-spacing:-0.02em}
 .lr-sub{font-size:13px;margin-top:6px;opacity:.7;color:white}
 .lr-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(27,45,90,.07);font-size:14px}
 .lr-row:last-child{border-bottom:none}
