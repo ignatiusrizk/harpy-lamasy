@@ -1126,6 +1126,12 @@ html, body { overflow-x: clip; overscroll-behavior-y: contain; }
   }
   /* Td tanpa data-lbl (mis. tombol action) — full width, no label */
   .hl-stack-mobile tbody td:not([data-lbl])::before { content: ''; }
+  /* Baris loading/empty-state (colspan) — tetap block rata-tengah, bukan flex kiri */
+  .hl-stack-mobile tbody td.hl-loading {
+    display: block !important;
+    text-align: center !important;
+  }
+  .hl-stack-mobile tbody td.hl-loading::before { content: ''; }
   .hl-stack-mobile tbody td:not([data-lbl]) {
     justify-content: flex-end !important;
     padding-top: 8px !important;
