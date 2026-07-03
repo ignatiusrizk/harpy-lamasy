@@ -628,16 +628,36 @@ async function refreshPreview() {
     const html = await r.text();
 
     const frame = document.getElementById('previewFrame');
-    // Sesuaikan tinggi iframe dengan lebar format
+    // Lebar format DIPERTAHANKAN (jangan max-width:100% — konten A4 reflow di layar
+    // sempit jadi berantakan). Kalau wadah lebih sempit, iframe di-SCALE turun
+    // (zoom-out dokumen) — layout tetap persis seperti PDF aslinya.
     const isA4 = fmt === 'a4', isA5 = fmt === 'a5';
-    const isPdf = isA4 || isA5;
-    frame.style.minHeight = isPdf ? '700px' : '400px';
-    frame.style.width = isA4 ? '210mm' : (isA5 ? '148mm' : (fmt==='thermal_58'?'72mm':'92mm'));
-    frame.style.maxWidth = '100%';
+    const pxW = isA4 ? 794 : (isA5 ? 560 : (fmt === 'thermal_58' ? 272 : 348)); // ≈96dpi
+    frame.style.width = pxW + 'px';
+    frame.style.maxWidth = 'none';
+    frame.style.minHeight = '0';
 
     // Write HTML ke iframe
     const doc = frame.contentDocument || frame.contentWindow.document;
     doc.open(); doc.write(html); doc.close();
+
+    // Scale agar muat wadah + tinggi wadah mengikuti hasil scale
+    const wrap = frame.closest('.preview-iframe-wrap');
+    function fitPreview(){
+      const availW = Math.max(100, wrap.clientWidth - 2);
+      const scale = Math.min(1, availW / pxW);
+      frame.style.transform = 'scale(' + scale + ')';
+      frame.style.transformOrigin = 'top center';
+      frame.style.display = 'block';
+      frame.style.margin = '0 auto';
+      const h = (doc.body && doc.body.scrollHeight) ? doc.body.scrollHeight : 700;
+      frame.style.height = h + 'px';
+      wrap.style.height = Math.ceil(h * scale) + 'px';
+      wrap.style.overflow = 'hidden';
+    }
+    fitPreview();
+    setTimeout(fitPreview, 300);  // ulang setelah font/gambar (logo/QR) ke-render
+    setTimeout(fitPreview, 900);
   } catch(e) {
     console.error('Preview error:', e);
   }
