@@ -1126,12 +1126,15 @@ html, body { overflow-x: clip; overscroll-behavior-y: contain; }
   }
   /* Td tanpa data-lbl (mis. tombol action) — full width, no label */
   .hl-stack-mobile tbody td:not([data-lbl])::before { content: ''; }
-  /* Baris loading/empty-state (colspan) — tetap block rata-tengah, bukan flex kiri */
-  .hl-stack-mobile tbody td.hl-loading {
+  /* Baris loading/empty-state (sel colspan) — tetap block rata-tengah, bukan
+     flex kiri. Pakai [colspan] biar agnostik thd nama class (.hl-loading /
+     .hl-empty / .loading / .empty / tanpa class). */
+  .hl-stack-mobile tbody td[colspan] {
     display: block !important;
     text-align: center !important;
+    width: 100% !important;
   }
-  .hl-stack-mobile tbody td.hl-loading::before { content: ''; }
+  .hl-stack-mobile tbody td[colspan]::before { content: '' !important; }
   .hl-stack-mobile tbody td:not([data-lbl]) {
     justify-content: flex-end !important;
     padding-top: 8px !important;
