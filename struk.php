@@ -233,7 +233,7 @@ require_once ROOT . '/components.php';
 
 /* ── Main grid ── */
 .struk-grid { display:grid; grid-template-columns:360px 1fr; gap:18px; align-items:start; }
-@media(max-width:900px){ .struk-grid{ grid-template-columns:1fr; } }
+@media(max-width:900px){ .struk-grid{ grid-template-columns:minmax(0,1fr); } }
 
 /* ── Settings panel ── */
 .settings-panel { background:#fff; border-radius:14px; border:1px solid rgba(27,45,90,.08); padding:0; overflow:hidden; }
