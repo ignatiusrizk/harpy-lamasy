@@ -1907,3 +1907,10 @@ body::before{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area
 .lmx-mo:hover{background:#E2E8F0}
 .lmx-mo.sel{background:var(--teal,#2DD4BF);color:var(--navy-d,#0F1C3A);font-weight:800}
 .lmx-mo.dis{opacity:.3;cursor:not-allowed}
+
+/* ══ Settings tabs (outlet-settings / struk / payment-settings) — mobile rapi ══ */
+@media(max-width:680px){
+  .settings-tabs{display:grid !important;grid-template-columns:repeat(3,minmax(0,1fr));gap:2px}
+  .settings-tab{padding:10px 2px !important;font-size:12.5px !important;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .settings-tab .st-x{display:none}
+}

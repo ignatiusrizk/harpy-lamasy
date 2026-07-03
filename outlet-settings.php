@@ -214,11 +214,11 @@ if ($action) {
 
 <div class="hl-main">
   <div class="settings-tabs" style="display:flex;gap:2px;margin-bottom:18px;border-bottom:1px solid var(--off)">
-    <a href="/outlet-settings" class="settings-tab active" style="padding:11px 18px;border-bottom:3px solid var(--teal);color:var(--navy-d);font-weight:700;font-size:14px;text-decoration:none">🏢 Outlet & Nota</a>
-    <a href="/struk" class="settings-tab" style="padding:11px 18px;border-bottom:3px solid transparent;color:var(--gray);font-weight:600;font-size:14px;text-decoration:none">🧾 Struk & Invoice</a>
+    <a href="/outlet-settings" class="settings-tab active" style="padding:11px 18px;border-bottom:3px solid var(--teal);color:var(--navy-d);font-weight:700;font-size:14px;text-decoration:none">🏢 Outlet<span class="st-x"> & Nota</span></a>
+    <a href="/struk" class="settings-tab" style="padding:11px 18px;border-bottom:3px solid transparent;color:var(--gray);font-weight:600;font-size:14px;text-decoration:none">🧾 Struk<span class="st-x"> & Invoice</span></a>
     <a href="/payment-settings" class="settings-tab" style="padding:11px 18px;border-bottom:3px solid transparent;color:var(--gray);font-weight:600;font-size:14px;text-decoration:none">💳 Pembayaran</a>
   </div>
-  <div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:10px;padding:14px 18px;margin-bottom:18px;font-size:13.5px;color:#1E40AF;line-height:1.55">
+  <div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:10px;padding:12px 14px;margin-bottom:16px;font-size:12.5px;color:#1E40AF;line-height:1.5">
     💡 <strong>Format Nomor Nota</strong> — atur prefix & template format nota per outlet. Default tiap outlet otomatis dapat prefix dari nama (mis. "Harpy Laundry" → <code>HARPY-</code>).
     Bisa di-customize untuk konsistensi branding (mis. <code>HL-2024-00001</code>, <code>JKT001/2026/06/</code>, dll).
   </div>
