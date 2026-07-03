@@ -397,7 +397,7 @@ if ($action) {
                 $db->commit();
             } catch (Throwable $e) {
                 $db->rollBack();
-                echo json_encode(['error' => $e->getMessage()]); exit;
+                apiErr($e); exit;
             }
         } else {
             $db->prepare("UPDATE saas_manual_payments SET status='cancelled' WHERE id=?")->execute([$id]);

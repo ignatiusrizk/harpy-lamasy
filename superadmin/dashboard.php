@@ -208,7 +208,7 @@ if ($action) {
     exit;
 
     } catch (Throwable $e) {
-        echo json_encode(['error' => $e->getMessage()]);
+        apiErr($e);
         exit;
     }
 }

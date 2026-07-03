@@ -473,7 +473,7 @@ if ($action) {
             echo json_encode(['success' => true, 'poin_earned' => $poinEarned, 'wa_url' => $waUrl]);
         } catch (Throwable $e) {
             $db->rollBack();
-            echo json_encode(['error' => $e->getMessage()]);
+            apiErr($e);
         }
         exit;
     }
@@ -606,7 +606,7 @@ if ($action) {
             ]);
         } catch (Throwable $e) {
             $db->rollBack();
-            echo json_encode(['error' => $e->getMessage()]);
+            apiErr($e);
         }
         exit;
     }
@@ -662,7 +662,7 @@ if ($action) {
             echo json_encode(['ok'=>true, 'affected'=>$affected]);
         } catch (Throwable $e) {
             $db->rollBack();
-            echo json_encode(['error'=>$e->getMessage()]);
+            apiErr($e);
         }
         exit;
     }

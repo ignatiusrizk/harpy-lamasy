@@ -100,7 +100,7 @@ if ($action) {
                 'datetime'=>$datetime, 'date_only'=>$tanggalOnly,
                 'label'=>$label,
             ]);
-        } catch (Throwable $e) { echo json_encode(['error'=>$e->getMessage()]); }
+        } catch (Throwable $e) { apiErr($e); }
         exit;
     }
 
@@ -152,7 +152,7 @@ if ($action) {
                 ],
             ]);
         } catch (Throwable $e) {
-            echo json_encode(['error' => $e->getMessage()]);
+            apiErr($e);
         }
         exit;
     }
@@ -704,7 +704,7 @@ if ($action) {
             } catch (Throwable) {}
         } catch (Throwable $e) {
             $db->rollBack();
-            echo json_encode(['error' => $e->getMessage()]);
+            apiErr($e);
         }
         exit;
     }

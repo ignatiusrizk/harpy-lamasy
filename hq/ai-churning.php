@@ -57,7 +57,7 @@ if ($action === 'list') {
 
         echo json_encode(['ok' => true, 'list' => $list, 'count' => count($list)]);
     } catch (Throwable $e) {
-        echo json_encode(['error' => $e->getMessage()]);
+        apiErr($e);
     }
     exit;
 }
@@ -126,7 +126,7 @@ if ($action === 'generate' && $_SERVER['REQUEST_METHOD'] === 'POST') {
             'telepon' => preg_replace('/[^0-9]/', '', $cust['telepon']),
         ]);
     } catch (Throwable $e) {
-        echo json_encode(['error' => $e->getMessage()]);
+        apiErr($e);
     }
     exit;
 }

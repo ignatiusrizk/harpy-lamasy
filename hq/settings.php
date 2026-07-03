@@ -262,7 +262,7 @@ if ($action === 'coin_usage') {
         $stmt->execute([$tid]);
         echo json_encode($stmt->fetchAll());
     } catch (Throwable $e) {
-        echo json_encode(['error'=>$e->getMessage()]);
+        apiErr($e);
     }
     exit;
 }
@@ -289,7 +289,7 @@ if ($action === 'coin_balance') {
             'outlets'     => $outlets->fetchAll(),
         ]);
     } catch (Throwable $e) {
-        echo json_encode(['error'=>$e->getMessage()]);
+        apiErr($e);
     }
     exit;
 }

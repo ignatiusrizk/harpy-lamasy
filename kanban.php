@@ -72,7 +72,7 @@ if ($action) {
                 'cap'          => $cap,
             ]);
         } catch (Throwable $e) {
-            echo json_encode(['error'=>$e->getMessage()]);
+            apiErr($e);
         }
         exit;
     }
@@ -172,7 +172,7 @@ if ($action) {
                 'poin_earned'=>$poinEarned, 'saldo_poin'=>$saldoPoin,
             ]);
         } catch (Throwable $e) {
-            echo json_encode(['error'=>$e->getMessage()]);
+            apiErr($e);
         }
         exit;
     }

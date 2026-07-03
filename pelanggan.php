@@ -52,7 +52,7 @@ if ($action === 'generate_coupon' && $_SERVER['REQUEST_METHOD']==='POST') {
         $result = Loyalty::createCoupon($pelTid, (int)$pel['id'], $rewardId, $defaultOid, null);
         echo json_encode(['ok'=>true, 'kupon'=>$result]);
     } catch (Throwable $e) {
-        echo json_encode(['error'=>$e->getMessage()]);
+        apiErr($e);
     }
     exit;
 }

@@ -24,7 +24,7 @@ if ($action === 'preview' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $outletIds = array_map('intval', $d['outlet_ids'] ?? []);
     try {
         echo json_encode(['ok'=>true, 'recipients'=>Broadcast::recipientsForOutlets($tid, $outletIds)]);
-    } catch (Throwable $e) { echo json_encode(['error'=>$e->getMessage()]); }
+    } catch (Throwable $e) { apiErr($e); }
     exit;
 }
 
@@ -47,7 +47,7 @@ if ($action === 'create' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         CoinLedger::deductHq('wa_blast', (string)$bid);
         try { logAudit('create', 'broadcast', 'Broadcast: '.($d['judul']??''), (string)$bid); } catch (Throwable) {}
         echo json_encode(['ok'=>true, 'id'=>$bid]);
-    } catch (Throwable $e) { echo json_encode(['error'=>$e->getMessage()]); }
+    } catch (Throwable $e) { apiErr($e); }
     exit;
 }
 
@@ -59,7 +59,7 @@ if ($action === 'detail') {
         $b = Broadcast::get($tid, $bid);
         if (!$b) { echo json_encode(['error'=>'Tidak ditemukan']); exit; }
         echo json_encode(['ok'=>true, 'broadcast'=>$b]);
-    } catch (Throwable $e) { echo json_encode(['error'=>$e->getMessage()]); }
+    } catch (Throwable $e) { apiErr($e); }
     exit;
 }
 
@@ -67,7 +67,7 @@ if ($action === 'detail') {
 if ($action === 'history') {
     header('Content-Type: application/json');
     try { echo json_encode(['ok'=>true, 'history'=>Broadcast::history($tid)]); }
-    catch (Throwable $e) { echo json_encode(['error'=>$e->getMessage()]); }
+    catch (Throwable $e) { apiErr($e); }
     exit;
 }
 

@@ -90,7 +90,7 @@ if ($action) {
                 echo json_encode(['ok' => true, 'msg' => "Bundle \"$nama\" berhasil ditambahkan."]);
             }
         } catch (Throwable $e) {
-            echo json_encode(['error' => $e->getMessage()]);
+            apiErr($e);
         }
         exit;
     }

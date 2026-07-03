@@ -52,7 +52,7 @@ if ($action) {
             ");
             $s->execute([$tid, $oid]);
             echo json_encode(['ok'=>true, 'mitra'=>$s->fetchAll(PDO::FETCH_ASSOC)]);
-        } catch (Throwable $e) { echo json_encode(['error'=>$e->getMessage()]); }
+        } catch (Throwable $e) { apiErr($e); }
         exit;
     }
 
@@ -93,7 +93,7 @@ if ($action) {
                 logAudit('create','droppoint',"Tambah mitra: $nama", (string)$newId);
                 echo json_encode(['ok'=>true, 'id'=>$newId]);
             }
-        } catch (Throwable $e) { echo json_encode(['error'=>$e->getMessage()]); }
+        } catch (Throwable $e) { apiErr($e); }
         exit;
     }
 
@@ -153,7 +153,7 @@ if ($action) {
                 logAudit('create_account','droppoint',"Buat akun mitra: ".$dp['nama_mitra'], (string)$dpId);
                 echo json_encode(['ok'=>true, 'mode'=>'create', 'username'=>$username, 'password'=>$password]);
             }
-        } catch (Throwable $e) { echo json_encode(['error'=>$e->getMessage()]); }
+        } catch (Throwable $e) { apiErr($e); }
         exit;
     }
 
@@ -168,7 +168,7 @@ if ($action) {
                ->execute([$aktif, $dpId, $tid]);
             logAudit('toggle_account','droppoint',($aktif?'Aktifkan':'Nonaktifkan')." akun mitra #$dpId", (string)$dpId);
             echo json_encode(['ok'=>true]);
-        } catch (Throwable $e) { echo json_encode(['error'=>$e->getMessage()]); }
+        } catch (Throwable $e) { apiErr($e); }
         exit;
     }
 
@@ -221,7 +221,7 @@ if ($action) {
                 $rows[] = $row;
             }
             echo json_encode(['ok'=>true, 'periode'=>['start'=>$start,'end'=>$end], 'rows'=>$rows]);
-        } catch (Throwable $e) { echo json_encode(['error'=>$e->getMessage()]); }
+        } catch (Throwable $e) { apiErr($e); }
         exit;
     }
 
@@ -278,7 +278,7 @@ if ($action) {
             }
             logAudit('generate_rekap','droppoint',"Generate rekap $start s/d $end ($created baru, $updated update)");
             echo json_encode(['ok'=>true, 'created'=>$created, 'updated'=>$updated]);
-        } catch (Throwable $e) { echo json_encode(['error'=>$e->getMessage()]); }
+        } catch (Throwable $e) { apiErr($e); }
         exit;
     }
 
@@ -345,7 +345,7 @@ if ($action) {
             echo json_encode(['ok'=>true, 'paid'=>$paid, 'total'=>$totalBayar]);
         } catch (Throwable $e) {
             if ($db->inTransaction()) $db->rollBack();
-            echo json_encode(['error'=>$e->getMessage()]);
+            apiErr($e);
         }
         exit;
     }
@@ -364,7 +364,7 @@ if ($action) {
             ");
             $s->execute([$tid, $oid, date('Y-m-d')]);
             echo json_encode(['ok'=>true, 'orders'=>$s->fetchAll(PDO::FETCH_ASSOC)]);
-        } catch (Throwable $e) { echo json_encode(['error'=>$e->getMessage()]); }
+        } catch (Throwable $e) { apiErr($e); }
         exit;
     }
 
@@ -379,7 +379,7 @@ if ($action) {
                ->execute([$orderId, $tid, $oid]);
             logAudit('confirm_pickup','droppoint',"Konfirmasi pickup order #$orderId", (string)$orderId);
             echo json_encode(['ok'=>true]);
-        } catch (Throwable $e) { echo json_encode(['error'=>$e->getMessage()]); }
+        } catch (Throwable $e) { apiErr($e); }
         exit;
     }
 

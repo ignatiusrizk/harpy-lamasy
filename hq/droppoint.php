@@ -38,7 +38,7 @@ if ($action === 'per_outlet') {
         $stmt = $db->prepare($sql);
         $stmt->execute([$start,$end,$start,$end,$start,$end,$tid]);
         echo json_encode(['ok'=>true, 'rows'=>$stmt->fetchAll(PDO::FETCH_ASSOC), 'periode'=>['start'=>$start,'end'=>$end]]);
-    } catch (Throwable $e) { echo json_encode(['error'=>$e->getMessage()]); }
+    } catch (Throwable $e) { apiErr($e); }
     exit;
 }
 
@@ -84,7 +84,7 @@ if ($action === 'top_mitra') {
         }
         unset($r);
         echo json_encode(['ok'=>true, 'rows'=>$rows]);
-    } catch (Throwable $e) { echo json_encode(['error'=>$e->getMessage()]); }
+    } catch (Throwable $e) { apiErr($e); }
     exit;
 }
 

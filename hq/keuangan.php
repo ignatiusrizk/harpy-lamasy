@@ -58,7 +58,7 @@ if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && ($_SERVER['HTTP_SEC_FETCH_MODE'
                     break;
             }
         } catch (Throwable $e) {
-            echo json_encode(['error' => $e->getMessage()]);
+            apiErr($e);
         }
         exit;
     }

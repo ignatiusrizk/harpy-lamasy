@@ -155,7 +155,7 @@ if ($action) {
             logAudit('update_preferensi', 'customer#'.$id, '');
             echo json_encode(['ok'=>true]);
         } catch (Throwable $e) {
-            echo json_encode(['error'=>$e->getMessage()]);
+            apiErr($e);
         }
         exit;
     }

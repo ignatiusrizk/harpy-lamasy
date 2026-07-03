@@ -41,7 +41,7 @@ if ($action === 'list') {
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
         $unread = Notifier::unreadCount($tid, $oid);
         echo json_encode(['ok'=>true, 'rows'=>$rows, 'unread'=>$unread]);
-    } catch (Throwable $e) { echo json_encode(['error'=>$e->getMessage()]); }
+    } catch (Throwable $e) { apiErr($e); }
     exit;
 }
 
@@ -63,7 +63,7 @@ if ($action === 'mark_read' && $_SERVER['REQUEST_METHOD'] === 'POST') {
                ->execute([$id, $tid, $oid]);
         }
         echo json_encode(['ok'=>true]);
-    } catch (Throwable $e) { echo json_encode(['error'=>$e->getMessage()]); }
+    } catch (Throwable $e) { apiErr($e); }
     exit;
 }
 
@@ -84,7 +84,7 @@ if ($action === 'send_now' && $_SERVER['REQUEST_METHOD'] === 'POST') {
             'coin_feature' => 'daily_report',
         ]);
         echo json_encode($res);
-    } catch (Throwable $e) { echo json_encode(['error'=>$e->getMessage()]); }
+    } catch (Throwable $e) { apiErr($e); }
     exit;
 }
 
@@ -129,7 +129,7 @@ if ($action === 'save_prefs' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
         $db->prepare("UPDATE tenants SET notif_settings=? WHERE id=?")->execute([json_encode($cur), $tid]);
         echo json_encode(['success'=>true]);
-    } catch (Throwable $e) { echo json_encode(['error'=>$e->getMessage()]); }
+    } catch (Throwable $e) { apiErr($e); }
     exit;
 }
 

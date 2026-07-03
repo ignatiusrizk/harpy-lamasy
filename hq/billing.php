@@ -44,7 +44,7 @@ if ($action === 'monitor') {
             'coin_mode'  => $coinMode,
             'tenant_balance' => CoinLedger::balance($tid),
         ]);
-    } catch (Throwable $e) { echo json_encode(['error'=>$e->getMessage()]); }
+    } catch (Throwable $e) { apiErr($e); }
     exit;
 }
 
@@ -62,7 +62,7 @@ if ($action === 'set_budget' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
         CoinLedger::setBudget($tid, (int)($d['outlet_id'] ?? 0), (int)($d['budget'] ?? 0));
         echo json_encode(['ok'=>true]);
-    } catch (Throwable $e) { echo json_encode(['error'=>$e->getMessage()]); }
+    } catch (Throwable $e) { apiErr($e); }
     exit;
 }
 
@@ -81,7 +81,7 @@ if ($action === 'transfer' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         CoinLedger::transferBetweenOutlets($tid,
             (int)($d['from'] ?? 0), (int)($d['to'] ?? 0), (int)($d['amount'] ?? 0), $d['desc'] ?? '');
         echo json_encode(['ok'=>true]);
-    } catch (Throwable $e) { echo json_encode(['error'=>$e->getMessage()]); }
+    } catch (Throwable $e) { apiErr($e); }
     exit;
 }
 

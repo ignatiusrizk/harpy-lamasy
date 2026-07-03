@@ -202,7 +202,7 @@ if ($action) {
             echo json_encode(['success' => true]);
         } catch (Throwable $e) {
             $db->rollBack();
-            echo json_encode(['error' => $e->getMessage()]);
+            apiErr($e);
         }
         exit;
     }

@@ -19,7 +19,7 @@ $canEdit = !empty($hqIsOwner) || !empty($hqIsManager);
 if ($action === 'templates') {
     header('Content-Type: application/json');
     try { echo json_encode(['ok'=>true, 'templates'=>Checklist::listTemplates($tid)]); }
-    catch (Throwable $e) { echo json_encode(['error'=>$e->getMessage()]); }
+    catch (Throwable $e) { apiErr($e); }
     exit;
 }
 
@@ -34,7 +34,7 @@ if ($action === 'save' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         $newId = Checklist::saveTemplate($tid, $d, $id);
         try { logAudit($id?'update':'create', 'checklist', 'Template: '.($d['judul']??''), (string)$newId); } catch (Throwable) {}
         echo json_encode(['ok'=>true, 'id'=>$newId]);
-    } catch (Throwable $e) { echo json_encode(['error'=>$e->getMessage()]); }
+    } catch (Throwable $e) { apiErr($e); }
     exit;
 }
 
@@ -47,7 +47,7 @@ if ($action === 'delete' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
         Checklist::deleteTemplate($tid, (int)($d['id'] ?? 0));
         echo json_encode(['ok'=>true]);
-    } catch (Throwable $e) { echo json_encode(['error'=>$e->getMessage()]); }
+    } catch (Throwable $e) { apiErr($e); }
     exit;
 }
 
@@ -56,7 +56,7 @@ if ($action === 'compliance') {
     header('Content-Type: application/json');
     $tgl = preg_match('/^\d{4}-\d{2}-\d{2}$/', $_GET['tanggal'] ?? '') ? $_GET['tanggal'] : date('Y-m-d');
     try { echo json_encode(['ok'=>true, 'tanggal'=>$tgl, 'data'=>Checklist::compliance($tid, $tgl)]); }
-    catch (Throwable $e) { echo json_encode(['error'=>$e->getMessage()]); }
+    catch (Throwable $e) { apiErr($e); }
     exit;
 }
 

@@ -224,7 +224,7 @@ if ($action) {
             ");
             $stmt->execute([$tid, $oid, $like, $like, $like]);
             echo json_encode(['ok'=>true, 'rows'=>$stmt->fetchAll(PDO::FETCH_ASSOC)]);
-        } catch (Throwable $e) { echo json_encode(['error'=>$e->getMessage()]); }
+        } catch (Throwable $e) { apiErr($e); }
         exit;
     }
 

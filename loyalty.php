@@ -33,7 +33,7 @@ if ($action) {
                 'poin_value'      => (int)($cfg['loyalty_poin_value'] ?? 100),
                 'expiry_months'   => (int)($cfg['loyalty_expiry_months'] ?? 12),
             ]]);
-        } catch (Throwable $e) { echo json_encode(['error'=>$e->getMessage()]); }
+        } catch (Throwable $e) { apiErr($e); }
         exit;
     }
 
@@ -54,7 +54,7 @@ if ($action) {
                 ->execute([$enabled, $rpp, $pv, $exp, $tid]);
             logAudit('save_loyalty_config', 'loyalty', "enabled=$enabled rpp=$rpp pv=$pv exp=$exp");
             echo json_encode(['ok'=>true]);
-        } catch (Throwable $e) { echo json_encode(['error'=>$e->getMessage()]); }
+        } catch (Throwable $e) { apiErr($e); }
         exit;
     }
 
@@ -77,7 +77,7 @@ if ($action) {
             }
             unset($r);
             echo json_encode(['ok'=>true, 'rows'=>$rows]);
-        } catch (Throwable $e) { echo json_encode(['error'=>$e->getMessage()]); }
+        } catch (Throwable $e) { apiErr($e); }
         exit;
     }
 
@@ -126,7 +126,7 @@ if ($action) {
                 logAudit('create_reward', 'loyalty', "Reward baru: $nama");
                 echo json_encode(['ok'=>true, 'id'=>$newId]);
             }
-        } catch (Throwable $e) { echo json_encode(['error'=>$e->getMessage()]); }
+        } catch (Throwable $e) { apiErr($e); }
         exit;
     }
 
@@ -146,7 +146,7 @@ if ($action) {
                 ->execute([$id, $tid]);
             logAudit('toggle_reward', 'loyalty', "Reward #$id toggled");
             echo json_encode(['ok'=>true]);
-        } catch (Throwable $e) { echo json_encode(['error'=>$e->getMessage()]); }
+        } catch (Throwable $e) { apiErr($e); }
         exit;
     }
 
@@ -173,7 +173,7 @@ if ($action) {
                ->execute([$id, $tid]);
             logAudit('delete_reward', 'loyalty', "Reward #$id deleted");
             echo json_encode(['ok'=>true]);
-        } catch (Throwable $e) { echo json_encode(['error'=>$e->getMessage()]); }
+        } catch (Throwable $e) { apiErr($e); }
         exit;
     }
 

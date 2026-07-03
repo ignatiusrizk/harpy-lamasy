@@ -119,7 +119,7 @@ if ($action) {
                 'msg' => ($coin > 0 ? "+$coin" : "$coin") . " coin. Saldo baru: " . number_format($newBal)]);
         } catch (Throwable $e) {
             $db->rollBack();
-            echo json_encode(['error' => $e->getMessage()]);
+            apiErr($e);
         }
         exit;
     }
@@ -232,7 +232,7 @@ if ($action) {
                 logSuperAdminAction('topup_coin', $id, "Topup $amount coin (shared)");
                 echo json_encode(['success' => true, 'new_balance' => $newBal, 'mode' => 'shared']);
             }
-        } catch (Throwable $e) { $db->rollBack(); echo json_encode(['error' => $e->getMessage()]); }
+        } catch (Throwable $e) { $db->rollBack(); apiErr($e); }
         exit;
     }
 
@@ -247,7 +247,7 @@ if ($action) {
             logSuperAdminAction('set_coin_mode', $id, "Coin mode → {$mode} (saldo dipindah: {$res['moved']})");
             echo json_encode(['success' => true, 'mode' => $mode, 'moved' => $res['moved']]);
         } catch (Throwable $e) {
-            echo json_encode(['error' => $e->getMessage()]);
+            apiErr($e);
         }
         exit;
     }

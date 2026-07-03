@@ -289,7 +289,7 @@ if ($action) {
                ->execute([count($rows), $opnameId]);
             $db->commit();
             echo json_encode(['ok'=>true, 'id'=>$opnameId]);
-        } catch (Throwable $e) { $db->rollBack(); echo json_encode(['error'=>$e->getMessage()]); }
+        } catch (Throwable $e) { $db->rollBack(); apiErr($e); }
         exit;
     }
 
@@ -346,7 +346,7 @@ if ($action) {
             }
             $db->commit();
             echo json_encode(['ok'=>true]);
-        } catch (Throwable $e) { $db->rollBack(); echo json_encode(['error'=>$e->getMessage()]); }
+        } catch (Throwable $e) { $db->rollBack(); apiErr($e); }
         exit;
     }
 
@@ -412,7 +412,7 @@ if ($action) {
 
             $db->commit();
             echo json_encode(['ok'=>true, 'total_selisih_item'=>$totalSelisihItem, 'nilai_selisih'=>$nilaiSelisih]);
-        } catch (Throwable $e) { $db->rollBack(); echo json_encode(['error'=>$e->getMessage()]); }
+        } catch (Throwable $e) { $db->rollBack(); apiErr($e); }
         exit;
     }
 

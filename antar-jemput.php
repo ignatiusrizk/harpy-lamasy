@@ -158,7 +158,7 @@ if ($action) {
             echo json_encode(['ok'=>true]);
         } catch (Throwable $e) {
             if ($db->inTransaction()) $db->rollBack();
-            echo json_encode(['error'=>$e->getMessage()]);
+            apiErr($e);
         }
         exit;
     }

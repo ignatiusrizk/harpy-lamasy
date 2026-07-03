@@ -8,7 +8,7 @@
 //   try {
 //       AIBudget::checkOrThrow($tenantId, 'ai_briefing');
 //   } catch (RuntimeException $e) {
-//       echo json_encode(['error' => $e->getMessage()]); exit;
+//       apiErr($e); exit;
 //   }
 //
 //   // Setelah API call sukses:

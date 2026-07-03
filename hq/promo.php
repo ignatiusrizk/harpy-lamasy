@@ -54,7 +54,7 @@ if ($action) {
             $rows = $stmt->fetchAll();
         } catch (Throwable $e) {
             error_log('[hq promo list] '.$e->getMessage());
-            echo json_encode(['error'=>$e->getMessage()]); exit;
+            apiErr($e); exit;
         }
 
         // Untuk account scope, ambil outlet assignment
@@ -271,7 +271,7 @@ if ($action) {
             $stmt->execute($params);
             echo json_encode($stmt->fetchAll());
         } catch (Throwable $e) {
-            echo json_encode(['error'=>$e->getMessage()]);
+            apiErr($e);
         }
         exit;
     }

@@ -369,7 +369,7 @@ if ($action) {
                 ];
             }
             echo json_encode(['ok'=>true, 'bulan'=>$bulan, 'hari_eff'=>$hariEff, 'rows'=>$rows]);
-        } catch (Throwable $e) { echo json_encode(['error'=>$e->getMessage()]); }
+        } catch (Throwable $e) { apiErr($e); }
         exit;
     }
 

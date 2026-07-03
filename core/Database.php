@@ -5,6 +5,21 @@
 // DB_NAME = u269895997_harpy_master
 // ══════════════════════════════════════════════════════
 
+// ── Hardening keamanan: jangan tampilkan error PHP ke output (cegah kebocoran
+//    path/SQL/schema ke client); tetap dicatat ke log server. ──
+@ini_set('display_errors', '0');
+@ini_set('log_errors', '1');
+
+// Helper: balas error API generik ke client + catat detail ke log server.
+// Ganti pola lama `echo json_encode(['error'=>$e->getMessage()])` yang membocorkan
+// pesan exception (mis. SQLSTATE/nama kolom) ke pemanggil.
+if (!function_exists('apiErr')) {
+    function apiErr(Throwable $e, string $msg = 'Terjadi kesalahan sistem. Silakan coba lagi.'): void {
+        error_log('[apiErr] ' . $e->getMessage() . ' @ ' . $e->getFile() . ':' . $e->getLine());
+        echo json_encode(['error' => $msg]);
+    }
+}
+
 class Database
 {
     private static ?PDO $conn = null;

@@ -554,7 +554,7 @@ if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && ($_SERVER['HTTP_SEC_FETCH_MODE'
             echo json_encode(['ok' => true, 'id' => $id]);
         } catch (Throwable $e) {
             if ($db->inTransaction()) $db->rollBack();
-            echo json_encode(['error' => $e->getMessage()]);
+            apiErr($e);
         }
         exit;
     }
@@ -623,7 +623,7 @@ if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && ($_SERVER['HTTP_SEC_FETCH_MODE'
             logSuperAdminAction('email_template_save', null, "Save template: " . ($_POST['slug'] ?? ''));
             echo json_encode(['ok' => true]);
         } catch (Throwable $e) {
-            echo json_encode(['error' => $e->getMessage()]);
+            apiErr($e);
         }
         exit;
     }

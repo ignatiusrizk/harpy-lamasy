@@ -34,7 +34,7 @@ if ($action) {
             }
             unset($t);
             echo json_encode(['ok'=>true, 'tanggal'=>$tgl, 'templates'=>$templates]);
-        } catch (Throwable $e) { echo json_encode(['error'=>$e->getMessage()]); }
+        } catch (Throwable $e) { apiErr($e); }
         exit;
     }
 
@@ -69,7 +69,7 @@ if ($action) {
                 $user ? (int)$user['id'] : null, $user['nama'] ?? null);
             logAudit('submit', 'checklist', "Isi checklist #$templateId", (string)$templateId);
             echo json_encode(['ok'=>true]);
-        } catch (Throwable $e) { echo json_encode(['error'=>$e->getMessage()]); }
+        } catch (Throwable $e) { apiErr($e); }
         exit;
     }
 

@@ -50,7 +50,7 @@ if ($action === 'data') {
         $stmt->execute($params);
         echo json_encode(['entries' => $stmt->fetchAll()]);
     } catch (Throwable $e) {
-        echo json_encode(['error' => $e->getMessage()]);
+        apiErr($e);
     }
     exit;
 }

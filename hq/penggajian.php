@@ -59,7 +59,7 @@ if ($action === 'data') {
         }
         echo json_encode(['ok'=>true, 'bulan'=>$bulan, 'rows'=>$rows,
             'total'=>['beban'=>$totBeban,'pending'=>$totPending,'dibayar'=>$totDibayar,'slip'=>$totSlip,'karyawan'=>$totKar]]);
-    } catch (Throwable $e) { echo json_encode(['error'=>$e->getMessage()]); }
+    } catch (Throwable $e) { apiErr($e); }
     exit;
 }
 
@@ -123,7 +123,7 @@ if ($action === 'generate' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         try { logAudit('generate_gaji','penggajian',"Generate slip massal $bulan ($created baru, $splitCount split multi-outlet)".($evalBonus?' +eval_bonus':'')); } catch (Throwable) {}
         echo json_encode(['ok'=>true, 'created'=>$created, 'split'=>$splitCount]);
-    } catch (Throwable $e) { echo json_encode(['error'=>$e->getMessage()]); }
+    } catch (Throwable $e) { apiErr($e); }
     exit;
 }
 
@@ -141,7 +141,7 @@ if ($action === 'data_karyawan') {
                              ORDER BY u.name");
         $st->execute([$tid, $oid, $bulan]);
         echo json_encode(['rows' => $st->fetchAll(PDO::FETCH_ASSOC)]);
-    } catch (Throwable $e) { echo json_encode(['error'=>$e->getMessage()]); }
+    } catch (Throwable $e) { apiErr($e); }
     exit;
 }
 
@@ -188,7 +188,7 @@ if ($action === 'komponen_add' && $_SERVER['REQUEST_METHOD'] === 'POST') {
            ->execute([(int)$s['sb'], (int)$s['sd'], (int)$s['sp'] + (int)$s['sb'] - (int)$s['sd'], $gajiId]);
         try { logAudit('komponen_add','gaji',"gaji_id=$gajiId nama=$nama amount=$amount"); } catch (Throwable) {}
         echo json_encode(['ok'=>true]);
-    } catch (Throwable $e) { echo json_encode(['error'=>$e->getMessage()]); }
+    } catch (Throwable $e) { apiErr($e); }
     exit;
 }
 
@@ -208,7 +208,7 @@ if ($action === 're_evaluate' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         BonusEvaluator::applyToGaji($gajiId);
         try { logAudit('re_evaluate','gaji',"gaji_id=$gajiId"); } catch (Throwable) {}
         echo json_encode(['ok'=>true]);
-    } catch (Throwable $e) { echo json_encode(['error'=>$e->getMessage()]); }
+    } catch (Throwable $e) { apiErr($e); }
     exit;
 }
 
@@ -226,7 +226,7 @@ if ($action === 'mark_paid' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->execute($oid>0 ? [$tid,$bulan,$oid] : [$tid,$bulan]);
         try { logAudit('mark_paid','penggajian',"Tandai gaji dibayar $bulan".($oid?" outlet#$oid":" semua")); } catch (Throwable) {}
         echo json_encode(['ok'=>true, 'affected'=>$stmt->rowCount()]);
-    } catch (Throwable $e) { echo json_encode(['error'=>$e->getMessage()]); }
+    } catch (Throwable $e) { apiErr($e); }
     exit;
 }
 

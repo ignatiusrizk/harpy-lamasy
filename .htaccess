@@ -86,6 +86,8 @@ RedirectMatch 403 ^/core/
   Header set Referrer-Policy "strict-origin-when-cross-origin"
   Header set Permissions-Policy "geolocation=(), microphone=(), camera=()"
   Header set X-Permitted-Cross-Domain-Policies "none"
+  # HSTS — paksa HTTPS 1 tahun (anti SSL-stripping). Tanpa preload (aman, bisa dicabut).
+  Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
   # Hapus header yang mengungkap teknologi stack
   Header unset X-Powered-By
   Header always unset X-Powered-By

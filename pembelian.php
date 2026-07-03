@@ -183,7 +183,7 @@ if ($action) {
             echo json_encode(['ok' => true, 'total' => $total]);
         } catch (Throwable $e) {
             $db->rollBack();
-            echo json_encode(['error' => $e->getMessage()]);
+            apiErr($e);
         }
         exit;
     }
@@ -252,7 +252,7 @@ if ($action) {
                ->execute([$poId, $tid]);
             $db->commit();
             echo json_encode(['ok' => true, 'count' => count($rows)]); exit;
-        } catch (Throwable $e) { $db->rollBack(); echo json_encode(['error' => $e->getMessage()]); exit; }
+        } catch (Throwable $e) { $db->rollBack(); apiErr($e); exit; }
     }
 
     echo json_encode(['error' => 'Unknown action']);

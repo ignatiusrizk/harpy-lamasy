@@ -65,7 +65,7 @@ if ($action) {
                 'range'       => ['start' => $startDate, 'end' => $endDate],
             ]);
         } catch (Throwable $e) {
-            echo json_encode(['error' => $e->getMessage()]);
+            apiErr($e);
         }
         exit;
     }
@@ -82,7 +82,7 @@ if ($action) {
             logSuperAdminAction('update_ai_budget', $tenantId, "Set AI daily budget ke $budget coin");
             echo json_encode(['ok' => true]);
         } catch (Throwable $e) {
-            echo json_encode(['error' => $e->getMessage()]);
+            apiErr($e);
         }
         exit;
     }

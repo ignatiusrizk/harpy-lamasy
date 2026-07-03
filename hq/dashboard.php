@@ -255,7 +255,7 @@ if (($_GET['action'] ?? '') === 'live') {
             'outlets'=>$outletsLive,
             'ts'=>date('H:i:s'),
         ]);
-    } catch (Throwable $e) { echo json_encode(['error'=>$e->getMessage()]); }
+    } catch (Throwable $e) { apiErr($e); }
     exit;
 }
 
@@ -301,7 +301,7 @@ if (($_GET['action'] ?? '') === 'chart_data') {
             'periode'  => ['start'=>$start, 'end'=>$end],
         ]);
     } catch (Throwable $e) {
-        echo json_encode(['error'=>$e->getMessage()]);
+        apiErr($e);
     }
     exit;
 }

@@ -35,7 +35,7 @@ if (($_GET['action'] ?? '') === 'detail') {
         }
         $r['wa_url'] = $waUrl;
         echo json_encode(['ok'=>true, 'order'=>$r]);
-    } catch (Throwable $e) { echo json_encode(['error'=>$e->getMessage()]); }
+    } catch (Throwable $e) { apiErr($e); }
     exit;
 }
 

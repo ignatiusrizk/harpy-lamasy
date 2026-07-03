@@ -51,7 +51,7 @@ if ($action === 'absensi') {
         $stmt = $db->prepare($sql);
         $stmt->execute($params);
         echo json_encode(['ok'=>true, 'rows'=>$stmt->fetchAll(PDO::FETCH_ASSOC)]);
-    } catch (Throwable $e) { echo json_encode(['error'=>$e->getMessage()]); }
+    } catch (Throwable $e) { apiErr($e); }
     exit;
 }
 
@@ -94,7 +94,7 @@ if ($action === 'produktivitas') {
         }
         usort($rows, fn($a,$b)=>$b['omset_per_kar'] <=> $a['omset_per_kar']);
         echo json_encode(['ok'=>true, 'rows'=>$rows]);
-    } catch (Throwable $e) { echo json_encode(['error'=>$e->getMessage()]); }
+    } catch (Throwable $e) { apiErr($e); }
     exit;
 }
 

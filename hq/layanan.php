@@ -32,7 +32,7 @@ if ($action === 'list') {
         unset($m);
         echo json_encode(['ok'=>true, 'master'=>$master]);
     } catch (Throwable $e) {
-        echo json_encode(['error'=>$e->getMessage()]);
+        apiErr($e);
     }
     exit;
 }
@@ -44,7 +44,7 @@ if ($action === 'coverage') {
     try {
         echo json_encode(['ok'=>true, 'coverage'=>ServiceCatalog::coverage($tid, $mid)]);
     } catch (Throwable $e) {
-        echo json_encode(['error'=>$e->getMessage()]);
+        apiErr($e);
     }
     exit;
 }
@@ -62,7 +62,7 @@ if ($action === 'save' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         try { logAudit($id?'update':'create', 'layanan_master', "Master layanan: ".($_POST['nama']??''), (string)$newId); } catch (Throwable) {}
         echo json_encode(['ok'=>true, 'id'=>$newId]);
     } catch (Throwable $e) {
-        echo json_encode(['error'=>$e->getMessage()]);
+        apiErr($e);
     }
     exit;
 }
@@ -81,7 +81,7 @@ if ($action === 'delete' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         try { logAudit('delete', 'layanan_master', "Hapus master layanan", (string)$id); } catch (Throwable) {}
         echo json_encode(['ok'=>true]);
     } catch (Throwable $e) {
-        echo json_encode(['error'=>$e->getMessage()]);
+        apiErr($e);
     }
     exit;
 }
@@ -104,7 +104,7 @@ if ($action === 'push' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         try { logAudit('push', 'layanan_master', "Push layanan ke ".count($outletIds)." outlet", (string)$mid); } catch (Throwable) {}
         echo json_encode(['ok'=>true, 'result'=>$res]);
     } catch (Throwable $e) {
-        echo json_encode(['error'=>$e->getMessage()]);
+        apiErr($e);
     }
     exit;
 }
@@ -123,7 +123,7 @@ if ($action === 'push_many' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         $res = ServiceCatalog::pushManyToOutlets($tid, $masterIds, $outletIds, $overwrite);
         try { logAudit('push_many', 'layanan_master', count($masterIds)." layanan → ".count($outletIds)." outlet"); } catch (Throwable) {}
         echo json_encode(['ok'=>true, 'result'=>$res]);
-    } catch (Throwable $e) { echo json_encode(['error'=>$e->getMessage()]); }
+    } catch (Throwable $e) { apiErr($e); }
     exit;
 }
 

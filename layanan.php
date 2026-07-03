@@ -51,7 +51,7 @@ if ($action) {
             logAudit('override','layanan',"Adjust harga layanan master #$masterId jadi Rp ".number_format($harga,0,',','.'));
             echo json_encode(['success'=>true]);
         } catch (Throwable $e) {
-            echo json_encode(['error'=>$e->getMessage()]);
+            apiErr($e);
         }
         exit;
     }

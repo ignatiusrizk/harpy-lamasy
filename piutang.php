@@ -82,7 +82,7 @@ if ($action === 'list') {
             'total'    => $total,
             'has_more' => ($offset + count($rows)) < $total,
         ]);
-    } catch (Throwable $e) { echo json_encode(['error'=>$e->getMessage()]); }
+    } catch (Throwable $e) { apiErr($e); }
     exit;
 }
 
@@ -101,7 +101,7 @@ if ($action === 'list_b2b_customer') {
         $s->execute([$tid]);
         echo json_encode(['ok'=>true, 'rows'=>$s->fetchAll(PDO::FETCH_ASSOC),
                           'has_tipe_bayar'=>$hasTipeBayar]);
-    } catch (Throwable $e) { echo json_encode(['error'=>$e->getMessage()]); }
+    } catch (Throwable $e) { apiErr($e); }
     exit;
 }
 
@@ -145,7 +145,7 @@ if ($action === 'generate' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->execute([$tid,$oid,$pelId,$start,$end,$tempo,$totalOrder,$totalTagihan,$totalDibayar]);
         logAudit('generate','piutang',"Generate tagihan pelanggan #$pelId, $start s/d $end, Rp ".number_format($totalTagihan,0,',','.'));
         echo json_encode(['ok'=>true, 'total_tagihan'=>$totalTagihan, 'total_order'=>$totalOrder]);
-    } catch (Throwable $e) { echo json_encode(['error'=>$e->getMessage()]); }
+    } catch (Throwable $e) { apiErr($e); }
     exit;
 }
 
@@ -217,7 +217,7 @@ if ($action === 'generate_bulk' && $_SERVER['REQUEST_METHOD'] === 'POST') {
             'errors'    => array_slice($errors, 0, 5),
             'total_candidates' => count($candidates),
         ]);
-    } catch (Throwable $e) { echo json_encode(['error'=>$e->getMessage()]); }
+    } catch (Throwable $e) { apiErr($e); }
     exit;
 }
 
@@ -281,7 +281,7 @@ if ($action === 'mark_invoiced' && $_SERVER['REQUEST_METHOD'] === 'POST') {
             "Invoice ".$row['nama']." periode ".$row['periode_start']." s/d ".$row['periode_end']);
         logAudit('invoice','piutang',"Kirim invoice #$id pelanggan {$row['nama']}", (string)$id);
         echo json_encode(['ok'=>true, 'wa'=>$waUrl]);
-    } catch (Throwable $e) { echo json_encode(['error'=>$e->getMessage()]); }
+    } catch (Throwable $e) { apiErr($e); }
     exit;
 }
 
@@ -331,7 +331,7 @@ if ($action === 'bayar' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         echo json_encode(['ok'=>true, 'status'=>$status]);
     } catch (Throwable $e) {
         if ($db->inTransaction()) $db->rollBack();
-        echo json_encode(['error'=>$e->getMessage()]);
+        apiErr($e);
     }
     exit;
 }
@@ -373,7 +373,7 @@ if ($action === 'reminder' && $_SERVER['REQUEST_METHOD'] === 'POST') {
             "Reminder ke {$row['nama']} sisa Rp ".number_format((int)$row['sisa_tagihan']));
         logAudit('reminder','piutang',"Reminder piutang #$id {$row['nama']}", (string)$id);
         echo json_encode(['ok'=>true, 'wa'=>$waUrl]);
-    } catch (Throwable $e) { echo json_encode(['error'=>$e->getMessage()]); }
+    } catch (Throwable $e) { apiErr($e); }
     exit;
 }
 

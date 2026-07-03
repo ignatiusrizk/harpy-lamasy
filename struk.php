@@ -201,7 +201,7 @@ if ($action) {
             )->execute([$tid, $oid, $tipe]);
             echo json_encode(['success' => true]);
         } catch (Throwable $e) {
-            echo json_encode(['error' => $e->getMessage()]);
+            apiErr($e);
         }
         exit;
     }

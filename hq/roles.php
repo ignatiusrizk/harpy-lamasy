@@ -52,7 +52,7 @@ if ($action) {
             $stmt->execute([$tid]);
             echo json_encode($stmt->fetchAll());
         } catch (Throwable $e) {
-            echo json_encode(['error'=>$e->getMessage()]);
+            apiErr($e);
         }
         exit;
     }
@@ -74,7 +74,7 @@ if ($action) {
             }
             echo json_encode($grouped);
         } catch (Throwable $e) {
-            echo json_encode(['error'=>$e->getMessage()]);
+            apiErr($e);
         }
         exit;
     }
@@ -140,7 +140,7 @@ if ($action) {
                 'push_events' => $pushEvents,
             ]);
         } catch (Throwable $e) {
-            echo json_encode(['error'=>$e->getMessage()]);
+            apiErr($e);
         }
         exit;
     }

@@ -68,7 +68,7 @@ if ($action) {
             echo json_encode(['ok'=>true]);
         } catch (Throwable $e) {
             if ($db->inTransaction()) $db->rollBack();
-            echo json_encode(['error'=>$e->getMessage()]);
+            apiErr($e);
         }
         exit;
     }
@@ -128,7 +128,7 @@ if ($action) {
         } catch (Throwable $e) {
             if ($db->inTransaction()) $db->rollBack();
             if ($sigPath && file_exists(ROOT . '/' . $sigPath)) @unlink(ROOT . '/' . $sigPath);
-            echo json_encode(['error'=>$e->getMessage()]);
+            apiErr($e);
         }
         exit;
     }

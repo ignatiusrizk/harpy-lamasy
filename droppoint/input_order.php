@@ -18,7 +18,7 @@ if ($action === 'layanan') {
                             ORDER BY kategori, urutan, nama");
         $s->execute([$tid, $oid]);
         echo json_encode(['ok'=>true, 'layanan'=>$s->fetchAll(PDO::FETCH_ASSOC)]);
-    } catch (Throwable $e) { echo json_encode(['error'=>$e->getMessage()]); }
+    } catch (Throwable $e) { apiErr($e); }
     exit;
 }
 
@@ -139,7 +139,7 @@ if ($action === 'submit' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         ]);
     } catch (Throwable $e) {
         if ($db->inTransaction()) $db->rollBack();
-        echo json_encode(['error'=>$e->getMessage()]);
+        apiErr($e);
     }
     exit;
 }

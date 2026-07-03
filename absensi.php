@@ -365,7 +365,7 @@ if ($action) {
                 'existing'          => $existing,
             ]);
         } catch (Throwable $e) {
-            echo json_encode(['error' => $e->getMessage()]);
+            apiErr($e);
         }
         exit;
     }
@@ -415,7 +415,7 @@ if ($action) {
             logAudit('handover_ack', 'shift#'.$id, '');
             echo json_encode(['ok'=>true]);
         } catch (Throwable $e) {
-            echo json_encode(['error'=>$e->getMessage()]);
+            apiErr($e);
         }
         exit;
     }
