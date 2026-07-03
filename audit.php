@@ -87,6 +87,30 @@ if ($action) {
   .hl-table tbody td{font-size:12px;padding:8px 8px}
   .log-ket{max-width:none;white-space:normal !important}
 }
+/* Kontrol custom filter (ganti select/date native) */
+.lm-cust{display:none!important}
+.lmui-trg{padding:9px 12px;border:1px solid rgba(27,45,90,.14);border-radius:9px;font-family:inherit;font-size:14px;background:#fff;text-align:left;display:inline-flex;align-items:center;justify-content:space-between;gap:8px;cursor:pointer;color:var(--navy);font-weight:600;min-width:150px}
+.lmui-trg .lmui-lbl{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lmui-trg .lmui-car{color:var(--gray);font-size:12px;flex:0 0 auto}
+.lmui-trg.ph .lmui-lbl{color:var(--gray)}
+.lmui-pop{position:fixed;background:#fff;border:1px solid rgba(27,45,90,.12);border-radius:10px;box-shadow:0 12px 32px rgba(15,28,58,.16);z-index:9000;max-height:280px;overflow-y:auto;padding:6px}
+.lmui-opt{display:block;width:100%;text-align:left;padding:10px 12px;border:0;background:none;font-family:inherit;font-size:14px;border-radius:7px;cursor:pointer;color:var(--navy);font-weight:600}
+.lmui-opt:hover{background:var(--off,#F1F5FB)}
+.lmui-opt.sel{background:#E8F0FE;color:#1E40AF;font-weight:700}
+.lm-date{position:relative;display:inline-block}
+.lm-date-btn{display:inline-flex;align-items:center;justify-content:space-between;gap:10px;min-width:150px;padding:9px 12px;border:1px solid rgba(27,45,90,.14);border-radius:9px;background:#fff;color:var(--navy);font-size:14px;font-weight:600;font-family:inherit;cursor:pointer}
+.lm-cal{position:fixed;z-index:9001;background:#fff;border:1px solid rgba(27,45,90,.12);border-radius:12px;box-shadow:0 12px 34px rgba(15,28,58,.18);padding:12px;width:264px}
+.lm-cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.lm-cal-head button{border:none;background:var(--off,#F1F5FB);width:30px;height:30px;border-radius:8px;cursor:pointer;font-size:15px;color:var(--navy)}
+.lm-cal-title{font-weight:800;font-size:14px;color:var(--navy)}
+.lm-cal-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:2px}
+.lm-cal-dow{font-size:10px;color:var(--gray);text-align:center;font-weight:700;padding:4px 0}
+.lm-cal-day{border:none;background:none;height:32px;border-radius:8px;font-size:13px;color:var(--navy);cursor:pointer;font-family:inherit}
+.lm-cal-day:hover{background:var(--off,#F1F5FB)}
+.lm-cal-day.today{outline:1.5px solid var(--teal)}
+.lm-cal-day.sel{background:var(--navy);color:#fff;font-weight:800}
+.lm-cal-day.empty{visibility:hidden}
+@media(max-width:680px){.lmui-trg,.lm-date,.lm-date-btn{width:100%}}
 </style>
 </head>
 <body>
@@ -111,7 +135,7 @@ if ($action) {
     <div class="hl-filter-bar" id="auditFilter">
       <input type="text" id="fSearch" class="hl-input" placeholder="Cari aksi, keterangan, user..."
         oninput="debounce()" style="flex:1;max-width:280px"/>
-      <select id="fModul" class="hl-input" style="width:auto" onchange="loadLog(1)">
+      <select id="fModul" class="hl-input lm-cust" style="width:auto" onchange="loadLog(1)">
         <option value="">Semua Modul</option>
         <option value="orders">Orders</option>
         <option value="kas">Kas</option>
@@ -121,11 +145,11 @@ if ($action) {
         <option value="settings">Settings</option>
         <option value="auth">Auth (Login)</option>
       </select>
-      <select id="fUser" class="hl-input" style="width:auto" onchange="loadLog(1)">
+      <select id="fUser" class="hl-input lm-cust" style="width:auto" onchange="loadLog(1)">
         <option value="">Semua User</option>
       </select>
-      <input type="date" id="fDari" class="hl-input" style="width:auto" onchange="loadLog(1)"/>
-      <input type="date" id="fSampai" class="hl-input" style="width:auto" onchange="loadLog(1)"/>
+      <div class="lm-date"><button type="button" class="lm-date-btn" onclick="lmDateOpen('fDari',this)"><span class="lm-date-txt">Dari tanggal</span> <span>📅</span></button><input type="hidden" id="fDari" onchange="loadLog(1)"></div>
+      <div class="lm-date"><button type="button" class="lm-date-btn" onclick="lmDateOpen('fSampai',this)"><span class="lm-date-txt">Sampai tanggal</span> <span>📅</span></button><input type="hidden" id="fSampai" onchange="loadLog(1)"></div>
       <button class="hl-btn hl-btn-outline hl-btn-sm" onclick="resetFilter()">✕ Reset</button>
       <button class="hl-btn hl-btn-outline hl-btn-sm" onclick="loadLog(1)">↻</button>
     </div>
@@ -166,9 +190,10 @@ let currentPage = 1;
 
 document.addEventListener('DOMContentLoaded', () => {
   initFilter('auditFilter');
+  lmEnhanceFilters();
   const today = localDateStr();
-  document.getElementById('fDari').value   = today;
-  document.getElementById('fSampai').value = today;
+  lmDateSet('fDari', today);
+  lmDateSet('fSampai', today);
   loadStats();
   loadUsers();
   loadLog(1);
@@ -194,6 +219,7 @@ async function loadUsers() {
   const sel = document.getElementById('fUser');
   sel.innerHTML = '<option value="">Semua User</option>' +
     d.map(u => `<option value="${u.user_id}">${esc(u.user_nama)}</option>`).join('');
+  lmSyncSel('fUser');
 }
 
 async function loadLog(page=1) {
@@ -271,14 +297,72 @@ function resetFilter() {
   document.getElementById('fSearch').value  = '';
   document.getElementById('fModul').value   = '';
   document.getElementById('fUser').value    = '';
-  document.getElementById('fDari').value    = localDateStr();
-  document.getElementById('fSampai').value  = localDateStr();
+  lmSyncSel('fModul','fUser');
+  lmDateSet('fDari', localDateStr());
+  lmDateSet('fSampai', localDateStr());
   loadLog(1);
 }
 
 function debounce(){ clearTimeout(searchTimer); searchTimer=setTimeout(()=>loadLog(1),400); }
 function fmtDateTime(d){if(!d)return'-';const dt=new Date(d);return dt.toLocaleDateString('id-ID',{day:'2-digit',month:'short'})+' '+dt.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',second:'2-digit'});}
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+/* ── Dropdown custom (ganti select native) — pola sama piutang/layanan ── */
+let _pop=null,_popAnchor=null;
+function _closePop(){ if(_pop){_pop.remove();_pop=null;} _popAnchor=null;
+  document.removeEventListener('mousedown',_onOutside,true);
+  window.removeEventListener('scroll',_closePop,true); window.removeEventListener('resize',_closePop); }
+function _onOutside(e){ if(e.target.closest('.lmui-pop')||e.target.closest('.lmui-trg')) return; _closePop(); }
+function _placePop(a){ const r=a.getBoundingClientRect(); _pop.style.left=r.left+'px'; _pop.style.minWidth=r.width+'px';
+  const ph=_pop.offsetHeight; let top=r.bottom+4; if(top+ph>window.innerHeight-8) top=Math.max(8,r.top-ph-4); _pop.style.top=top+'px';
+  const pw=_pop.offsetWidth; if(r.left+pw>window.innerWidth-8) _pop.style.left=Math.max(8,window.innerWidth-pw-8)+'px'; }
+function _initSel(sel){
+  sel.classList.remove('lm-cust'); sel.style.display='none';
+  const trg=document.createElement('button'); trg.type='button'; trg.className='lmui-trg';
+  trg.innerHTML='<span class="lmui-lbl"></span><span class="lmui-car">▾</span>';
+  const lbl=trg.querySelector('.lmui-lbl');
+  const sync=()=>{ const o=sel.options[sel.selectedIndex]; lbl.textContent=o?o.textContent:'—'; trg.classList.toggle('ph',!sel.value); };
+  sel._lmSync=sync; sel.addEventListener('change',sync);
+  trg.onclick=()=>{ if(_popAnchor===trg){_closePop();return;} _closePop();
+    _pop=document.createElement('div'); _pop.className='lmui-pop';
+    _pop.innerHTML=Array.from(sel.options).map((o,i)=>`<button type="button" class="lmui-opt${i===sel.selectedIndex?' sel':''}" data-i="${i}">${esc(o.textContent)}</button>`).join('');
+    _pop.onclick=e=>{ const b=e.target.closest('.lmui-opt'); if(!b) return; sel.selectedIndex=+b.dataset.i; sel.dispatchEvent(new Event('change')); _closePop(); };
+    document.body.appendChild(_pop); _popAnchor=trg; _placePop(trg);
+    document.addEventListener('mousedown',_onOutside,true);
+    window.addEventListener('scroll',_closePop,true); window.addEventListener('resize',_closePop); };
+  sel.after(trg); sync();
+}
+function lmSyncSel(...ids){ ids.forEach(id=>{ const el=document.getElementById(id); if(el&&el._lmSync) el._lmSync(); }); }
+function lmEnhanceFilters(){ document.querySelectorAll('select.lm-cust').forEach(_initSel); }
+
+/* ── Date picker: pola laporan.php (terbukti jalan) ── */
+function lmFmtDMY(v){ if(!v) return 'Pilih tanggal'; const p=v.split('-'); const mo=['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des']; return (+p[2])+' '+mo[(+p[1])-1]+' '+p[0]; }
+function lmDateSet(id,val){ const h=document.getElementById(id); if(!h) return; h.value=val||''; const w=h.closest('.lm-date'); if(w){ const t=w.querySelector('.lm-date-txt'); if(t) t.textContent=lmFmtDMY(val); } }
+let _lmCalFor=null;
+function lmCalClose(){ document.querySelectorAll('.lm-cal').forEach(c=>c.remove()); _lmCalFor=null; }
+function lmDateOpen(id,btn){
+  if(_lmCalFor===id){ lmCalClose(); return; }
+  lmCalClose(); _lmCalFor=id;
+  const cur=(document.getElementById(id).value)||localDateStr(); const [y,m]=cur.split('-').map(Number);
+  const cal=document.createElement('div'); cal.className='lm-cal'; document.body.appendChild(cal);
+  const r=btn.getBoundingClientRect(); const estH=300;
+  cal.style.top=Math.max(8,(r.bottom+estH>window.innerHeight-8 ? r.top-estH-6 : r.bottom+6))+'px';
+  cal.style.left=Math.max(8,Math.min(r.left,window.innerWidth-272))+'px';
+  lmCalRender(cal,id,y,m);
+}
+function lmCalRender(cal,id,y,m){
+  const mo=['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+  const first=new Date(y,m-1,1).getDay(), days=new Date(y,m,0).getDate();
+  const today=localDateStr(), sel=document.getElementById(id).value, pad=n=>String(n).padStart(2,'0');
+  let h='<div class="lm-cal-head"><button type="button" onclick="lmCalNav(this,\''+id+'\','+y+','+m+',-1)">‹</button><span class="lm-cal-title">'+mo[m-1]+' '+y+'</span><button type="button" onclick="lmCalNav(this,\''+id+'\','+y+','+m+',1)">›</button></div><div class="lm-cal-grid">';
+  ['M','S','S','R','K','J','S'].forEach(d=>h+='<div class="lm-cal-dow">'+d+'</div>');
+  for(let i=0;i<first;i++) h+='<button class="lm-cal-day empty"></button>';
+  for(let d=1;d<=days;d++){ const v=y+'-'+pad(m)+'-'+pad(d); h+='<button type="button" class="lm-cal-day'+(v===sel?' sel':'')+(v===today?' today':'')+'" onclick="lmCalPick(\''+id+'\',\''+v+'\')">'+d+'</button>'; }
+  cal.innerHTML=h+'</div>';
+}
+function lmCalNav(btn,id,y,m,delta){ m+=delta; if(m<1){m=12;y--;} if(m>12){m=1;y++;} lmCalRender(btn.closest('.lm-cal'),id,y,m); }
+function lmCalPick(id,v){ lmDateSet(id,v); lmCalClose(); const h=document.getElementById(id); if(h) h.dispatchEvent(new Event('change')); }
+document.addEventListener('click', e=>{ if(!e.target.closest('.lm-date') && !e.target.closest('.lm-cal')) lmCalClose(); });
 </script>
 </body>
 </html>
