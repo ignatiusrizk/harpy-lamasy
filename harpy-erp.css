@@ -1064,7 +1064,8 @@ html, body { overflow-x: clip; overscroll-behavior-y: contain; }
   }
   .hl-filter-bar input, .hl-filter-bar select,
   .filter-bar input, .filter-bar select,
-  .hl-filter-bar .lmx-btn, .filter-bar .lmx-btn {
+  .hl-filter-bar .lmx-btn, .filter-bar .lmx-btn,
+  .hl-filter-bar .lmui-trg, .filter-bar .lmui-trg {
     width: 100% !important; min-width: 0 !important; flex: 1 1 auto;
   }
   /* Stat grids — adapt */
