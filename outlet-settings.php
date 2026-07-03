@@ -26,8 +26,16 @@ if ($action) {
 
         $cols = "id, tenant_id, nama_outlet, slug, kota, telepon, status, is_main";
         if ($hasNotaCols) $cols .= ", nota_prefix, nota_format, label_size, antar_mode, absensi_selfie_wajib, absensi_geofence_aktif, absensi_lat, absensi_lng, absensi_radius_m";
-        $st = $db->prepare("SELECT $cols FROM outlets WHERE tenant_id=? ORDER BY is_main DESC, id ASC");
-        $st->execute([$tid]);
+        // Scope: di mode OUTLET tampilkan HANYA outlet aktif (jangan bocorkan config
+        // outlet lain). Fallback semua outlet hanya kalau tak ada konteks outlet (HQ).
+        $oid = TenantResolver::outletId();
+        if ($oid > 0) {
+            $st = $db->prepare("SELECT $cols FROM outlets WHERE tenant_id=? AND id=?");
+            $st->execute([$tid, $oid]);
+        } else {
+            $st = $db->prepare("SELECT $cols FROM outlets WHERE tenant_id=? ORDER BY is_main DESC, id ASC");
+            $st->execute([$tid]);
+        }
         $rows = $st->fetchAll(PDO::FETCH_ASSOC);
 
         // Tambah preview format utk masing-masing
@@ -81,14 +89,28 @@ if ($action) {
     // ── Parfum CRUD (per outlet atau global) ──
     if ($action === 'parfum_list') {
         try {
-            $st = $db->prepare(
-                "SELECT p.*, o.nama_outlet
-                   FROM hl_parfum p
-              LEFT JOIN outlets o ON o.id = p.outlet_id
-                  WHERE p.tenant_id = ?
-                  ORDER BY p.outlet_id IS NULL DESC, p.urutan ASC, p.nama ASC"
-            );
-            $st->execute([$tid]);
+            // Scope: mode OUTLET → parfum global + parfum outlet ini saja (jangan
+            // bocorkan parfum outlet lain). HQ (tanpa konteks outlet) → semua.
+            $oid = TenantResolver::outletId();
+            if ($oid > 0) {
+                $st = $db->prepare(
+                    "SELECT p.*, o.nama_outlet
+                       FROM hl_parfum p
+                  LEFT JOIN outlets o ON o.id = p.outlet_id
+                      WHERE p.tenant_id = ? AND (p.outlet_id IS NULL OR p.outlet_id = ?)
+                      ORDER BY p.outlet_id IS NULL DESC, p.urutan ASC, p.nama ASC"
+                );
+                $st->execute([$tid, $oid]);
+            } else {
+                $st = $db->prepare(
+                    "SELECT p.*, o.nama_outlet
+                       FROM hl_parfum p
+                  LEFT JOIN outlets o ON o.id = p.outlet_id
+                      WHERE p.tenant_id = ?
+                      ORDER BY p.outlet_id IS NULL DESC, p.urutan ASC, p.nama ASC"
+                );
+                $st->execute([$tid]);
+            }
             echo json_encode(['rows' => $st->fetchAll(PDO::FETCH_ASSOC)]);
         } catch (Throwable $e) {
             echo json_encode(['error'=>'Tabel hl_parfum belum ada. Run migration parfum.', 'rows'=>[]]);
