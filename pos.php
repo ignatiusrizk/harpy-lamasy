@@ -992,11 +992,16 @@ textarea{resize:vertical;min-height:64px}
   }
   /* Hide labels jika tidak ada data-lbl */
   .items-table tbody td:empty::before { content:'' }
-  /* Inputs di stacked layout */
+  /* Inputs di stacked layout — .lmx-btn (dropdown custom) ikut; !important perlu
+     krn template item pakai inline width (64px satuan / 130px express) yg tersalin
+     ke tombol → tanpa ini kotaknya sempit & lebar acak */
   .items-table tbody td input,
-  .items-table tbody td select {
-    text-align:right; flex:1; min-width:0; max-width:160px;
+  .items-table tbody td select,
+  .items-table tbody td .lmx-btn {
+    text-align:right; flex:1 1 auto !important; min-width:0 !important;
+    max-width:160px; width:auto !important;
   }
+  .items-table tbody td .lmx-btn .lmx-lbl { text-align:right; }
   .items-table tbody td .item-sub { font-weight:700; color:var(--navy); }
   /* Tombol remove di pojok kanan atas card */
   .items-table tbody td:last-child {
