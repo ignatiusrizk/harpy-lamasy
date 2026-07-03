@@ -89,13 +89,21 @@
 
 ---
 
-## 4b. SuperAdmin — Static & Keamanan (LULUS, tanpa login)
+## 4b. SuperAdmin — Static, Keamanan & Fungsional (LULUS)
 
+**Static & keamanan:**
 - **Guard:** 31 halaman SA semua ada proteksi session/`sa_guard` (0 gap).
-- **CSRF:** semua handler POST SA pakai `saVerifyCsrf()` (0 gap).
-- **Impersonate:** permission gate `clients.impersonate` + CSRF + POST-only + cegah impersonate berlapis + log `saas_impersonation_log`.
-- **Jalur uang** (payments confirm/cancel/refund, coin_pricing, packages, billing-config, affiliates): permission gate + CSRF + audit `logSuperAdminAction()`. `billing.php` read-only.
-- Audit SA via helper `logSuperAdminAction()` (`superadmin/middleware/superadmin_guard.php`).
+- **CSRF:** semua handler POST SA pakai `saVerifyCsrf()` (0 gap; token salah → "CSRF invalid" — diverifikasi E2E).
+- **HTTP Basic Auth (Layer 0):** konsol SA dilindungi Basic Auth level-app (`SA_BASIC_USER`/`SA_BASIC_PASS`) sebagai faktor kedua sebelum login; balas "Not Found" agar path tak terendus scanner. Login app + 2FA di atasnya = defense in depth solid.
+- **Impersonate:** permission gate `clients.impersonate` + CSRF + POST-only + cegah nesting + log `saas_impersonation_log` (code-verified; live-test sengaja tak dijalankan — guardrail memblokir impersonate tenant nyata).
+- **Jalur uang** (payments/coin_pricing/packages/billing-config/affiliates): permission + CSRF + audit `logSuperAdminAction()`. `billing.php` read-only.
+
+**Fungsional (via akun SA dummy owner, sudah dihapus):**
+- Login (Basic + app) → dashboard render ✓; clients list (9 tenant) ✓.
+- **Topup coin** tenant → saldo naik + `coin_ledger` + `superadmin_logs` "topup_coin" ✓ (di-revert setelah tes).
+- **Banners save/delete** → `superadmin_logs` "banner_create"/"banner_delete" ✓ — **konfirmasi E2E fix #5** (sebelumnya tak terekam).
+- **De-native lmx + tema gelap** ter-include & tampil di halaman SA ✓; viewport-fit=cover + safe-area aktif.
+- Cleanup: akun dummy + log/ledger uji dihapus, coin tenant di-revert (hanya SA asli tersisa).
 
 ## 4c. Sweep UI/UX Mobile Final (static, 11 halaman)
 
