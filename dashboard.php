@@ -1421,7 +1421,7 @@ if ($_dashRole === 'kasir'):
   </div>
 
   <!-- STAT CARDS -->
-  <div class="dash-grid">
+  <div class="dash-grid" data-tour="t_dash_summary">
     <div class="dash-card teal">
       <div class="dash-num" id="dOmset">-</div>
       <div class="dash-label">Omset Hari Ini</div>
