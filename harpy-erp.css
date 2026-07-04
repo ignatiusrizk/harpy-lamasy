@@ -1561,6 +1561,8 @@ html, body { overflow-x: clip; overscroll-behavior-y: contain; }
   justify-content: center;
   padding: 20px;
   backdrop-filter: blur(4px);
+  overflow-y: auto;           /* jangan pernah nge-trap wheel/2-jari saat tampil */
+  overscroll-behavior: contain;
 }
 .hl-exit-modal.show { display: flex; }
 .hl-exit-content {

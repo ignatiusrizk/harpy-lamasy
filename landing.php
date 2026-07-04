@@ -2345,9 +2345,22 @@ document.querySelectorAll('.feature-card, .step-card, .pricing-card, .testi-card
   var form = document.getElementById('hlExitForm');
   if (!modal || !form) return;
 
-  // Trigger: mouse leave viewport ke atas
+  function closeExit(){ modal.classList.remove('show'); }
+  // Tutup dgn klik backdrop (di luar konten) + tombol Esc — biar tak pernah "ke-trap".
+  modal.addEventListener('click', function(e){ if (e.target === modal) closeExit(); });
+  document.addEventListener('keydown', function(e){ if (e.key === 'Escape') closeExit(); });
+
+  // Trigger cuma di-arm setelah user benar-benar engage (5 dtk DAN sudah scroll)
+  // supaya tidak nyembur pas kursor tak sengaja lewat atas layar di awal.
+  var armed = false;
+  setTimeout(function(){ if (window.scrollY > 200) armed = true; }, 5000);
+  window.addEventListener('scroll', function(){ if (!armed && window.scrollY > 200) {
+    setTimeout(function(){ armed = true; }, 5000);
+  }}, { once: true, passive: true });
+
+  // Trigger: mouse benar-benar keluar viewport lewat atas
   document.addEventListener('mouseout', function(e) {
-    if (e.clientY <= 0 && !e.relatedTarget && !sessionStorage.getItem('hl_exit_shown')) {
+    if (armed && e.clientY <= 0 && !e.relatedTarget && !sessionStorage.getItem('hl_exit_shown')) {
       modal.classList.add('show');
       sessionStorage.setItem('hl_exit_shown', '1');
     }
