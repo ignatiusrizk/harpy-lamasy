@@ -195,7 +195,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['start_demo'])) {
 
   <div class="or">— atau —</div>
 
-  <a href="/register" class="register-btn">Daftar Gratis — Trial 30 Hari →</a>
+  <a href="/register" class="register-btn">Daftar Gratis — Trial 7 Hari →</a>
   <div class="fine-print">Tidak perlu kartu kredit &nbsp;·&nbsp; Setup &lt;5 menit &nbsp;·&nbsp; Batalkan kapan saja</div>
 </div>
 </body>
