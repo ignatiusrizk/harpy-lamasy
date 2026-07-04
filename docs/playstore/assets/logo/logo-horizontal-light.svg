@@ -1,0 +1,18 @@
+<svg width="680" height="150" viewBox="0 0 680 150" xmlns="http://www.w3.org/2000/svg">
+  <!-- TILE + MARK -->
+  <g transform="translate(15,15)">
+    <rect x="0" y="0" width="120" height="120" rx="30" fill="#0F1C3A"/>
+    <!-- L droplet mark (scaled to tile) -->
+    <path d="M40 40
+             a13.6 13.6 0 0 1 27.2 0
+             v34.7
+             a6 6 0 0 1 -6 6
+             h-15
+             a6 6 0 0 1 -6 -6
+             z" fill="#FFFFFF"/>
+    <rect x="40" y="69.5" width="46" height="14" rx="7" fill="#FFFFFF"/>
+    <circle cx="53.5" cy="37.5" r="6.3" fill="#35E8D5"/>
+  </g>
+  <!-- WORDMARK -->
+  <text x="158" y="97" font-family="Arial" font-weight="bold" font-size="62" letter-spacing="2" fill="#0F1C3A">LAMASY</text>
+</svg>
