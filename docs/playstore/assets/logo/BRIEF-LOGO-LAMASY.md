@@ -47,7 +47,7 @@ LAMASY lahir dari **Harpy**. Logo harus melanjutkan bahasa visual keluarga:
 | Peran | Hex | Catatan |
 |-------|-----|---------|
 | **Teal (lingkaran)** | `#1FC0CB` | Sama dengan **Harpy Laundry**. Ini patokan utama. |
-| **Putih** | `#FFFFFF` | Sweater, sparkle, cincin, teks. |
+| **Putih** | `#FFFFFF` | Mesin cuci, sparkle, cincin, teks. |
 
 > Alternatif teal: Harpy induk memakai `#35E7D5` (lebih terang/aqua). Untuk LAMASY,
 > **pakai `#1FC0CB`** agar sepasang dengan Harpy Laundry. Jangan tambah warna lain —
