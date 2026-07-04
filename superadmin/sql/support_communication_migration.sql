@@ -1,6 +1,6 @@
 -- ══════════════════════════════════════════════════════════════
 -- support_communication_migration.sql
--- Support & Komunikasi Tenant — LaMaSy SuperAdmin
+-- Support & Komunikasi Tenant — LAMASY SuperAdmin
 --
 -- Jalankan SETELAH:
 --   schema.sql (support_tickets & tenant_notes sudah ada)

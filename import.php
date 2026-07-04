@@ -565,7 +565,7 @@ if ($action) {
             <div style="font-size:13px;font-weight:700;margin-bottom:10px;color:#1B2D5A;">📄 Download Template (Opsional)</div>
             <p style="font-size:12.5px;color:#6B7280;margin-bottom:12px;">
               Jika kamu punya file dari Smartlink, iLaundry, atau Excel sendiri — langsung upload saja.
-              AI akan mapping otomatis. Template ini untuk data baru atau jika mau format standar LaMaSy.
+              AI akan mapping otomatis. Template ini untuk data baru atau jika mau format standar LAMASY.
             </p>
             <a id="templateLink" href="#" class="hl-btn hl-btn-outline hl-btn-sm" target="_blank">
               ⬇ Download Template CSV
@@ -877,7 +877,7 @@ function showAiCostPrompt(cost, balance, canAfford, isRerun) {
     const title = isRerun ? 'Run AI Ulang?' : 'Format Baru Terdeteksi';
     const intro = isRerun
         ? 'AI akan dipanggil ulang untuk menganalisa file ini (cache sebelumnya diabaikan).'
-        : 'File ini punya format yang belum pernah di-import. AI Claude akan menganalisa kolom & mapping otomatis ke schema LaMaSy.';
+        : 'File ini punya format yang belum pernah di-import. AI Claude akan menganalisa kolom & mapping otomatis ke schema LAMASY.';
 
     const tbody = document.getElementById('mappingTbody');
     tbody.innerHTML = `

@@ -95,7 +95,7 @@ class AIBudget
             $remaining = max(0, $budget - $used);
             throw new RuntimeException(
                 "Budget AI hari ini sudah hampir habis ($used / $budget coin terpakai, sisa $remaining). "
-              . "Reset otomatis jam 00:00. Kalau perlu naikkan budget, hubungi admin LaMaSy."
+              . "Reset otomatis jam 00:00. Kalau perlu naikkan budget, hubungi admin LAMASY."
             );
         }
     }

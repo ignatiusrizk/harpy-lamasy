@@ -43,7 +43,7 @@ if (!$row) {
 
 $tStmt = Database::get()->prepare("SELECT nama_perusahaan FROM tenants WHERE id = ?");
 $tStmt->execute([$tid]);
-$tenant = $tStmt->fetch(PDO::FETCH_ASSOC) ?: ['nama_perusahaan' => 'LaMaSy'];
+$tenant = $tStmt->fetch(PDO::FETCH_ASSOC) ?: ['nama_perusahaan' => 'LAMASY'];
 
 // Format periode bulan jadi "Juni 2026"
 $periode = '-';
@@ -241,7 +241,7 @@ body { font-family: 'Helvetica', Arial, sans-serif; margin: 0; padding: 32px 40p
 </div>
 
 <p style="font-size:10px;color:#9CA3AF;text-align:center;margin-top:24px;border-top:1px dashed #E5E7EB;padding-top:12px">
-  Slip ini di-generate otomatis dari LaMaSy · <?= date('d M Y, H:i') ?> WIB
+  Slip ini di-generate otomatis dari LAMASY · <?= date('d M Y, H:i') ?> WIB
 </p>
 
 <?php if ($autoPrint): ?>

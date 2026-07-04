@@ -201,7 +201,7 @@ class TrialNurture
         if ($day >= 1 && !$hasOrder) {
             return self::tp('trial_h1_setup', "Setup cuma 3 menit — yuk buat order pertama",
                 self::body($owner,
-                    "<p>Selamat datang di LaMaSy, $owner! Outlet <strong>".self::e($namaOutlet)."</strong> sudah aktif dalam masa trial.</p>
+                    "<p>Selamat datang di LAMASY, $owner! Outlet <strong>".self::e($namaOutlet)."</strong> sudah aktif dalam masa trial.</p>
                      <p>Tinggal 3 langkah cepat biar langsung bisa terima order: atur layanan &amp; harga → tambah/​pakai customer umum → buat order pertama di kasir. Total ± 3 menit.</p>
                      <p>💡 Punya daftar pelanggan lama di Excel/CSV? Kamu bisa <strong>import langsung</strong> di menu Customer — datanya masuk otomatis, gak perlu ketik ulang.</p>",
                     "Mulai sekarang", "/onboarding.php"));
@@ -220,7 +220,7 @@ class TrialNurture
     private static function body(string $owner, string $inner, string $ctaLabel, string $href): string
     {
         $url = $href === 'wa'
-            ? 'https://wa.me/'.self::CS_WA.'?text='.rawurlencode('Halo Tim LaMaSy, saya butuh bantuan setup outlet trial.')
+            ? 'https://wa.me/'.self::CS_WA.'?text='.rawurlencode('Halo Tim LAMASY, saya butuh bantuan setup outlet trial.')
             : self::APP_URL . $href;
         $content =
             "<p style='font-size:15px'>Halo <strong>".self::e($owner)."</strong>,</p>"
@@ -230,8 +230,8 @@ class TrialNurture
                     text-decoration:none;font-weight:700;padding:13px 28px;border-radius:10px;font-size:15px'>"
                  .self::e($ctaLabel)."</a>
                </p>
-               <p style='color:#64748b;font-size:12px'>Email ini dikirim otomatis oleh sistem LaMaSy karena outlet kamu sedang dalam masa trial.</p>";
-        return Mailer::baseTemplate('LaMaSy', $content);
+               <p style='color:#64748b;font-size:12px'>Email ini dikirim otomatis oleh sistem LAMASY karena outlet kamu sedang dalam masa trial.</p>";
+        return Mailer::baseTemplate('LAMASY', $content);
     }
 
     private static function dataPhrase(int $nTrx, int $nCust): string

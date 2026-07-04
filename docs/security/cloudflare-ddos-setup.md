@@ -1,4 +1,4 @@
-# Panduan Setting Cloudflare — Proteksi DDoS LaMaSy
+# Panduan Setting Cloudflare — Proteksi DDoS LAMASY
 
 **Domain:** `lamasy.harpy.id` · **Origin:** Hostinger · **Tanggal:** 2026-07-03
 

@@ -189,7 +189,7 @@ $selfReferralCfg = $mesin ? Referral::config((int)$mesin['tenant_id']) : ['enabl
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
 <meta name="theme-color" content="#0F1C3A">
-<title><?= $mesin ? htmlspecialchars($mesin['nama']) : 'Self-Service' ?> · LaMaSy</title>
+<title><?= $mesin ? htmlspecialchars($mesin['nama']) : 'Self-Service' ?> · LAMASY</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -258,7 +258,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:linear-gradient(180de
 
   <?php if (!$mesin): ?>
     <!-- ═════ MESIN NOT FOUND ═════ -->
-    <div class="brand"><p class="brand-name">LaMaSy</p></div>
+    <div class="brand"><p class="brand-name">LAMASY</p></div>
     <div class="card">
       <div class="success-screen">
         <div class="success-icon">😕</div>
@@ -270,7 +270,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:linear-gradient(180de
   <?php else: ?>
 
     <div class="brand">
-      <p class="brand-name"><?= htmlspecialchars($mesin['nama_perusahaan'] ?? 'LaMaSy') ?></p>
+      <p class="brand-name"><?= htmlspecialchars($mesin['nama_perusahaan'] ?? 'LAMASY') ?></p>
       <p class="brand-outlet">📍 <?= htmlspecialchars($mesin['nama_outlet']) ?></p>
     </div>
 

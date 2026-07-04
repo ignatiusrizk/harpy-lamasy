@@ -1,6 +1,6 @@
 # LAMASY Tenant App — Install Guide
 
-Sistem LaMaSy (POS, Orders, Kanban, Dashboard) sekarang bisa di-install sebagai aplikasi ke home screen Android & iOS — tanpa native app, pakai Progressive Web App (PWA).
+Sistem LAMASY (POS, Orders, Kanban, Dashboard) sekarang bisa di-install sebagai aplikasi ke home screen Android & iOS — tanpa native app, pakai Progressive Web App (PWA).
 
 ## 📱 Cara Install
 

@@ -212,9 +212,9 @@ function activateExistingTenant(PDO $db, int $saId, array $wizard, int $tenantId
         $coinLine = ($payStatus !== 'belum_bayar' && $coinAwal > 0)
             ? "\n🪙 Coin       : +" . number_format($coinAwal,0,',','.') . " coin" : "";
         $waMsg = "Halo *" . ($t['owner_name'] ?? '') . "*!\n\n"
-            . "Outlet Anda di *LaMaSy* sudah *AKTIF* 🎉" . $coinLine . "\n\n"
+            . "Outlet Anda di *LAMASY* sudah *AKTIF* 🎉" . $coinLine . "\n\n"
             . "Silakan lanjut operasional di " . (defined('APP_URL') ? APP_URL : 'https://lamasy.harpy.id') . "/login\n"
-            . "(pakai akun yang sudah Anda daftarkan)\n\n_Tim LaMaSy — Harpy Group_";
+            . "(pakai akun yang sudah Anda daftarkan)\n\n_Tim LAMASY — Harpy Group_";
 
         return [
             'success'           => true,
@@ -464,14 +464,14 @@ function provisionTenant(array $wizard): array
             : "";
 
         $waMsg = "Halo *{$wizard['owner_name']}*!\n\n"
-            . "Selamat datang di *LaMaSy — Laundry Management System* 🎉\n\n"
+            . "Selamat datang di *LAMASY — Laundry Management System* 🎉\n\n"
             . "Akun Anda telah aktif:\n\n"
             . "🔗 Login  : " . (defined('APP_URL') ? APP_URL : 'https://lamasy.harpy.id') . "/login\n"
             . "👤 Username : *{$username}*\n"
             . "🔑 Password : *{$password}*"
             . $coinLine . "\n\n"
             . "Silakan login dan mulai setup outlet Anda.\n"
-            . "Ada pertanyaan? Hubungi kami kapan saja.\n\n_Tim LaMaSy — Harpy Group_";
+            . "Ada pertanyaan? Hubungi kami kapan saja.\n\n_Tim LAMASY — Harpy Group_";
 
         return [
             'success'       => true,

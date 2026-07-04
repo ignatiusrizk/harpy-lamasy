@@ -302,7 +302,7 @@ if ($action) {
 
 <div class="hl-page-header">
   <h1 class="hl-page-title">🎧 Bantuan & Support</h1>
-  <p class="hl-page-sub">Kirim pertanyaan atau laporkan masalah — tim LaMaSy siap membantu.</p>
+  <p class="hl-page-sub">Kirim pertanyaan atau laporkan masalah — tim LAMASY siap membantu.</p>
 </div>
 
 <!-- ══ SECTION 1: Submit Tiket Baru ═════════════════ -->
@@ -545,7 +545,7 @@ function renderThread(ticket, replies) {
     // Then replies
     replies.forEach(r => {
       const isAdmin = !!r.superadmin_id;
-      const sender  = isAdmin ? (r.sa_nama || 'Tim LaMaSy') : (r.user_nama || myName);
+      const sender  = isAdmin ? (r.sa_nama || 'Tim LAMASY') : (r.user_nama || myName);
       bubblesHtml += `
         <div class="bubble ${isAdmin ? 'admin' : 'tenant'}">
           <div class="bubble-head">${esc(sender)}</div>

@@ -896,7 +896,7 @@ function renderGlobalJsHelpers(): void { ?>
       // offer pertama kali (di dashboard, desktop, sekali)
       async function offer(){
         if(typeof lmConfirm!=='function'){ return; }
-        const ok = await lmConfirm('Mau lihat tur fitur LaMaSy? Sekitar 2 menit keliling 5 halaman utama (Dashboard, POS, Order, Kas, Produksi).', {okText:'Mulai tur', cancelText:'Nanti saja'});
+        const ok = await lmConfirm('Mau lihat tur fitur LAMASY? Sekitar 2 menit keliling 5 halaman utama (Dashboard, POS, Order, Kas, Produksi).', {okText:'Mulai tur', cancelText:'Nanti saja'});
         if(ok) replay(); else { try{ localStorage.setItem(DONE,'1'); }catch(e){} }
       }
 
@@ -1361,7 +1361,7 @@ function renderTopbar(string $activePage = '', bool $minimalMode = false): void 
                   $notifItems[] = [
                     'icon'  => '🎧', 'sev' => 'info',
                     'title' => "Balasan tiket support ({$unreadTicketReplies})",
-                    'desc'  => "Tim LaMaSy sudah membalas tiket kamu.",
+                    'desc'  => "Tim LAMASY sudah membalas tiket kamu.",
                     'cta'   => ['url' => '/support.php', 'label' => 'Lihat Tiket'],
                   ];
                 }

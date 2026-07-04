@@ -5,7 +5,7 @@
 // AI-powered column mapper untuk import data dari sistem lain.
 // Mengirim header + sample rows ke Claude API,
 // menerima mapping JSON yang memetakan kolom file ke
-// field target LaMaSy.
+// field target LAMASY.
 //
 // Mapping di-cache di hl_migration_mapping_templates —
 // file dengan header yang sama tidak perlu re-call AI.
@@ -150,7 +150,7 @@ class AIMigrationMapper
           . 'Selalu respond dengan JSON valid saja — tidak ada teks lain.'
         );
 
-        $prompt = "Kamu menganalisa file data laundry untuk migrasi ke sistem LaMaSy.\n\n"
+        $prompt = "Kamu menganalisa file data laundry untuk migrasi ke sistem LAMASY.\n\n"
             . "Headers (nama kolom): " . implode(', ', array_map(fn($h) => "\"$h\"", $headers)) . "\n\n"
             . "Sample data (per kolom, 5 nilai pertama — format `[nama_kolom]: nilai1 | nilai2 | ...`):\n$sampleStr\n"
             . "Target schema untuk entitas [{$entityType}]:\n"

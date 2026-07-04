@@ -167,7 +167,7 @@ form input:focus { outline:none; border-color:var(--teal); box-shadow:0 0 0 3px 
   <?php if (!$noOrder): ?>
   <!-- ════════ STATE: NO INPUT — Form input nomor nota ════════ -->
   <div class="brand">
-    <h1>🧺 LaMaSy Tracking</h1>
+    <h1>🧺 LAMASY Tracking</h1>
     <p>Cek status cucian Anda</p>
   </div>
   <div class="card">

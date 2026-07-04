@@ -220,7 +220,7 @@ canvas.ob-confetti{position:fixed;inset:0;pointer-events:none;z-index:50}
     <div class="ob-check">🎉</div>
     <h1 class="ob-h1">Order pertama berhasil!</h1>
     <p class="ob-sub">Keren, <?= $ownerName ?: 'Kak' ?>! <?= htmlspecialchars($namaOutlet) ?> resmi jalan.<br>
-       Sekarang semua fitur LaMaSy terbuka untukmu.</p>
+       Sekarang semua fitur LAMASY terbuka untukmu.</p>
     <a class="ob-big-cta" href="/dashboard">Masuk Dashboard →</a>
   </div>
 <?php else: ?>
@@ -287,7 +287,7 @@ canvas.ob-confetti{position:fixed;inset:0;pointer-events:none;z-index:50}
   </div>
 
   <p class="ob-foot">
-    Butuh bantuan? <a href="https://wa.me/6285121519302?text=Halo+Tim+LaMaSy%2C+saya+butuh+bantuan+setup+outlet+pertama." target="_blank" rel="noopener">Chat CS via WhatsApp</a>
+    Butuh bantuan? <a href="https://wa.me/6285121519302?text=Halo+Tim+LAMASY%2C+saya+butuh+bantuan+setup+outlet+pertama." target="_blank" rel="noopener">Chat CS via WhatsApp</a>
     · <a href="/onboarding.php">Segarkan</a>
     · <a href="/logout.php">Keluar</a>
   </p>

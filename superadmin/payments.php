@@ -330,7 +330,7 @@ if ($action) {
                 $tgl = date('d/m/Y', strtotime($tanggalBayar));
                 $ref = $refTransfer ?: '-';
 
-                $waMsg = "✅ *Pembayaran Diterima — LaMaSy*\n\n"
+                $waMsg = "✅ *Pembayaran Diterima — LAMASY*\n\n"
                        . "Halo {$tenant['owner_name']}!\n\n"
                        . "Pembayaran kamu sudah kami terima dan diproses.\n\n"
                        . ($pkgBdlNama ? "📦 Paket/Bundle : $pkgBdlNama\n" : '')
@@ -339,7 +339,7 @@ if ($action) {
                        . "💼 Saldo coin   : " . number_format($newBalance, 0, ',', '.') . " coin\n\n"
                        . "Ref: $ref\n"
                        . "Tanggal: $tgl\n\n"
-                       . "Terima kasih sudah menggunakan LaMaSy! 🙏";
+                       . "Terima kasih sudah menggunakan LAMASY! 🙏";
 
                 $phone = preg_replace('/[^0-9]/', '', $tenant['owner_wa']);
                 if (str_starts_with($phone, '0')) $phone = '62' . substr($phone, 1);
@@ -1253,11 +1253,11 @@ function openWaLink(payId, ownerWa){
     const p = (d.rows||[]).find(r => r.id == payId);
     if (!p) return;
     const phone = ownerWa.replace(/[^0-9]/g,'').replace(/^0/, '62');
-    const msg = `✅ *Pembayaran Diterima — LaMaSy*\n\nHalo ${p.owner_name}!\n\nPembayaran kamu sudah kami terima dan diproses.\n\n`
+    const msg = `✅ *Pembayaran Diterima — LAMASY*\n\nHalo ${p.owner_name}!\n\nPembayaran kamu sudah kami terima dan diproses.\n\n`
               + (p.bundle_nama||p.package_nama ? `📦 Paket/Bundle : ${p.bundle_nama||p.package_nama}\n` : '')
               + (p.nominal_dibayar > 0 ? `💰 Nominal      : ${rp(p.nominal_dibayar)}\n` : '')
               + (p.coin_dikreditkan > 0 ? `🪙 Coin         : +${coin(p.coin_dikreditkan)} coin\n` : '')
-              + `\nRef: ${p.ref_transfer||'-'}\nTanggal: ${p.tanggal_bayar||'-'}\n\nTerima kasih sudah menggunakan LaMaSy! 🙏`;
+              + `\nRef: ${p.ref_transfer||'-'}\nTanggal: ${p.tanggal_bayar||'-'}\n\nTerima kasih sudah menggunakan LAMASY! 🙏`;
 
     document.getElementById('waModalTitle').textContent = 'Kirim Notifikasi WA';
     document.getElementById('waModalSub').textContent   = p.nama_outlet + ' · ' + ownerWa;

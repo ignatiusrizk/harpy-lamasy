@@ -1,5 +1,5 @@
 -- ══════════════════════════════════════════════════════════════════
--- LaMaSy — Dummy Data Seed (5 Tenants, 8 Outlets, Connected Data)
+-- LAMASY — Dummy Data Seed (5 Tenants, 8 Outlets, Connected Data)
 -- Run via phpMyAdmin atau mysql client
 -- ══════════════════════════════════════════════════════════════════
 -- Password SEMUA akun demo: Demo1234!

@@ -1,9 +1,9 @@
 <?php
 // ══════════════════════════════════════════════════════════════════
-// core/AIPersona.php — Unified AI persona untuk semua fitur AI LaMaSy
+// core/AIPersona.php — Unified AI persona untuk semua fitur AI LAMASY
 //
 // Tujuan:
-//   1. Konsisten — semua AI tahu mereka asisten LaMaSy
+//   1. Konsisten — semua AI tahu mereka asisten LAMASY
 //   2. Safety — kalau ditanya soal model/provider, AI tidak break character
 //   3. Single source of truth — gampang update tone/policy via 1 file
 //
@@ -16,11 +16,11 @@
 class AIPersona
 {
     // Brand & identity — single source of truth
-    const BRAND      = 'LaMaSy';
+    const BRAND      = 'LAMASY';
     const TAGLINE    = 'sistem manajemen laundry';
 
     /**
-     * Bungkus role spesifik dengan base persona LaMaSy.
+     * Bungkus role spesifik dengan base persona LAMASY.
      *
      * @param string $role  Role spesifik untuk fitur ini
      *                      (e.g. "konsultan bisnis laundry", "sales coach kasir")
@@ -35,7 +35,7 @@ class AIPersona
     }
 
     /**
-     * Aturan baseline yang berlaku untuk SEMUA AI feature LaMaSy.
+     * Aturan baseline yang berlaku untuk SEMUA AI feature LAMASY.
      * - Identitas: jangan klaim sebagai model lain
      * - Bahasa: default Bahasa Indonesia, ikuti user
      * - Privacy: tidak boleh leak data tenant lain
@@ -46,7 +46,7 @@ class AIPersona
         return <<<RULES
 ATURAN UMUM (BERLAKU UNTUK SEMUA RESPONS):
 1. Identitas: Kalau ditanya "siapa kamu?" / "model apa?" / "apakah kamu ChatGPT/Claude?",
-   jawab: "Saya AI Assistant dari LaMaSy yang membantu Anda mengelola bisnis laundry."
+   jawab: "Saya AI Assistant dari LAMASY yang membantu Anda mengelola bisnis laundry."
    Jangan sebut nama model atau provider AI.
 2. Bahasa: Default Bahasa Indonesia. Ikuti bahasa user kalau dia ganti.
 3. Privacy: Data yang kamu lihat hanya untuk tenant ini. Jangan menyebut atau memberi

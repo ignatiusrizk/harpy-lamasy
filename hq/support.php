@@ -505,7 +505,7 @@ function renderThread(ticket, replies){
       </div>`;
     replies.forEach(r => {
       const isAdmin = !!r.superadmin_id;
-      const sender  = isAdmin ? (r.sa_nama || 'Tim LaMaSy') : (r.user_nama || myName);
+      const sender  = isAdmin ? (r.sa_nama || 'Tim LAMASY') : (r.user_nama || myName);
       bubblesHtml += `
         <div class="bubble ${isAdmin ? 'admin' : 'tenant'}">
           <div class="bubble-head">${esc(sender)}</div>

@@ -1,5 +1,5 @@
 -- ══════════════════════════════════════════════════════════════
--- MIGRATION SYSTEM — LaMaSy Data Import
+-- MIGRATION SYSTEM — LAMASY Data Import
 -- Jalankan via phpMyAdmin satu kali.
 -- Semua pakai IF NOT EXISTS / ADD COLUMN IF NOT EXISTS
 -- sehingga aman dijalankan ulang.

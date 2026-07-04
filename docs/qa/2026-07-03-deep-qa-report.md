@@ -1,4 +1,4 @@
-# Laporan Deep QA — LaMaSy
+# Laporan Deep QA — LAMASY
 
 **Tanggal:** 2026-07-03 (WIB)
 **Cakupan:** Outlet (A1–A17), HQ (B1–B9), SuperAdmin (C), Publik/API (D), lintas-sistem + audit log

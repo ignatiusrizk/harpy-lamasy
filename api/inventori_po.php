@@ -28,7 +28,7 @@ $outletRow = TenantQuery::rawOne(
 );
 $tStmt = Database::get()->prepare("SELECT nama_perusahaan FROM tenants WHERE id = ?");
 $tStmt->execute([$tid]);
-$tenant = $tStmt->fetch(PDO::FETCH_ASSOC) ?: ['nama_perusahaan' => 'LaMaSy'];
+$tenant = $tStmt->fetch(PDO::FETCH_ASSOC) ?: ['nama_perusahaan' => 'LAMASY'];
 
 // Bahan kritis
 $rows = TenantQuery::raw(

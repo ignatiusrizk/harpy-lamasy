@@ -81,8 +81,8 @@ if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && ($_SERVER['HTTP_SEC_FETCH_MODE'
         )->fetchAll(PDO::FETCH_ASSOC);
 
         $waMsg = $enable
-            ? "🔧 *LaMaSy Maintenance*\n\n{$message}" . ($until ? "\n⏰ Estimasi selesai: " . date('d M Y H:i', strtotime($until)) . " WIB" : "") . "\n\nMohon maaf atas ketidaknyamanannya. 🙏"
-            : "✅ *LaMaSy Sudah Kembali Normal!*\n\nSistem sudah bisa digunakan kembali.\nTerima kasih atas kesabarannya! 🙏\n\n_Tim LaMaSy_";
+            ? "🔧 *LAMASY Maintenance*\n\n{$message}" . ($until ? "\n⏰ Estimasi selesai: " . date('d M Y H:i', strtotime($until)) . " WIB" : "") . "\n\nMohon maaf atas ketidaknyamanannya. 🙏"
+            : "✅ *LAMASY Sudah Kembali Normal!*\n\nSistem sudah bisa digunakan kembali.\nTerima kasih atas kesabarannya! 🙏\n\n_Tim LAMASY_";
 
         $waSent = 0;
         foreach ($tenants as $t) {

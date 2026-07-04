@@ -200,7 +200,7 @@ if ($action) {
                        . "Tiket  : #{$ticket['id']} — {$ticket['subject']}\n"
                        . "Status : " . ($statusMap[$ticket['status']] ?? $ticket['status']) . "\n\n"
                        . "Balasan:\n{$preview}\n\n"
-                       . "Lihat detail: " . (defined('APP_URL') ? APP_URL : 'https://lamasy.harpy.id') . "/support.php\n\n_Tim LaMaSy_";
+                       . "Lihat detail: " . (defined('APP_URL') ? APP_URL : 'https://lamasy.harpy.id') . "/support.php\n\n_Tim LAMASY_";
                 $waLink = "https://wa.me/{$waNum}?text=" . urlencode($waMsg);
             }
 
@@ -246,7 +246,7 @@ if ($action) {
                 $waMsg = "✅ *Tiket kamu sudah $statusLabel*\n\n"
                        . "Tiket : #{$ticket['id']} — {$ticket['subject']}\n\n"
                        . ($status === 'resolved' ? "Mohon konfirmasi jika masalah sudah teratasi di: " . (defined('APP_URL') ? APP_URL : 'https://lamasy.harpy.id') . "/support.php\n\n" : "")
-                       . "Terima kasih telah menggunakan LaMaSy! 🙏\n_Tim LaMaSy_";
+                       . "Terima kasih telah menggunakan LAMASY! 🙏\n_Tim LAMASY_";
                 $waLink = "https://wa.me/{$waNum}?text=" . urlencode($waMsg);
             }
 
@@ -706,7 +706,7 @@ function renderDetail(ticket, replies, admins) {
   (replies||[]).forEach(r => {
     const isInternal = parseInt(r.is_internal||0);
     const isAdmin    = !!r.superadmin_id;
-    const sender     = isAdmin ? (r.sa_nama||'Tim LaMaSy') : (r.user_nama||'Tenant');
+    const sender     = isAdmin ? (r.sa_nama||'Tim LAMASY') : (r.user_nama||'Tenant');
     const cls        = isInternal ? 'internal' : (isAdmin ? 'admin' : 'tenant');
     const tag        = isInternal ? ' 🔒 Internal' : '';
     html += `<div class="bubble ${cls}">

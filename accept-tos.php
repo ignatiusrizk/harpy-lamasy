@@ -54,7 +54,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Syarat &amp; Ketentuan Diperbarui — LaMaSy</title>
+  <title>Syarat &amp; Ketentuan Diperbarui — LAMASY</title>
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
     body{
@@ -91,7 +91,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <div class="badge">📋 Pembaruan Ketentuan</div>
   <h1>Syarat &amp; Ketentuan Diperbarui</h1>
   <p>
-    LaMaSy telah memperbarui Syarat &amp; Ketentuan Penggunaan ke
+    LAMASY telah memperbarui Syarat &amp; Ketentuan Penggunaan ke
     <strong>versi <?= htmlspecialchars($tosVer) ?></strong>
     (berlaku <?= htmlspecialchars(date('d M Y', strtotime($tosDate))) ?>).
     Anda perlu menyetujui ketentuan baru sebelum dapat melanjutkan.
@@ -99,7 +99,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
   <div class="tos-preview">
     <strong>Ringkasan perubahan:</strong><br><br>
-    Versi ini merupakan ketentuan resmi pertama LaMaSy yang mencakup definisi layanan,
+    Versi ini merupakan ketentuan resmi pertama LAMASY yang mencakup definisi layanan,
     kewajiban pengguna, sistem Coin, kebijakan data, dan pembatasan tanggung jawab.
     Silakan baca ketentuan lengkap sebelum menyetujui.
   </div>
@@ -117,7 +117,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <a href="/tos" target="_blank">Syarat &amp; Ketentuan</a>
         dan
         <a href="/privacy" target="_blank">Kebijakan Privasi</a>
-        LaMaSy versi <?= htmlspecialchars($tosVer) ?>.
+        LAMASY versi <?= htmlspecialchars($tosVer) ?>.
       </span>
     </label>
     <button type="submit" class="btn">✓ Setuju &amp; Lanjutkan</button>

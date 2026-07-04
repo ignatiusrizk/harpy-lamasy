@@ -81,7 +81,7 @@ $critical = count(array_filter($rows, fn($r) => $r['score'] < 3));
         <td style="text-align:right;white-space:nowrap">
           <?php if (!empty($r['owner_wa'])): ?>
           <a class="lmx-btn" style="padding:5px 10px;font-size:12px" target="_blank" rel="noopener"
-             href="https://wa.me/<?= preg_replace('/[^0-9]/','', (strpos($r['owner_wa'],'0')===0 ? '62'.substr($r['owner_wa'],1) : $r['owner_wa'])) ?>?text=<?= rawurlencode('Halo '.($r['owner_name']??'').', dari tim LaMaSy — mau bantu maksimalkan trial outletmu.') ?>">WA</a>
+             href="https://wa.me/<?= preg_replace('/[^0-9]/','', (strpos($r['owner_wa'],'0')===0 ? '62'.substr($r['owner_wa'],1) : $r['owner_wa'])) ?>?text=<?= rawurlencode('Halo '.($r['owner_name']??'').', dari tim LAMASY — mau bantu maksimalkan trial outletmu.') ?>">WA</a>
           <?php endif; ?>
           <?php if (!empty($r['email'])): ?><span style="font-size:11px;color:var(--ash)"><?= htmlspecialchars($r['email']) ?></span><?php endif; ?>
         </td>

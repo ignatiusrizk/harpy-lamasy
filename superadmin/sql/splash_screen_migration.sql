@@ -81,7 +81,7 @@ FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM hl_splash_tips WHERE judul='Drop Point
 
 INSERT INTO hl_splash_tips (tenant_id, judul, konten, icon, cta_label, cta_url, urutan)
 SELECT NULL, 'Laporan Keuangan Lengkap',
-       'LaMaSy punya Neraca, Arus Kas, dan Rasio Keuangan. Lengkap untuk pengajuan KUR ke bank.',
+       'LAMASY punya Neraca, Arus Kas, dan Rasio Keuangan. Lengkap untuk pengajuan KUR ke bank.',
        '📊', 'Lihat Laporan', '/laporan', 5
 FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM hl_splash_tips WHERE judul='Laporan Keuangan Lengkap' AND tenant_id IS NULL);
 

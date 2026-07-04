@@ -386,7 +386,7 @@ canvas { width: 100% !important; }
 <div class="sa-page-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
   <div>
     <h1>🩺 Platform Health</h1>
-    <p>Monitoring real-time platform LaMaSy — auto-refresh setiap 60 detik</p>
+    <p>Monitoring real-time platform LAMASY — auto-refresh setiap 60 detik</p>
   </div>
   <div style="display:flex;align-items:center;gap:12px;">
     <span class="live-badge"><span class="live-dot"></span> LIVE</span>

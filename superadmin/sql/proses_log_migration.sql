@@ -1,5 +1,5 @@
 -- ══════════════════════════════════════════════════════════════
--- PROSES LOG MIGRATION — LaMaSy
+-- PROSES LOG MIGRATION — LAMASY
 -- Jalankan via phpMyAdmin / run_proses_log.php satu kali.
 -- ══════════════════════════════════════════════════════════════
 

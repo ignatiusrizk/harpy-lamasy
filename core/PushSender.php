@@ -131,7 +131,7 @@ class PushSender
         $body = ['message' => [
             'token'        => $token,
             'notification' => [
-                'title' => (string)($payload['title'] ?? 'LaMaSy'),
+                'title' => (string)($payload['title'] ?? 'LAMASY'),
                 'body'  => (string)($payload['body'] ?? ''),
             ],
             'data'    => array_map('strval', ['url' => $payload['url'] ?? '']),

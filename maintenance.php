@@ -27,7 +27,7 @@ if (file_exists($cacheFile)) {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta http-equiv="refresh" content="60">
-  <title>LaMaSy — Maintenance</title>
+  <title>LAMASY — Maintenance</title>
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
     body{
@@ -70,8 +70,8 @@ if (file_exists($cacheFile)) {
     </div>
     <?php endif; ?>
     <p class="refresh">Halaman ini akan refresh otomatis setiap 60 detik.</p>
-    <a href="https://wa.me/6285121519302?text=<?= urlencode('Halo LaMaSy, kapan maintenance selesai?') ?>"
-       class="wa-link">💬 Hubungi Tim LaMaSy via WhatsApp</a>
+    <a href="https://wa.me/6285121519302?text=<?= urlencode('Halo LAMASY, kapan maintenance selesai?') ?>"
+       class="wa-link">💬 Hubungi Tim LAMASY via WhatsApp</a>
     <div><div class="logo">La<span>Ma</span>Sy</div></div>
   </div>
 </body>

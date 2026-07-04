@@ -105,7 +105,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['start_demo'])) {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Coba Demo — LaMaSy Laundry Management System</title>
+  <title>Coba Demo — LAMASY Laundry Management System</title>
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
     body{font-family:'Segoe UI',Arial,sans-serif;background:linear-gradient(135deg,#0F1C3A,#1F3864);min-height:100vh;color:#fff}
@@ -142,7 +142,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['start_demo'])) {
   <div class="logo">La<span>Ma</span>Sy</div>
   <div class="tagline">Laundry Management System</div>
   <h1>Kelola Laundry Lebih<br><span>Cerdas & Efisien</span></h1>
-  <p class="sub">Coba semua fitur LaMaSy tanpa perlu daftar. Data demo di-reset otomatis setiap 24 jam.</p>
+  <p class="sub">Coba semua fitur LAMASY tanpa perlu daftar. Data demo di-reset otomatis setiap 24 jam.</p>
 
   <div class="features">
     <div class="feat">

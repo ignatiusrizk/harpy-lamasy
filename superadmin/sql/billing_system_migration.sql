@@ -1,6 +1,6 @@
 -- ══════════════════════════════════════════════════════
 -- billing_system_migration.sql
--- Billing & Payment System — LaMaSy SuperAdmin
+-- Billing & Payment System — LAMASY SuperAdmin
 --
 -- Jalankan SETELAH semua migration sebelumnya sudah dijalankan:
 --   outlet_migration.sql
@@ -14,7 +14,7 @@ SET FOREIGN_KEY_CHECKS = 0;
 
 -- ════════════════════════════════════════════════════════
 -- BAGIAN 1: saas_packages
--- Paket berlangganan LaMaSy — bisa di-CRUD via packages.php
+-- Paket berlangganan LAMASY — bisa di-CRUD via packages.php
 -- ════════════════════════════════════════════════════════
 
 CREATE TABLE IF NOT EXISTS saas_packages (

@@ -107,7 +107,7 @@ if (($_GET['action'] ?? '') === 'generate' && $_SERVER['REQUEST_METHOD'] === 'PO
 
     // README
     $zip->addFromString('README.txt',
-        "LaMaSy Export\n" .
+        "LAMASY Export\n" .
         "===========\n" .
         "Tenant ID  : $tid\n" .
         "Generated  : " . date('Y-m-d H:i:s') . "\n" .
