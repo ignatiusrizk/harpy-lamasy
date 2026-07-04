@@ -115,6 +115,7 @@ if (isset($_GET['msg'])) {
     if ($_GET['msg'] === 'logout')          $msg   = 'Anda berhasil logout.';
     if ($_GET['msg'] === 'session_expired') $error = '⏰ Sesi telah berakhir. Silakan login kembali.';
     if ($_GET['msg'] === 'not_logged_in')   $error = '🔒 Anda harus login terlebih dahulu.';
+    if ($_GET['msg'] === 'reset_ok')        $msg   = 'Password berhasil diubah. Silakan login dengan password baru.';
 }
 
 // ── PROSES LOGIN ──────────────────────────────────────
@@ -519,6 +520,9 @@ input[type="password"]:focus {
           placeholder="Masukkan password"
           autocomplete="current-password" required/>
         <button type="button" class="toggle-pw" onclick="togglePw()" id="toggleBtn">👁️</button>
+      </div>
+      <div style="text-align:right;margin-top:8px">
+        <a href="/reset-password" style="font-size:12.5px;color:#35E8D5;text-decoration:none">Lupa password?</a>
       </div>
     </div>
 
