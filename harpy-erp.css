@@ -408,6 +408,14 @@ body { font-family: var(--font); background: var(--off); color: var(--dark); min
 .hl-filter-bar:not(.hl-filter-body-inner) { border-radius: var(--r-lg); border-top: 1px solid rgba(27,45,90,.07); margin-bottom: 18px; }
 .hl-filter-collapsible .hl-filter-bar { border-radius: 0 0 var(--r-lg) var(--r-lg); margin-bottom: 0; }
 
+/* Semua kontrol filter tinggi seragam — input native & tombol lmx (select/date
+   hasil enhance) hitung tinggi sedikit beda; min-height + box-sizing samakan. */
+.hl-filter-bar .hl-input,
+.hl-filter-bar .lmx-btn,
+.hl-filter-bar input:not([type=checkbox]):not([type=radio]) {
+  min-height: 42px; box-sizing: border-box;
+}
+
 .hl-filter-label { font-size: 12px; font-weight: 700; color: var(--navy); white-space: nowrap; }
 
 /* ── EMPTY & LOADING ───────────────────────────────── */
