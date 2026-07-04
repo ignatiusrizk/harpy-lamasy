@@ -1107,6 +1107,7 @@ img { max-width: 100%; }
     <li><a href="#ai" style="color:#C4B5FD;font-weight:700;">✦ AI</a></li>
     <li><a href="#fitur">Fitur</a></li>
     <li><a href="#harga">Harga</a></li>
+    <li><a href="/demo">Demo</a></li>
     <li><a href="#faq">FAQ</a></li>
     <li><a href="#kontak">Kontak</a></li>
   </ul>
@@ -1121,6 +1122,7 @@ img { max-width: 100%; }
 <div class="nav-mobile-menu" id="mobileMenu">
   <a href="#fitur" onclick="closeMobileMenu()">Fitur</a>
   <a href="#harga" onclick="closeMobileMenu()">Harga</a>
+  <a href="/demo" onclick="closeMobileMenu()">Demo</a>
   <a href="#faq" onclick="closeMobileMenu()">FAQ</a>
   <a href="#kontak" onclick="closeMobileMenu()">Kontak</a>
   <div class="nav-mobile-divider"></div>
@@ -1145,7 +1147,7 @@ img { max-width: 100%; }
 
   <div class="hero-btns">
     <a href="/register.php" class="btn-primary">&#128640; Coba Gratis 14 Hari</a>
-    <a href="#fitur" class="btn-secondary">&#9654; Lihat Fitur</a>
+    <a href="/demo" class="btn-secondary">&#9654; Coba Demo Langsung</a>
   </div>
   <div class="hero-microtrust">
     ✓ Tanpa kartu kredit · ✓ Setup 5 menit · ✓ Cancel anytime
@@ -2168,6 +2170,7 @@ function switchCmpTab(tab, btn) {
         <li><a href="/register.php">🚀 Daftar Gratis</a></li>
         <li><a href="/login.php">Login Tenant</a></li>
         <li><a href="/p">Portal Pelanggan</a></li>
+        <li><a href="/kalkulator-laundry">🧮 Kalkulator Untung Laundry</a></li>
         <li><a href="/reset-password">Reset Password</a></li>
       </ul>
     </div>
