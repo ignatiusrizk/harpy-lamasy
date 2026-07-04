@@ -1587,10 +1587,11 @@ document.addEventListener('DOMContentLoaded',()=>{
   document.getElementById('greeting').textContent=greet+', <?= htmlspecialchars($user['nama']) ?>!';
   document.getElementById('dashDate').textContent=now.toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
   loadAll();
-  // AI Wow Moment: briefing auto-muncul (trial/cached) — kalau ada data, langsung load.
+  // AI Wow Moment: briefing auto-muncul (trial/cached) — kalau ada data, langsung load (silent, tanpa konfirmasi biaya).
+  window.__briefBoost = <?= $briefBoost ? 'true' : 'false' ?>;
   if (<?= $briefAuto ? 'true' : 'false' ?> && <?= $briefHasData ? 'true' : 'false' ?>) {
     briefingVisible = true;
-    loadBriefing();
+    loadBriefing(true);
   }
 });
 
@@ -1744,14 +1745,17 @@ function toggleBriefing(){
   document.getElementById('aiBriefingPanel').style.display=briefingVisible?'block':'none';
   if(briefingVisible&&!briefingLoaded)loadBriefing();
 }
-async function loadBriefing(){
+async function loadBriefing(silent){
   const btn=document.getElementById('btnBriefingRefresh');
 
-  // ── Confirm tier price untuk panggilan ke-2 ke atas ──
+  // Gratis selama trial (boost) atau auto-load → jangan tampilkan konfirmasi biaya.
+  const skipConfirm = silent === true || window.__briefBoost === true;
+
+  // ── Confirm tier price untuk panggilan ke-2 ke atas (skip kalau gratis/auto) ──
   try {
     const sr = await fetch('ai.php?action=briefing_status');
     const ss = await sr.json();
-    if (ss.ok && ss.used > 0 && !ss.blocked && ss.next_price != null) {
+    if (!skipConfirm && ss.ok && ss.used > 0 && !ss.blocked && ss.next_price != null) {
       const remaining = ss.limit - ss.used;
       const msg = `Briefing ke-${ss.used + 1} dari ${ss.limit} hari ini.\n\n`
         + `💰 Biaya: ${ss.next_price} coin (sebelumnya: ${ss.current_price} coin)\n`
