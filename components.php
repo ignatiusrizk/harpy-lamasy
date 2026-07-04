@@ -1445,10 +1445,15 @@ function renderTopbar(string $activePage = '', bool $minimalMode = false): void 
                 </div>
               </div>
 
-              <!-- Coin chip tetap inline (info operasional, selalu terlihat) -->
+              <!-- Coin chip tetap inline (info operasional, selalu terlihat).
+                   Klik → riwayat coin (self-audit owner) bila punya akses HQ. -->
+              <?php $coinCanAudit = TenantResolver::canAccessHqV2(); ?>
               <?php if ($coinFrozen): ?>
                 <span class="ol-top-chip" style="opacity:.65"
                       title="Coin beku selama masa tenggang — aktivasi outlet untuk memakainya lagi.">🪙 <?= $frozenFmt ?> 🔒</span>
+              <?php elseif ($coinCanAudit): ?>
+                <a class="ol-top-chip" href="/hq/coin-info" style="text-decoration:none;cursor:pointer"
+                   title="Saldo coin — klik untuk lihat riwayat pemakaian">🪙 <?= $coinFmt ?></a>
               <?php else: ?>
                 <span class="ol-top-chip" title="Saldo coin">🪙 <?= $coinFmt ?></span>
               <?php endif; ?>

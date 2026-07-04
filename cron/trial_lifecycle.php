@@ -228,4 +228,43 @@ try {
     clog('stickiness FAIL: ' . $e->getMessage());
 }
 
+// ── 9. Coin burn-rate anomali → email Super Admin (audit coin 2026-07-04) ──
+// Tenant dengan potongan coin KEMARIN melebihi ambang → notify SA 1x/hari.
+try {
+    $thrRow = $db->query("SELECT value_text FROM saas_billing_config
+                          WHERE key_name='coin_burn_alert_threshold' LIMIT 1")->fetchColumn();
+    $thr = max(100, (int)($thrRow ?: 2000));
+    $burn = $db->prepare(
+        "SELECT t.id, t.nama_perusahaan, SUM(cl.amount) burn, COUNT(*) n
+           FROM coin_ledger cl JOIN tenants t ON t.id=cl.tenant_id
+          WHERE cl.type='deduct' AND cl.amount>0
+            AND cl.created_at >= CURDATE() - INTERVAL 1 DAY AND cl.created_at < CURDATE()
+          GROUP BY t.id HAVING burn >= ? ORDER BY burn DESC LIMIT 20");
+    $burn->execute([$thr]);
+    $burnRows = $burn->fetchAll();
+    if ($burnRows) {
+        // Dedupe 1x/hari via saas_sa_notif_log
+        $dup = $db->query("SELECT 1 FROM saas_sa_notif_log
+                           WHERE event_type='coin_burn_alert' AND DATE(sent_at)=CURDATE() LIMIT 1")->fetchColumn();
+        if (!$dup) {
+            require_once ROOT . '/core/SaNotifier.php';
+            $lines = '';
+            foreach ($burnRows as $b) {
+                $lines .= '<li><strong>' . htmlspecialchars($b['nama_perusahaan'] ?: ('Tenant #'.$b['id']))
+                        . '</strong>: ' . number_format((int)$b['burn']) . ' coin (' . (int)$b['n'] . '× potong)</li>';
+            }
+            SaNotifier::notify('coin_burn_alert',
+                '🔥 Coin burn anomali — ' . count($burnRows) . ' tenant > ' . number_format($thr) . ' coin/hari',
+                "<p>Tenant dengan pemakaian coin kemarin melebihi ambang " . number_format($thr) . ":</p><ul>$lines</ul>
+                 <p>Cek detail: dashboard SA → tab 🔥 Burn Anomali.</p>",
+                date('Y-m-d'));
+        }
+        clog('coin burn: ' . count($burnRows) . ' tenant >= ' . $thr . ' (kemarin)');
+    } else {
+        clog('coin burn: aman (< ' . $thr . ')');
+    }
+} catch (Throwable $e) {
+    clog('coin burn FAIL: ' . $e->getMessage());
+}
+
 clog('=== trial_lifecycle.php DONE ===');

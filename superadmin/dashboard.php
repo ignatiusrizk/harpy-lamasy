@@ -122,10 +122,31 @@ if ($action) {
             $inactiveAlert = [];
         }
 
+        // Burn-rate anomali: tenant terpotong coin melebihi ambang HARI INI
+        // (deteksi "potongan tak terkendali" sisi platform — audit coin 2026-07-04).
+        // Ambang configurable: saas_billing_config.coin_burn_alert_threshold (default 2000).
+        try {
+            $thr = $db->query("SELECT value_text FROM saas_billing_config
+                               WHERE key_name='coin_burn_alert_threshold' LIMIT 1")->fetchColumn();
+            $thr = max(100, (int)($thr ?: 2000));
+            $burnStmt = $db->prepare(
+                "SELECT t.id, t.nama_perusahaan AS nama_outlet, t.owner_name, t.owner_wa,
+                        SUM(cl.amount) AS burn_today, COUNT(*) AS n_deduct,
+                        SUBSTRING_INDEX(GROUP_CONCAT(cl.feature_used ORDER BY cl.amount DESC),',',3) AS top_features
+                 FROM coin_ledger cl JOIN tenants t ON t.id = cl.tenant_id
+                 WHERE cl.type='deduct' AND cl.amount > 0 AND DATE(cl.created_at)=CURDATE()
+                 GROUP BY t.id HAVING burn_today >= ?
+                 ORDER BY burn_today DESC LIMIT 10");
+            $burnStmt->execute([$thr]);
+            $burnAlert = $burnStmt->fetchAll();
+        } catch (Throwable) { $burnAlert = []; $thr = 2000; }
+
         echo json_encode([
             'coin_kritis' => $coinAlert,
             'trial_habis' => $trialAlert,
             'tidak_login' => $inactiveAlert,
+            'coin_burn'   => $burnAlert,
+            'burn_threshold' => $thr,
         ]);
         exit;
     }
@@ -260,6 +281,7 @@ if ($action) {
       <button class="sa-tab active" onclick="switchAlertTab('coin')">Coin Kritis</button>
       <button class="sa-tab" onclick="switchAlertTab('trial')">Trial Habis</button>
       <button class="sa-tab" onclick="switchAlertTab('inactive')">Tidak Aktif</button>
+      <button class="sa-tab" onclick="switchAlertTab('burn')" id="tabBurn">🔥 Burn Anomali</button>
     </div>
   </div>
 
@@ -271,6 +293,9 @@ if ($action) {
       <div style="color:var(--ash);font-size:13px;">Memuat...</div>
     </div>
     <div id="alertInactive" style="display:none">
+      <div style="color:var(--ash);font-size:13px;">Memuat...</div>
+    </div>
+    <div id="alertBurn" style="display:none">
       <div style="color:var(--ash);font-size:13px;">Memuat...</div>
     </div>
   </div>
@@ -463,7 +488,31 @@ fetch('dashboard.php?action=alerts', { headers: { 'X-Requested-With': 'XMLHttpRe
     renderAlertCoin(d.coin_kritis);
     renderAlertTrial(d.trial_habis);
     renderAlertInactive(d.tidak_login);
+    renderAlertBurn(d.coin_burn, d.burn_threshold);
+    // tab burn menyala merah kalau ada anomali
+    if (d.coin_burn && d.coin_burn.length) {
+      const tb = document.getElementById('tabBurn');
+      if (tb) { tb.style.color = '#E24B4A'; tb.textContent = `🔥 Burn Anomali (${d.coin_burn.length})`; }
+    }
   });
+
+function renderAlertBurn(list, thr) {
+  const el = document.getElementById('alertBurn');
+  if (!list || !list.length) { el.innerHTML = `<p style="color:var(--ash-dim);font-size:13px;">Tidak ada tenant dengan pemakaian coin > ${(thr||2000).toLocaleString('id-ID')} hari ini.</p>`; return; }
+  el.innerHTML = list.map(t => `
+    <div class="sa-alert-item">
+      <span class="alert-icon">🔥</span>
+      <div class="alert-text">
+        <strong>${esc(t.nama_outlet)}</strong> — ${esc(t.owner_name||'')}
+        <span class="coin-kritis" style="margin-left:8px;">-${parseInt(t.burn_today).toLocaleString('id-ID')} coin hari ini</span>
+        <span style="margin-left:8px;color:var(--ash);font-size:11px;">${t.n_deduct}× potong · ${esc(t.top_features||'')}</span>
+      </div>
+      <div class="alert-action">
+        <a href="client_detail.php?id=${t.id}" class="sa-btn sa-btn-sm sa-btn-outline">Detail</a>
+        ${t.owner_wa ? `<a href="https://wa.me/${t.owner_wa}" target="_blank" class="sa-btn sa-btn-sm sa-btn-wa" style="margin-left:4px;">WA</a>` : ''}
+      </div>
+    </div>`).join('');
+}
 
 function renderAlertCoin(list) {
   const el = document.getElementById('alertCoin');
@@ -518,12 +567,13 @@ function renderAlertInactive(list) {
 
 function switchAlertTab(tab) {
   document.querySelectorAll('.sa-tabs .sa-tab').forEach((t,i) => {
-    const tabs = ['coin','trial','inactive'];
+    const tabs = ['coin','trial','inactive','burn'];
     t.classList.toggle('active', tabs[i] === tab);
   });
   document.getElementById('alertCoin').style.display    = tab === 'coin'     ? '' : 'none';
   document.getElementById('alertTrial').style.display   = tab === 'trial'    ? '' : 'none';
   document.getElementById('alertInactive').style.display = tab === 'inactive' ? '' : 'none';
+  document.getElementById('alertBurn').style.display    = tab === 'burn'     ? '' : 'none';
 }
 
 function esc(s) {
