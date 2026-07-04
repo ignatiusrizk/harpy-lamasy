@@ -1670,8 +1670,9 @@ html, body { overflow-x: clip; overscroll-behavior-y: contain; }
 .hl-tour-overlay {
   position: fixed; inset: 0;
   z-index: 998;
-  background: rgba(15,28,58,.6);
-  backdrop-filter: blur(2px);
+  /* Transparan — kegelapan HANYA dari box-shadow spotlight, supaya elemen di
+     dalam lubang tetap tajam & terang (bukan ikut blur/redup). */
+  background: transparent;
   animation: hlTourFade .25s ease;
   pointer-events: auto;
 }
@@ -1681,7 +1682,7 @@ html, body { overflow-x: clip; overscroll-behavior-y: contain; }
   position: absolute;
   background: transparent;
   border-radius: 10px;
-  box-shadow: 0 0 0 9999px rgba(15,28,58,.6), 0 0 0 4px rgba(53,232,213,.4);
+  box-shadow: 0 0 0 9999px rgba(15,28,58,.74), 0 0 0 4px rgba(53,232,213,.55);
   pointer-events: none;
   transition: all .3s cubic-bezier(.4,0,.2,1);
 }
