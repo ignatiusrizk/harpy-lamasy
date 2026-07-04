@@ -753,6 +753,9 @@ function saRenderNav(string $activePage = '', string $pageTitle = ''): void {
         <a href="/superadmin/tenant_health.php" class="sa-nav-link <?= $activePage === 'tenant_health' ? 'active' : '' ?>">
           <span class="icon">🩺</span> Tenant Health
         </a>
+        <a href="/superadmin/leads.php" class="sa-nav-link <?= $activePage === 'leads' ? 'active' : '' ?>">
+          <span class="icon">📧</span> Leads
+        </a>
 
         <div class="sa-nav-section">Finance</div>
         <a href="/superadmin/billing.php" class="sa-nav-link <?= $activePage === 'billing' ? 'active' : '' ?>">
