@@ -1918,14 +1918,13 @@ body::before{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area
   .settings-tab .st-x{display:none}
 }
 
-/* ── Trial AI Boost badge (Brief 2) — "Gratis selama trial" ── */
+/* ── Trial AI Boost badge (Brief 2) — tag status "Gratis selama trial" ──
+   Dibuat SUBTLE (tint + border, bukan gradient tebal) supaya kebaca sebagai
+   label keterangan tombol AI Briefing, bukan tombol/CTA kedua. */
 .lm-boost-badge{
-  display:inline-flex;align-items:center;gap:4px;
-  font-size:11px;font-weight:700;line-height:1;white-space:nowrap;
-  padding:6px 11px;border-radius:100px;color:#04322c;
-  background:linear-gradient(110deg,#5eead4 0%,#14b8a6 35%,#99f6e4 50%,#14b8a6 65%,#5eead4 100%);
-  background-size:220% 100%;animation:lmBoostShimmer 2.6s linear infinite;
-  box-shadow:0 1px 4px rgba(20,184,166,.35);
+  display:inline-flex;align-items:center;gap:3px;
+  font-size:10px;font-weight:600;line-height:1;white-space:nowrap;
+  padding:4px 8px;border-radius:8px;
+  color:#0d9488;background:rgba(20,184,166,.10);
+  border:1px solid rgba(20,184,166,.30);
 }
-@keyframes lmBoostShimmer{0%{background-position:180% 0}100%{background-position:-20% 0}}
-@media(prefers-reduced-motion:reduce){.lm-boost-badge{animation:none}}
