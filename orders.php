@@ -1247,9 +1247,9 @@ textarea{resize:vertical;min-height:64px}
       <span class="hl-toggle-arrow">▼</span>
     </button>
     <div class="hl-filter-bar" id="orderFilter">
-      <input type="text" id="searchInput" placeholder="Cari nama, no. order, telepon..."
+      <input type="text" id="searchInput" class="hl-input" placeholder="Cari nama, no. order, telepon..."
         oninput="debounce()" style="flex:1;min-width:180px"/>
-      <select id="filterStatus" onchange="loadOrders(1)">
+      <select id="filterStatus" class="hl-input" style="width:auto" onchange="loadOrders(1)">
         <option value="">Semua Status</option>
         <option value="masuk">Masuk</option>
         <option value="cuci">Proses Cuci</option>
@@ -1258,13 +1258,13 @@ textarea{resize:vertical;min-height:64px}
         <option value="siap">Siap Diambil</option>
         <option value="diambil">Sudah Diambil</option>
       </select>
-      <select id="filterBayar" onchange="loadOrders(1)">
+      <select id="filterBayar" class="hl-input" style="width:auto" onchange="loadOrders(1)">
         <option value="">Semua Pembayaran</option>
         <option value="belum_bayar">Belum Bayar</option>
         <option value="dp">DP</option>
         <option value="lunas">Lunas</option>
       </select>
-      <select id="filterSumber" onchange="loadOrders(1)" title="Sumber order">
+      <select id="filterSumber" class="hl-input" style="width:auto" onchange="loadOrders(1)" title="Sumber order">
         <option value="">Semua Sumber</option>
         <option value="walkin">🏪 Walk-in</option>
         <option value="drop">📦 Drop Point</option>
