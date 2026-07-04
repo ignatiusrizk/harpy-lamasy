@@ -41,6 +41,82 @@ class CoinLedger
         'ai_migration_mapping' => 1000,
     ];
 
+    // ── Trial AI Boost (Brief 2) ────────────────────────
+    // Fitur AI paling "wow" digratiskan selama 7 hari trial supaya tenant
+    // mencobanya tanpa takut coin habis. Fitur advanced (ai_analyst, ai_chat_data,
+    // ai_churn_message) TETAP dipotong sebagai insentif upgrade.
+    // Catatan penting soal key: tombol "AI Briefing" di dashboard OUTLET sebenarnya
+    // memungut 'ai_briefing_hq' (via ai.php?action=briefing → deductHq) — jadi key itu
+    // WAJIB di sini biar briefing harian gratis saat trial. Boost hanya menyala kalau
+    // outlet ter-resolve trial (konteks dashboard outlet), jadi jalur HQ-dashboard yang
+    // punya pemotongan inline & tak outlet-scoped TIDAK terpengaruh (owner HQ = charge normal).
+    // 'ai_briefing' = key legacy (deductAiBriefing), disertakan agar aman.
+    // ai_anomaly & ai_daily_report tidak dipungut coin sama sekali → tak perlu.
+    const TRIAL_BOOST_FEATURES = ['ai_briefing_hq', 'ai_briefing', 'ai_insight_laporan'];
+
+    /** Apakah panggilan fitur ini gratis karena Trial AI Boost aktif? */
+    public static function isTrialBoost(string $feature): bool
+    {
+        if (!in_array($feature, self::TRIAL_BOOST_FEATURES, true)) return false;
+        if (!class_exists('TenantResolver')) return false;
+        $tenant = TenantResolver::getTenant();
+        if ((int)($tenant['trial_ai_boost'] ?? 0) !== 1) return false;
+        if (!TenantResolver::isTrial()) return false;
+        return TenantResolver::trialDay() <= 7;
+    }
+
+    /** Catat pemakaian boost sebagai baris ledger amount=0 (tetap ke-hitung utk rate-limit & stats). */
+    private static function logBoost(string $feature, ?string $refId = null): void
+    {
+        try {
+            $bal = TenantResolver::coinBalance();
+            Database::get()->prepare(
+                "INSERT INTO coin_ledger
+                   (tenant_id, outlet_id, type, amount, feature_used, description, balance_after, ref_id)
+                 VALUES (?, ?, 'deduct', 0, ?, ?, ?, ?)"
+            )->execute([
+                TenantResolver::id(),
+                TenantResolver::outletId() ?: null,
+                $feature,
+                '[TRIAL BOOST] Gratis trial: ' . $feature,
+                $bal,
+                $refId,
+            ]);
+        } catch (Throwable $e) { error_log('[CoinLedger::logBoost] '.$e->getMessage()); }
+    }
+
+    /**
+     * Statistik trial boost untuk SA: per fitur → jumlah panggilan + estimasi
+     * potensi revenue yang "digratiskan" (calls × harga retail saat ini).
+     * @return array<int,array{feature:string,calls:int,tenants:int,lost_revenue:int}>
+     */
+    public static function trialBoostStats(?string $start = null, ?string $end = null): array
+    {
+        $start = $start ?? date('Y-m-01');
+        $end   = $end   ?? date('Y-m-d');
+        try {
+            $s = Database::get()->prepare(
+                "SELECT feature_used feature, COUNT(*) calls, COUNT(DISTINCT tenant_id) tenants
+                   FROM coin_ledger
+                  WHERE type='deduct' AND amount=0
+                    AND description LIKE '[TRIAL BOOST]%'
+                    AND DATE(created_at) BETWEEN ? AND ?
+                  GROUP BY feature_used ORDER BY calls DESC"
+            );
+            $s->execute([$start, $end]);
+            $out = [];
+            foreach ($s->fetchAll(PDO::FETCH_ASSOC) as $r) {
+                $out[] = [
+                    'feature'      => $r['feature'],
+                    'calls'        => (int)$r['calls'],
+                    'tenants'      => (int)$r['tenants'],
+                    'lost_revenue' => (int)$r['calls'] * self::getHarga($r['feature']),
+                ];
+            }
+            return $out;
+        } catch (Throwable) { return []; }
+    }
+
     // ── Pricing cache (loaded dari saas_coin_pricing) ──
     private static ?array $pricing = null;
     private static int    $cacheExpiry = 0;
@@ -155,6 +231,7 @@ class CoinLedger
     public static function canAfford(string $feature): bool
     {
         if (!self::isFeatureActive($feature)) return false;
+        if (self::isTrialBoost($feature)) return true; // gratis selama trial boost
         $cost = self::getHarga($feature);
         if ($cost === 0) return true;
         return TenantResolver::coinBalance() >= $cost;
@@ -183,6 +260,7 @@ class CoinLedger
     public static function canAffordHq(string $feature, ?int $overrideCost = null): bool
     {
         if (!self::isFeatureActive($feature)) return false;
+        if (self::isTrialBoost($feature)) return true; // gratis selama trial boost
         $cost = $overrideCost !== null ? max(0, $overrideCost) : self::getHarga($feature);
         if ($cost === 0) return true;
         $tenantId = TenantResolver::id();
@@ -209,6 +287,8 @@ class CoinLedger
     public static function deductHq(string $feature, ?string $refId = null, ?int $overrideCost = null): bool
     {
         if (!self::isFeatureActive($feature)) return false;
+        // Trial AI Boost: gratis selama trial → catat pemakaian, jangan potong coin.
+        if (self::isTrialBoost($feature)) { self::logBoost($feature, $refId); return true; }
         $cost = $overrideCost !== null ? max(0, $overrideCost) : self::getHarga($feature);
         if ($cost === 0) return true;
 
@@ -301,6 +381,9 @@ class CoinLedger
     ): bool {
         // Fitur dinonaktifkan platform-wide → tolak
         if (!self::isFeatureActive($feature)) return false;
+
+        // Trial AI Boost: gratis selama trial → catat pemakaian, jangan potong coin.
+        if (self::isTrialBoost($feature)) { self::logBoost($feature, $refId); return true; }
 
         $cost = $overrideCost !== null ? max(0, $overrideCost) : self::getHarga($feature);
         if ($cost === 0) return true;

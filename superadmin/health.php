@@ -652,6 +652,42 @@ canvas { width: 100% !important; }
   <?php endif; ?>
 </div>
 
+<?php
+// ── Trial AI Boost — fitur AI yang digratiskan selama trial (Brief 2) ──
+require_once dirname(__DIR__) . '/core/CoinLedger.php';
+$boostRows  = CoinLedger::trialBoostStats(date('Y-m-01'), date('Y-m-d'));
+$boostCalls = array_sum(array_column($boostRows, 'calls'));
+$boostLost  = array_sum(array_column($boostRows, 'lost_revenue'));
+?>
+<div class="sa-ai-border" style="padding:24px;margin-top:24px">
+  <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:16px;flex-wrap:wrap;gap:12px">
+    <div>
+      <h3 style="margin:0 0 4px;font-size:16px;font-weight:700;color:var(--glow);display:inline-flex;align-items:center;gap:10px">✨ Trial AI Boost — Bulan Ini</h3>
+      <p style="margin:0;font-size:12px;color:var(--ash)">Panggilan AI yang digratiskan selama trial · <?= date('M Y') ?></p>
+    </div>
+    <div style="display:flex;gap:16px;font-size:12px">
+      <div><div style="color:var(--ash);font-size:10px;text-transform:uppercase">Boost Calls</div><div style="font-family:'DM Mono',monospace;font-weight:800;font-size:18px;color:#35E8D5"><?= number_format($boostCalls) ?></div></div>
+      <div><div style="color:var(--ash);font-size:10px;text-transform:uppercase">Est. Potensi Coin Digratiskan</div><div style="font-family:'DM Mono',monospace;font-weight:800;font-size:18px;color:var(--amber)"><?= number_format($boostLost) ?> coin</div></div>
+    </div>
+  </div>
+  <?php if (empty($boostRows)): ?>
+    <div style="text-align:center;padding:20px;color:var(--ash);font-size:13px">Belum ada pemakaian trial boost bulan ini.</div>
+  <?php else: ?>
+  <table class="sa-table" style="margin-top:8px">
+    <thead><tr><th>Feature</th><th style="text-align:right">Calls</th><th style="text-align:right">Tenant</th><th style="text-align:right">Est. Coin Digratiskan</th></tr></thead>
+    <tbody>
+    <?php foreach ($boostRows as $r): ?>
+      <tr>
+        <td style="font-family:'DM Mono',monospace;font-size:12px"><?= htmlspecialchars($r['feature']) ?></td>
+        <td style="text-align:right;font-family:'DM Mono',monospace;font-weight:700"><?= number_format($r['calls']) ?></td>
+        <td style="text-align:right;font-family:'DM Mono',monospace"><?= number_format($r['tenants']) ?></td>
+        <td style="text-align:right;font-family:'DM Mono',monospace;color:var(--amber)"><?= number_format($r['lost_revenue']) ?></td>
+      </tr>
+    <?php endforeach; ?>
+    </tbody>
+  </table>
+  <?php endif; ?>
+</div>
 <?php saRenderNavClose(); ?>
 
 <!-- ── Chart.js CDN (light, no color plugins needed) ── -->

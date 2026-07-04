@@ -18,6 +18,9 @@ class AIRateLimiter
     {
         $tid = $tenantId ?? (int) TenantResolver::id();
         [$limit, $label] = self::lookup($feature);
+        // Trial AI Boost: gandakan limit harian selama trial (Brief 2).
+        $boosted = class_exists('CoinLedger') && CoinLedger::isTrialBoost($feature);
+        if ($boosted && $limit > 0) $limit *= 2;
         $used = self::countToday($feature, $tid);
         $unlimited = $limit <= 0;
 
@@ -47,6 +50,7 @@ class AIRateLimiter
             'tiers'         => $tiers,           // array of progressive prices atau null
             'next_price'    => $nextPrice,        // price untuk call berikutnya
             'current_price' => $currentPrice,     // price untuk last call (kalau ada)
+            'boosted'       => $boosted,          // gratis selama trial (Trial AI Boost)
         ];
     }
 
