@@ -29,6 +29,20 @@ class TrialNurture
     const APP_URL = 'https://lamasy.harpy.id';
     const CS_WA   = '6285121519302';
 
+    // ── KILL-SWITCH (Brief 4) ───────────────────────────
+    // ENABLED=false → nurturing MATI untuk semua tenant nyata (tidak kirim email).
+    // Selama MATI, HANYA tenant di TEST_TENANT_IDS yang tetap diproses — untuk uji
+    // coba ke tenant test dulu. Kalau sudah yakin: set ENABLED=true (dan kosongkan
+    // TEST_TENANT_IDS), lalu push.
+    const ENABLED         = false;
+    const TEST_TENANT_IDS = [];   // mis. [21] saat mau tes ke tenant test tertentu
+
+    /** Boleh kirim nurturing utk tenant ini? (global ON, atau tenant ada di test allowlist) */
+    private static function allowed(int $tenantId): bool
+    {
+        return self::ENABLED || in_array($tenantId, self::TEST_TENANT_IDS, true);
+    }
+
     /**
      * Proses semua outlet yang relevan (trial / grace / suspended baru).
      * @return array{processed:int, sent:int, byType:array<string,int>}
@@ -36,6 +50,8 @@ class TrialNurture
     public static function runAll(): array
     {
         $summary = ['processed' => 0, 'sent' => 0, 'byType' => []];
+        // Kalau MATI total & tak ada tenant test → tidak usah query apa pun.
+        if (!self::ENABLED && empty(self::TEST_TENANT_IDS)) return $summary;
         try {
             $rows = Database::get()->query(
                 "SELECT id FROM outlets
@@ -74,6 +90,9 @@ class TrialNurture
             $o->execute([$outletId]);
             $row = $o->fetch(PDO::FETCH_ASSOC);
             if (!$row) return null;
+
+            // Kill-switch: skip kecuali nurturing ON atau tenant ada di test allowlist.
+            if (!self::allowed((int)$row['tenant_id'])) return null;
 
             $tp = self::pickTouchpoint($row);
             if (!$tp) return null;
