@@ -309,6 +309,42 @@ img { max-width: 100%; }
   max-width: 540px; margin: 0 auto 36px;
   line-height: 1.6;
 }
+
+/* ── Hero page-load animation (subtle, orchestrated) ──
+   Satu sequence staggered + satu ambient float. Animasi hanya transform+opacity
+   (GPU). Hover elemen tetap aman: entrance dipasang di container, hover di child. */
+.hero-badge, .hero h1, .hero-sub, .hero-btns, .hero-microtrust, .hero-chips {
+  opacity: 0;
+  transform: translateY(16px);
+  animation: heroFadeUp .6s cubic-bezier(.16,1,.3,1) forwards;
+}
+.hero-badge      { animation-delay: .05s; }
+.hero h1         { animation-delay: .15s; }
+.hero-sub        { animation-delay: .25s; }
+.hero-btns       { animation-delay: .35s; }
+.hero-microtrust { animation-delay: .45s; }
+.hero-chips      { animation-delay: .55s; }
+@keyframes heroFadeUp { to { opacity: 1; transform: translateY(0); } }
+
+.hero-mockup-wrap {
+  opacity: 0;
+  transform: scale(.96);
+  animation: heroScaleIn .7s cubic-bezier(.16,1,.3,1) .6s forwards;
+}
+@keyframes heroScaleIn { to { opacity: 1; transform: scale(1); } }
+
+/* Ambient: dashboard mockup mengambang halus, mulai setelah entrance selesai */
+.hero-mockup { animation: heroFloat 6s ease-in-out 1.4s infinite; }
+@keyframes heroFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-badge, .hero h1, .hero-sub, .hero-btns, .hero-microtrust, .hero-chips,
+  .hero-mockup-wrap, .hero-mockup, .hero-mockup-float-badge {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
 .hero-btns {
   display: flex; align-items: center; justify-content: center;
   gap: 14px; flex-wrap: wrap;
