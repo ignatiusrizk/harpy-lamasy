@@ -79,12 +79,13 @@ if ($_isDirectLanding) {
   --r:       12px;
 }
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { scroll-behavior: smooth; }
+html { scroll-behavior: smooth; overflow-x: hidden; }
 body {
   font-family: var(--font);
   background: var(--navy-d);
   color: var(--white);
-  overflow-x: hidden;
+  /* overflow-x dipindah ke <html> — overflow-x:hidden di body bikin overflow-y
+     jadi 'auto' (body jadi scroll-container) yg kadang macetkan scroll trackpad */
 }
 a { text-decoration: none; color: inherit; }
 img { max-width: 100%; }
