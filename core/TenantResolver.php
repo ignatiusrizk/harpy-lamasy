@@ -369,7 +369,7 @@ class TenantResolver
             // Fallback: hitung mundur dari trial_ends_at (asumsi trial 7 hari).
             $ends = self::$outlet['trial_ends_at'] ?? null;
             if (empty($ends)) return 1;
-            $start = date('Y-m-d H:i:s', strtotime($ends) - 7 * 86400);
+            $start = date('Y-m-d H:i:s', strtotime($ends) - 14 * 86400);
         }
         $elapsed = time() - strtotime($start);
         return max(1, (int)floor($elapsed / 86400) + 1);
@@ -623,12 +623,12 @@ class TenantResolver
                            . "<a href='/billing.php'>Aktifkan sekarang →</a>",
             ];
         } elseif (self::isTrial()) {
-            $day       = self::trialDay();
             $daysLeft  = self::trialDaysLeft();
             $trialCoin = self::trialCoinBalance();
 
-            // Brief 3 — loss aversion: H7+ MERAH, H5-6 KUNING, dgn angka transaksi+customer.
-            if ($day >= 7 || $daysLeft <= 0) {
+            // Brief 3 — loss aversion, di-anchor ke SISA hari (bukan hari ke-N) supaya
+            // benar utk panjang trial berapa pun: ≤1 hari MERAH, ≤3 hari KUNING.
+            if ($daysLeft <= 1) {
                 [$nTrx, $nCust] = self::trialDataCounts();
                 $banners[] = [
                     'type'    => 'danger',
@@ -637,7 +637,7 @@ class TenantResolver
                                . " akan terkunci tengah malam. "
                                . "<a href='/billing.php'>Aktifkan sekarang →</a>",
                 ];
-            } elseif ($day >= 5) {
+            } elseif ($daysLeft <= 3) {
                 [$nTrx, $nCust] = self::trialDataCounts();
                 $banners[] = [
                     'type'    => 'warning',
@@ -645,12 +645,6 @@ class TenantResolver
                                . self::lockPhrase($nTrx, $nCust)
                                . " akan terkunci — sayang kalau hilang. "
                                . "<a href='/billing.php'>Aktifkan sekarang →</a>",
-                ];
-            } elseif ($daysLeft <= 3) {
-                $banners[] = [
-                    'type'    => 'warning',
-                    'message' => "⏰ Trial berakhir dalam <strong>$daysLeft hari</strong>. "
-                               . "<a href='/billing.php'>Upgrade sekarang →</a>",
                 ];
             }
 

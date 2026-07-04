@@ -22,7 +22,7 @@ class TenantProvisioner
         $db->beginTransaction();
         try {
             // ── Step 1: Insert tenant ─────────────────
-            $trialEnd = date('Y-m-d H:i:s', strtotime('+7 days'));
+            $trialEnd = date('Y-m-d H:i:s', strtotime('+14 days'));
             $db->prepare("
                 INSERT INTO tenants
                   (slug, nama_perusahaan, owner_name, owner_wa,
@@ -71,7 +71,7 @@ class TenantProvisioner
                 'outlet'   => $data['nama_outlet'],
                 'url'      => APP_URL . '/login',
                 'password' => $tempPassword,
-                'trial'    => '7 hari',
+                'trial'    => '14 hari',
             ]);
 
             return [

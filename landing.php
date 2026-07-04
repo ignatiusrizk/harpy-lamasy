@@ -25,7 +25,7 @@ if ($_isDirectLanding) {
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<meta name="description" content="LAMASY — ERP Laundry modern dengan AI terintegrasi. POS, Laporan Keuangan SAK EMKM, manajemen karyawan, integrasi WhatsApp lengkap. Trial 7 hari gratis, bayar sesuai pemakaian via Coin — tanpa langganan bulanan."/>
+<meta name="description" content="LAMASY — ERP Laundry modern dengan AI terintegrasi. POS, Laporan Keuangan SAK EMKM, manajemen karyawan, integrasi WhatsApp lengkap. Trial 14 hari gratis, bayar sesuai pemakaian via Coin — tanpa langganan bulanan."/>
 <meta name="author" content="PT Harpy Sinergi Mandiri"/>
 <meta name="robots" content="index, follow"/>
 <link rel="canonical" href="https://lamasy.harpy.id/"/>
@@ -34,7 +34,7 @@ if ($_isDirectLanding) {
 <meta property="og:type" content="website"/>
 <meta property="og:url" content="https://lamasy.harpy.id/"/>
 <meta property="og:title" content="LAMASY — ERP Laundry Modern dengan AI Terintegrasi"/>
-<meta property="og:description" content="POS, laporan SAK EMKM, AI briefing, integrasi WhatsApp — semua dalam 1 platform. Trial 7 hari gratis."/>
+<meta property="og:description" content="POS, laporan SAK EMKM, AI briefing, integrasi WhatsApp — semua dalam 1 platform. Trial 14 hari gratis."/>
 <meta property="og:image" content="https://lamasy.harpy.id/assets/og-image.png"/>
 <meta property="og:image:width" content="1200"/>
 <meta property="og:image:height" content="630"/>
@@ -1027,7 +1027,7 @@ img { max-width: 100%; }
     "@type": "Offer",
     "price": "0",
     "priceCurrency": "IDR",
-    "description": "Trial 7 hari gratis, lanjut bayar sesuai pemakaian via Coin"
+    "description": "Trial 14 hari gratis, lanjut bayar sesuai pemakaian via Coin"
   },
   "url": "https://lamasy.harpy.id/",
   "screenshot": "https://lamasy.harpy.id/assets/og-image.png"
@@ -1052,7 +1052,7 @@ img { max-width: 100%; }
       "name": "Berapa biaya pakai LAMASY?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "Trial 7 hari gratis tanpa kartu kredit. Setelah itu bayar sesuai pemakaian via Coin — tidak ada langganan bulanan."
+        "text": "Trial 14 hari gratis tanpa kartu kredit. Setelah itu bayar sesuai pemakaian via Coin — tidak ada langganan bulanan."
       }
     },
     {
@@ -1144,7 +1144,7 @@ img { max-width: 100%; }
   <p class="hero-sub">POS, laporan keuangan SAK EMKM, AI briefing harian, integrasi WhatsApp lengkap — semua dalam 1 platform. Bayar sesuai pemakaian, tanpa langganan bulanan yang mengikat.</p>
 
   <div class="hero-btns">
-    <a href="/register.php" class="btn-primary">&#128640; Coba Gratis 7 Hari</a>
+    <a href="/register.php" class="btn-primary">&#128640; Coba Gratis 14 Hari</a>
     <a href="#fitur" class="btn-secondary">&#9654; Lihat Fitur</a>
   </div>
   <div class="hero-microtrust">
@@ -1235,7 +1235,7 @@ img { max-width: 100%; }
 <div class="stats-bar">
   <div class="stats-inner">
     <div class="stat-item">
-      <div class="stat-num">7 Hari</div>
+      <div class="stat-num">14 Hari</div>
       <div class="stat-label">Trial Gratis</div>
     </div>
     <div class="stat-item">
@@ -1299,7 +1299,7 @@ img { max-width: 100%; }
               font-weight:700;padding:13px 32px;border-radius:10px;text-decoration:none;
               font-size:15px;transition:opacity .2s"
        onmouseenter="this.style.opacity='.85'" onmouseleave="this.style.opacity='1'">
-      Coba Gratis 7 Hari →
+      Coba Gratis 14 Hari →
     </a>
   </div>
 </section>
@@ -1650,7 +1650,7 @@ img { max-width: 100%; }
         <?php
         $rowsApps = [
           ['Model Biaya',           'Langganan bulanan, atau coin dgn biaya/transaksi tinggi', '1× setup + pay-per-use Coin — biaya per transaksi hemat, tanpa langganan'],
-          ['Trial Free',            'Biasanya 3-7 hari, fitur terbatas',           '7 hari penuh + 10.000 coin gratis'],
+          ['Trial Free',            'Biasanya 3-14 hari, fitur terbatas',           '14 hari penuh + 10.000 coin gratis'],
           ['AI Terintegrasi',       'Tidak ada / cuma chatbot CS',                 'AI Briefing, Chat Data, Migration, Upselling'],
           ['Laporan Keuangan',      'Laporan operasional saja',                    'SAK EMKM formal (Laba Rugi, Neraca, Arus Kas)'],
           ['WhatsApp Notif',        'Add-on terpisah berbayar',                    'Termasuk — pay-per-use via coin'],
@@ -1716,7 +1716,7 @@ function switchCmpTab(tab, btn) {
       <div class="step-card">
         <div class="step-num-wrap">1</div>
         <h3>Daftar Akun</h3>
-        <p>Isi form registrasi sederhana. Akun trial 7 hari langsung aktif dengan 10.000 coin gratis. Tidak perlu kartu kredit.</p>
+        <p>Isi form registrasi sederhana. Akun trial 14 hari langsung aktif dengan 10.000 coin gratis. Tidak perlu kartu kredit.</p>
       </div>
       <div class="step-card">
         <div class="step-num-wrap">2</div>
@@ -1743,7 +1743,7 @@ function switchCmpTab(tab, btn) {
     <?php
     $audiences = [
       ['🏠', 'Laundry Rumahan',
-       'Baru mulai atau masih kecil? Justru ideal untuk Anda. Setup 10 menit, langsung produktif. Trial gratis 7 hari untuk pastikan cocok dulu.'],
+       'Baru mulai atau masih kecil? Justru ideal untuk Anda. Setup 10 menit, langsung produktif. Trial gratis 14 hari untuk pastikan cocok dulu.'],
       ['🏪', 'Outlet 1-5 Cabang',
        'Kelola semua cabang dari satu dashboard HQ. Tidak perlu WhatsApp bolak-balik ke masing-masing cabang — semua data terpusat real-time.'],
       ['🏢', 'Waralaba & Franchise',
@@ -1843,7 +1843,7 @@ function switchCmpTab(tab, btn) {
     <h2>Bayar Sesuai Pemakaian — Bukan Langganan Mengikat</h2>
     <p>Tidak ada paket bertingkat. Tidak ada biaya bulanan wajib. Cuma <strong>1× setup fee per outlet</strong>, sisanya kamu yang kontrol via Coin sesuai pemakaian fitur.</p>
     <p style="text-align:center;color:rgba(53,232,213,.9);font-weight:600;margin-bottom:8px;font-size:15px;">
-      Trial 7 hari gratis · Lanjut bayar sesuai pakai via Coin
+      Trial 14 hari gratis · Lanjut bayar sesuai pakai via Coin
     </p>
     <p style="text-align:center;color:rgba(255,255,255,.5);max-width:600px;margin:0 auto 32px;font-size:13px;">
       Biaya per transaksi rendah &amp; transparan — bayar hanya saat fitur dipakai (nota, WA, AI). Tanpa langganan, tanpa kontrak; bisnis sepi, biaya ikut turun.
@@ -1857,7 +1857,7 @@ function switchCmpTab(tab, btn) {
     <div class="pricing-card" style="display:flex;flex-direction:column;">
       <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:rgba(53,232,213,.7);margin-bottom:8px;">Coba Dulu</div>
       <div class="pricing-name">Trial Gratis</div>
-      <div class="pricing-price">Rp 0<div class="per">7 hari, semua fitur terbuka</div></div>
+      <div class="pricing-price">Rp 0<div class="per">14 hari, semua fitur terbuka</div></div>
       <div class="pricing-desc">Daftar 3 langkah, langsung pakai. Tidak perlu kartu kredit, tidak ada komitmen.</div>
       <div class="pricing-divider"></div>
       <ul class="pricing-features" style="flex:1;">
@@ -1917,10 +1917,10 @@ function switchCmpTab(tab, btn) {
   <div class="hl-mini-faq">
     <details>
       <summary>Apa yang terjadi setelah klik "Coba Gratis"?</summary>
-      <p>Kamu register dengan nama outlet + email + password (5 menit). Setup outlet langsung selesai, bisa input order pertama dalam menit yang sama. Trial 7 hari otomatis aktif — no kartu kredit.</p>
+      <p>Kamu register dengan nama outlet + email + password (5 menit). Setup outlet langsung selesai, bisa input order pertama dalam menit yang sama. Trial 14 hari otomatis aktif — no kartu kredit.</p>
     </details>
     <details>
-      <summary>Apakah saya wajib bayar setelah trial 7 hari?</summary>
+      <summary>Apakah saya wajib bayar setelah trial 14 hari?</summary>
       <p>Tidak wajib. Kalau tidak topup coin setelah trial, akses dibatasi (view-only) tapi data tetap tersimpan. Anytime mau lanjut, topup coin → akses penuh lagi.</p>
     </details>
     <details>
@@ -1993,7 +1993,7 @@ function switchCmpTab(tab, btn) {
 
       <div class="testi-card">
         <div class="testi-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
-        <div class="testi-text">"Baru buka outlet pertama 3 bulan lalu. Trial 7 hari cukup bikin saya yakin pakai LAMASY. Tidak ada langganan bulanan yang mencekik — cocok untuk yang baru mulai dan masih hitung-hitungan biaya operasional."</div>
+        <div class="testi-text">"Baru buka outlet pertama 3 bulan lalu. Trial 14 hari cukup bikin saya yakin pakai LAMASY. Tidak ada langganan bulanan yang mencekik — cocok untuk yang baru mulai dan masih hitung-hitungan biaya operasional."</div>
         <div class="testi-author">
           <div class="testi-avatar">&#x1F3EA;</div>
           <div>
@@ -2052,7 +2052,7 @@ function switchCmpTab(tab, btn) {
     <?php
     $faqs = [
       ['Apakah LAMASY benar-benar gratis di awal?',
-       'Trial <strong>7 hari</strong> benar-benar gratis — tidak perlu kartu kredit, tidak ada biaya tersembunyi. Semua fitur (POS, Keuangan, Karyawan, AI, WA) terbuka. Dapat <strong>10.000 coin gratis</strong> untuk coba fitur AI &amp; WA. Setelah trial, aktivasi outlet permanen Rp 800rb (promo launching, normal Rp 1jt) sekali bayar.'],
+       'Trial <strong>14 hari</strong> benar-benar gratis — tidak perlu kartu kredit, tidak ada biaya tersembunyi. Semua fitur (POS, Keuangan, Karyawan, AI, WA) terbuka. Dapat <strong>10.000 coin gratis</strong> untuk coba fitur AI &amp; WA. Setelah trial, aktivasi outlet permanen Rp 800rb (promo launching, normal Rp 1jt) sekali bayar.'],
 
       ['Bagaimana sistem pricing-nya? Saya bingung soal coin.',
        'Simpel: <strong>1× aktivasi Rp 800rb per outlet</strong> (promo launching) untuk akses permanen, sisanya pay-per-use via Coin. Saat aktivasi dapat <strong>100.000 coin bonus</strong> — plus sisa coin trial kamu otomatis ditambahkan ke saldo. Contoh harga fitur: WA notif = 50 coin, AI Chat = 50 coin, AI Briefing = 500 coin. Topup self-service mulai Rp 50rb / 10.000 coin. <strong>Tidak ada langganan bulanan wajib</strong> — kamu yang kontrol pemakaian.'],
@@ -2079,7 +2079,7 @@ function switchCmpTab(tab, btn) {
        'AI di LAMASY fokus ke 4 hal konkret: <strong>(1) Briefing pagi</strong> — ringkasan kondisi outlet otomatis. <strong>(2) Chat dengan Data</strong> — tanya pakai bahasa natural, AI baca laporan. <strong>(3) Pesan retensi</strong> — generate WA personal untuk pelanggan dormant. <strong>(4) Upselling di POS</strong> — saran cross-sell saat kasir input order. Semua opt-in, bisa di-skip kalau nggak perlu.'],
 
       ['Bagaimana jika trial habis dan belum aktivasi?',
-       'Setelah trial 7 hari, outlet masuk periode <strong>grace 7 hari</strong> — data masih bisa dilihat (read-only) tapi tidak bisa input order baru. Setelah grace berakhir, outlet ditangguhkan tapi data tetap tersimpan 30 hari. Kamu bisa aktivasi kapan saja tanpa kehilangan data — sisa coin trial juga tetap tersimpan.'],
+       'Setelah trial 14 hari, outlet masuk periode <strong>grace 14 hari</strong> — data masih bisa dilihat (read-only) tapi tidak bisa input order baru. Setelah grace berakhir, outlet ditangguhkan tapi data tetap tersimpan 30 hari. Kamu bisa aktivasi kapan saja tanpa kehilangan data — sisa coin trial juga tetap tersimpan.'],
 
       ['Apakah ada kontrak jangka panjang?',
        'Tidak ada. Tidak ada kontrak bulanan/tahunan. Setup fee dibayar sekali untuk aktivasi outlet permanen, sisanya kamu yang kontrol via topup coin. Berhenti pakai? Coin tersimpan sampai kamu aktif lagi, tidak ada penalti.'],
@@ -2123,9 +2123,9 @@ function switchCmpTab(tab, btn) {
 <div class="cta-banner">
   <div class="cta-inner">
     <h2>Siap Digitalisasi Laundry Anda?</h2>
-    <p>Mulai trial 7 hari sekarang dengan 10.000 coin gratis — semua fitur, tanpa kartu kredit. Setelah cocok, aktivasi outlet permanen <strong>Rp 800rb</strong> (promo launching, normal Rp 1jt) + 100rb coin bonus.</p>
+    <p>Mulai trial 14 hari sekarang dengan 10.000 coin gratis — semua fitur, tanpa kartu kredit. Setelah cocok, aktivasi outlet permanen <strong>Rp 800rb</strong> (promo launching, normal Rp 1jt) + 100rb coin bonus.</p>
     <div class="cta-btns">
-      <a href="/register.php" class="btn-primary">&#128640; Mulai Trial 7 Hari Gratis</a>
+      <a href="/register.php" class="btn-primary">&#128640; Mulai Trial 14 Hari Gratis</a>
       <a href="https://wa.me/6285121519302?text=Halo+saya+ingin+tahu+lebih+lanjut+tentang+LAMASY" target="_blank" class="btn-secondary">&#128172; Chat WhatsApp</a>
     </div>
   </div>
@@ -2310,7 +2310,7 @@ document.querySelectorAll('.feature-card, .step-card, .pricing-card, .testi-card
   <div class="hl-exit-content">
     <button class="hl-exit-close" type="button" onclick="document.getElementById('hlExitModal').classList.remove('show')">&times;</button>
     <h3>Tunggu, jangan pergi dulu 👋</h3>
-    <p>Tinggalkan email kamu — kami kirim tips &amp; update seputar bikin bisnis laundry lebih rapi &amp; cuan. Plus info trial gratis 7 hari.</p>
+    <p>Tinggalkan email kamu — kami kirim tips &amp; update seputar bikin bisnis laundry lebih rapi &amp; cuan. Plus info trial gratis 14 hari.</p>
     <form id="hlExitForm">
       <input type="email" name="email" placeholder="email@kamu.com" required>
       <button type="submit">Gabung sekarang</button>

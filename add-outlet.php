@@ -155,9 +155,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['step2_submit'])) {
         $outletSlug  = aoUniqueSlug($d['nama_outlet'], $tid);
         $isPaid      = ($d['mode'] ?? 'trial') === 'paid';
         // Paid outlet = pending (menunggu konfirmasi pembayaran superadmin)
-        // Trial outlet = trial (langsung aktif dengan masa trial 7 hari)
+        // Trial outlet = trial (langsung aktif dengan masa trial 14 hari)
         $trialStatus = $isPaid ? 'pending' : 'trial';
-        $trialEnds   = $isPaid ? null : date('Y-m-d H:i:s', time() + 7 * 86400);
+        $trialEnds   = $isPaid ? null : date('Y-m-d H:i:s', time() + 14 * 86400);
         $trialCoins  = (!$isPaid && $isFirstOutlet) ? 10000 : 0;
 
         $db->prepare("

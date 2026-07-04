@@ -301,7 +301,7 @@ $captchaB = $r['captcha_b'] ?? 5;
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Daftar Gratis — LAMASY</title>
-<meta name="description" content="Daftarkan outlet laundry kamu di LAMASY. Gratis 7 hari, tidak perlu kartu kredit.">
+<meta name="description" content="Daftarkan outlet laundry kamu di LAMASY. Gratis 14 hari, tidak perlu kartu kredit.">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
@@ -474,7 +474,7 @@ if ($step === 1): ?>
              placeholder="cth: Bandung">
     </div>
     <div class="trial-badge">
-      🎁 <strong>Gratis 7 hari trial!</strong>
+      🎁 <strong>Gratis 14 hari trial!</strong>
       Dapat 10.000 coin untuk coba fitur AI &amp; notifikasi WA.
       Tidak perlu kartu kredit.
     </div>
@@ -595,7 +595,7 @@ elseif ($step === 3): ?>
     </div>
     <div class="review-row">
       <span class="rv-label">Paket</span>
-      <span class="rv-val" style="color:var(--teal)">🎁 Trial 7 Hari Gratis</span>
+      <span class="rv-val" style="color:var(--teal)">🎁 Trial 14 Hari Gratis</span>
     </div>
     <div class="review-row">
       <span class="rv-label">Trial Coin</span>

@@ -62,7 +62,7 @@ class CoinLedger
         $tenant = TenantResolver::getTenant();
         if ((int)($tenant['trial_ai_boost'] ?? 0) !== 1) return false;
         if (!TenantResolver::isTrial()) return false;
-        return TenantResolver::trialDay() <= 7;
+        return TenantResolver::trialDay() <= 14;
     }
 
     /** Catat pemakaian boost sebagai baris ledger amount=0 (tetap ke-hitung utk rate-limit & stats). */

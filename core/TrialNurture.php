@@ -162,9 +162,12 @@ class TrialNurture
 
         if ($status !== 'trial') return null;
 
-        $day = self::trialDay($o);
+        // Anchor touchpoint akhir ke SISA hari (bukan hari ke-N) supaya benar utk
+        // panjang trial berapa pun (7/14/dst). h1/h3 tetap berbasis hari-berjalan.
+        $day  = self::trialDay($o);
+        $left = self::daysLeft($o['trial_ends_at'] ?? null);
 
-        if ($day >= 7) {
+        if ($left <= 0) {
             return self::tp('trial_h7_final', "Trial berakhir hari ini — aktifkan sebelum tengah malam",
                 self::body($owner,
                     "<p>Hari ini <strong>hari terakhir</strong> trial <strong>".self::e($namaOutlet)."</strong>.</p>
@@ -172,13 +175,13 @@ class TrialNurture
                      <p>Masih ada masa tenggang 3 hari sebagai jaring pengaman — tapi paling aman aktifkan <strong>sekarang</strong>.</p>",
                     "Aktifkan sekarang", "/billing.php"));
         }
-        if ($day >= 5) {
+        if ($left <= 2) {
             // Stickiness (Strategi #5): kalau score<3, sisipkan SATU saran aksi termudah
-            // ke email H5 ini — jangan kirim WA/email terpisah (anti double-nudge).
+            // ke email ini — jangan kirim WA/email terpisah (anti double-nudge).
             $stickyTip = self::stickyTip((int)$o['tenant_id']);
-            return self::tp('trial_h5_lossaversion', "2 hari lagi — data outlet kamu akan terkunci ⚠️",
+            return self::tp('trial_h5_lossaversion', "$left hari lagi — data outlet kamu akan terkunci ⚠️",
                 self::body($owner,
-                    "<p>Trial <strong>".self::e($namaOutlet)."</strong> tinggal <strong>2 hari</strong> lagi.</p>
+                    "<p>Trial <strong>".self::e($namaOutlet)."</strong> tinggal <strong>$left hari</strong> lagi.</p>
                      <p>Kamu sudah menginput ".self::dataPhrase($nTrx,$nCust).". <strong>Sayang kalau terkunci</strong> begitu trial habis.</p>"
                      . $stickyTip .
                     "<p>Aktifkan outlet supaya semua data &amp; fitur tetap jalan tanpa putus.</p>",
@@ -281,7 +284,7 @@ class TrialNurture
         if (empty($start)) {
             $ends = $o['trial_ends_at'] ?? null;
             if (empty($ends)) return 1;
-            $start = date('Y-m-d H:i:s', strtotime($ends) - 7 * 86400);
+            $start = date('Y-m-d H:i:s', strtotime($ends) - 14 * 86400);
         }
         return max(1, (int)floor((time() - strtotime($start)) / 86400) + 1);
     }
