@@ -42,13 +42,17 @@ $sql = [];
 $sql[] = "-- SEED MARKETING DEMO — generated ".date('c');
 $sql[] = "SET NAMES utf8mb4;";
 
-// 1) pelanggan baru
+// 1) pelanggan baru — portal_token WAJIB diisi (tanpa ini pelanggan tak bisa masuk portal;
+//    POS/customer.php aslinya selalu set bin2hex(random_bytes(16)))
 foreach ($plgBaru as $i => [$nm,$tel]) {
   $created = (clone $today)->modify('-'.mt_rand(8,40).' days')->format('Y-m-d H:i:s');
-  $sql[] = "INSERT INTO hl_pelanggan (tenant_id,outlet_id,registered_outlet_id,nama,telepon,tipe,is_active,segmen,created_at)
-    SELECT $TID,$OID,$OID,'".addslashes($nm)."','$tel','umum',1,'baru','$created'
+  $ptok = bin2hex(random_bytes(16));
+  $sql[] = "INSERT INTO hl_pelanggan (tenant_id,outlet_id,registered_outlet_id,nama,telepon,tipe,is_active,segmen,portal_token,created_at)
+    SELECT $TID,$OID,$OID,'".addslashes($nm)."','$tel','umum',1,'baru','$ptok','$created'
     WHERE NOT EXISTS (SELECT 1 FROM hl_pelanggan WHERE tenant_id=$TID AND telepon='$tel');";
 }
+// Backfill token utk pelanggan demo lama yang belum punya (MD5 = 32 hex, format sama)
+$sql[] = "UPDATE hl_pelanggan SET portal_token=MD5(CONCAT(id,'-',RAND(),'-',NOW())) WHERE tenant_id=$TID AND (portal_token IS NULL OR portal_token='');";
 
 function plgSub($tel){ global $TID; return "(SELECT id FROM hl_pelanggan WHERE tenant_id=$TID AND telepon='$tel' LIMIT 1)"; }
 
