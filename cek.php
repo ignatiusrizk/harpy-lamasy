@@ -167,9 +167,10 @@ form input:focus { outline:none; border-color:var(--teal); box-shadow:0 0 0 3px 
 @media (max-width:480px) { .status-icon { font-size:36px; } .status-text .value { font-size:16px; } }
 .or-divider { text-align:center; color:var(--gray); font-size:12px; margin:16px 0; }
 .portal-affordance { background:#fff; border:1px solid var(--border); border-radius:16px; padding:0; margin-bottom:14px; box-shadow:0 1px 3px rgba(0,0,0,0.06); overflow:hidden; }
-.portal-affordance > summary { list-style:none; cursor:pointer; padding:16px 18px; font-size:14px; font-weight:700; color:var(--teal); display:flex; justify-content:space-between; align-items:center; gap:8px; }
+/* Teks mengalir sbg 1 kalimat (bukan flex space-between) — di layar sempit patah natural, panah tak yatim */
+.portal-affordance > summary { list-style:none; cursor:pointer; padding:16px 18px; font-size:14px; font-weight:700; color:var(--teal); line-height:1.5; }
 .portal-affordance > summary::-webkit-details-marker { display:none; }
-.portal-affordance > summary span { color:var(--gray); font-weight:600; font-size:13px; }
+.portal-affordance > summary span { color:var(--gray); font-weight:600; font-size:13px; white-space:nowrap; }
 .portal-affordance[open] > summary { border-bottom:1px solid #F3F4F6; }
 .portal-body { padding:14px 18px 18px; font-size:13.5px; color:#374151; line-height:1.6; }
 .portal-body ul { margin:8px 0 0; padding-left:18px; color:var(--gray); }
