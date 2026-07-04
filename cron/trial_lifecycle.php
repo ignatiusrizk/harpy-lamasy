@@ -94,19 +94,16 @@ $reminderRows = $db->prepare("
 ");
 $reminderRows->execute();
 $reminders = $reminderRows->fetchAll();
-$sent = 0;
 foreach ($reminders as $r) {
-    $ok = Mailer::sendTrialReminder($r['email'], $r['owner_name'] ?? 'Owner', (int)$r['days_left']);
-    if ($ok) $sent++;
-    clog("reminder ($r[days_left]h): outlet_id=$r[id] email=$r[email] " . ($ok ? 'sent' : 'FAILED'));
-
-    // Notify super admin (best-effort)
+    // Reminder ke tenant kini ditangani TrialNurture (sequence H5/H7, framing
+    // loss-aversion + angka nyata — Brief 3/4). Di sini cukup notifikasi Super
+    // Admin bahwa trial mau habis (best-effort, tidak dobel dgn email tenant).
     try {
         require_once dirname(__DIR__) . '/core/SaNotifier.php';
         SaNotifier::trialExpiring((int)$r['id'], (int)$r['days_left']);
     } catch (Throwable $e) { clog('SaNotify trialExpiring fail: ' . $e->getMessage()); }
 }
-clog("$sent trial reminder emails sent");
+clog(count($reminders) . ' trial-expiring → SA notified');
 
 // ── 2. grace → suspended ─────────────────────────────
 $graceExpired = $db->prepare("
@@ -210,4 +207,16 @@ $db->prepare("
 ")->execute();
 
 clog('trial_coin_balance reset for non-trial outlets');
+
+// ── 7. Trial Nurturing Sequence (Brief 4) ───────────
+// Jalan setelah transisi status supaya touchpoint sesuai state terbaru.
+// Idempoten: tiap touchpoint max 1x per outlet (guard di TrialNurture).
+try {
+    require_once ROOT . '/core/TrialNurture.php';
+    $nur = TrialNurture::runAll();
+    clog("trial_nurture: processed={$nur['processed']} sent={$nur['sent']} types=" . json_encode($nur['byType'] ?: (object)[]));
+} catch (Throwable $e) {
+    clog('trial_nurture FAIL: ' . $e->getMessage());
+}
+
 clog('=== trial_lifecycle.php DONE ===');

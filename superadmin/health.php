@@ -688,6 +688,50 @@ $boostLost  = array_sum(array_column($boostRows, 'lost_revenue'));
   </table>
   <?php endif; ?>
 </div>
+
+<?php
+// ── Trial Nurturing — ringkasan touchpoint terkirim bulan ini (Brief 4) ──
+$nurRows = [];
+try {
+    $ns = Database::get()->prepare(
+        "SELECT REPLACE(event_type,'trial_nurture:','') tp,
+                COUNT(*) n, COUNT(DISTINCT ref_id) tenants, MAX(sent_at) last_at
+           FROM saas_sa_notif_log
+          WHERE event_type LIKE 'trial_nurture:%'
+            AND sent_at >= ?
+          GROUP BY event_type ORDER BY n DESC"
+    );
+    $ns->execute([date('Y-m-01').' 00:00:00']);
+    $nurRows = $ns->fetchAll(PDO::FETCH_ASSOC);
+} catch (Throwable) {}
+$nurTotal = array_sum(array_column($nurRows, 'n'));
+?>
+<div class="sa-ai-border" style="padding:24px;margin-top:24px">
+  <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:16px;flex-wrap:wrap;gap:12px">
+    <div>
+      <h3 style="margin:0 0 4px;font-size:16px;font-weight:700;color:var(--glow)">📨 Trial Nurturing — Bulan Ini</h3>
+      <p style="margin:0;font-size:12px;color:var(--ash)">Touchpoint sequence terkirim (email + in-app) · <?= date('M Y') ?></p>
+    </div>
+    <div><div style="color:var(--ash);font-size:10px;text-transform:uppercase">Total Terkirim</div><div style="font-family:'DM Mono',monospace;font-weight:800;font-size:18px;color:#35E8D5"><?= number_format($nurTotal) ?></div></div>
+  </div>
+  <?php if (empty($nurRows)): ?>
+    <div style="text-align:center;padding:20px;color:var(--ash);font-size:13px">Belum ada nurturing terkirim bulan ini.</div>
+  <?php else: ?>
+  <table class="sa-table" style="margin-top:8px">
+    <thead><tr><th>Touchpoint</th><th style="text-align:right">Terkirim</th><th style="text-align:right">Tenant</th><th style="text-align:right">Terakhir</th></tr></thead>
+    <tbody>
+    <?php foreach ($nurRows as $r): ?>
+      <tr>
+        <td style="font-family:'DM Mono',monospace;font-size:12px"><?= htmlspecialchars($r['tp']) ?></td>
+        <td style="text-align:right;font-family:'DM Mono',monospace;font-weight:700"><?= number_format($r['n']) ?></td>
+        <td style="text-align:right;font-family:'DM Mono',monospace"><?= number_format($r['tenants']) ?></td>
+        <td style="text-align:right;font-family:'DM Mono',monospace;font-size:11px;color:var(--ash)"><?= htmlspecialchars(substr((string)$r['last_at'],0,16)) ?></td>
+      </tr>
+    <?php endforeach; ?>
+    </tbody>
+  </table>
+  <?php endif; ?>
+</div>
 <?php saRenderNavClose(); ?>
 
 <!-- ── Chart.js CDN (light, no color plugins needed) ── -->
