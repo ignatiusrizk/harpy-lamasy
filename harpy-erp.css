@@ -1530,6 +1530,9 @@ html, body { overflow-x: clip; overscroll-behavior-y: contain; }
 
 /* ── LANDING: Beta Banner ────────────────────────────── */
 .hl-beta-banner {
+  /* navbar landing fixed 68px — tanpa offset ini banner ketutupan navbar */
+  margin-top: 68px;
+  position: relative; z-index: 2;
   background: linear-gradient(135deg, rgba(53,232,213,.12), rgba(99,102,241,.12));
   border-bottom: 1px solid rgba(53,232,213,.25);
   padding: 10px 16px;
