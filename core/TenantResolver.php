@@ -360,6 +360,40 @@ class TenantResolver
         return (self::$outlet['status'] ?? '') === 'trial';
     }
 
+    /** Hari ke-berapa trial berjalan (1-based). 0 kalau bukan trial. */
+    public static function trialDay(): int
+    {
+        if (!self::isTrial()) return 0;
+        $start = self::$outlet['trial_starts_at'] ?? null;
+        if (empty($start)) {
+            // Fallback: hitung mundur dari trial_ends_at (asumsi trial 7 hari).
+            $ends = self::$outlet['trial_ends_at'] ?? null;
+            if (empty($ends)) return 1;
+            $start = date('Y-m-d H:i:s', strtotime($ends) - 7 * 86400);
+        }
+        $elapsed = time() - strtotime($start);
+        return max(1, (int)floor($elapsed / 86400) + 1);
+    }
+
+    // ══ Onboarding (Brief 1: Hari-1 flow) ══
+    /** Status onboarding tenant: registered | setup_done | first_order | activated */
+    public static function onboardingStep(): string
+    {
+        return (string)(self::$tenant['onboarding_step'] ?? 'activated');
+    }
+
+    /** Onboarding sudah tuntas? (first_order / activated dianggap tuntas) */
+    public static function onboardingDone(): bool
+    {
+        return in_array(self::onboardingStep(), ['first_order', 'activated'], true);
+    }
+
+    /** Owner tenant baru yang belum menyelesaikan onboarding → perlu dipandu. */
+    public static function needsOnboarding(): bool
+    {
+        return !self::onboardingDone() && self::isOwnerLevel();
+    }
+
     // ══ Role & Permission helpers (per brief Akses Karyawan 6.7) ══
 
     /** Role user aktif: owner | superadmin | manager | admin | staff | kasir | kurir */

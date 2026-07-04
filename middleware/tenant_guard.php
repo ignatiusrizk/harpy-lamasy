@@ -210,6 +210,31 @@ if (empty($_SESSION['is_demo']) &&
     }
 }
 
+// ── Onboarding Gate (Brief 1: Hari-1 flow) ─────────────
+// Owner tenant baru yang belum menyelesaikan onboarding di-pandu ke /onboarding.php.
+// Halaman yang dibutuhkan untuk menuntaskan checklist tetap boleh diakses (allowlist),
+// supaya tidak terjadi redirect-loop. Skip demo/impersonasi/AJAX/aksi POST.
+if (empty($_SESSION['is_demo']) &&
+    empty($_SESSION['impersonating_tenant_id']) &&
+    empty($_GET['action']) &&
+    empty($_SERVER['HTTP_X_REQUESTED_WITH']) &&
+    ($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'GET' &&
+    TenantResolver::needsOnboarding()) {
+
+    $_obScript  = $_SERVER['PHP_SELF'] ?? '';
+    $_obAllowed = [
+        '/onboarding.php',                       // hub onboarding
+        '/layanan.php', '/pelanggan.php', '/pos.php', // langkah 1-3
+        '/logout.php', '/accept-tos.php', '/tos.php', '/privacy.php',
+        '/profil.php', '/billing.php', '/billing-checkout.php',
+        '/outlet-suspended.php', '/add-outlet.php',
+    ];
+    if (!in_array($_obScript, $_obAllowed, true)) {
+        header('Location: /onboarding.php');
+        exit;
+    }
+}
+
 // ── Demo Mode: block aksi write tertentu ───────────────
 if (!empty($_SESSION['is_demo'])) {
     define('DEMO_MODE', true);
