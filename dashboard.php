@@ -1917,7 +1917,7 @@ async function loadAlerts(){
   if (wrapMI && Array.isArray(d.mitra_inaktif) && d.mitra_inaktif.length) {
     wrapMI.style.display = 'block';
     document.getElementById('mitraInaktifList').innerHTML = d.mitra_inaktif.map(m => {
-      const last = m.last_order ? new Date(m.last_order).toLocaleDateString('id-ID',{day:'2-digit',month:'short'}) : 'belum pernah';
+      const last = m.last_order ? new Date(String(m.last_order).replace(' ','T')+'Z').toLocaleDateString('id-ID',{day:'2-digit',month:'short',timeZone:'Asia/Jakarta'}) : 'belum pernah';
       const wa = m.wa ? (''+m.wa).replace(/[^0-9]/g,'').replace(/^0/,'62') : '';
       const waLink = wa ? `<a class="alert-wa" target="_blank" href="https://wa.me/${wa.startsWith('62')?wa:'62'+wa}?text=${encodeURIComponent('Halo '+m.nama_mitra+', sudah lama tidak ada order dari titik kamu. Semua baik2 saja? 🙏')}">💬 WA</a>` : '';
       return `<div class="alert-row">

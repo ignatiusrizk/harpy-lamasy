@@ -402,7 +402,8 @@ const fmtAgo = s => {
   if (h < 24) return h + ' jam lalu';
   return Math.floor(h/24) + ' hari lalu';
 };
-const fmtDateTime = s => s ? new Date(s).toLocaleString('id-ID',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '-';
+// created_at tiket/reply = UTC (DEFAULT current_timestamp) → parse sbg UTC, format WIB
+const fmtDateTime = s => s ? new Date(String(s).replace(' ','T')+'Z').toLocaleString('id-ID',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit',timeZone:'Asia/Jakarta'}) : '-';
 
 let _submitOpen = false;
 function toggleSubmitForm(){

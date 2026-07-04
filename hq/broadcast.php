@@ -227,7 +227,7 @@ async function loadHistory(){
       const pct = b.total>0 ? Math.round(b.sent/b.total*100) : 0;
       return `<div class="hist-item" onclick="openDetail(${b.id})">
         <div class="hist-judul">${esc(b.judul)}</div>
-        <div class="hist-meta">${esc(b.created_by_nama||'-')} · ${new Date(b.created_at).toLocaleString('id-ID')}</div>
+        <div class="hist-meta">${esc(b.created_by_nama||'-')} · ${new Date(String(b.created_at).replace(' ','T')+'Z').toLocaleString('id-ID',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit',timeZone:'Asia/Jakarta'})}</div>
         <div class="hist-prog" style="color:${pct>=100?'#10B981':'#F59E0B'}">📤 ${b.sent}/${b.total} terkirim (${pct}%)</div>
       </div>`;
     }).join('');
@@ -242,7 +242,7 @@ async function openDetail(id){
     const b = d.broadcast;
     curPesan = b.pesan;
     document.getElementById('dmJudul').textContent = b.judul;
-    document.getElementById('dmMeta').textContent = `${b.created_by_nama||'-'} · ${new Date(b.created_at).toLocaleString('id-ID')}`;
+    document.getElementById('dmMeta').textContent = `${b.created_by_nama||'-'} · ${new Date(String(b.created_at).replace(' ','T')+'Z').toLocaleString('id-ID',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit',timeZone:'Asia/Jakarta'})}`;
     document.getElementById('dmPesan').textContent = b.pesan;
     document.getElementById('dmRecipients').innerHTML = b.recipients.map(rc => {
       const waUrl = `https://wa.me/${rc.telepon}?text=${encodeURIComponent('*'+b.judul+'*\n\n'+b.pesan)}`;

@@ -552,7 +552,8 @@ if ($action) {
 <script>
 const CSRF = document.querySelector('meta[name="csrf-token"]')?.content || '';
 const esc  = s => { const d=document.createElement('div');d.textContent=s||'';return d.innerHTML; };
-const fmtDT = s => s ? new Date(s).toLocaleString('id-ID',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}) : '-';
+// created_at tiket/reply = UTC (DEFAULT current_timestamp) → parse sbg UTC, format WIB
+const fmtDT = s => s ? new Date(String(s).replace(' ','T')+'Z').toLocaleString('id-ID',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit',timeZone:'Asia/Jakarta'}) : '-';
 const fmtAgo = s => {
   if (!s) return '-';
   const h = (Date.now()-new Date(s).getTime())/3600000;

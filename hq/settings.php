@@ -955,7 +955,7 @@ async function loadTopupHistory(){
           <tbody>
             ${rows.map(r => `
               <tr style="border-top:1px solid #F3F4F6">
-                <td style="padding:9px 10px">${new Date(r.paid_at || r.created_at).toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'})}</td>
+                <td style="padding:9px 10px">${new Date(String(r.paid_at || r.created_at).replace(' ','T')+'Z').toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric',timeZone:'Asia/Jakarta'})}</td>
                 <td style="padding:9px 10px">${escapeHtml(r.type || 'topup')}</td>
                 <td style="padding:9px 10px;text-align:right;font-family:var(--mono);font-weight:700">Rp ${Number(r.amount||0).toLocaleString('id-ID')}</td>
                 <td style="padding:9px 10px;text-align:right;font-family:var(--mono)">${Number(r.coin_amount||0).toLocaleString('id-ID')}</td>

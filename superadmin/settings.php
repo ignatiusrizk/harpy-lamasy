@@ -1485,7 +1485,7 @@ async function loadDemoStats() {
     document.getElementById('demoTotal').textContent     = d.sessions_total;
     document.getElementById('demoConvTotal').textContent = d.conv_total;
     document.getElementById('demoLastReset').textContent = d.last_reset
-        ? new Date(d.last_reset).toLocaleString('id-ID') : 'Belum pernah';
+        ? new Date(String(d.last_reset).replace(' ','T')+'Z').toLocaleString('id-ID',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit',timeZone:'Asia/Jakarta'}) : 'Belum pernah';
 }
 
 async function resetDemo() {
@@ -1621,7 +1621,7 @@ async function loadTeam() {
       ? '<span class="sa-badge sa-badge-active">Aktif</span>'
       : '<span class="sa-badge sa-badge-suspended">Nonaktif</span>';
     const ll = a.last_login
-      ? new Date(a.last_login).toLocaleDateString('id-ID', {day:'2-digit',month:'short',year:'numeric'})
+      ? new Date(String(a.last_login).replace(' ','T')+'Z').toLocaleDateString('id-ID', {day:'2-digit',month:'short',year:'numeric',timeZone:'Asia/Jakarta'})
       : '-';
     const rowData = JSON.stringify(a).replace(/'/g,"&apos;");
     return `<tr>

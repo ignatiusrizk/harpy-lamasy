@@ -979,7 +979,7 @@ async function showDetail(id){
       <div class="info-row"><span class="lbl">Jabatan</span><span class="val">${escapeHtml(k.jabatan || '-')}</span></div>
       ${k.nik ? `<div class="info-row"><span class="lbl">NIK</span><span class="val">${escapeHtml(k.nik)}</span></div>` : ''}
       <div class="info-row"><span class="lbl">Status</span><span class="val">${k.is_active==1?'✓ Aktif':'⛔ Non-aktif'}</span></div>
-      <div class="info-row"><span class="lbl">Bergabung</span><span class="val">${k.created_at ? new Date(k.created_at).toLocaleDateString('id-ID') : '-'}</span></div>
+      <div class="info-row"><span class="lbl">Bergabung</span><span class="val">${k.created_at ? new Date(String(k.created_at).replace(' ','T')+'Z').toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric',timeZone:'Asia/Jakarta'}) : '-'}</span></div>
     </div>
 
     ${k.kontrak_tipe ? `
