@@ -1278,14 +1278,16 @@ if ($_dashRole === 'kasir'):
       <h1 style="font-size:1.3rem;font-weight:800;color:var(--navy)" id="greeting">Selamat pagi!</h1>
       <p style="font-size:13px;color:var(--gray)" id="dashDate">--</p>
     </div>
-    <div style="display:flex;gap:8px;align-items:center">
+    <div style="display:flex;gap:8px;align-items:flex-start">
       <?php if ($user['role'] !== 'staff'): ?>
-      <div id="aiBriefingBadge"
-           style="background:linear-gradient(135deg,#667eea,#764ba2);color:white;font-size:12px;font-weight:600;padding:6px 14px;border-radius:100px;cursor:pointer"
-           onclick="toggleBriefing()">✨ AI Briefing</div>
-      <?php if (class_exists('CoinLedger') && CoinLedger::isTrialBoost('ai_briefing_hq')): ?>
-      <span class="lm-boost-badge" title="Gratis selama masa trial — coin tidak dipotong">✨ Gratis selama trial</span>
-      <?php endif; ?>
+      <div style="display:flex;flex-direction:column;gap:5px;align-items:flex-start">
+        <div id="aiBriefingBadge"
+             style="background:linear-gradient(135deg,#667eea,#764ba2);color:white;font-size:12px;font-weight:600;padding:6px 14px;border-radius:100px;cursor:pointer"
+             onclick="toggleBriefing()">✨ AI Briefing</div>
+        <?php if (class_exists('CoinLedger') && CoinLedger::isTrialBoost('ai_briefing_hq')): ?>
+        <span class="lm-boost-badge" title="Gratis selama masa trial — coin tidak dipotong">✨ Gratis selama trial</span>
+        <?php endif; ?>
+      </div>
       <?php endif; ?>
       <button class="hl-btn hl-btn-outline hl-btn-sm" onclick="loadAll()">↻ Refresh</button>
     </div>
