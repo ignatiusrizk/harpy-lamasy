@@ -1,7 +1,8 @@
 <?php
 // CARA PAKAI: php superadmin/sql/seed_demo_marketing.php | /opt/homebrew/opt/mysql-client/bin/mysql
-// Isi tenant Demo (2) dgn data marketing 7 hari (omset naik, pipeline penuh, kas sehat, absensi, VIP).
-// Aman diulang: pelanggan idempoten (NOT EXISTS), no_order pakai offset waktu anti-bentrok.
+// Isi tenant Demo (2) dgn data marketing 7 hari (omset naik, pipeline penuh, kas sehat, absensi, VIP)
+// + loyalty: program poin ON, katalog 3 reward, poin pelanggan (portal tampil lengkap).
+// Aman diulang: pelanggan/reward idempoten (NOT EXISTS), poin pakai GREATEST, no_order offset waktu anti-bentrok.
 // Generator SQL data dummy marketing — tenant Demo (2) / outlet Demo Laundry Pusat (2)
 // Cerita: laundry ramai, omset 7 hari naik, hari ini ~Rp 950rb (target 1jt → bar ~95%)
 mt_srand(20260704);
@@ -161,5 +162,25 @@ $sql[] = "UPDATE hl_pelanggan p SET
   last_transaksi=(SELECT MAX(t.created_at) FROM hl_transaksi t WHERE t.tenant_id=$TID AND t.pelanggan_id=p.id)
   WHERE p.tenant_id=$TID;";
 $sql[] = "UPDATE hl_pelanggan SET segmen='vip' WHERE tenant_id=$TID AND total_order>=5;";
+
+// 8) LOYALTY: program poin ON + katalog reward (idempoten by nama) + poin pelanggan
+//    → portal pelanggan demo tampil lengkap: Hadiah Tersedia dgn mix ✅ bisa-tukar / ⏳ kurang
+$sql[] = "UPDATE tenants SET loyalty_enabled=1 WHERE id=$TID;";
+$rewards = [ // nama, deskripsi, poin, nilai_rp
+  ['Parfum Premium Upgrade', 'Upgrade parfum premium 1x cuci',            50,  5000],
+  ['Diskon Rp 20.000',       'Potongan langsung utk transaksi berikutnya',100, 20000],
+  ['Gratis Cuci 5 Kg',       'Cuci kering reguler 5kg gratis',            250, 25000],
+];
+foreach ($rewards as [$rnm,$rds,$rpoin,$rnilai]) {
+  $sql[] = "INSERT INTO hl_poin_reward (tenant_id, nama_reward, deskripsi, poin_dibutuhkan, tipe, nilai, is_active, created_at)
+    SELECT $TID,'".addslashes($rnm)."','".addslashes($rds)."',$rpoin,'diskon',$rnilai,1,NOW()
+    WHERE NOT EXISTS (SELECT 1 FROM hl_poin_reward WHERE tenant_id=$TID AND nama_reward='".addslashes($rnm)."');";
+}
+// Poin bervariasi: sebagian bisa redeem 2 reward, sebagian 1, sebagian nanggung (drama "butuh X lagi")
+$poinMap = ['081377710003'=>280, '081377710001'=>120, '081377710008'=>95, '081377710005'=>140,
+            '081211110001'=>65,  '081211110002'=>540, '021555600001'=>1200, '081211110006'=>80];
+foreach ($poinMap as $ptel => $pval) {
+  $sql[] = "UPDATE hl_pelanggan SET poin_balance=GREATEST(poin_balance,$pval) WHERE tenant_id=$TID AND telepon='$ptel';";
+}
 
 echo implode("\n", $sql)."\n";
