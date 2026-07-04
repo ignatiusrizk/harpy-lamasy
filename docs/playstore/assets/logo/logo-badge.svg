@@ -1,0 +1,15 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="256" cy="256" r="248" fill="#35E7D5"/>
+  <circle cx="256" cy="256" r="234" fill="#FFFFFF"/>
+  <circle cx="256" cy="256" r="222" fill="#35E7D5"/>
+
+  <!-- garment + sparkles digeser ke atas & diperkecil -->
+  <g transform="translate(256,196) scale(0.78) translate(-256,-276)">
+    <path d="M222 182 C214 180 190 186 158 206 L146 218 L176 276 L204 260 L204 356 Q204 370 218 370 L294 370 Q308 370 308 356 L308 260 L336 276 L366 218 L354 206 C322 186 298 180 290 182 C282 204 230 204 222 182 Z" fill="#FFFFFF"/>
+    <path d="M360 138 L371 166 L399 177 L371 188 L360 216 L349 188 L321 177 L349 166 Z" fill="#FFFFFF"/>
+    <path d="M398 210 L404 227 L421 233 L404 239 L398 256 L392 239 L375 233 L392 227 Z" fill="#FFFFFF"/>
+  </g>
+
+  <!-- wordmark -->
+  <text x="256" y="398" text-anchor="middle" font-family="Arial" font-weight="bold" font-size="60" letter-spacing="4" fill="#FFFFFF">LAMASY</text>
+</svg>

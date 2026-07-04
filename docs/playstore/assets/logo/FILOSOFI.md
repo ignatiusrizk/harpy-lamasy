@@ -1,72 +1,59 @@
 # Filosofi Logo LAMASY
 
-> Satu tetesan yang jatuh, lalu menemukan tempatnya.
+> Bagian dari keluarga Harpy — bahasa yang sama, cerita yang sama.
 
-## Gagasan besar
+## Satu keluarga
 
-Logo LAMASY dibangun dari satu bentuk sederhana: **huruf "L" yang juga sebuah tetesan
-air jatuh ke permukaan.** Satu bentuk, dua makna — dan keduanya benar sekaligus.
+LAMASY bukan merek yang berdiri sendiri; ia lahir dari **Harpy**. Karena itu logonya
+sengaja **melanjutkan bahasa visual keluarga Harpy**, bukan menciptakan dunia baru:
 
-- **"L"** adalah inisial **LAMASY**.
-- **Tetesan air** adalah unsur paling mendasar dari dunia laundry: air, bersih, segar.
+- **Harpy** (induk) — huruf **"H"** putih di dalam lingkaran teal.
+- **Harpy Laundry** — **pakaian + kilau (sparkle)** putih di dalam lingkaran teal.
+- **LAMASY** — meneruskan gaya Harpy Laundry: **pakaian + sparkle** di lingkaran teal,
+  dengan nama LAMASY di dalamnya.
 
-Kami tidak menempelkan gambar mesin cuci atau setumpuk baju. Kami mengambil hal yang
-paling hakiki dari pekerjaan ini — **air yang membersihkan** — dan menjadikannya huruf.
+Siapa pun yang mengenal Harpy akan langsung merasakan LAMASY berasal dari rumah yang
+sama. Itu tujuannya: **kesinambungan, bukan kejutan.**
 
-## Membaca bentuknya
+## Membaca lambangnya
 
-**Kepala yang membulat** di atas adalah kepala tetesan: bulir air di ujung, sesaat
-sebelum jatuh. **Batang yang turun** adalah gerak jatuhnya. **Kaki yang melebar ke
-kanan** adalah permukaan tempat tetesan itu mendarat dan menyebar — sekaligus menutup
-bentuk menjadi huruf **L** yang utuh.
+**Pakaian (kaos) putih** adalah objek dari seluruh pekerjaan ini — yang dicuci,
+dirawat, dikembalikan bersih. Kami tidak menggambar mesin atau proses; kami menaruh
+**hasilnya** di tengah: sehelai pakaian yang bersih.
 
-Ada narasi kecil di dalamnya: *sesuatu yang jatuh, lalu menemukan tempatnya, lalu
-menjadi rapi.* Itulah yang LAMASY lakukan untuk sebuah usaha laundry — mengubah hal
-yang berserak (order, kas, stok, absensi) menjadi satu bentuk yang tertata.
+**Dua kilau (sparkle)** di sampingnya bekerja ganda:
+1. **Bersih & segar** — bahasa universal "baru dicuci", persis motif Harpy Laundry.
+2. **Percikan kecerdasan** — LAMASY membawa AI (voice order, scan struk, saran).
+   Kilau itu isyarat bahwa ada "kecerdasan" yang membuat pekerjaan terasa ringan.
 
-## Titik aqua: dua makna
-
-Bulir **aqua** di kepala huruf bekerja ganda, dan itu disengaja:
-
-1. **Jendela mesin cuci** — isyarat langsung ke dunia laundry, tanpa perlu menggambar
-   mesinnya.
-2. **Percikan / spark** — kilau energi yang mewakili **AI yang terintegrasi** di
-   LAMASY: voice order, scan struk, saran cerdas. Kecerdasan itu bukan hiasan, ia
-   duduk di dalam bentuk inti.
-
-Titik ini sengaja **tidak di tengah**. Simetri yang terlalu rapi terasa dingin;
-sedikit bergeser membuatnya hidup — seperti bulir air sungguhan, tak pernah persis
-di tengah.
+**Lingkaran dengan cincin ganda** adalah bentuk **stempel / segel** — kesan
+terpercaya, resmi, dan utuh. Sistem yang memegang uang dan data sebuah usaha pantas
+tampil seperti segel yang bisa dipegang janjinya.
 
 ## Warna
 
-| Warna | Makna |
-|-------|-------|
-| **Navy** `#0F1C3A` | Fondasi, kepercayaan, ketenangan sebuah sistem yang bisa diandalkan mengurus uang & data. |
-| **Teal** `#0F7B6C` | Air, kesegaran, kebersihan — warna kerja LAMASY. |
-| **Aqua** `#35E8D5` | Energi & kecerdasan — percikan AI, momen "bersih & selesai". |
+| Warna | Hex | Makna |
+|-------|-----|-------|
+| **Teal Harpy** | `#35E7D5` | Warna induk keluarga. Air, kesegaran, kebersihan. Pengikat identitas Harpy → LAMASY. |
+| **Putih** | `#FFFFFF` | Bersih. Kejelasan. Hasil akhir yang rapi. |
 
-Gradasi **navy → teal** pada tile menghubungkan keduanya: dari **fondasi yang kokoh**
-(navy, bawah) menuju **kesegaran & pergerakan** (teal, atas). Sistem yang stabil,
-tapi terasa ringan.
+Satu warna, dipakai dengan disiplin. Keluarga Harpy dikenali justru dari **kesederhanaan
+teal-putih**-nya — menambah warna lain akan memutus tali keluarga itu.
 
 ## Bentuk & rasa
 
-Semua sudut dibulatkan. LAMASY dipakai oleh pemilik dan karyawan usaha kecil-menengah,
-seringkali dari HP di sela kesibukan. Bentuk yang **ramah dan membulat** mengatakan:
-*ini alat yang bersahabat, bukan software korporat yang kaku.* Bobot huruf yang tebal
-membuatnya tetap terbaca jelas bahkan sebagai ikon kecil di layar HP.
+Semua membulat, tegas, dan lapang. LAMASY dipakai pemilik dan karyawan usaha
+kecil-menengah, sering dari HP di sela kerja. Lambang yang **ramah dan jelas** —
+terbaca bahkan sebagai ikon kecil — mengatakan: *alat ini bersahabat, dan bisa
+diandalkan.*
 
-## Prinsip yang dipegang
+## Prinsip
 
-- **Satu ide, dieksekusi bersih.** Keberanian dihabiskan di satu tempat (tetesan-L),
-  sisanya dijaga tenang. Tidak ada elemen yang tidak bekerja.
-- **Berakar pada subjek.** Setiap keputusan berasal dari dunia laundry (air, bersih,
-  segar), bukan dari tren desain.
-- **Bekerja di ukuran terkecil.** Logo yang gagal sebagai ikon 48px adalah logo yang
-  gagal. Bentuk ini tetap dikenali sampai sekecil itu.
+- **Kesinambungan keluarga di atas orisinalitas.** Nilai terbesar logo ini bukan
+  "berbeda", tapi "jelas satu rumah dengan Harpy".
+- **Tunjukkan hasil, bukan proses.** Pakaian bersih + kilau, bukan mesin cuci.
+- **Satu warna, dieksekusi bersih.** Teal-putih adalah tanda tangan keluarga.
 
 ---
 
-*LAMASY — satu aplikasi untuk seluruh laundry Anda. Dari tetesan pertama, sampai
-semuanya rapi.*
+*LAMASY — dari keluarga Harpy. Bersih, cerdas, tertata.*

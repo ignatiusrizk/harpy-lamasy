@@ -1,51 +1,41 @@
 # Logo LAMASY
 
-## Konsep
-Huruf **L** (LAMASY) berbentuk **tetesan air yang jatuh ke permukaan** — inti dunia
-laundry (air, bersih, segar). "Bead" **aqua** di kepala huruf berfungsi ganda:
-jendela mesin cuci + percikan (spark) yang menandakan **AI terintegrasi**. Diletakkan
-pada tile gradient **navy → teal**, palet brand yang sudah dipakai di seluruh app.
-
-Satu risiko yang diambil: bead aqua off-center di kepala L — memberi karakter
-(porthole/tetesan) alih-alih monogram L polos.
-
-## Palet
-| Nama | Hex | Pakai |
-|------|-----|-------|
-| Navy Deep | `#0F1C3A` | base gelap / wordmark di bg terang |
-| Teal | `#0F7B6C` | tile / aksen |
-| Aqua Glow | `#35E8D5` | bead / spark |
-| White | `#FFFFFF` | mark / wordmark di bg gelap |
+Bagian dari **keluarga Harpy**. Meneruskan bahasa visual **Harpy Laundry**:
+lingkaran **teal `#35E7D5`** + cincin ganda putih + **pakaian & sparkle** putih.
+Baca cerita lengkapnya di [FILOSOFI.md](FILOSOFI.md) · lembar visual: `filosofi-sheet.png`.
 
 ## File
 | File | Untuk |
 |------|-------|
-| `logo-icon-1024.png` / `logo-icon-512.png` | App icon (tile gradient + mark). 512 = upload Play Console |
-| `logo-mark.svg` | Mark saja (transparan) — untuk adaptive-icon foreground / favicon |
-| `logo-horizontal-dark.(svg\|png)` | Lockup untuk background GELAP (tile teal, wordmark putih) — mis. login/topbar |
-| `logo-horizontal-light.(svg\|png)` | Lockup untuk background TERANG (tile & wordmark navy) |
+| `logo-badge-1024.png` / `logo-badge-512.png` | **Logo utama** (badge, ada teks LAMASY di dalam lingkaran). Marketing, listing, splash |
+| `logo-icon-1024.png` / `logo-icon-512.png` | **App icon** (tanpa teks — pakaian+sparkle saja, terbaca kecil). Untuk launcher / icon Play |
+| `logo-badge.svg` / `logo-icon.svg` | Sumber vektor (edit di browser/design tool, render ulang) |
+| `filosofi-sheet.(svg\|png)` | Lembar filosofi beranotasi |
 
-Wordmark: Arial Bold, letter-spacing lebar (gaya SaaS modern). Ganti ke font brand
-kalau punya lisensi (mis. Poppins/Montserrat) dengan mengedit SVG lalu render ulang.
+## Palet
+| Warna | Hex |
+|-------|-----|
+| Teal Harpy | `#35E7D5` |
+| Putih | `#FFFFFF` |
 
-## Mengganti logo LAMA (Harpy "H") jadi ini
+## Mengganti logo LAMA (Harpy "H") jadi ini di APK
 App icon di APK sekarang masih **Harpy "H"** (`lamasy-app/resources/icon.png`).
-Play mensyaratkan icon 512 = icon launcher. Untuk mengadopsi logo baru:
+Untuk adopsi logo LAMASY:
 1. Ganti `lamasy-app/resources/icon.png` (1024×1024) dengan `logo-icon-1024.png`.
-   Untuk adaptive icon: `resources/icon-foreground.png` = `logo-mark.svg` (render PNG,
-   beri padding aman ~18%), `resources/icon-background.png` = warna/gradient tile.
-2. Regenerasi: `cd lamasy-app && npx @capacitor/assets generate --android` (atau tool aset yg dipakai).
-3. `./build-aab.sh` → icon baru ikut di bundle.
-> Selama APK belum di-rebuild dgn icon baru, upload icon Play = tetap yang lama (Harpy H)
-> agar konsisten. Jangan campur (Play bisa reject kalau icon listing ≠ launcher).
+2. `cd lamasy-app && npx @capacitor/assets generate --android`
+3. `./build-aab.sh` → icon baru ikut bundle.
+> Selama APK belum di-rebuild, upload icon Play tetap yang lama agar konsisten
+> (Play bisa reject kalau icon listing ≠ launcher).
 
 ## Render ulang (kalau edit SVG)
 ```bash
 FONT="/System/Library/Fonts/Supplemental/Arial Bold.ttf"
-# icon
-magick -size 1024x1024 -define gradient:angle=135 gradient:'#0F1C3A-#0F7B6C' tile.png
-magick -background none -density 300 logo-mark.svg -resize 1024x1024 m.png
-magick tile.png m.png -composite logo-icon-1024.png; rm tile.png m.png
-# lockup
-magick -background none -density 300 -font "$FONT" logo-horizontal-dark.svg -resize 1360x300 logo-horizontal-dark.png
+# icon polos
+magick -background none logo-icon.svg -resize 1024x1024 logo-icon-1024.png
+# badge (teks LAMASY ditempel via annotate — magick lemah render text SVG)
+magick -background none logo-badge.svg -resize 1024x1024 base.png   # abaikan teks yg mungkin ke-clip
+# atau render badge tanpa teks lalu:
+magick base.png -gravity South -font "$FONT" -fill white -pointsize 116 -kerning 12 -annotate +0+188 "LAMASY" logo-badge-1024.png
 ```
+> Catatan: ImageMagick tak render `text-anchor`/`letter-spacing`/emoji di SVG dengan
+> baik — teks wordmark dibuat via `-annotate`. Di browser, SVG-nya tampil benar.

@@ -1,63 +1,49 @@
-<svg width="1200" height="820" viewBox="0 0 1200 820" xmlns="http://www.w3.org/2000/svg">
-  <rect width="1200" height="820" fill="#F7FAFC"/>
+<svg width="1200" height="760" viewBox="0 0 1200 760" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="760" fill="#F7FAFC"/>
+  <text x="70" y="84" font-family="Arial" font-weight="bold" font-size="42" fill="#0F1C3A">Filosofi Logo LAMASY</text>
+  <text x="72" y="122" font-family="Arial" font-size="21" fill="#5A6678">Bagian dari keluarga Harpy — bahasa yang sama, cerita yang sama.</text>
+  <rect x="72" y="140" width="120" height="4" rx="2" fill="#35E7D5"/>
 
-  <!-- header -->
-  <text x="70" y="86" font-family="Arial" font-weight="bold" font-size="44" fill="#0F1C3A">Filosofi Logo LAMASY</text>
-  <text x="72" y="126" font-family="Arial" font-size="22" fill="#5A6678">Satu tetesan yang jatuh, lalu menemukan tempatnya.</text>
-  <rect x="72" y="146" width="120" height="4" rx="2" fill="#35E8D5"/>
-
-  <!-- MARK: navy tile + L droplet -->
-  <rect x="120" y="220" width="340" height="340" rx="82" fill="#0F1C3A"/>
-  <g transform="translate(122,232) scale(0.664)">
-    <path d="M172 172 a58 58 0 0 1 116 0 v148 a26 26 0 0 1 -26 26 h-64 a26 26 0 0 1 -26 -26 z" fill="#FFFFFF"/>
-    <rect x="172" y="298" width="196" height="60" rx="30" fill="#FFFFFF"/>
-    <circle cx="230" cy="160" r="27" fill="#35E8D5"/>
+  <!-- badge mark -->
+  <g transform="translate(110,200)">
+    <circle cx="170" cy="170" r="168" fill="#35E7D5"/>
+    <circle cx="170" cy="170" r="158" fill="none" stroke="#FFFFFF" stroke-width="6"/>
+    <circle cx="170" cy="170" r="148" fill="#35E7D5"/>
+    <g transform="translate(170,120) scale(0.5) translate(-256,-276)">
+      <path d="M222 182 C214 180 190 186 158 206 L146 218 L176 276 L204 260 L204 356 Q204 370 218 370 L294 370 Q308 370 308 356 L308 260 L336 276 L366 218 L354 206 C322 186 298 180 290 182 C282 204 230 204 222 182 Z" fill="#FFFFFF"/>
+      <path d="M360 138 L371 166 L399 177 L371 188 L360 216 L349 188 L321 177 L349 166 Z" fill="#FFFFFF"/>
+      <path d="M398 210 L404 227 L421 233 L404 239 L398 256 L392 239 L375 233 L392 227 Z" fill="#FFFFFF"/>
+    </g>
+    <text x="170" y="272" text-anchor="middle" font-family="Arial" font-weight="bold" font-size="42" fill="#FFFFFF">LAMASY</text>
   </g>
 
-  <!-- callout lines + target dots -->
+  <!-- callouts -->
   <g stroke="#B7C0CE" stroke-width="2" fill="none">
-    <path d="M270 300 H600"/>
-    <path d="M300 360 H600"/>
-    <path d="M300 470 H600"/>
-    <path d="M380 520 H600"/>
+    <path d="M300 270 H560"/><path d="M360 330 H560"/><path d="M300 470 H560"/>
   </g>
-  <g fill="#35E8D5">
-    <circle cx="270" cy="300" r="5"/><circle cx="300" cy="360" r="5"/>
-    <circle cx="300" cy="470" r="5"/><circle cx="380" cy="520" r="5"/>
-  </g>
-
-  <!-- labels -->
+  <g fill="#35E7D5"><circle cx="300" cy="270" r="5"/><circle cx="360" cy="330" r="5"/><circle cx="300" cy="470" r="5"/></g>
   <g font-family="Arial">
-    <text x="616" y="292" font-weight="bold" font-size="22" fill="#0F1C3A">Bulir aqua</text>
-    <text x="616" y="320" font-size="18" fill="#5A6678">Jendela mesin cuci + percikan AI</text>
-
-    <text x="616" y="352" font-weight="bold" font-size="22" fill="#0F1C3A">Kepala tetesan</text>
-    <text x="616" y="380" font-size="18" fill="#5A6678">Bulir air, sesaat sebelum jatuh</text>
-
-    <text x="616" y="462" font-weight="bold" font-size="22" fill="#0F1C3A">Batang</text>
-    <text x="616" y="490" font-size="18" fill="#5A6678">Gerak jatuh — membentuk huruf L</text>
-
-    <text x="616" y="512" font-weight="bold" font-size="22" fill="#0F1C3A">Permukaan</text>
-    <text x="616" y="540" font-size="18" fill="#5A6678">Tetesan mendarat &amp; menyebar → tertata</text>
+    <text x="576" y="262" font-weight="bold" font-size="22" fill="#0F1C3A">Kilau (sparkle)</text>
+    <text x="576" y="290" font-size="18" fill="#5A6678">Bersih &amp; segar + percikan kecerdasan (AI)</text>
+    <text x="576" y="322" font-weight="bold" font-size="22" fill="#0F1C3A">Pakaian</text>
+    <text x="576" y="350" font-size="18" fill="#5A6678">Objek pekerjaan — hasil yang bersih, bukan mesinnya</text>
+    <text x="576" y="462" font-weight="bold" font-size="22" fill="#0F1C3A">Lingkaran cincin-ganda</text>
+    <text x="576" y="490" font-size="18" fill="#5A6678">Stempel / segel — terpercaya. Wadah keluarga Harpy</text>
   </g>
 
-  <!-- one-liner story -->
-  <text x="70" y="640" font-family="Arial" font-size="20" fill="#374151">Satu bentuk, dua makna: inisial </text>
-  <text x="366" y="640" font-family="Arial" font-weight="bold" font-size="20" fill="#0F7B6C">L</text>
-  <text x="378" y="640" font-family="Arial" font-size="20" fill="#374151"> untuk LAMASY, dan tetesan air — inti dunia laundry.</text>
+  <text x="70" y="600" font-family="Arial" font-size="20" fill="#374151">Meneruskan gaya Harpy Laundry (pakaian + sparkle di lingkaran teal) — satu rumah dengan Harpy.</text>
 
-  <!-- palette -->
+  <!-- family row -->
   <g font-family="Arial">
-    <rect x="70"  y="690" width="150" height="70" rx="14" fill="#0F1C3A"/>
-    <text x="82" y="726" font-weight="bold" font-size="17" fill="#FFFFFF">Navy</text>
-    <text x="82" y="748" font-size="14" fill="#9FB0C4">#0F1C3A · fondasi</text>
+    <text x="70" y="648" font-weight="bold" font-size="16" fill="#0F1C3A">Keluarga:</text>
+    <circle cx="210" cy="700" r="34" fill="#35E7D5"/><text x="210" y="712" text-anchor="middle" font-weight="bold" font-size="30" fill="#FFFFFF">H</text>
+    <text x="210" y="754" text-anchor="middle" font-size="13" fill="#5A6678">Harpy</text>
+    <circle cx="320" cy="700" r="34" fill="#35E7D5"/><circle cx="320" cy="700" r="30" fill="none" stroke="#fff" stroke-width="2"/><text x="320" y="708" text-anchor="middle" font-size="20" fill="#FFFFFF"></text>
+    <text x="320" y="754" text-anchor="middle" font-size="13" fill="#5A6678">Harpy Laundry</text>
+    <circle cx="430" cy="700" r="34" fill="#35E7D5"/><circle cx="430" cy="700" r="30" fill="none" stroke="#fff" stroke-width="2"/>
+    <text x="430" y="754" text-anchor="middle" font-size="13" fill="#0F7B6C" font-weight="bold">LAMASY</text>
 
-    <rect x="236" y="690" width="150" height="70" rx="14" fill="#0F7B6C"/>
-    <text x="248" y="726" font-weight="bold" font-size="17" fill="#FFFFFF">Teal</text>
-    <text x="248" y="748" font-size="14" fill="#CFF3EC">#0F7B6C · air</text>
-
-    <rect x="402" y="690" width="150" height="70" rx="14" fill="#35E8D5"/>
-    <text x="414" y="726" font-weight="bold" font-size="17" fill="#0F1C3A">Aqua</text>
-    <text x="414" y="748" font-size="14" fill="#0B5A50">#35E8D5 · AI</text>
+    <rect x="560" y="672" width="150" height="56" rx="12" fill="#35E7D5"/><text x="572" y="700" font-weight="bold" font-size="16" fill="#0F1C3A">Teal Harpy</text><text x="572" y="720" font-size="13" fill="#0B5A50">#35E7D5</text>
+    <rect x="724" y="672" width="150" height="56" rx="12" fill="#FFFFFF" stroke="#E5E9F2"/><text x="736" y="700" font-weight="bold" font-size="16" fill="#0F1C3A">Putih</text><text x="736" y="720" font-size="13" fill="#5A6678">#FFFFFF · bersih</text>
   </g>
 </svg>
