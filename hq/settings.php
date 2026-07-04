@@ -1000,7 +1000,7 @@ async function loadCoinUsage(){
           <tbody>
             ${rows.map(r => `
               <tr style="border-top:1px solid #F3F4F6">
-                <td style="padding:9px 10px">${new Date(r.created_at).toLocaleDateString('id-ID',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})}</td>
+                <td style="padding:9px 10px">${new Date(String(r.created_at).replace(' ','T')+'Z').toLocaleString('id-ID',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit',timeZone:'Asia/Jakarta'})}</td>
                 <td style="padding:9px 10px">📍 ${escapeHtml(r.nama_outlet || '?')}</td>
                 <td style="padding:9px 10px">
                   <div style="font-weight:600">${escapeHtml(r.feature_used || '-')}</div>

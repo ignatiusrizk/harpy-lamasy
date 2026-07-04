@@ -66,8 +66,10 @@ if ($action !== '') {
     // Validasi periode YYYY-MM, fallback bulan ini (Asia/Jakarta)
     $bulan = (string)($_GET['bulan'] ?? '');
     if (!preg_match('/^\d{4}-\d{2}$/', $bulan)) $bulan = date('Y-m');
-    $periodeStart = $bulan . '-01 00:00:00';
-    $periodeEnd   = date('Y-m-01 00:00:00', strtotime($bulan . '-01 +1 month'));
+    // created_at disimpan UTC (DEFAULT current_timestamp, server MySQL = UTC), sedang
+    // batas bulan ini WIB. gmdate() ubah batas WIB → wall-clock UTC agar cocok dgn kolom.
+    $periodeStart = gmdate('Y-m-d H:i:s', strtotime($bulan . '-01 00:00:00'));
+    $periodeEnd   = gmdate('Y-m-d H:i:s', strtotime($bulan . '-01 +1 month'));
     try {
         if ($action === 'coin_summary') {
             $s = $db->prepare(
@@ -470,7 +472,8 @@ async function cuLoadLedger() {
     const isDed = r.type === 'deduct';
     const amt = (isDed ? '−' : '+') + fmtNum(r.amount);
     const cls = isDed ? 'cu-amt-deduct' : 'cu-amt-topup';
-    const tgl = new Date(r.created_at.replace(' ','T')).toLocaleString('id-ID',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
+    // created_at = UTC; tambah 'Z' agar di-parse sbg UTC, lalu format eksplisit ke WIB (jangan andalkan tz device)
+    const tgl = new Date(r.created_at.replace(' ','T') + 'Z').toLocaleString('id-ID',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit',timeZone:'Asia/Jakarta'});
     return `<tr><td>${esc(tgl)}</td><td>${esc(r.nama_fitur||'-')}</td><td>${esc(r.nama_outlet||'—')}</td>
       <td class="${cls}">${amt}</td><td style="font-family:'DM Mono',monospace">${fmtNum(r.balance_after)}</td></tr>`;
   }).join('');
