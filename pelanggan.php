@@ -91,6 +91,7 @@ try {
 
 // Load rewards yang apply di outlet tsb + tenant scope
 $rewards = [];
+$loyaltyOn = false; // program poin aktif? (gate empty-state — jangan janji poin kalau earning OFF)
 if ($lastOutletId > 0) {
     require_once ROOT . '/core/Loyalty.php';
     // Tenant_id dari outlet
@@ -99,7 +100,8 @@ if ($lastOutletId > 0) {
         $st->execute([$lastOutletId]);
         $tid = (int)($st->fetchColumn() ?: 0);
         if ($tid > 0) {
-            $rewards = Loyalty::availableRewards($tid, $lastOutletId, $poin);
+            $loyaltyOn = Loyalty::isEnabled($tid);
+            $rewards   = Loyalty::availableRewards($tid, $lastOutletId, $poin);
         }
     } catch (Throwable) {}
 }
@@ -238,6 +240,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
       </div>
     <?php endforeach; ?>
     <div style="margin-top:10px;font-size:12px;color:#64748B;font-style:italic">💡 Tukar jadi kupon kode untuk dipakai sendiri atau di-share via WA</div>
+  </div>
+  <?php elseif ($loyaltyOn): ?>
+  <!-- Program poin AKTIF tapi katalog hadiah belum diisi owner — kasih tahu poin tetap terkumpul.
+       Kalau loyalty OFF, section disembunyikan total (jangan janjikan poin yg tak pernah bertambah). -->
+  <div class="card">
+    <h2>🎁 Hadiah Tersedia</h2>
+    <div style="text-align:center;padding:14px 6px;color:#64748B;font-size:13.5px;line-height:1.6">
+      <div style="font-size:26px;margin-bottom:6px">🎁</div>
+      Poin kamu terus terkumpul di setiap transaksi.<br>
+      Daftar hadiah sedang disiapkan outlet — pantau terus di sini!
+    </div>
   </div>
   <?php endif; ?>
 
