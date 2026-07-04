@@ -76,7 +76,7 @@ class TrialNurture
     /**
      * Evaluasi + kirim touchpoint untuk 1 outlet. Return type yang dikirim, atau null.
      */
-    public static function runOutlet(int $outletId): ?string
+    public static function runOutlet(int $outletId, bool $force = false): ?string
     {
         try {
             $db = Database::get();
@@ -91,8 +91,9 @@ class TrialNurture
             $row = $o->fetch(PDO::FETCH_ASSOC);
             if (!$row) return null;
 
-            // Kill-switch: skip kecuali nurturing ON atau tenant ada di test allowlist.
-            if (!self::allowed((int)$row['tenant_id'])) return null;
+            // Kill-switch: skip kecuali nurturing ON / tenant di test allowlist /
+            // dipanggil paksa dari trigger SA (test manual).
+            if (!$force && !self::allowed((int)$row['tenant_id'])) return null;
 
             $tp = self::pickTouchpoint($row);
             if (!$tp) return null;
