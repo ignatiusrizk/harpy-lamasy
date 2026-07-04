@@ -1285,6 +1285,34 @@ if ($_dashRole === 'kasir'):
   }
   </script>
 
+  <?php
+  // ── AI Wow Moment (Strategi #3): briefing auto-tampil ──
+  // Auto-generate GRATIS hanya saat trial-boost atau sudah ter-cache hari ini
+  // (hindari auto-charge diam-diam untuk tenant berbayar).
+  require_once ROOT . '/core/AIInsight.php';
+  $briefBoost  = class_exists('CoinLedger') && CoinLedger::isTrialBoost('ai_briefing_hq');
+  $briefCached = false;
+  try { $briefCached = AIInsight::peekCache($tid, AIInsight::briefingCacheKey()) !== null; } catch (Throwable) {}
+  $briefAuto = ($user['role'] !== 'staff') && ($briefBoost || $briefCached);
+  $briefHasData = false;
+  $anomCount = 0; $anomLast = '';
+  try {
+      $_oidb = TenantResolver::outletId();
+      $_bs = Database::get()->prepare("SELECT COUNT(*) FROM hl_transaksi WHERE tenant_id=? AND outlet_id=?");
+      $_bs->execute([$tid, $_oidb]);
+      $briefHasData = (int)$_bs->fetchColumn() > 0;
+      // K2: anomali belum-dibaca hari ini (Notifier type alert_*)
+      $_as = Database::get()->prepare(
+          "SELECT subject FROM hl_notif_log
+            WHERE tenant_id=? AND outlet_id=? AND type LIKE 'alert\\_%' AND channel='inapp'
+              AND read_at IS NULL AND status='sent' AND DATE(sent_at)=CURDATE()
+            ORDER BY sent_at DESC");
+      $_as->execute([$tid, $_oidb]);
+      $_ar = $_as->fetchAll(PDO::FETCH_COLUMN);
+      $anomCount = count($_ar);
+      $anomLast  = $anomCount ? (string)$_ar[0] : '';
+  } catch (Throwable) {}
+  ?>
   <!-- GREETING -->
   <div style="margin-bottom:20px;display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap">
     <div>
@@ -1323,20 +1351,44 @@ if ($_dashRole === 'kasir'):
   </div>
 
   <!-- AI BRIEFING PANEL -->
-  <div id="aiBriefingPanel" style="display:none;margin-bottom:20px">
+  <div id="aiBriefingPanel" style="display:<?= $briefAuto ? 'block' : 'none' ?>;margin-bottom:20px">
     <div class="hl-card" style="border:2px solid rgba(139,92,246,.2);background:linear-gradient(135deg,#FAFAFA,#F5F3FF)">
       <div class="hl-card-header" style="border-bottom:1px solid rgba(139,92,246,.1)">
         <div class="hl-card-title" style="display:flex;align-items:center;gap:8px">
           <span style="background:linear-gradient(135deg,#667eea,#764ba2);color:white;font-size:10px;font-weight:800;padding:3px 8px;border-radius:100px;letter-spacing:.06em">AI</span>
-          Briefing Harian
+          🤖 Briefing Hari Ini
         </div>
         <button class="hl-btn hl-btn-outline hl-btn-sm" onclick="loadBriefing()" id="btnBriefingRefresh">↻</button>
       </div>
       <div class="hl-card-body" id="aiBriefingContent">
+        <?php if ($briefAuto && !$briefHasData): ?>
+        <div style="text-align:center;padding:8px 4px">
+          <div style="font-size:32px;margin-bottom:8px">🌱</div>
+          <div style="font-weight:700;color:var(--navy);margin-bottom:4px">Briefing pertamamu menunggu!</div>
+          <div style="font-size:13px;color:var(--gray);line-height:1.5">Belum ada data transaksi untuk dianalisis. Yuk buat order pertama hari ini —
+            besok pagi AI langsung kasih ringkasan performa outletmu di sini. ✨</div>
+          <a href="/pos.php" class="hl-btn hl-btn-primary hl-btn-sm" style="margin-top:12px">Buat order pertama →</a>
+        </div>
+        <?php else: ?>
         <div class="hl-loading">⏳ AI sedang menganalisis data...</div>
+        <?php endif; ?>
       </div>
     </div>
   </div>
+
+  <?php if ($anomCount > 0): ?>
+  <!-- K2: banner anomali non-blocking (AnomalyDetector → Notifier, belum dibaca) -->
+  <div id="anomBanner" style="display:flex;align-items:center;gap:10px;margin-bottom:16px;padding:10px 14px;
+       background:linear-gradient(90deg,#FEF3C7,#FDE68A);border-left:4px solid #F59E0B;color:#92400E;
+       border-radius:8px;font-size:13px;line-height:1.4">
+    <span style="font-size:18px">⚠️</span>
+    <span style="flex:1"><strong><?= $anomCount ?></strong> hal perlu dicek hari ini<?= $anomLast ? ' — '.htmlspecialchars($anomLast) : '' ?>.
+      Cek detail di lonceng 🔔 di atas.</span>
+    <button onclick="document.getElementById('anomBanner').style.display='none';sessionStorage.setItem('anomDismiss','<?= date('Y-m-d') ?>')"
+            style="background:none;border:none;color:#92400E;font-size:16px;cursor:pointer;line-height:1">✕</button>
+  </div>
+  <script>if(sessionStorage.getItem('anomDismiss')==='<?= date('Y-m-d') ?>'){var _ab=document.getElementById('anomBanner');if(_ab)_ab.style.display='none';}</script>
+  <?php endif; ?>
 
   <!-- TARGET OMSET -->
   <div id="targetWrap" style="display:none;margin-bottom:14px">
@@ -1535,6 +1587,11 @@ document.addEventListener('DOMContentLoaded',()=>{
   document.getElementById('greeting').textContent=greet+', <?= htmlspecialchars($user['nama']) ?>!';
   document.getElementById('dashDate').textContent=now.toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
   loadAll();
+  // AI Wow Moment: briefing auto-muncul (trial/cached) — kalau ada data, langsung load.
+  if (<?= $briefAuto ? 'true' : 'false' ?> && <?= $briefHasData ? 'true' : 'false' ?>) {
+    briefingVisible = true;
+    loadBriefing();
+  }
 });
 
 async function loadAll(){loadStats();loadAlerts();loadPipeline();loadChart();loadExtras();loadHandoverBanner();}
