@@ -72,7 +72,7 @@ if (file_exists($cacheFile)) {
     <p class="refresh">Halaman ini akan refresh otomatis setiap 60 detik.</p>
     <a href="https://wa.me/6285121519302?text=<?= urlencode('Halo LAMASY, kapan maintenance selesai?') ?>"
        class="wa-link">💬 Hubungi Tim LAMASY via WhatsApp</a>
-    <div><div class="logo">La<span>Ma</span>Sy</div></div>
+    <div><div class="logo">LA<span>MA</span>SY</div></div>
   </div>
 </body>
 </html>

@@ -139,7 +139,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['start_demo'])) {
 </head>
 <body>
 <div class="hero">
-  <div class="logo">La<span>Ma</span>Sy</div>
+  <div class="logo">LA<span>MA</span>SY</div>
   <div class="tagline">Laundry Management System</div>
   <h1>Kelola Laundry Lebih<br><span>Cerdas & Efisien</span></h1>
   <p class="sub">Coba semua fitur LAMASY tanpa perlu daftar. Data demo di-reset otomatis setiap 24 jam.</p>
