@@ -2309,11 +2309,11 @@ document.querySelectorAll('.feature-card, .step-card, .pricing-card, .testi-card
 <div class="hl-exit-modal" id="hlExitModal">
   <div class="hl-exit-content">
     <button class="hl-exit-close" type="button" onclick="document.getElementById('hlExitModal').classList.remove('show')">&times;</button>
-    <h3>Tunggu, mau saya kirim panduan gratis?</h3>
-    <p>Checklist 7 step setup laundry digital — PDF + link demo video, langsung ke email kamu.</p>
+    <h3>Tunggu, jangan pergi dulu 👋</h3>
+    <p>Tinggalkan email kamu — kami kirim tips &amp; update seputar bikin bisnis laundry lebih rapi &amp; cuan. Plus info trial gratis 7 hari.</p>
     <form id="hlExitForm">
       <input type="email" name="email" placeholder="email@kamu.com" required>
-      <button type="submit">Kirim ke email saya</button>
+      <button type="submit">Gabung sekarang</button>
     </form>
     <a href="#" class="hl-exit-skip" onclick="document.getElementById('hlExitModal').classList.remove('show');return false;">Lain kali</a>
   </div>
