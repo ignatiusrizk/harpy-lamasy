@@ -224,7 +224,7 @@ if (empty($_SESSION['is_demo']) &&
     $_obScript  = $_SERVER['PHP_SELF'] ?? '';
     $_obAllowed = [
         '/onboarding.php',                       // hub onboarding
-        '/layanan.php', '/pelanggan.php', '/pos.php', // langkah 1-3
+        '/layanan.php', '/customer.php', '/pos.php', '/import.php', // langkah 1-3 + import customer
         '/logout.php', '/accept-tos.php', '/tos.php', '/privacy.php',
         '/profil.php', '/billing.php', '/billing-checkout.php',
         '/outlet-suspended.php', '/add-outlet.php',

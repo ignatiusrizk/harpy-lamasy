@@ -197,7 +197,8 @@ class TrialNurture
             return self::tp('trial_h1_setup', "Setup cuma 3 menit — yuk buat order pertama",
                 self::body($owner,
                     "<p>Selamat datang di LaMaSy, $owner! Outlet <strong>".self::e($namaOutlet)."</strong> sudah aktif dalam masa trial.</p>
-                     <p>Tinggal 3 langkah cepat biar langsung bisa terima order: tambah layanan → tambah/​pakai customer umum → buat order pertama di kasir. Total ± 3 menit.</p>",
+                     <p>Tinggal 3 langkah cepat biar langsung bisa terima order: atur layanan &amp; harga → tambah/​pakai customer umum → buat order pertama di kasir. Total ± 3 menit.</p>
+                     <p>💡 Punya daftar pelanggan lama di Excel/CSV? Kamu bisa <strong>import langsung</strong> di menu Customer — datanya masuk otomatis, gak perlu ketik ulang.</p>",
                     "Mulai sekarang", "/onboarding.php"));
         }
         return null;

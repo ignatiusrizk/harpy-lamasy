@@ -519,8 +519,11 @@ function renderCustomer() {
     grid.innerHTML = `<div style="grid-column:1/-1"><div class="hl-empty-v2">
       <div class="e-icon">👥</div>
       <div class="e-title">Belum ada customer</div>
-      <div class="e-sub">Tambahkan customer pertamamu atau cek filter pencarian</div>
-      ${CAN_CREATE_CUST ? `<button class="hl-btn hl-btn-primary hl-btn-sm" onclick="openModal()">+ Tambah Customer</button>` : ''}
+      <div class="e-sub">Punya data pelanggan lama di Excel/CSV? Import biar langsung lengkap — atau tambah manual.</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:6px">
+        <a class="hl-btn hl-btn-primary hl-btn-sm" href="/import.php?entity=pelanggan">📥 Import Excel/CSV</a>
+        ${CAN_CREATE_CUST ? `<button class="hl-btn hl-btn-outline hl-btn-sm" onclick="openModal()">+ Tambah manual</button>` : ''}
+      </div>
     </div></div>`;
     return;
   }

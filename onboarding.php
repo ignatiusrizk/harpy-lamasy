@@ -28,6 +28,59 @@ $tid = TenantResolver::id();
 $oid = TenantResolver::outletId();
 $db  = Database::get();
 
+// ── Preset layanan untuk quick-setup wizard (Komponen 2 · Data Accumulation) ──
+$LAYANAN_PRESETS = [
+    ['nama'=>'Cuci Kering Lipat',    'satuan'=>'kg',     'kategori'=>'Kiloan', 'checked'=>true],
+    ['nama'=>'Cuci Setrika',         'satuan'=>'kg',     'kategori'=>'Kiloan', 'checked'=>true],
+    ['nama'=>'Setrika Saja',         'satuan'=>'kg',     'kategori'=>'Kiloan', 'checked'=>true],
+    ['nama'=>'Cuci Express (1 hari)','satuan'=>'kg',     'kategori'=>'Kiloan', 'checked'=>false],
+    ['nama'=>'Bed Cover',            'satuan'=>'pcs',    'kategori'=>'Satuan', 'checked'=>false],
+    ['nama'=>'Selimut',              'satuan'=>'pcs',    'kategori'=>'Satuan', 'checked'=>false],
+    ['nama'=>'Sepatu',               'satuan'=>'pasang', 'kategori'=>'Satuan', 'checked'=>false],
+    ['nama'=>'Karpet',               'satuan'=>'m²',     'kategori'=>'Satuan', 'checked'=>false],
+];
+
+// ── Handler: simpan wizard layanan (min 1 layanan + harga) ──
+if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && ($_POST['action'] ?? '') === 'save_layanan') {
+    verifyCsrf();
+    // Nama layanan yang sudah ada → jangan dobel
+    $existing = [];
+    try {
+        $st = $db->prepare("SELECT LOWER(nama) FROM hl_layanan WHERE tenant_id=? AND outlet_id=?");
+        $st->execute([$tid, $oid]);
+        $existing = array_flip($st->fetchAll(PDO::FETCH_COLUMN));
+    } catch (Throwable $e) { error_log('[onboarding wizard] '.$e->getMessage()); }
+
+    $toInsert = [];
+    foreach (($_POST['p_on'] ?? []) as $i) {
+        $i = (int)$i;
+        if (!isset($LAYANAN_PRESETS[$i])) continue;
+        $harga = (int)($_POST['p_harga'][$i] ?? 0);
+        if ($harga <= 0) continue;
+        $toInsert[] = $LAYANAN_PRESETS[$i] + ['harga'=>$harga];
+    }
+    foreach (($_POST['c_nama'] ?? []) as $k => $nm) {
+        $nm = trim(strip_tags((string)$nm));
+        $harga = (int)($_POST['c_harga'][$k] ?? 0);
+        if ($nm === '' || $harga <= 0) continue;
+        $sat = trim(strip_tags((string)($_POST['c_satuan'][$k] ?? 'kg'))) ?: 'kg';
+        $toInsert[] = ['nama'=>mb_substr($nm,0,100), 'satuan'=>mb_substr($sat,0,30), 'kategori'=>'Lainnya', 'harga'=>$harga];
+    }
+
+    if ($toInsert) {
+        $ins = $db->prepare("INSERT INTO hl_layanan (tenant_id, outlet_id, nama, kategori, satuan, harga, is_active, urutan)
+                             VALUES (?,?,?,?,?,?,1,?)");
+        $u = 0;
+        foreach ($toInsert as $r) {
+            if (isset($existing[mb_strtolower($r['nama'])])) continue; // skip duplikat
+            try { $ins->execute([$tid, $oid, $r['nama'], $r['kategori'], $r['satuan'], $r['harga'], $u++]); }
+            catch (Throwable $e) { error_log('[onboarding wizard insert] '.$e->getMessage()); }
+        }
+    }
+    header('Location: /onboarding.php'); // PRG — reload hitung ulang progres
+    exit;
+}
+
 // ── Hitung progres nyata dari data ─────────────────────
 function _obCount(PDO $db, string $sql, array $p): int {
     try { $s = $db->prepare($sql); $s->execute($p); return (int)$s->fetchColumn(); }
@@ -116,6 +169,21 @@ body.ob-body{margin:0;min-height:100vh;background:
   padding:9px 16px;border-radius:10px;background:linear-gradient(90deg,var(--ob-teal2),var(--ob-teal));
   color:#04211d;border:none;cursor:pointer}
 .ob-cta.ghost{background:transparent;border:1px solid rgba(255,255,255,.18);color:#cbd5e1}
+/* Wizard layanan (Komponen 2) */
+.ob-wiz{margin-top:6px}
+.ob-wrow{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.06)}
+.ob-wrow input[type=checkbox]{width:18px;height:18px;accent-color:var(--ob-teal);flex:none}
+.ob-wname{flex:1;font-size:13px;color:#e6edf6}
+.ob-wname small{color:#7c8ba0;font-weight:400}
+.ob-wprice{display:inline-flex;align-items:center;gap:5px;font-size:12px;color:#9fb0c3}
+.ob-wprice input{width:92px;padding:7px 9px;border-radius:8px;border:1px solid rgba(255,255,255,.14);
+  background:rgba(255,255,255,.05);color:#fff;font-size:13px;font-family:inherit;text-align:right;outline:none}
+.ob-wprice input:focus{border-color:var(--ob-teal)}
+.ob-addcustom{margin-top:12px;background:none;border:1px dashed rgba(255,255,255,.2);color:#9fb0c3;
+  font-size:12px;font-weight:600;padding:8px 12px;border-radius:9px;cursor:pointer;font-family:inherit}
+.ob-hint{font-size:11.5px;color:#7c8ba0;text-align:center;margin:8px 0 0}
+.ob-hint.err{color:#fca5a5}
+.ob-step2cta{display:flex;flex-direction:column;gap:8px}
 .ob-done-tag{font-size:12px;font-weight:700;color:#5eead4}
 .ob-foot{text-align:center;margin-top:22px;font-size:12px;color:#64748b}
 .ob-foot a{color:#94a3b8}
@@ -160,8 +228,8 @@ canvas.ob-confetti{position:fixed;inset:0;pointer-events:none;z-index:50}
     // Langkah aktif = langkah pertama yang belum selesai
     $activeIdx = !$step1 ? 1 : (!$step3 ? 3 : 0); // step2 opsional → langsung ke 3 kalau layanan sudah ada
     $steps = [
-      [1, $step1, 'Tambah 1 layanan', 'Misal “Cuci Kiloan” atau “Setrika”. Ini yang nanti dipilih saat buat order.', '/layanan.php', 'Tambah layanan'],
-      [2, $step2, 'Tambah customer (opsional)', 'Simpan data pelanggan tetap. Kalau mau cepat, bisa langsung pakai “customer umum” saat buat order.', '/pelanggan.php', 'Tambah customer'],
+      [1, $step1, 'Atur layanan & harga', 'Centang layanan yang kamu jual, isi harganya. Ini yang nanti dipilih saat buat order.', '/layanan.php', 'Tambah layanan'],
+      [2, $step2, 'Tambah customer (opsional)', 'Punya data pelanggan lama di Excel? Import biar langsung lengkap. Atau lewati — bisa pakai “customer umum” saat buat order.', '/customer.php', 'Tambah manual'],
       [3, $step3, 'Buat order pertama', 'Buka kasir, pilih layanan & customer, simpan. Inilah transaksi pertamamu!', '/pos.php', 'Buka Kasir →'],
     ];
     foreach ($steps as [$n, $done, $title, $desc, $href, $label]):
@@ -175,6 +243,28 @@ canvas.ob-confetti{position:fixed;inset:0;pointer-events:none;z-index:50}
         <p class="ob-desc"><?= $desc ?></p>
         <?php if ($done): ?>
           <span class="ob-done-tag">✓ Selesai</span>
+        <?php elseif ($n === 1): ?>
+          <!-- Komponen 2: Wizard layanan quick-setup -->
+          <form method="post" class="ob-wiz" onsubmit="return obWizCheck()">
+            <input type="hidden" name="_csrf" value="<?= htmlspecialchars(getCsrfToken()) ?>">
+            <input type="hidden" name="action" value="save_layanan">
+            <?php foreach ($LAYANAN_PRESETS as $i => $p): ?>
+            <label class="ob-wrow">
+              <input type="checkbox" name="p_on[]" value="<?= $i ?>" <?= $p['checked'] ? 'checked' : '' ?>>
+              <span class="ob-wname"><?= htmlspecialchars($p['nama']) ?> <small>/ <?= htmlspecialchars($p['satuan']) ?></small></span>
+              <span class="ob-wprice">Rp <input type="number" name="p_harga[<?= $i ?>]" min="0" step="500" placeholder="0" inputmode="numeric"></span>
+            </label>
+            <?php endforeach; ?>
+            <div id="obCustom"></div>
+            <button type="button" class="ob-addcustom" onclick="obAddCustom()">+ Tambah layanan sendiri</button>
+            <button type="submit" class="ob-cta" style="width:100%;margin-top:14px">Simpan &amp; lanjut →</button>
+            <p class="ob-hint" id="obWizHint">Centang minimal 1 layanan &amp; isi harganya.</p>
+          </form>
+        <?php elseif ($n === 2): ?>
+          <div class="ob-step2cta">
+            <a class="ob-cta" href="/import.php?entity=pelanggan">📥 Import dari Excel/CSV</a>
+            <a class="ob-cta ghost" href="<?= $href ?>"><?= htmlspecialchars($label) ?></a>
+          </div>
         <?php else: ?>
           <a class="ob-cta <?= $isActive ? '' : 'ghost' ?>" href="<?= $href ?>"><?= htmlspecialchars($label) ?></a>
         <?php endif; ?>
@@ -220,5 +310,31 @@ canvas.ob-confetti{position:fixed;inset:0;pointer-events:none;z-index:50}
 })();
 </script>
 <?php endif; ?>
+<script>
+// Wizard layanan (Komponen 2) — tambah baris custom + validasi min 1 layanan berharga
+function obAddCustom(){
+  var wrap=document.getElementById('obCustom'); if(!wrap) return;
+  var row=document.createElement('label'); row.className='ob-wrow';
+  row.innerHTML=
+    '<span class="ob-wname"><input type="text" name="c_nama[]" placeholder="Nama layanan sendiri" '
+    +'style="width:100%;padding:7px 9px;border-radius:8px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.05);color:#fff;font-size:13px;font-family:inherit;outline:none"></span>'
+    +'<span class="ob-wprice"><select name="c_satuan[]" style="padding:7px;border-radius:8px;border:1px solid rgba(255,255,255,.14);background:#0A0F1F;color:#fff;font-size:12px;font-family:inherit">'
+    +'<option value="kg">kg</option><option value="pcs">pcs</option><option value="pasang">pasang</option><option value="m²">m²</option></select> '
+    +'Rp <input type="number" name="c_harga[]" min="0" step="500" placeholder="0" inputmode="numeric"></span>';
+  wrap.appendChild(row);
+}
+function obWizCheck(){
+  var ok=false;
+  document.querySelectorAll('.ob-wiz input[name="p_on[]"]').forEach(function(cb){
+    if(cb.checked){ var h=cb.closest('.ob-wrow').querySelector('input[name^="p_harga"]'); if(h&&parseInt(h.value||0,10)>0) ok=true; }
+  });
+  document.querySelectorAll('.ob-wiz input[name="c_nama[]"]').forEach(function(n){
+    var h=n.closest('.ob-wrow').querySelector('input[name="c_harga[]"]');
+    if(n.value.trim()&&h&&parseInt(h.value||0,10)>0) ok=true;
+  });
+  if(!ok){ var hint=document.getElementById('obWizHint'); if(hint){ hint.textContent='Centang minimal 1 layanan dan isi harganya (lebih dari 0).'; hint.classList.add('err'); } return false; }
+  return true;
+}
+</script>
 </body>
 </html>

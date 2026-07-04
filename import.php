@@ -1236,7 +1236,12 @@ function showToast(msg, type='success') {
 // ────────────────────────────────────────────────────
 // Init
 // ────────────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', () => { loadHistory(); });
+document.addEventListener('DOMContentLoaded', () => {
+  loadHistory();
+  // Preselect entity dari URL (?entity=pelanggan) — entry point import (Komponen 3)
+  var pe = new URLSearchParams(location.search).get('entity');
+  if (pe && document.getElementById('ec_' + pe)) { selectEntity(pe); goStep(2); }
+});
 </script>
 </body>
 </html>
