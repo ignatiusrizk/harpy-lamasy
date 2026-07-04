@@ -3,6 +3,8 @@
 // Isi tenant Demo (2) dgn data marketing 7 hari (omset naik, pipeline penuh, kas sehat, absensi, VIP)
 // + loyalty: program poin ON, katalog 3 reward, poin pelanggan (portal tampil lengkap).
 // Aman diulang: pelanggan/reward idempoten (NOT EXISTS), poin pakai GREATEST, no_order offset waktu anti-bentrok.
+// ⚠️ TAPI order/kas TIDAK idempoten — tiap run MENAMBAH ~90 order batch baru. Jalankan SEKALI per reset demo;
+//    kalau kedobelan, hapus batch: DELETE ... WHERE CAST(SUBSTRING_INDEX(no_order,'-',-1) AS UNSIGNED) >= <seq_batch_ekstra>.
 // Generator SQL data dummy marketing — tenant Demo (2) / outlet Demo Laundry Pusat (2)
 // Cerita: laundry ramai, omset 7 hari naik, hari ini ~Rp 950rb (target 1jt → bar ~95%)
 mt_srand(20260704);
