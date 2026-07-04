@@ -34,7 +34,9 @@ if ($ajaxAction === 'status') {
 
 function lookupOrder(string $noOrder, string $phoneLast4): ?array
 {
-    if (!preg_match('/^[A-Z0-9\-_\/]+$/i', $noOrder) || strlen($phoneLast4) < 4) return null;
+    // Guard SETELAH strip non-digit: wajib persis 4 digit asli ("22ab" tak boleh lolos jadi "22")
+    $want = preg_replace('/[^0-9]/', '', $phoneLast4);
+    if (!preg_match('/^[A-Z0-9\-_\/]+$/i', $noOrder) || strlen($want) !== 4) return null;
     try {
         $db = Database::get();
         $st = $db->prepare(
@@ -54,7 +56,6 @@ function lookupOrder(string $noOrder, string $phoneLast4): ?array
 
         // no_order hanya unik PER-tenant → bisa >1 baris lintas-tenant. Jangan pilih
         // sembarang: kembalikan hanya baris yang 4 digit terakhir HP-nya cocok.
-        $want = preg_replace('/[^0-9]/', '', $phoneLast4);
         $trx  = null;
         foreach ($rows as $r) {
             $tPhone = preg_replace('/[^0-9]/', '', (string)($r['telepon'] ?? ''));
