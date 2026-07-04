@@ -425,7 +425,7 @@ $lastUpdated = '23 Juni 2026';
       <p>Untuk pertanyaan terkait Syarat &amp; Ketentuan ini, hubungi kami:</p>
       <ul>
         <li><strong>WhatsApp:</strong> <a href="https://wa.me/6285121519302">+62 851-2151-9302</a></li>
-        <li><strong>Email:</strong> <a href="mailto:halo@harpy.id">halo@harpy.id</a></li>
+        <li><strong>Email:</strong> <a href="mailto:harpy@harpy.id">harpy@harpy.id</a></li>
         <li><strong>Tiket Support:</strong> Melalui fitur Support &amp; Tiket di dalam Platform</li>
       </ul>
     </section>

@@ -2177,7 +2177,7 @@ function switchCmpTab(tab, btn) {
       <div class="footer-col-title">Perusahaan</div>
       <ul class="footer-links">
         <li><a href="#founder">Tentang Kami</a></li>
-        <li><a href="mailto:halo@harpy.id">halo@harpy.id</a></li>
+        <li><a href="mailto:harpy@harpy.id">harpy@harpy.id</a></li>
         <li><a href="/tos">Syarat &amp; Ketentuan</a></li>
         <li><a href="/privacy">Kebijakan Privasi</a></li>
       </ul>

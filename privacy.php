@@ -451,7 +451,7 @@ $lastUpdated = '23 Juni 2026';
         <li><strong>Keberatan</strong> — Menolak pemrosesan data untuk tujuan tertentu</li>
         <li><strong>Penarikan Persetujuan</strong> — Mencabut persetujuan kapan saja</li>
       </ul>
-      <p>Untuk menggunakan hak-hak ini, hubungi kami melalui <a href="https://wa.me/6285121519302">WhatsApp</a> atau email <a href="mailto:halo@harpy.id">halo@harpy.id</a>. Kami akan merespons dalam waktu maksimal 3 hari kerja.</p>
+      <p>Untuk menggunakan hak-hak ini, hubungi kami melalui <a href="https://wa.me/6285121519302">WhatsApp</a> atau email <a href="mailto:harpy@harpy.id">harpy@harpy.id</a>. Kami akan merespons dalam waktu maksimal 3 hari kerja.</p>
     </section>
 
     <section>
@@ -470,7 +470,7 @@ $lastUpdated = '23 Juni 2026';
       <p>Jika Anda memiliki pertanyaan, kekhawatiran, atau ingin menggunakan hak Anda terkait privasi data:</p>
       <ul>
         <li><strong>WhatsApp:</strong> <a href="https://wa.me/6285121519302">+62 851-2151-9302</a></li>
-        <li><strong>Email:</strong> <a href="mailto:halo@harpy.id">halo@harpy.id</a></li>
+        <li><strong>Email:</strong> <a href="mailto:harpy@harpy.id">harpy@harpy.id</a></li>
         <li><strong>Tiket Support:</strong> Melalui fitur Support &amp; Tiket di dalam Platform</li>
       </ul>
       <p>Kami berkomitmen merespons pertanyaan privasi dalam <strong>3 hari kerja</strong>.</p>
