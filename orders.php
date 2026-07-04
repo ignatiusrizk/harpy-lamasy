@@ -859,6 +859,46 @@ if ($action) {
     }
 
     // GENERATE WA REMINDER MESSAGE
+    // ── Belum Diambil: daftar order 'siap' ≥2 hari yg belum diambil ──
+    if ($action === 'pickup_reminders') {
+        header('Content-Type: application/json');
+        $days = 2; // ambang default
+        try {
+            $rows = TenantQuery::raw(
+                "SELECT t.id, t.no_order, t.nama_pelanggan, t.telepon,
+                        t.reminder_last_at, t.reminder_count,
+                        COALESCE(
+                          (SELECT MAX(pl.created_at) FROM hl_proses_log pl
+                            WHERE pl.transaksi_id=t.id AND pl.status_baru='siap'),
+                          t.estimasi_selesai, t.tanggal
+                        ) AS siap_at
+                   FROM hl_transaksi t
+                  WHERE t.tenant_id=? AND t.outlet_id=? AND t.status_proses='siap'
+                 HAVING siap_at IS NOT NULL AND siap_at <= (NOW() - INTERVAL $days DAY)
+                  ORDER BY siap_at ASC
+                  LIMIT 100",
+                [$tid, $oid]
+            );
+            echo json_encode(['ok'=>true, 'days'=>$days, 'count'=>count($rows), 'rows'=>$rows]);
+        } catch (Throwable $e) { echo json_encode(['ok'=>false, 'count'=>0, 'rows'=>[], 'error'=>'x']); }
+        exit;
+    }
+
+    // ── Tandai sudah diingatkan (dipanggil saat tombol WA diklik) ──
+    if ($action === 'mark_reminded' && $_SERVER['REQUEST_METHOD']==='POST') {
+        header('Content-Type: application/json');
+        verifyCsrf();
+        $d  = json_decode(file_get_contents('php://input'), true) ?: [];
+        $id = (int)($d['id'] ?? 0);
+        $own = TenantQuery::rawOne("SELECT id FROM hl_transaksi WHERE id=? AND tenant_id=? AND outlet_id=?", [$id, $tid, $oid]);
+        if (!$own) { echo json_encode(['error'=>'Not found']); exit; }
+        Database::get()->prepare(
+            "UPDATE hl_transaksi SET reminder_last_at=NOW(), reminder_count=reminder_count+1 WHERE id=? AND tenant_id=? AND outlet_id=?"
+        )->execute([$id, $tid, $oid]);
+        echo json_encode(['ok'=>true]);
+        exit;
+    }
+
     if ($action === 'wa_message') {
         $id   = intval($_GET['id']);
         $tipe = $_GET['tipe'] ?? 'reminder';

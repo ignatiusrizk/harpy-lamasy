@@ -1051,6 +1051,17 @@ if ($_dashRole === 'kasir'):
   </div>
 </div>
 
+<!-- Belum Diambil (siap ≥2 hari) -->
+<div id="belumDiambilCard" style="display:none;background:#fff;border-radius:12px;padding:18px 20px;box-shadow:0 1px 6px rgba(0,0,0,.05);margin-bottom:20px;border-left:4px solid #F59E0B">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:12px">
+    <div>
+      <h3 style="font-size:14px;font-weight:800;color:#0F1C3A;margin:0">🔔 Belum Diambil <span id="bdCount" style="background:#F59E0B;color:#fff;border-radius:100px;padding:1px 9px;font-size:12px;margin-left:4px">0</span></h3>
+      <div style="font-size:11.5px;color:#9CA3AF;margin-top:2px">Sudah siap ≥2 hari, belum diambil pelanggan. Ingatkan via WhatsApp.</div>
+    </div>
+  </div>
+  <div id="bdList"></div>
+</div>
+
 <!-- Quick actions kasir -->
 <div style="background:#fff;border-radius:12px;padding:22px;box-shadow:0 1px 6px rgba(0,0,0,.05);margin-bottom:20px">
   <h3 style="font-size:14px;font-weight:700;color:#0F1C3A;margin-bottom:14px">⚡ Aksi Cepat</h3>
@@ -1930,6 +1941,51 @@ async function loadChart(){
 function statusLabel(s){return{masuk:'Diterima',cuci:'Cuci',kering:'Kering',setrika:'Setrika',siap:'Siap',diambil:'Diambil'}[s]||s;}
 function fmtDate(d){if(!d)return'-';const s=String(d);return new Date(s.includes(' ')?s.replace(' ','T'):s+'T00:00:00').toLocaleDateString('id-ID',{day:'2-digit',month:'short'});}
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+// ── Belum Diambil: daftar order siap ≥2 hari + tombol Ingatkan (WA gratis via wa.me) ──
+async function loadBelumDiambil(){
+  try{
+    const r = await fetch('/orders.php?action=pickup_reminders');
+    const d = await r.json();
+    if(!d || !d.ok || !d.count) return;
+    document.getElementById('bdCount').textContent = d.count;
+    document.getElementById('bdList').innerHTML = d.rows.map(bdRow).join('');
+    document.getElementById('belumDiambilCard').style.display = '';
+  }catch(e){}
+}
+function bdDays(siapAt){
+  if(!siapAt) return '-';
+  const n = Math.floor((Date.now()-new Date(String(siapAt).replace(' ','T')).getTime())/86400000);
+  return n<=0?'hari ini':(n+' hari lalu');
+}
+function bdRow(o){
+  const info = o.reminder_last_at
+    ? `<span style="font-size:11px;color:#0F7B6C">✓ diingatkan ${o.reminder_count}× · terakhir ${fmtDate(o.reminder_last_at)}</span>`
+    : `<span style="font-size:11px;color:#9CA3AF">belum diingatkan</span>`;
+  return `<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-top:1px solid #F0F1F4">
+    <div style="min-width:0">
+      <div style="font-weight:700;color:#0F1C3A;font-size:13px">${esc(o.nama_pelanggan||'-')} <span style="color:#9CA3AF;font-weight:500">· ${esc(o.no_order)}</span></div>
+      <div style="font-size:11.5px;color:#F59E0B;font-weight:600">siap ${bdDays(o.siap_at)}</div>
+      ${info}
+    </div>
+    <button onclick="bdIngatkan(${o.id}, this)" ${o.telepon?'':'disabled'} style="flex:0 0 auto;background:#25D366;color:#fff;border:none;border-radius:8px;padding:8px 12px;font-size:12.5px;font-weight:700;cursor:pointer;${o.telepon?'':'opacity:.4'}">📲 Ingatkan</button>
+  </div>`;
+}
+async function bdIngatkan(id, btn){
+  btn.disabled = true; btn.textContent = '…';
+  try{
+    const r = await fetch('/orders.php?action=wa_message&id='+id+'&tipe=siap');
+    const d = await r.json();
+    if(d && d.success && d.phone){
+      let p = String(d.phone).replace(/\D/g,'');
+      if(p.startsWith('0')) p='62'+p.slice(1); else if(p.startsWith('8')) p='62'+p;
+      window.open('https://wa.me/'+p+'?text='+encodeURIComponent(d.message),'_blank');
+      await fetch('/orders.php?action=mark_reminded',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrfToken()},body:JSON.stringify({id})});
+      loadBelumDiambil();
+    } else { btn.disabled=false; btn.textContent='📲 Ingatkan'; }
+  }catch(e){ btn.disabled=false; btn.textContent='📲 Ingatkan'; }
+}
+document.addEventListener('DOMContentLoaded', loadBelumDiambil);
 </script>
 </body>
 </html>
