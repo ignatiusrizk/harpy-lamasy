@@ -1278,7 +1278,7 @@ if ($_dashRole === 'kasir'):
       <h1 style="font-size:1.3rem;font-weight:800;color:var(--navy)" id="greeting">Selamat pagi!</h1>
       <p style="font-size:13px;color:var(--gray)" id="dashDate">--</p>
     </div>
-    <div style="display:flex;gap:8px;align-items:flex-start">
+    <div style="display:flex;gap:8px;align-items:flex-start;justify-content:space-between;flex:1 1 100%">
       <?php if ($user['role'] !== 'staff'): ?>
       <div style="display:flex;flex-direction:column;gap:5px;align-items:flex-start">
         <div id="aiBriefingBadge"
