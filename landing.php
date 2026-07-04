@@ -1649,7 +1649,7 @@ img { max-width: 100%; }
       <tbody>
         <?php
         $rowsApps = [
-          ['Model Pricing',         'Langganan bulanan wajib (Rp 200-500rb/bln)',  '1× setup permanen + pay-per-use Coin'],
+          ['Model Biaya',           'Langganan bulanan, atau coin dgn biaya/transaksi tinggi', '1× setup + pay-per-use Coin — biaya per transaksi hemat, tanpa langganan'],
           ['Trial Free',            'Biasanya 3-7 hari, fitur terbatas',           '7 hari penuh + 10.000 coin gratis'],
           ['AI Terintegrasi',       'Tidak ada / cuma chatbot CS',                 'AI Briefing, Chat Data, Migration, Upselling'],
           ['Laporan Keuangan',      'Laporan operasional saja',                    'SAK EMKM formal (Laba Rugi, Neraca, Arus Kas)'],
@@ -1846,7 +1846,7 @@ function switchCmpTab(tab, btn) {
       Trial 7 hari gratis · Lanjut bayar sesuai pakai via Coin
     </p>
     <p style="text-align:center;color:rgba(255,255,255,.5);max-width:600px;margin:0 auto 32px;font-size:13px;">
-      vs langganan bulanan kompetitor Rp 500K+/bulan — LAMASY bayar sesuai pakai, bisnis slow biaya tetap rendah.
+      Biaya per transaksi rendah &amp; transparan — bayar hanya saat fitur dipakai (nota, WA, AI). Tanpa langganan, tanpa kontrak; bisnis sepi, biaya ikut turun.
     </p>
   </div>
 
