@@ -243,6 +243,7 @@ if ($action) {
 
     // ── EXTRAS (segmen breakdown, top 5 pelanggan, week vs week) ──
     if ($action === 'extras') {
+        $db            = Database::get(); // ⚠️ tanpa ini semua query di bawah throw & tertelan catch bisu → widget selalu kosong
         $thisWeekStart = date('Y-m-d', strtotime('monday this week'));
         $todayStr      = date('Y-m-d');
         $lastWeekStart = date('Y-m-d', strtotime('monday this week -7 days'));

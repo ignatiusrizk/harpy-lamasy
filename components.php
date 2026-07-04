@@ -75,7 +75,7 @@ function renderDemoBanner(): void {
       <span style="display:flex;align-items:center;gap:8px">
         <a href="/demo-exit?convert=1"
            style="background:#FAC775;color:#1F3864;padding:6px 14px;border-radius:6px;text-decoration:none;font-size:12px;font-weight:700;white-space:nowrap">
-          Daftar Gratis — Trial 30 Hari →
+          Daftar Gratis — Trial 7 Hari →
         </a>
         <a href="/demo-exit"
            onclick="return lmAsk(event,'Keluar dari mode demo?')"
