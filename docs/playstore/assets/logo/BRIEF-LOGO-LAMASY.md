@@ -10,13 +10,15 @@ keluarga** dengan **Harpy** dan **Harpy Laundry** — bukan konsep baru.
 LAMASY lahir dari **Harpy**. Logo harus melanjutkan bahasa visual keluarga:
 
 - **Harpy (induk):** lingkaran teal, huruf **"H" serif** putih di tengah.
-- **Harpy Laundry:** lingkaran teal **cincin-ganda**, **sweater putih + 2 kilau
-  (sparkle)** di tengah, tulisan **"HARPY LAUNDRY"** di bawah.
-- **LAMASY (yang dibuat):** ikuti **persis gaya Harpy Laundry**, hanya ganti
-  tulisannya menjadi **"LAMASY"**.
+- **Harpy Laundry:** lingkaran teal **cincin-ganda**, elemen putih + **kilau (sparkle)**,
+  tulisan **"HARPY LAUNDRY"** di bawah.
+- **LAMASY (yang dibuat):** ikuti **gaya keluarga** (lingkaran teal cincin-ganda +
+  elemen putih + sparkle + wordmark), tapi simbol tengahnya = **MESIN CUCI**, bukan
+  pakaian. Alasannya: **LAMASY adalah aplikasi/sistem laundry** — simbolnya harus
+  membaca "laundry" secara umum, bukan satu potong baju.
 
-> Prinsip utama: **kesinambungan, bukan kejutan.** Orang yang kenal Harpy Laundry
-> harus langsung tahu LAMASY dari rumah yang sama.
+> Prinsip utama: **kesinambungan gaya keluarga + makna yang tepat.** Terlihat satu
+> rumah dengan Harpy, tapi jelas ini **aplikasi laundry** (mesin cuci), bukan toko baju.
 
 ---
 
@@ -25,15 +27,18 @@ LAMASY lahir dari **Harpy**. Logo harus melanjutkan bahasa visual keluarga:
 1. **Lingkaran** penuh berwarna teal.
 2. **Cincin ganda** di tepi: garis tipis putih, jarak, lalu bidang teal — memberi
    kesan **stempel/segel**.
-3. **Sweater putih** di bagian atas-tengah: model **crewneck lengan panjang**,
-   dengan **karet di pergelangan (cuff)** dan **karet di bawah (hem)** — persis
-   seperti sweater di logo Harpy Laundry (bukan kaos lengan pendek).
-4. **Dua sparkle (bintang 4-sudut)** putih di dada sweater: satu **lebih besar**
-   (kanan-atas dada), satu **lebih kecil** (kiri-bawah dada).
-5. **Tulisan "LAMASY"** di bawah sweater, di dalam lingkaran: **huruf kapital,
+3. **Mesin cuci putih** di bagian atas-tengah (ikon flat, garis bersih):
+   - Model **bukaan depan (front-load)** — badan **kotak sudut membulat**, dengan
+     **pintu bundar (porthole)** di tengah.
+   - **Panel kontrol** tipis di atas: 1–2 kenop/tombol kecil (opsional, sederhana saja).
+   - **Kaki kecil** di bawah (opsional) — gaya ikon, jangan terlalu detail.
+   - Semua **putih solid** (siluet), bukan garis-outline tipis, supaya terbaca di HP.
+4. **Sparkle (bintang 4-sudut) putih** sebagai tanda "bersih/segar" + percikan AI:
+   letakkan **1 sparkle besar di kanan-atas** mesin (di ruang teal, tak menimpa badan)
+   dan boleh **1 kecil** di dekatnya. Ini ciri keluarga (Harpy Laundry punya sparkle).
+5. **Tulisan "LAMASY"** di bawah mesin, di dalam lingkaran: **huruf kapital,
    sans-serif tebal (bold), rata tengah**, spasi antar-huruf sedikit lega.
-   (Karena LAMASY satu kata, cukup **satu baris** — beda dari "HARPY / LAUNDRY"
-   yang dua baris. Boleh dibuat sedikit lebih besar agar seimbang.)
+   (Satu kata → **satu baris**; boleh sedikit lebih besar agar seimbang.)
 
 ---
 
@@ -64,14 +69,14 @@ LAMASY lahir dari **Harpy**. Logo harus melanjutkan bahasa visual keluarga:
 ```
         ┌───────────────┐
         │   ╭ cincin ╮   │
-        │   sweater +    │   ← sweater di 60% atas
-        │    sparkle     │
+        │  [ mesin cuci ]│   ← mesin cuci + sparkle di 60% atas
+        │    + sparkle   │
         │                │
         │    LAMASY      │   ← wordmark di 25% bawah
         │   ╰────────╯   │
         └───────────────┘
 ```
-- Sweater menempati kira-kira **bagian tengah-atas** lingkaran.
+- Mesin cuci menempati kira-kira **bagian tengah-atas** lingkaran.
 - Wordmark "LAMASY" di **sepertiga bawah**, tidak menyentuh cincin.
 - Semua elemen **rata tengah secara horizontal**.
 
@@ -79,9 +84,9 @@ LAMASY lahir dari **Harpy**. Logo harus melanjutkan bahasa visual keluarga:
 
 ## 6. Varian yang dibutuhkan
 
-1. **Logo utama (badge)** — lingkaran + sweater + sparkle + teks "LAMASY".
+1. **Logo utama (badge)** — lingkaran + mesin cuci + sparkle + teks "LAMASY".
    Untuk: splash, marketing, listing, kop.
-2. **App icon (tanpa teks)** — lingkaran + sweater + sparkle saja (buang teks).
+2. **App icon (tanpa teks)** — lingkaran + mesin cuci + sparkle saja (buang teks).
    Untuk: ikon aplikasi (harus terbaca di ukuran kecil ~48px).
 3. **Versi mono putih** (opsional) — semua putih, latar transparan, untuk di atas
    foto/warna gelap.
@@ -94,19 +99,22 @@ Store butuh **512×512**.
 ## 7. Do & Don't
 
 **Lakukan**
-- Jaga sweater + sparkle + cincin-ganda seperti Harpy Laundry.
+- Simbol = **mesin cuci** (front-load, pintu bundar) — jelas "laundry sebagai app".
+- Jaga ciri keluarga: **lingkaran teal + cincin-ganda + sparkle** seperti Harpy Laundry.
 - Pakai teal `#1FC0CB` + putih saja.
-- Pastikan terbaca saat dikecilkan (uji di 48px).
+- Mesin cuci bergaya **ikon flat/siluet** — sederhana, terbaca saat dikecilkan (uji di 48px).
 
 **Jangan**
-- Jangan pakai kaos lengan pendek — harus **sweater lengan panjang** (konsisten keluarga).
+- **Jangan pakai pakaian/sweater/kaos** — LAMASY = sistem laundry, simbolnya mesin cuci.
+- Jangan gambar mesin cuci terlalu realistis/berdetail — cukup ikon bersih.
 - Jangan tambah warna/gradient/bayangan.
 - Jangan pakai font serif untuk "LAMASY".
-- Jangan taruh sparkle menimpa lengan sampai bentuk sweater rusak; letakkan di **dada**.
+- Jangan letakkan sparkle menimpa badan mesin sampai bentuknya rusak; taruh di ruang teal sekitarnya.
 
 ---
 
 ## 8. Satu kalimat konsep (kalau diminta ringkas)
 
-> "LAMASY = Harpy Laundry versi aplikasi: sweater bersih + kilau di lingkaran teal
-> bercincin, dengan nama LAMASY — satu keluarga, satu janji: bersih, cerdas, tertata."
+> "LAMASY = aplikasi laundry keluarga Harpy: mesin cuci + kilau di lingkaran teal
+> bercincin, dengan nama LAMASY — satu rumah dengan Harpy, jelas sebuah sistem laundry:
+> bersih, cerdas, tertata."
