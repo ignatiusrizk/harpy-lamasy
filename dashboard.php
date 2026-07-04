@@ -95,6 +95,19 @@ $action = $_GET['action'] ?? '';
 if ($action) {
     header('Content-Type: application/json');
 
+    // ── Product tour tracking (analytics SA) — best-effort ──
+    if ($action === 'tour_track' && $_SERVER['REQUEST_METHOD']==='POST') {
+        try {
+            $d = json_decode(file_get_contents('php://input'), true) ?: [];
+            $done = !empty($d['done']) ? 1 : 0;
+            $last = substr((string)($d['last_page'] ?? ''), 0, 30);
+            Database::get()->prepare("UPDATE tenants SET tour_completed=GREATEST(tour_completed,?), tour_last_page=? WHERE id=?")
+                ->execute([$done, $last ?: null, TenantResolver::id()]);
+            echo json_encode(['ok'=>true]);
+        } catch (Throwable) { echo json_encode(['ok'=>false]); }
+        exit;
+    }
+
     // Jika belum ada outlet, kembalikan data kosong agar JS tidak error
     if (!$hasOutlet) {
         if ($action === 'stats') {
@@ -483,7 +496,7 @@ if ($action) {
 }
 </style>
 </head>
-<body>
+<body data-tour-page="dashboard">
 <?php renderTopbar('dashboard', !$hasOutlet); ?>
 
 <?php if (!$hasOutlet):
@@ -1033,7 +1046,7 @@ if ($_dashRole === 'kasir'):
         [$tid, $oid]
     )['c'] ?? 0);
 ?>
-<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px" class="rk-grid3">
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px" class="rk-grid3" data-tour="t_dash_summary">
   <div style="background:#fff;border-radius:12px;padding:18px;box-shadow:0 1px 6px rgba(0,0,0,.05);border-top:3px solid #35E8D5">
     <div style="font-size:1.4rem;font-weight:800;color:#0F1C3A;font-family:var(--mono)"><?= (int)$kasirStats['total'] ?></div>
     <div style="font-size:12px;color:#6B7280;font-weight:600">Transaksi Saya Hari Ini</div>
@@ -1281,7 +1294,7 @@ if ($_dashRole === 'kasir'):
     <div style="display:flex;gap:8px;align-items:flex-start;justify-content:space-between;flex:1 1 100%">
       <?php if ($user['role'] !== 'staff'): ?>
       <div style="display:flex;flex-direction:column;gap:5px;align-items:flex-start">
-        <div id="aiBriefingBadge"
+        <div id="aiBriefingBadge" data-tour="t_dash_ai"
              style="background:linear-gradient(135deg,#667eea,#764ba2);color:white;font-size:12px;font-weight:600;padding:6px 14px;border-radius:100px;cursor:pointer"
              onclick="toggleBriefing()">✨ AI Briefing</div>
         <?php if (class_exists('CoinLedger') && CoinLedger::isTrialBoost('ai_briefing_hq')): ?>

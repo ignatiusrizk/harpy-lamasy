@@ -248,14 +248,14 @@ tfoot td.td-jumlah{font-family:var(--mono)}
 }
 </style>
 </head>
-<body>
+<body data-tour-page="kas">
 <?php renderTopbar('kas'); ?>
 <div class="hl-main">
 
   <div class="summary-grid">
     <div class="sum-card masuk"><div class="sum-num green" id="sumMasuk">Rp 0</div><div class="sum-label">💚 Total Kas Masuk</div></div>
     <div class="sum-card keluar"><div class="sum-num red" id="sumKeluar">Rp 0</div><div class="sum-label">❤️ Total Kas Keluar</div></div>
-    <div class="sum-card saldo"><div class="sum-num teal" id="sumSaldo">Rp 0</div><div class="sum-label">💎 Saldo Bersih</div></div>
+    <div class="sum-card saldo" data-tour="t_kas_saldo"><div class="sum-num teal" id="sumSaldo">Rp 0</div><div class="sum-label">💎 Saldo Bersih</div></div>
     <div class="sum-card order"><div class="sum-num" id="sumOrder" style="color:#8B5CF6">0</div><div class="sum-label">📋 Transaksi Kas</div></div>
   </div>
 
@@ -358,7 +358,7 @@ tfoot td.td-jumlah{font-family:var(--mono)}
 
           <div id="jumlahPreview" style="display:none;text-align:center;padding:12px;border-radius:var(--r);margin-bottom:12px;font-size:1.2rem;font-weight:800;font-family:var(--mono)"></div>
 
-          <button class="hl-btn hl-btn-primary hl-btn-full" onclick="saveKas()" id="btnSave" style="margin-bottom:8px">💾 Simpan</button>
+          <button class="hl-btn hl-btn-primary hl-btn-full" onclick="saveKas()" id="btnSave" data-tour="t_kas_catat" style="margin-bottom:8px">💾 Simpan</button>
           <button class="hl-btn hl-btn-outline hl-btn-full" onclick="resetForm()">↺ Reset</button>
         </div>
       </div>
@@ -393,7 +393,7 @@ tfoot td.td-jumlah{font-family:var(--mono)}
                 <th>Ref Order</th><th style="text-align:right">Jumlah</th><th>Bukti</th><th></th>
               </tr>
             </thead>
-            <tbody id="tableBody">
+            <tbody id="tableBody" data-tour="t_kas_riwayat">
               <tr><td colspan="7" class="hl-loading">⏳ Memuat...</td></tr>
             </tbody>
             <tfoot id="tableFoot" style="display:none">

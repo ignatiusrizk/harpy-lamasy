@@ -1088,7 +1088,7 @@ textarea{resize:vertical;min-height:64px}
 }
 </style>
 </head>
-<body>
+<body data-tour-page="pos">
 <?php renderTopbar('pos'); ?>
 <script src="/assets/vendor/html2canvas.min.js?v=<?= @filemtime(__DIR__.'/assets/vendor/html2canvas.min.js') ?: '1' ?>"></script>
 <script src="/assets/js/thermal-print.js?v=<?= @filemtime(__DIR__.'/assets/js/thermal-print.js') ?: '1' ?>"></script>
@@ -1177,7 +1177,7 @@ function posSelectPrinter(p) {
             <div class="form-group full">
               <label>Nama Pelanggan <span class="req">*</span></label>
               <div class="autocomplete-wrap">
-                <input type="text" id="f_nama" placeholder="Ketik nama atau cari pelanggan..."
+                <input type="text" id="f_nama" data-tour="t_pos_customer" placeholder="Ketik nama atau cari pelanggan..."
                   autocomplete="off" oninput="searchPelanggan(this.value)"/>
                 <div class="autocomplete-list" id="acList"></div>
               </div>
@@ -1255,7 +1255,7 @@ function posSelectPrinter(p) {
               <button type="button" class="btn btn-teal-sm" onclick="openLayananQuick()" style="white-space:nowrap" title="Tambah layanan baru cepat">+ Layanan</button>
               <?php endif; ?>
             </div>
-            <div class="layanan-grid" id="layananGrid">
+            <div class="layanan-grid" id="layananGrid" data-tour="t_pos_layanan">
               <div style="color:var(--gray);font-size:13px;padding:8px">Memuat layanan...</div>
             </div>
           </div>
@@ -1363,7 +1363,7 @@ function posSelectPrinter(p) {
           <div class="card-title">💰 Ringkasan Pembayaran</div>
         </div>
         <div class="card-body">
-          <div class="summary-box">
+          <div class="summary-box" data-tour="t_pos_cart">
             <div class="sum-row">
               <span class="sum-label">Subtotal</span>
               <span class="sum-value" id="sumSubtotal">Rp 0</span>
@@ -1491,7 +1491,7 @@ window.outletQris = <?= json_encode([
               Belum ada item
             </div>
 
-            <button class="btn btn-primary" id="btnSave" onclick="saveTransaksi()" disabled>
+            <button class="btn btn-primary" id="btnSave" data-tour="t_pos_save" onclick="saveTransaksi()" disabled>
               💾 Simpan & Print Struk
             </button>
             <button class="btn btn-outline" onclick="resetForm()">

@@ -1930,3 +1930,20 @@ body::before{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area
 }
 @keyframes lmBoostShimmer{0%{background-position:180% 0}100%{background-position:-20% 0}}
 @media(prefers-reduced-motion:reduce){.lm-boost-badge{animation:none}}
+
+/* ── Product Tour cross-page (v2) — tambahan & override ── */
+.hl-tour-overlay { z-index: 9998; }
+.hl-tour-card { z-index: 9999; padding-top: 30px; }
+.hl-tour-x { position:absolute; top:8px; right:10px; background:none; border:none; font-size:15px; color:#9CA3AF; cursor:pointer; line-height:1; padding:2px 4px; }
+.hl-tour-x:hover { color:#374151; }
+.hl-tour-progress { font-size:11px; color:#9CA3AF; font-weight:600; margin:10px 0 12px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.hl-tour-odots { display:inline-flex; gap:5px; align-items:center; }
+.hl-tour-odot { width:7px; height:7px; border-radius:50%; background:#E5E9F2; display:inline-block; transition:all .2s; }
+.hl-tour-odot.done { background:#0F7B6C; }
+.hl-tour-odot.active { background:#35E8D5; width:18px; border-radius:4px; }
+.hl-tour-actions { display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap; margin-top:4px; }
+.hl-tour-back { background:none; border:none; color:#6B7280; font-size:12.5px; font-weight:600; cursor:pointer; padding:6px; }
+.hl-tour-back:hover { color:#374151; }
+.hl-tour-fin { background:#0F7B6C !important; }
+.hl-tour-confetti { position:fixed; top:-14px; width:9px; height:14px; border-radius:2px; z-index:10000; pointer-events:none; animation:hlTourFall 2.2s linear forwards; }
+@keyframes hlTourFall { to { transform:translateY(106vh) rotate(720deg); opacity:.25; } }

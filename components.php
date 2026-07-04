@@ -711,111 +711,210 @@ function renderGlobalJsHelpers(): void { ?>
     // PRODUCT TOUR — sidebar walkthrough untuk first-time user
     // Activates after outlet ready. Targets data-tour="<key>" elements.
     // ══════════════════════════════════════════════════════
-    window.HarpyTour = {
-      storageKey: 'harpy_tour_main_v1',
-      steps: [
-        { tour: 'dashboard', title: '📊 Dashboard',       body: 'Ringkasan omset, order aktif, pipeline produksi hari ini. Cek pagi-pagi sebelum mulai operasional.' },
-        { tour: 'pos',       title: '🛒 POS (Kasir)',      body: 'Input order baru dari pelanggan: pilih layanan, foto cucian, atur DP, cetak struk. Shortcut F3 untuk simpan.' },
-        { tour: 'orders',    title: '📋 Daftar Order',     body: 'Track semua order: status proses, pembayaran, riwayat. Bisa bulk-bayar lunas + bulk-kirim WA.' },
-        { tour: 'karyawan',  title: '👥 Karyawan',         body: 'Data karyawan, role akses, absensi, dan penggajian. Cocok untuk outlet dengan 2+ staff.' },
-        { tour: 'kas',       title: '💰 Kas',              body: 'Catat kas masuk/keluar harian. Auto-sync dengan order POS. Dasar laporan SAK EMKM.' },
-        { tour: 'laporan',   title: '📈 Laporan',          body: 'Laporan omset, kas, dan keuangan SAK EMKM bulanan. Export PDF/Excel untuk akuntan.' },
-      ],
-      visibleSteps: [],
-      current: 0,
-      active: false,
+    // ══════════════════════════════════════════════════════
+    // PRODUCT TOUR — spotlight per-halaman yang saling terhubung (cross-page)
+    // Alur: Dashboard → POS → Order → Kas → Produksi. State di sessionStorage.
+    // ══════════════════════════════════════════════════════
+    window.HarpyTour = (function(){
+      const KEY = 'lamasy_tour_state_v2';
+      const DONE = 'lamasy_tour_done_v2';
+      const SEQ  = ['dashboard','pos','orders','kas','produksi'];
+      const LBL  = {dashboard:'Dashboard', pos:'Kasir (POS)', orders:'Order', kas:'Kas', produksi:'Produksi'};
+      const URL  = {dashboard:'/dashboard', pos:'/pos', orders:'/orders', kas:'/kas', produksi:'/produksi'};
+      const STEP = {
+        dashboard: [
+          {t:'t_dash_summary', title:'📊 Command Center', body:'Ringkasan omzet & order hari ini langsung terlihat di sini — cek tiap pagi sebelum mulai operasional.'},
+          {t:'t_dash_ai',      title:'🤖 AI Briefing',    body:'Insight bisnis harian otomatis dari AI. Gratis selama trial — coba nanti ya!'},
+          {t:'t_dash_menu',    title:'🧭 Menu Operasional',body:'Semua fitur ada di menu ini. Kita keliling 5 halaman utama satu per satu.'},
+        ],
+        pos: [
+          {t:'t_pos_layanan',  title:'🧺 Pilih Layanan',   body:'Pilih layanan di sini — kiloan, satuan, dll. Sesuai yang kamu atur di menu Layanan.'},
+          {t:'t_pos_customer', title:'👤 Data Pelanggan',  body:'Isi atau pilih pelanggan. Mereka otomatis dapat portal tracking order.'},
+          {t:'t_pos_cart',     title:'🧾 Ringkasan Order',  body:'Item yang dipilih & total harga muncul di sini.'},
+          {t:'t_pos_save',     title:'💾 Simpan Order',     body:'Klik untuk selesaikan order. Struk otomatis tergenerate & bisa dicetak.'},
+        ],
+        orders: [
+          {t:'t_orders_table', title:'📋 Daftar Order',     body:'Semua order masuk terdaftar di sini — dari baru sampai selesai. Klik baris untuk detail / ubah status.'},
+          {t:'t_orders_filter',title:'🔍 Filter Order',     body:'Saring order berdasarkan status & pencarian biar gampang dilacak.'},
+        ],
+        kas: [
+          {t:'t_kas_saldo',    title:'💎 Saldo Kas',        body:'Pantau uang masuk, keluar, & saldo bersih outlet di sini.'},
+          {t:'t_kas_catat',    title:'✍️ Catat Kas',        body:'Catat pemasukan / pengeluaran manual — mis. beli deterjen atau bayar listrik.'},
+          {t:'t_kas_riwayat',  title:'📜 Riwayat Kas',      body:'Semua arus kas tercatat rapi, otomatis masuk laporan keuangan SAK EMKM.'},
+        ],
+        produksi: [
+          {t:'t_prod_list',    title:'🧺 Antrian Produksi', body:'Daftar cucian yang perlu dikerjakan — urut prioritas.'},
+          {t:'t_prod_stage',   title:'🔄 Tahap Produksi',   body:'Pilih tahap: cuci → kering → setrika → siap. Pelanggan lihat progress real-time.'},
+          {t:'t_prod_scan',    title:'📷 Scan QR',          body:'Scan QR di struk untuk update order super cepat, tanpa cari manual.'},
+        ],
+      };
 
-      shouldAutoStart() {
-        if (localStorage.getItem(this.storageKey)) return false;
-        if (window.innerWidth < 900) return false; // skip mobile (sidebar collapsed)
-        return !!document.querySelector('[data-tour]');
-      },
+      let steps=[], cur=0, page=null, curTarget=null;
 
-      start() {
-        if (this.active) return;
-        this.visibleSteps = this.steps.filter(s => document.querySelector(`[data-tour="${s.tour}"]`));
-        if (!this.visibleSteps.length) return;
-        this.current = 0;
-        this.active = true;
-        this.render();
-      },
-
-      render() {
-        this.destroy();
-        const step = this.visibleSteps[this.current];
-        const target = document.querySelector(`[data-tour="${step.tour}"]`);
-        if (!target) { this.next(); return; }
-
-        // Auto-expand parent collapsible group jika ada
-        const groupItems = target.closest('[data-group-items]');
-        if (groupItems) {
-          const gKey = groupItems.dataset.groupItems;
-          const toggle = document.querySelector(`.ol-side-group-toggle[data-group="${gKey}"]`);
-          if (toggle) {
-            const items = document.querySelector(`[data-group-items="${gKey}"]`);
-            if (items && items.style.maxHeight === '0px') {
-              items.style.maxHeight = items.scrollHeight + 'px';
-            }
-          }
-        }
-
-        target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        // Tunggu scroll selesai, baru position card
-        setTimeout(() => {
-          const rect = target.getBoundingClientRect();
-          const overlay = document.createElement('div');
-          overlay.className = 'hl-tour-overlay';
-          overlay.id = 'hlTourOverlay';
-          overlay.innerHTML = `
-            <div class="hl-tour-spotlight" style="top:${rect.top-6}px;left:${rect.left-6}px;width:${rect.width+12}px;height:${rect.height+12}px"></div>
-            <div class="hl-tour-card" style="top:${rect.top}px;left:${rect.right+20}px">
-              <div class="hl-tour-arrow"></div>
-              <div class="hl-tour-title">${step.title}</div>
-              <div class="hl-tour-body">${step.body}</div>
-              <div class="hl-tour-actions">
-                <button class="hl-tour-skip" onclick="HarpyTour.skip()">Skip</button>
-                <div class="hl-tour-dots">
-                  ${this.visibleSteps.map((_,i) => `<span class="hl-tour-dot${i===this.current?' active':''}"></span>`).join('')}
-                </div>
-                ${this.current < this.visibleSteps.length-1
-                  ? `<button class="hl-tour-next" onclick="HarpyTour.next()">Next →</button>`
-                  : `<button class="hl-tour-next" onclick="HarpyTour.finish()">Selesai ✓</button>`}
-              </div>
-            </div>`;
-          document.body.appendChild(overlay);
-        }, 250);
-      },
-
-      next() { if (this.current < this.visibleSteps.length-1) { this.current++; this.render(); } else { this.finish(); } },
-
-      skip() {
-        localStorage.setItem(this.storageKey, '1');
-        this.destroy();
-        this.active = false;
-      },
-
-      finish() {
-        localStorage.setItem(this.storageKey, '1');
-        this.destroy();
-        this.active = false;
-        // Toast konfirmasi
-        if (typeof showToast === 'function') showToast('Tour selesai ✓ Replay kapan saja via tombol "Tour Sistem"', 'success');
-      },
-
-      replay() {
-        localStorage.removeItem(this.storageKey);
-        this.start();
-      },
-
-      destroy() { const o = document.getElementById('hlTourOverlay'); if (o) o.remove(); }
-    };
-
-    // Auto-start setelah load + delay (kasih waktu sidebar render)
-    document.addEventListener('DOMContentLoaded', () => {
-      if (HarpyTour.shouldAutoStart()) {
-        setTimeout(() => HarpyTour.start(), 1000);
+      const S = {
+        get(){ try{ return JSON.parse(sessionStorage.getItem(KEY)); }catch(e){ return null; } },
+        set(s){ try{ sessionStorage.setItem(KEY, JSON.stringify(s)); }catch(e){} },
+        clear(){ try{ sessionStorage.removeItem(KEY); }catch(e){} }
+      };
+      function thisPage(){ return (document.body && document.body.dataset.tourPage) || null; }
+      function idxOf(p){ return SEQ.indexOf(p); }
+      function track(done, last){
+        try{ fetch('/dashboard.php?action=tour_track', {method:'POST', headers:{'Content-Type':'application/json','X-CSRF-Token':(typeof csrfToken==='function'?csrfToken():'')}, body:JSON.stringify({done:done?1:0, last_page:last||page||''})}); }catch(e){}
       }
-    });
+
+      function startPage(){
+        page = thisPage();
+        if(!page || !STEP[page]) return;
+        steps = STEP[page].filter(s => document.querySelector('[data-tour="'+s.t+'"]'));
+        if(!steps.length){ goNextPage(); return; } // tak ada target di halaman ini → lewati
+        const st = S.get();
+        cur = Math.min((st && st.current_page===page ? (st.page_step||0) : 0), steps.length-1);
+        render();
+      }
+
+      function saveStep(){
+        const st = S.get() || {completed_pages:[]};
+        st.tour_active = true; st.current_page = page; st.page_step = cur;
+        st.completed_pages = st.completed_pages || [];
+        S.set(st);
+      }
+
+      function dots(){
+        const st = S.get() || {completed_pages:[]};
+        return SEQ.map(p => {
+          const done = (st.completed_pages||[]).includes(p);
+          const active = p===page;
+          return '<span class="hl-tour-odot'+(done?' done':'')+(active?' active':'')+'" title="'+LBL[p]+'"></span>';
+        }).join('');
+      }
+
+      function render(){
+        destroy();
+        const step = steps[cur];
+        const target = document.querySelector('[data-tour="'+step.t+'"]');
+        if(!target){ if(cur<steps.length-1){ cur++; render(); } else { goNextPage(); } return; }
+        curTarget = target;
+        // buka grup sidebar kalau target di dalam grup collapsible
+        const gi = target.closest('[data-group-items]');
+        if(gi){ const items = gi; if(items.classList.contains('ol-side-collapsed')) items.classList.remove('ol-side-collapsed'); }
+        target.scrollIntoView({behavior:'smooth', block:'center'});
+        setTimeout(()=>paint(step), 340);
+      }
+
+      function paint(step){
+        const idx = idxOf(page), nextPage = SEQ[idx+1], nextLbl = nextPage ? LBL[nextPage] : null;
+        const isLast = cur===steps.length-1;
+        const backBtn = cur>0 ? '<button class="hl-tour-back" onclick="HarpyTour.back()">← Kembali</button>' : '<span></span>';
+        let mainBtn;
+        if(!isLast) mainBtn = '<button class="hl-tour-next" onclick="HarpyTour.next()">Lanjut →</button>';
+        else if(nextLbl) mainBtn = '<button class="hl-tour-next" onclick="HarpyTour.goNextPage()">Lanjut ke '+nextLbl+' →</button>';
+        else mainBtn = '<button class="hl-tour-next hl-tour-fin" onclick="HarpyTour.finish()">Selesai 🎉</button>';
+
+        const ov = document.createElement('div');
+        ov.className='hl-tour-overlay'; ov.id='hlTourOverlay';
+        ov.innerHTML =
+          '<div class="hl-tour-spotlight" id="hlTourHole"></div>'+
+          '<div class="hl-tour-card" id="hlTourCard">'+
+            '<button class="hl-tour-x" onclick="HarpyTour.close()" title="Tutup tour">✕</button>'+
+            '<div class="hl-tour-title">'+step.title+'</div>'+
+            '<div class="hl-tour-body">'+step.body+'</div>'+
+            '<div class="hl-tour-progress">Langkah '+(cur+1)+' dari '+steps.length+' <span class="hl-tour-odots">'+dots()+'</span></div>'+
+            '<div class="hl-tour-actions">'+backBtn+
+              '<button class="hl-tour-skip" onclick="HarpyTour.skipPage()">Lewati halaman</button>'+
+              mainBtn+
+            '</div>'+
+          '</div>';
+        document.body.appendChild(ov);
+        reposition();
+        saveStep();
+      }
+
+      function reposition(){
+        const ov = document.getElementById('hlTourOverlay'); if(!ov || !curTarget) return;
+        const r = curTarget.getBoundingClientRect(), pad=8;
+        const hole = document.getElementById('hlTourHole');
+        hole.style.top=(r.top-pad)+'px'; hole.style.left=(r.left-pad)+'px';
+        hole.style.width=(r.width+pad*2)+'px'; hole.style.height=(r.height+pad*2)+'px';
+        const card = document.getElementById('hlTourCard');
+        const vw=innerWidth, vh=innerHeight, cw=card.offsetWidth, ch=card.offsetHeight, gap=16;
+        let top, left, arrow;
+        if(r.right+gap+cw <= vw){ left=r.right+gap; top=clamp(r.top, 12, vh-ch-12); arrow='left'; }
+        else if(r.left-gap-cw >= 0){ left=r.left-gap-cw; top=clamp(r.top, 12, vh-ch-12); arrow='right'; }
+        else if(r.bottom+gap+ch <= vh){ top=r.bottom+gap; left=clamp(r.left, 12, vw-cw-12); arrow='top'; }
+        else { top=clamp(r.top-gap-ch, 12, vh-ch-12); left=clamp(r.left, 12, vw-cw-12); arrow='bottom'; }
+        card.style.top=top+'px'; card.style.left=left+'px'; card.setAttribute('data-arrow', arrow);
+      }
+      function clamp(v,a,b){ return Math.max(a, Math.min(b, v)); }
+
+      function next(){ if(cur<steps.length-1){ cur++; render(); } else { goNextPage(); } }
+      function back(){ if(cur>0){ cur--; render(); } }
+
+      function goNextPage(){
+        const st = S.get() || {completed_pages:[]};
+        st.completed_pages = st.completed_pages || [];
+        if(page && !st.completed_pages.includes(page)) st.completed_pages.push(page);
+        const idx = idxOf(page), nextPage = SEQ[idx+1];
+        if(!nextPage){ finish(); return; }
+        st.tour_active=true; st.current_page=nextPage; st.page_step=0;
+        S.set(st);
+        destroy();
+        window.location.href = URL[nextPage];
+      }
+      function skipPage(){ goNextPage(); }
+
+      function finish(){
+        const st = S.get() || {completed_pages:[]};
+        (st.completed_pages||[]).indexOf(page)<0 && page && st.completed_pages.push(page);
+        S.clear();
+        try{ localStorage.setItem(DONE, '1'); }catch(e){}
+        destroy();
+        confetti();
+        if(typeof showToast==='function') showToast('Tur selesai 🎉 Replay kapan saja via tombol "Tour Sistem".','success');
+        track(true, 'produksi');
+      }
+      function close(){
+        S.clear();
+        try{ localStorage.setItem(DONE, '1'); }catch(e){}
+        track(false, page);
+        destroy();
+      }
+      function replay(){
+        try{ localStorage.removeItem(DONE); }catch(e){}
+        S.set({tour_active:true, current_page:'dashboard', page_step:0, completed_pages:[]});
+        if(thisPage()==='dashboard') startPage(); else window.location.href='/dashboard';
+      }
+      function destroy(){ const o=document.getElementById('hlTourOverlay'); if(o) o.remove(); }
+
+      function confetti(){
+        const cols=['#35E8D5','#0F7B6C','#F59E0B','#EF4444','#3B82F6','#A78BFA'];
+        for(let i=0;i<30;i++){ const d=document.createElement('div'); d.className='hl-tour-confetti';
+          d.style.left=Math.random()*100+'vw'; d.style.background=cols[i%cols.length];
+          d.style.animationDelay=(Math.random()*0.3)+'s'; d.style.transform='rotate('+(Math.random()*360)+'deg)';
+          document.body.appendChild(d); setTimeout(()=>d.remove(), 2400); }
+      }
+
+      // offer pertama kali (di dashboard, desktop, sekali)
+      async function offer(){
+        if(typeof lmConfirm!=='function'){ return; }
+        const ok = await lmConfirm('Mau lihat tur fitur LaMaSy? Sekitar 2 menit keliling 5 halaman utama (Dashboard, POS, Order, Kas, Produksi).', {okText:'Mulai tur', cancelText:'Nanti saja'});
+        if(ok) replay(); else { try{ localStorage.setItem(DONE,'1'); }catch(e){} }
+      }
+
+      let _rt;
+      window.addEventListener('resize', ()=>{ clearTimeout(_rt); _rt=setTimeout(reposition,120); });
+      window.addEventListener('scroll', ()=>{ clearTimeout(_rt); _rt=setTimeout(reposition,60); }, true);
+
+      document.addEventListener('DOMContentLoaded', ()=>{
+        const st = S.get();
+        if(st && st.tour_active && st.current_page===thisPage()){
+          setTimeout(startPage, 600);
+        } else if(thisPage()==='dashboard' && window.innerWidth>=900 && !st){
+          try{ if(!localStorage.getItem(DONE)) setTimeout(offer, 1400); }catch(e){}
+        }
+      });
+
+      return { next, back, goNextPage, skipPage, finish, close, replay, start: startPage };
+    })();
 
     // ── PWA install prompt (Android Chrome) ──
     window._deferredInstallPrompt = null;
@@ -1080,7 +1179,7 @@ function renderTopbar(string $activePage = '', bool $minimalMode = false): void 
         </div>
 
         <?php if (!$minimalMode): ?>
-        <nav class="ol-side-nav">
+        <nav class="ol-side-nav" data-tour="t_dash_menu">
           <?php foreach ($navGroups as $groupKey => $group):
             if (!groupVisible($group, $user)) continue;
             $visibleItems = array_filter($group['items'], fn($i) => navItemVisible($i, $user));
@@ -1113,7 +1212,7 @@ function renderTopbar(string $activePage = '', bool $minimalMode = false): void 
         </nav>
 
         <?php if (!$minimalMode): ?>
-        <button type="button" class="hl-tour-replay-btn" onclick="HarpyTour.replay()" title="Walkthrough fitur sidebar">
+        <button type="button" class="hl-tour-replay-btn" onclick="HarpyTour.replay()" title="Tur keliling 5 halaman operasional utama">
           <span>💡</span> Tour Sistem
         </button>
         <?php endif; ?>

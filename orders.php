@@ -1200,7 +1200,7 @@ textarea{resize:vertical;min-height:64px}
 }
 </style>
 </head>
-<body>
+<body data-tour-page="orders">
 <?php if (($_GET['embed'] ?? '') === 'detail'): ?>
 <style>/* embed dari Kanban: sembunyikan chrome, tampilkan modal detail saja */
   .topbar, .ol-bottomnav, .pos-mobile-cta { display:none !important; }
@@ -1242,7 +1242,7 @@ textarea{resize:vertical;min-height:64px}
 
   <!-- FILTER -->
   <div class="hl-filter-collapsible">
-    <button class="hl-filter-toggle-btn" id="orderFilterBtn" onclick="toggleFilter('orderFilter')">
+    <button class="hl-filter-toggle-btn" id="orderFilterBtn" data-tour="t_orders_filter" onclick="toggleFilter('orderFilter')">
       🔍 Filter &amp; Pencarian <span class="hl-filter-active-dot" id="orderFilterDot"></span>
       <span class="hl-toggle-arrow">▼</span>
     </button>
@@ -1332,7 +1332,7 @@ textarea{resize:vertical;min-height:64px}
             <th>Aksi</th>
           </tr>
         </thead>
-        <tbody id="tableBody">
+        <tbody id="tableBody" data-tour="t_orders_table">
           <tr><td colspan="11"><div class="loading">⏳ Memuat data...</div></td></tr>
         </tbody>
       </table>

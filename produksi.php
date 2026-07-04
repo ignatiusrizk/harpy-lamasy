@@ -328,7 +328,7 @@ $pageTitle  = '🧺 Produksi';
 @media (max-width:480px){.scan-fab{right:16px;bottom:calc(80px + env(safe-area-inset-bottom,0px));width:56px;height:56px;font-size:23px}}
 </style>
 </head>
-<body>
+<body data-tour-page="produksi">
 <?php renderTopbar($activePage); ?>
 
 <main class="ol-main">
@@ -337,7 +337,7 @@ $pageTitle  = '🧺 Produksi';
 
     <!-- Stage tabs -->
     <label style="display:block;font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px">Tahap Produksi</label>
-    <div id="stageDD" class="stage-dd">
+    <div id="stageDD" data-tour="t_prod_stage" class="stage-dd">
       <button type="button" class="stage-dd-btn" onclick="toggleStageDD(event)">
         <span id="stageDDLabel">📥 Terima</span>
         <span class="stage-dd-caret">▾</span>
@@ -353,7 +353,7 @@ $pageTitle  = '🧺 Produksi';
     </div>
 
     <!-- Card list -->
-    <div id="cardList" style="display:grid;gap:10px;grid-template-columns:1fr">
+    <div id="cardList" data-tour="t_prod_list" style="display:grid;gap:10px;grid-template-columns:1fr">
       <div style="text-align:center;padding:40px;color:var(--gray)">⏳ Memuat...</div>
     </div>
 
@@ -378,7 +378,7 @@ $pageTitle  = '🧺 Produksi';
   </div>
 </main>
 
-<button class="scan-fab" onclick="startScan()" aria-label="Scan QR Order" title="Scan QR Order">📷</button>
+<button class="scan-fab" data-tour="t_prod_scan" onclick="startScan()" aria-label="Scan QR Order" title="Scan QR Order">📷</button>
 <!-- Kamera native utk scan QR (andal di WebView) + area decode tersembunyi -->
 <input type="file" id="qrPhoto" accept="image/*" capture="environment" style="display:none" onchange="onQrPhoto(this)">
 <div id="qrScanArea" style="display:none"></div>
