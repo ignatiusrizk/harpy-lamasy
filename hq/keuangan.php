@@ -18,6 +18,12 @@ $user    = currentUser();
 $uid     = (int) ($user['id'] ?? 0);
 $csrf    = getCsrfToken();
 
+// ── Stickiness (Strategi #5): catat owner buka laporan keuangan (full-page only) ──
+if (empty($_SERVER['HTTP_X_REQUESTED_WITH']) || ($_SERVER['HTTP_SEC_FETCH_MODE'] ?? '') === 'navigate') {
+    require_once ROOT . '/core/StickinessTracker.php';
+    StickinessTracker::logEvent($tid, 'viewed_financial_report');
+}
+
 // ── AJAX Handler ───────────────────────────────────────────────
 if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && ($_SERVER['HTTP_SEC_FETCH_MODE'] ?? '') !== 'navigate') {
     header('Content-Type: application/json');

@@ -219,4 +219,13 @@ try {
     clog('trial_nurture FAIL: ' . $e->getMessage());
 }
 
+// ── 8. Stickiness Score snapshot (Strategi #5) ──────
+try {
+    require_once ROOT . '/core/StickinessTracker.php';
+    $stk = StickinessTracker::snapshotAllTrials();
+    clog("stickiness: snapshot $stk tenant trial");
+} catch (Throwable $e) {
+    clog('stickiness FAIL: ' . $e->getMessage());
+}
+
 clog('=== trial_lifecycle.php DONE ===');

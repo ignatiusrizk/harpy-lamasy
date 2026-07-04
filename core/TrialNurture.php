@@ -23,6 +23,7 @@
 require_once __DIR__ . '/Database.php';
 require_once __DIR__ . '/Mailer.php';
 require_once __DIR__ . '/Notifier.php';
+require_once __DIR__ . '/StickinessTracker.php';
 
 class TrialNurture
 {
@@ -172,11 +173,15 @@ class TrialNurture
                     "Aktifkan sekarang", "/billing.php"));
         }
         if ($day >= 5) {
+            // Stickiness (Strategi #5): kalau score<3, sisipkan SATU saran aksi termudah
+            // ke email H5 ini — jangan kirim WA/email terpisah (anti double-nudge).
+            $stickyTip = self::stickyTip((int)$o['tenant_id']);
             return self::tp('trial_h5_lossaversion', "2 hari lagi — data outlet kamu akan terkunci ⚠️",
                 self::body($owner,
                     "<p>Trial <strong>".self::e($namaOutlet)."</strong> tinggal <strong>2 hari</strong> lagi.</p>
-                     <p>Kamu sudah menginput ".self::dataPhrase($nTrx,$nCust).". <strong>Sayang kalau terkunci</strong> begitu trial habis.</p>
-                     <p>Aktifkan outlet supaya semua data &amp; fitur tetap jalan tanpa putus.</p>",
+                     <p>Kamu sudah menginput ".self::dataPhrase($nTrx,$nCust).". <strong>Sayang kalau terkunci</strong> begitu trial habis.</p>"
+                     . $stickyTip .
+                    "<p>Aktifkan outlet supaya semua data &amp; fitur tetap jalan tanpa putus.</p>",
                     "Aktifkan sekarang", "/billing.php"));
         }
         if ($day >= 3) {
@@ -235,6 +240,25 @@ class TrialNurture
         if ($nTrx  > 0) $parts[] = "<strong>$nTrx transaksi</strong>";
         if ($nCust > 0) $parts[] = "<strong>$nCust pelanggan</strong>";
         return $parts ? 'data '.implode(' &amp; ', $parts) : 'semua data outlet';
+    }
+
+    /** Satu saran aksi termudah utk kriteria stickiness yang belum terpenuhi (Strategi #5). '' kalau score≥3. */
+    private static function stickyTip(int $tenantId): string
+    {
+        try {
+            $stk = StickinessTracker::calculate($tenantId);
+            if ($stk['score'] >= 3) return '';
+            $c = $stk['criteria'];
+            if (empty($c['portal_token']))
+                return "<p>💡 <strong>Tip cepat:</strong> pelangganmu bisa lacak order sendiri — kirim 1 link tracking dari menu Customer, cukup semenit.</p>";
+            if (empty($c['laporan_dilihat']))
+                return "<p>💡 <strong>Tip cepat:</strong> sudah lihat Laporan L/R &amp; Neraca otomatismu? Buka menu Keuangan — laporan sudah jadi tanpa hitung manual.</p>";
+            if (empty($c['staf_aktif']))
+                return "<p>💡 <strong>Tip cepat:</strong> ajak 1 stafmu coba sistem ini (tambah akun di menu Pengguna) biar tim ikut terbiasa.</p>";
+            if (empty($c['data_ada']))
+                return "<p>💡 <strong>Tip cepat:</strong> tambah beberapa transaksi &amp; customer lagi biar laporan bisnismu makin akurat.</p>";
+        } catch (Throwable $e) { error_log('[TrialNurture::stickyTip] '.$e->getMessage()); }
+        return '';
     }
 
     // ── Data helpers ──
