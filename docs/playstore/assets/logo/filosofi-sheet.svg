@@ -1,0 +1,63 @@
+<svg width="1200" height="820" viewBox="0 0 1200 820" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="820" fill="#F7FAFC"/>
+
+  <!-- header -->
+  <text x="70" y="86" font-family="Arial" font-weight="bold" font-size="44" fill="#0F1C3A">Filosofi Logo LAMASY</text>
+  <text x="72" y="126" font-family="Arial" font-size="22" fill="#5A6678">Satu tetesan yang jatuh, lalu menemukan tempatnya.</text>
+  <rect x="72" y="146" width="120" height="4" rx="2" fill="#35E8D5"/>
+
+  <!-- MARK: navy tile + L droplet -->
+  <rect x="120" y="220" width="340" height="340" rx="82" fill="#0F1C3A"/>
+  <g transform="translate(122,232) scale(0.664)">
+    <path d="M172 172 a58 58 0 0 1 116 0 v148 a26 26 0 0 1 -26 26 h-64 a26 26 0 0 1 -26 -26 z" fill="#FFFFFF"/>
+    <rect x="172" y="298" width="196" height="60" rx="30" fill="#FFFFFF"/>
+    <circle cx="230" cy="160" r="27" fill="#35E8D5"/>
+  </g>
+
+  <!-- callout lines + target dots -->
+  <g stroke="#B7C0CE" stroke-width="2" fill="none">
+    <path d="M270 300 H600"/>
+    <path d="M300 360 H600"/>
+    <path d="M300 470 H600"/>
+    <path d="M380 520 H600"/>
+  </g>
+  <g fill="#35E8D5">
+    <circle cx="270" cy="300" r="5"/><circle cx="300" cy="360" r="5"/>
+    <circle cx="300" cy="470" r="5"/><circle cx="380" cy="520" r="5"/>
+  </g>
+
+  <!-- labels -->
+  <g font-family="Arial">
+    <text x="616" y="292" font-weight="bold" font-size="22" fill="#0F1C3A">Bulir aqua</text>
+    <text x="616" y="320" font-size="18" fill="#5A6678">Jendela mesin cuci + percikan AI</text>
+
+    <text x="616" y="352" font-weight="bold" font-size="22" fill="#0F1C3A">Kepala tetesan</text>
+    <text x="616" y="380" font-size="18" fill="#5A6678">Bulir air, sesaat sebelum jatuh</text>
+
+    <text x="616" y="462" font-weight="bold" font-size="22" fill="#0F1C3A">Batang</text>
+    <text x="616" y="490" font-size="18" fill="#5A6678">Gerak jatuh — membentuk huruf L</text>
+
+    <text x="616" y="512" font-weight="bold" font-size="22" fill="#0F1C3A">Permukaan</text>
+    <text x="616" y="540" font-size="18" fill="#5A6678">Tetesan mendarat &amp; menyebar → tertata</text>
+  </g>
+
+  <!-- one-liner story -->
+  <text x="70" y="640" font-family="Arial" font-size="20" fill="#374151">Satu bentuk, dua makna: inisial </text>
+  <text x="366" y="640" font-family="Arial" font-weight="bold" font-size="20" fill="#0F7B6C">L</text>
+  <text x="378" y="640" font-family="Arial" font-size="20" fill="#374151"> untuk LAMASY, dan tetesan air — inti dunia laundry.</text>
+
+  <!-- palette -->
+  <g font-family="Arial">
+    <rect x="70"  y="690" width="150" height="70" rx="14" fill="#0F1C3A"/>
+    <text x="82" y="726" font-weight="bold" font-size="17" fill="#FFFFFF">Navy</text>
+    <text x="82" y="748" font-size="14" fill="#9FB0C4">#0F1C3A · fondasi</text>
+
+    <rect x="236" y="690" width="150" height="70" rx="14" fill="#0F7B6C"/>
+    <text x="248" y="726" font-weight="bold" font-size="17" fill="#FFFFFF">Teal</text>
+    <text x="248" y="748" font-size="14" fill="#CFF3EC">#0F7B6C · air</text>
+
+    <rect x="402" y="690" width="150" height="70" rx="14" fill="#35E8D5"/>
+    <text x="414" y="726" font-weight="bold" font-size="17" fill="#0F1C3A">Aqua</text>
+    <text x="414" y="748" font-size="14" fill="#0B5A50">#35E8D5 · AI</text>
+  </g>
+</svg>
