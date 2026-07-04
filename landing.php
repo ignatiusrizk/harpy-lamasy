@@ -1095,22 +1095,6 @@ img { max-width: 100%; }
 <?php endif; ?>
 </head>
 <body>
-<div class="hl-beta-banner">
-  🌱 <strong>Beta Access Program</strong> · 50 slot early adopter pertama dapat bonus 100K coin (≈3 bulan AI briefing gratis). Sisa: <span id="hlBetaSlots">47</span> slot
-</div>
-
-<script>
-(function(){
-  fetch('/assets/beta-slots.json?t=' + Date.now())
-    .then(function(r){ return r.json(); })
-    .then(function(d){
-      var el = document.getElementById('hlBetaSlots');
-      if (el && d.remaining !== undefined) el.textContent = d.remaining;
-    })
-    .catch(function(){ /* fallback to static 47 */ });
-})();
-</script>
-
 <div class="bg-grid"></div>
 
 <!-- ── NAVBAR ──────────────────────────────────────── -->
