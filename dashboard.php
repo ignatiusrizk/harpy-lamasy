@@ -931,11 +931,13 @@ if(localStorage.getItem('lamasy_tutorial_done')){
 // ── Status banners (trial / grace) ────────────────────
 $banners = TenantResolver::getBannerInfo();
 foreach ($banners as $b):
-    $bg = $b['type'] === 'warning'
-        ? 'linear-gradient(90deg,#FEF3C7,#FDE68A)'
-        : 'linear-gradient(90deg,#DBEAFE,#BFDBFE)';
-    $border = $b['type'] === 'warning' ? '#F59E0B' : '#3B82F6';
-    $color  = $b['type'] === 'warning' ? '#92400E' : '#1E40AF';
+    if ($b['type'] === 'danger') {
+        $bg = 'linear-gradient(90deg,#FEE2E2,#FECACA)'; $border = '#EF4444'; $color = '#991B1B';
+    } elseif ($b['type'] === 'warning') {
+        $bg = 'linear-gradient(90deg,#FEF3C7,#FDE68A)'; $border = '#F59E0B'; $color = '#92400E';
+    } else {
+        $bg = 'linear-gradient(90deg,#DBEAFE,#BFDBFE)'; $border = '#3B82F6'; $color = '#1E40AF';
+    }
 ?>
 <div style="background:<?= $bg ?>;border-left:4px solid <?= $border ?>;
             color:<?= $color ?>;padding:10px 16px;border-radius:8px;

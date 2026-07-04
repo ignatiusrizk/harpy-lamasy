@@ -611,23 +611,49 @@ class TenantResolver
     {
         $banners = [];
 
+        // Grace period (trial sudah lewat, H8-10) — loss aversion MERAH + angka nyata.
         if (self::isGraceMode()) {
             $days = self::graceDaysLeft();
+            [$nTrx, $nCust] = self::trialDataCounts();
             $banners[] = [
-                'type'    => 'warning',
-                'message' => "⚠️ Outlet dalam grace period. Sisa <strong>$days hari</strong> sebelum ditangguhkan. "
+                'type'    => 'danger',
+                'message' => "🔴 <strong>Masa tenggang tinggal $days hari.</strong> "
+                           . self::lockPhrase($nTrx, $nCust)
+                           . " akan <strong>terkunci</strong> kalau outlet belum diaktifkan. "
                            . "<a href='/billing.php'>Aktifkan sekarang →</a>",
             ];
         } elseif (self::isTrial()) {
-            $days      = self::trialDaysLeft();
+            $day       = self::trialDay();
+            $daysLeft  = self::trialDaysLeft();
             $trialCoin = self::trialCoinBalance();
-            if ($days <= 3) {
+
+            // Brief 3 — loss aversion: H7+ MERAH, H5-6 KUNING, dgn angka transaksi+customer.
+            if ($day >= 7 || $daysLeft <= 0) {
+                [$nTrx, $nCust] = self::trialDataCounts();
+                $banners[] = [
+                    'type'    => 'danger',
+                    'message' => "🔴 <strong>Trial berakhir hari ini!</strong> "
+                               . self::lockPhrase($nTrx, $nCust)
+                               . " akan terkunci tengah malam. "
+                               . "<a href='/billing.php'>Aktifkan sekarang →</a>",
+                ];
+            } elseif ($day >= 5) {
+                [$nTrx, $nCust] = self::trialDataCounts();
                 $banners[] = [
                     'type'    => 'warning',
-                    'message' => "⏰ Trial berakhir dalam <strong>$days hari</strong>. "
+                    'message' => "⏰ <strong>$daysLeft hari lagi</strong> trial berakhir. "
+                               . self::lockPhrase($nTrx, $nCust)
+                               . " akan terkunci — sayang kalau hilang. "
+                               . "<a href='/billing.php'>Aktifkan sekarang →</a>",
+                ];
+            } elseif ($daysLeft <= 3) {
+                $banners[] = [
+                    'type'    => 'warning',
+                    'message' => "⏰ Trial berakhir dalam <strong>$daysLeft hari</strong>. "
                                . "<a href='/billing.php'>Upgrade sekarang →</a>",
                 ];
             }
+
             if ($trialCoin < 1000) {
                 $banners[] = [
                     'type'    => 'info',
@@ -638,6 +664,31 @@ class TenantResolver
         }
 
         return $banners;
+    }
+
+    /** [jumlah transaksi, jumlah pelanggan] outlet/tenant aktif — untuk banner loss-aversion. */
+    private static function trialDataCounts(): array
+    {
+        try {
+            $db  = Database::get();
+            $tid = self::id();
+            $oid = self::outletId();
+            $t = $db->prepare("SELECT COUNT(*) FROM hl_transaksi WHERE tenant_id=? AND outlet_id=?");
+            $t->execute([$tid, $oid]);
+            $c = $db->prepare("SELECT COUNT(*) FROM hl_pelanggan WHERE tenant_id=?");
+            $c->execute([$tid]);
+            return [(int)$t->fetchColumn(), (int)$c->fetchColumn()];
+        } catch (Throwable) { return [0, 0]; }
+    }
+
+    /** Frasa "Data X transaksi & Y pelanggan" untuk banner. */
+    private static function lockPhrase(int $nTrx, int $nCust): string
+    {
+        $parts = [];
+        if ($nTrx  > 0) $parts[] = "<strong>$nTrx transaksi</strong>";
+        if ($nCust > 0) $parts[] = "<strong>$nCust pelanggan</strong>";
+        if (!$parts) return "Semua data outlet";
+        return "Data " . implode(' & ', $parts);
     }
 
     // ── Halaman suspended ─────────────────────────────
