@@ -187,7 +187,12 @@ class StrukGenerator
                         CoinLedger::deduct(self::COIN_B2B, $ref);
                     }
                 } else {
-                    CoinLedger::deduct(self::COIN_RETAIL, (string)$transaksiId);
+                    // Retail: bayar sekali per NO NOTA — cetak ulang gratis
+                    // (selaras positioning "print gratis": charge = biaya nota, bukan biaya cetak)
+                    $refR = (string)$transaksiId;
+                    if (!CoinLedger::hasCharged([self::COIN_RETAIL], $refR)) {
+                        CoinLedger::deduct(self::COIN_RETAIL, $refR);
+                    }
                 }
             }
             catch (Throwable $e) { if (class_exists('ErrorLogger')) ErrorLogger::logException('coin_deduct', $e); }
