@@ -178,7 +178,8 @@ class CoinLedger
         return (int)($m->fetchColumn() ?: 0);
     }
 
-    // ── Cek saldo utk fitur HQ-level (tidak pakai trial coin) ──
+    // ── Cek saldo utk fitur HQ-level. Selama trial → pakai trial_coin_balance dulu
+    //    (konsisten dgn topbar & deduct() outlet-level); baru fallback pool berbayar. ──
     public static function canAffordHq(string $feature, ?int $overrideCost = null): bool
     {
         if (!self::isFeatureActive($feature)) return false;
@@ -186,6 +187,12 @@ class CoinLedger
         if ($cost === 0) return true;
         $tenantId = TenantResolver::id();
         $db = Database::get();
+        // Outlet trial: honor trial coin dulu (dulu diabaikan → fitur AI HQ selalu tolak saat trial)
+        $outlet = TenantResolver::getOutlet();
+        if (!empty($outlet) && ($outlet['status'] ?? '') === 'trial'
+            && (int)($outlet['trial_coin_balance'] ?? 0) >= $cost) {
+            return true;
+        }
         if (TenantResolver::isSharedCoin()) {
             $s = $db->prepare("SELECT coin_balance FROM tenants WHERE id=? LIMIT 1");
             $s->execute([$tenantId]);
@@ -210,6 +217,29 @@ class CoinLedger
         $db = Database::get();
         $db->beginTransaction();
         try {
+            // ── Trial: potong trial_coin_balance outlet dulu (konsisten dgn deduct()) ──
+            $outlet   = TenantResolver::getOutlet();
+            $outletId = TenantResolver::outletId();
+            if (!empty($outlet) && ($outlet['status'] ?? '') === 'trial'
+                && (int)($outlet['trial_coin_balance'] ?? 0) > 0) {
+                $stmt = $db->prepare("SELECT trial_coin_balance FROM outlets WHERE id=? AND tenant_id=? FOR UPDATE");
+                $stmt->execute([$outletId, $tenantId]);
+                $trial = (int)($stmt->fetch()['trial_coin_balance'] ?? 0);
+                if ($trial >= $cost) {
+                    $newTrial = $trial - $cost;
+                    $db->prepare("UPDATE outlets SET trial_coin_balance=? WHERE id=? AND tenant_id=?")
+                       ->execute([$newTrial, $outletId, $tenantId]);
+                    $db->prepare("INSERT INTO coin_ledger
+                          (tenant_id, outlet_id, type, amount, feature_used, description, balance_after, ref_id)
+                        VALUES (?,?, 'deduct', ?, ?, ?, ?, ?)")
+                       ->execute([$tenantId, $outletId, $cost, $feature, '[TRIAL] Fitur HQ: '.$feature, $newTrial, $refId]);
+                    $db->commit();
+                    $_SESSION['tenant_coin_balance'] = $newTrial;
+                    TenantResolver::refresh();
+                    return true;
+                }
+                // trial kurang → lanjut potong dari pool berbayar di bawah
+            }
             if ($shared) {
                 $stmt = $db->prepare("SELECT coin_balance FROM tenants WHERE id=? FOR UPDATE");
                 $stmt->execute([$tenantId]);
