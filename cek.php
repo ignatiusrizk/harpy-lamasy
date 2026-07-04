@@ -45,17 +45,21 @@ function lookupOrder(string $noOrder, string $phoneLast4): ?array
                     (SELECT nama_perusahaan FROM tenants WHERE id=t.tenant_id) AS tenant_nama
                FROM hl_transaksi t
           LEFT JOIN outlets o ON o.id = t.outlet_id
-              WHERE t.no_order = ? LIMIT 1"
+              WHERE t.no_order = ?"
         );
         $st->execute([$noOrder]);
-        $trx = $st->fetch(PDO::FETCH_ASSOC);
-        if (!$trx) return null;
+        $rows = $st->fetchAll(PDO::FETCH_ASSOC);
+        if (!$rows) return null;
 
-        // Verify phone last 4 digits
-        $tPhone = preg_replace('/[^0-9]/', '', (string)($trx['telepon'] ?? ''));
-        if (substr($tPhone, -4) !== preg_replace('/[^0-9]/','',$phoneLast4)) {
-            return null;
+        // no_order hanya unik PER-tenant → bisa >1 baris lintas-tenant. Jangan pilih
+        // sembarang: kembalikan hanya baris yang 4 digit terakhir HP-nya cocok.
+        $want = preg_replace('/[^0-9]/', '', $phoneLast4);
+        $trx  = null;
+        foreach ($rows as $r) {
+            $tPhone = preg_replace('/[^0-9]/', '', (string)($r['telepon'] ?? ''));
+            if (substr($tPhone, -4) === $want) { $trx = $r; break; }
         }
+        if (!$trx) return null;
 
         // Status timeline
         $progresMap = ['masuk'=>10,'cuci'=>30,'kering'=>50,'setrika'=>70,'siap'=>90,'diambil'=>100];
