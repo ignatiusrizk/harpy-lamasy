@@ -63,41 +63,12 @@ if ($token) {
             $err = 'Gagal validasi. Coba lagi.';
         }
     }
-    // Record failed attempt
+    // Record failed attempt (token ada tapi invalid/not-found)
     $attempts[] = $now;
     $_SESSION[$rateKey] = $attempts;
 }
 
-?>
-<!doctype html>
-<html lang="id">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Portal Pelanggan — LAMASY</title>
-<style>
-body{margin:0;padding:40px 20px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:linear-gradient(135deg,#0F1C3A 0%,#1E3A8A 50%,#312E81 100%);min-height:100vh;color:#fff}
-.box{max-width:380px;margin:0 auto;background:#fff;color:#1E293B;border-radius:18px;padding:30px 24px;box-shadow:0 20px 60px rgba(0,0,0,.3);text-align:center}
-.brand{font-weight:800;color:#0F1C3A;margin-bottom:6px}
-.sub{color:#64748B;font-size:14px;margin-bottom:24px}
-.err{background:#FEE2E2;color:#991B1B;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:16px}
-.info{background:#EFF6FF;color:#1E40AF;padding:14px;border-radius:8px;font-size:13.5px;line-height:1.5;text-align:left}
-</style>
-</head>
-<body>
-<div class="box">
-  <h1 class="brand">🧺 LAMASY</h1>
-  <div class="sub">Portal Pelanggan</div>
-  <?php if ($err): ?>
-    <div class="err">❌ <?= htmlspecialchars($err) ?></div>
-  <?php elseif ($msg === 'login'): ?>
-    <div class="err">Silakan login dulu.</div>
-  <?php endif; ?>
-  <div class="info">
-    📷 <strong>Cara Login:</strong><br>
-    Scan QR code yang ada di struk laundry kamu. Otomatis masuk ke akun pelanggan.<br><br>
-    Belum punya struk? Kunjungi outlet LAMASY terdekat.
-  </div>
-</div>
-</body>
-</html>
+// Tak ada token valid (token kosong / invalid / pelanggan tak aktif) → arahkan ke
+// front door publik. Portal tetap QR-only; /cek?msg=portal menampilkan instruksi scan QR.
+header('Location: /cek?msg=portal');
+exit;
