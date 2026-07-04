@@ -34,8 +34,8 @@ class TrialNurture
     // Selama MATI, HANYA tenant di TEST_TENANT_IDS yang tetap diproses — untuk uji
     // coba ke tenant test dulu. Kalau sudah yakin: set ENABLED=true (dan kosongkan
     // TEST_TENANT_IDS), lalu push.
-    const ENABLED         = false;
-    const TEST_TENANT_IDS = [];   // mis. [21] saat mau tes ke tenant test tertentu
+    const ENABLED         = true;
+    const TEST_TENANT_IDS = [];   // (dipakai hanya saat ENABLED=false utk uji coba)
 
     /** Boleh kirim nurturing utk tenant ini? (global ON, atau tenant ada di test allowlist) */
     private static function allowed(int $tenantId): bool
