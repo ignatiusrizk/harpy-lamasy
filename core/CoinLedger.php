@@ -20,7 +20,7 @@ class CoinLedger
     const COSTS = [
         'generate_nota'      =>  50,
         'send_wa_notif'      => 100,
-        'send_wa_nota'       => 150,
+        'send_wa_nota'       => 100,
         'ai_briefing'        => 500,
         'ai_upselling'       =>  50,
         'ai_analyst'         => 200,
