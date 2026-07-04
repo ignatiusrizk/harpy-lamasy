@@ -97,7 +97,12 @@ if ($action === 'get_prefs') {
     $s->execute([$tid]);
     $raw = $s->fetchColumn();
     $cfg = $raw ? (json_decode($raw, true) ?: []) : [];
-    $g = function($cat,$ch) use ($cfg) { return (int)($cfg[$cat][$ch] ?? 1); }; // default 1
+    // Default UI cermin perilaku NotifPrefs (audit coin 2026-07-04): kategori
+    // berbayar yang BELUM dikonfigurasi → email OFF (opt-in), in-app ON.
+    $g = function($cat,$ch) use ($cfg) {
+        if (!is_array($cfg[$cat] ?? null)) return $ch === 'email' ? 0 : 1; // belum dikonfigurasi
+        return (int)($cfg[$cat][$ch] ?? 1);
+    };
     echo json_encode([
         'dr_email'=>$g('daily_report','email'), 'dr_inapp'=>$g('daily_report','inapp'),
         'an_email'=>$g('alert_anomali','email'), 'an_inapp'=>$g('alert_anomali','inapp'),

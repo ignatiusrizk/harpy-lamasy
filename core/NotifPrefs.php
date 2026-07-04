@@ -5,14 +5,28 @@ class NotifPrefs
 {
     private const CHANNELS = ['email', 'inapp'];
 
-    /** Channel aktif untuk satu kategori. Default keduanya kalau key absen. Pure. */
+    // Kategori notif OTOMATIS yang MEMOTONG COIN saat email terkirim
+    // (alert_anomali 50, daily_report 100 — via Notifier coin_feature).
+    // Audit coin 2026-07-04: email berbayar TIDAK boleh default ON —
+    // nol potongan tanpa persetujuan owner. In-app tetap ON (gratis).
+    private const PAID_AUTO = ['alert_anomali', 'daily_report'];
+
+    /**
+     * Channel aktif untuk satu kategori. Pure.
+     * Default: kategori gratis → email+inapp ON; kategori BERBAYAR yang belum
+     * pernah dikonfigurasi owner → inapp saja (email = opt-in di Notifikasi Owner).
+     * Kalau owner SUDAH konfigurasi kategori itu → hormati pilihannya apa adanya.
+     */
     public static function channelsFor(array $cfg, string $kategori): array
     {
         $kat = $cfg[$kategori] ?? null;
-        if (!is_array($kat)) return self::CHANNELS; // kategori belum dikonfigurasi → default ON
+        if (!is_array($kat)) {
+            // kategori belum dikonfigurasi
+            return in_array($kategori, self::PAID_AUTO, true) ? ['inapp'] : self::CHANNELS;
+        }
         $out = [];
         foreach (self::CHANNELS as $ch) {
-            if ((int)($kat[$ch] ?? 1) === 1) $out[] = $ch; // channel absen → default ON
+            if ((int)($kat[$ch] ?? 1) === 1) $out[] = $ch; // konfigurasi eksplisit → key absen = ON
         }
         return $out;
     }
