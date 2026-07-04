@@ -788,6 +788,9 @@ function saRenderNav(string $activePage = '', string $pageTitle = ''): void {
         <a href="/superadmin/settings.php" class="sa-nav-link <?= $activePage === 'settings' ? 'active' : '' ?>">
           <span class="icon">⚙️</span> Platform Settings
         </a>
+        <a href="/superadmin/layanan_presets.php" class="sa-nav-link <?= $activePage === 'layanan_presets' ? 'active' : '' ?>">
+          <span class="icon">🧺</span> Preset Layanan
+        </a>
         <a href="/superadmin/audit.php" class="sa-nav-link <?= $activePage === 'audit' ? 'active' : '' ?>">
           <span class="icon">📜</span> Audit Log
         </a>

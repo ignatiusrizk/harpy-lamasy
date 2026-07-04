@@ -29,16 +29,29 @@ $oid = TenantResolver::outletId();
 $db  = Database::get();
 
 // ── Preset layanan untuk quick-setup wizard (Komponen 2 · Data Accumulation) ──
-$LAYANAN_PRESETS = [
-    ['nama'=>'Cuci Kering Lipat',    'satuan'=>'kg',     'kategori'=>'Kiloan', 'checked'=>true],
-    ['nama'=>'Cuci Setrika',         'satuan'=>'kg',     'kategori'=>'Kiloan', 'checked'=>true],
-    ['nama'=>'Setrika Saja',         'satuan'=>'kg',     'kategori'=>'Kiloan', 'checked'=>true],
-    ['nama'=>'Cuci Express (1 hari)','satuan'=>'kg',     'kategori'=>'Kiloan', 'checked'=>false],
-    ['nama'=>'Bed Cover',            'satuan'=>'pcs',    'kategori'=>'Satuan', 'checked'=>false],
-    ['nama'=>'Selimut',              'satuan'=>'pcs',    'kategori'=>'Satuan', 'checked'=>false],
-    ['nama'=>'Sepatu',               'satuan'=>'pasang', 'kategori'=>'Satuan', 'checked'=>false],
-    ['nama'=>'Karpet',               'satuan'=>'m²',     'kategori'=>'Satuan', 'checked'=>false],
-];
+// Dikelola SuperAdmin di saas_layanan_presets (Opsi D). Fallback ke hardcoded
+// kalau tabel belum ada / kosong.
+$LAYANAN_PRESETS = [];
+try {
+    $ps = $db->query("SELECT nama, satuan, kategori, default_checked FROM saas_layanan_presets
+                      WHERE is_active=1 ORDER BY urutan, id")->fetchAll(PDO::FETCH_ASSOC);
+    foreach ($ps as $p) {
+        $LAYANAN_PRESETS[] = ['nama'=>$p['nama'], 'satuan'=>$p['satuan'],
+                              'kategori'=>$p['kategori'], 'checked'=>(bool)$p['default_checked']];
+    }
+} catch (Throwable $e) { error_log('[onboarding presets] '.$e->getMessage()); }
+if (!$LAYANAN_PRESETS) {
+    $LAYANAN_PRESETS = [
+        ['nama'=>'Cuci Kering Lipat',    'satuan'=>'kg',     'kategori'=>'Kiloan', 'checked'=>true],
+        ['nama'=>'Cuci Setrika',         'satuan'=>'kg',     'kategori'=>'Kiloan', 'checked'=>true],
+        ['nama'=>'Setrika Saja',         'satuan'=>'kg',     'kategori'=>'Kiloan', 'checked'=>true],
+        ['nama'=>'Cuci Express (1 hari)','satuan'=>'kg',     'kategori'=>'Kiloan', 'checked'=>false],
+        ['nama'=>'Bed Cover',            'satuan'=>'pcs',    'kategori'=>'Satuan', 'checked'=>false],
+        ['nama'=>'Selimut',              'satuan'=>'pcs',    'kategori'=>'Satuan', 'checked'=>false],
+        ['nama'=>'Sepatu',               'satuan'=>'pasang', 'kategori'=>'Satuan', 'checked'=>false],
+        ['nama'=>'Karpet',               'satuan'=>'m²',     'kategori'=>'Satuan', 'checked'=>false],
+    ];
+}
 
 // ── Handler: simpan wizard layanan (min 1 layanan + harga) ──
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && ($_POST['action'] ?? '') === 'save_layanan') {
