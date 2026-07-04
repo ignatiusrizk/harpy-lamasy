@@ -19,6 +19,7 @@ header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
 $noOrder = trim($_GET['n'] ?? '');
 $phoneLast4 = trim($_POST['phone'] ?? '');
 $ajaxAction = $_GET['action'] ?? '';
+$portalMsg = ($_GET['msg'] ?? '') === 'portal';  // datang dari /p tanpa token valid
 
 // ── AJAX: poll status (refresh tanpa reload) ──
 if ($ajaxAction === 'status') {
@@ -163,24 +164,58 @@ form input:focus { outline:none; border-color:var(--teal); box-shadow:0 0 0 3px 
 .contact a { color:var(--teal); text-decoration:none; font-weight:600; }
 .wa-btn { background:#25D366; color:#fff; text-decoration:none; padding:10px 14px; border-radius:10px; font-size:13px; font-weight:600; display:inline-flex; align-items:center; gap:6px; margin-top:8px; }
 @media (max-width:480px) { .status-icon { font-size:36px; } .status-text .value { font-size:16px; } }
+.or-divider { text-align:center; color:var(--gray); font-size:12px; margin:16px 0; }
+.portal-affordance { background:#fff; border:1px solid var(--border); border-radius:16px; padding:0; margin-bottom:14px; box-shadow:0 1px 3px rgba(0,0,0,0.06); overflow:hidden; }
+.portal-affordance > summary { list-style:none; cursor:pointer; padding:16px 18px; font-size:14px; font-weight:700; color:var(--teal); display:flex; justify-content:space-between; align-items:center; gap:8px; }
+.portal-affordance > summary::-webkit-details-marker { display:none; }
+.portal-affordance > summary span { color:var(--gray); font-weight:600; font-size:13px; }
+.portal-affordance[open] > summary { border-bottom:1px solid #F3F4F6; }
+.portal-body { padding:14px 18px 18px; font-size:13.5px; color:#374151; line-height:1.6; }
+.portal-body ul { margin:8px 0 0; padding-left:18px; color:var(--gray); }
 </style>
 </head>
 <body>
 <div class="wrap">
 
   <?php if (!$noOrder): ?>
-  <!-- ════════ STATE: NO INPUT — Form input nomor nota ════════ -->
+  <!-- ════════ STATE: NO INPUT — Form nota + afordan portal ════════ -->
   <div class="brand">
-    <h1>🧺 LAMASY Tracking</h1>
+    <h1>🧺 LAMASY</h1>
     <p>Cek status cucian Anda</p>
   </div>
+
+  <?php
+  // Blok afordan portal — dirender sekali, dipakai di ATAS (kalau datang dari /p
+  // redirect) atau di BAWAH form (default). <details> = toggle aksesibel keyboard.
+  ob_start(); ?>
+    <details class="portal-affordance"<?= $portalMsg ? ' open' : '' ?>>
+      <summary>🎫 Punya akun member? <span>Masuk Portal Pelanggan →</span></summary>
+      <div class="portal-body">
+        📷 <strong>Scan QR code di struk</strong> laundry kamu — otomatis masuk ke akun.
+        <ul>
+          <li>Poin &amp; deposit</li>
+          <li>Riwayat semua order</li>
+          <li>Kupon &amp; ajak teman</li>
+        </ul>
+      </div>
+    </details>
+  <?php $portalBlock = ob_get_clean(); ?>
+
+  <?php if ($portalMsg) echo $portalBlock; ?>
+
   <div class="card">
     <h2 class="h2">Masukkan Nomor Nota</h2>
     <form method="GET" action="/cek.php">
-      <input type="text" name="n" placeholder="HARPY-260607-001" required autofocus autocomplete="off"/>
+      <input type="text" name="n" placeholder="HARPY-260607-001" required<?= $portalMsg ? '' : ' autofocus' ?> autocomplete="off"/>
       <button type="submit" class="btn">🔍 Cek Status</button>
     </form>
   </div>
+
+  <?php if (!$portalMsg): ?>
+    <div class="or-divider">— atau —</div>
+    <?= $portalBlock ?>
+  <?php endif; ?>
+
   <div class="contact">
     Belum punya nota? Hubungi outlet laundry Anda.
   </div>
