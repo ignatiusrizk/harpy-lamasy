@@ -1,6 +1,6 @@
 # Billing-Checkout: Native Share/Save + Redesign — Design Spec
 
-> LaMaSy. Tanggal: 2026-07-01.
+> LAMASY. Tanggal: 2026-07-01.
 
 ## Goal
 

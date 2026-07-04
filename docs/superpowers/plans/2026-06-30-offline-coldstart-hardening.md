@@ -406,7 +406,7 @@ Buat `~/Documents/lamasy-app/www/offline.html`:
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Offline — LaMaSy</title>
+  <title>Offline — LAMASY</title>
   <style>
     html,body{margin:0;min-height:100%;background:#0F1C3A;color:#fff;
       font-family:-apple-system,Roboto,system-ui,sans-serif;
@@ -477,7 +477,7 @@ git commit -m "feat(native): offline.html bundle + server.errorPath — anti err
 - [ ] **Step 6: Build APK b12 (USER — butuh JDK 21 + Android SDK)**
 
 Run: `cd ~/Documents/lamasy-app && ./build-apk.sh`
-Expected: APK ter-build, `versionCode` naik ke b12, file `~/Desktop/LaMaSy-v<ver>-b12-debug.apk` tercipta.
+Expected: APK ter-build, `versionCode` naik ke b12, file `~/Desktop/LAMASY-v<ver>-b12-debug.apk` tercipta.
 
 ---
 

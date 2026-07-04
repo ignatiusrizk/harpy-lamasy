@@ -1,6 +1,6 @@
 # Welcome Kit Fisik + Alamat Outlet Wajib — Design Spec
 
-> LaMaSy. Tanggal: 2026-06-30.
+> LAMASY. Tanggal: 2026-06-30.
 
 ## Goal
 

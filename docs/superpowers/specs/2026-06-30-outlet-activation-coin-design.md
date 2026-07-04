@@ -1,6 +1,6 @@
 # Outlet Activation: Server Config + Bonus Coin — Design Spec
 
-> LaMaSy. Tanggal: 2026-06-30.
+> LAMASY. Tanggal: 2026-06-30.
 
 ## Goal
 

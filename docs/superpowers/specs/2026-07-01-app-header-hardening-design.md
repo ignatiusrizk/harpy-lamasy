@@ -1,6 +1,6 @@
 # App Header Hardening — Design Spec
 
-> LaMaSy. Tanggal: 2026-07-01.
+> LAMASY. Tanggal: 2026-07-01.
 
 ## Goal
 

@@ -8,7 +8,7 @@
 
 Beri karyawan (kasir/staff/produksi) interface dedicated untuk update order di setiap stage proses laundry. Setiap stage punya form input spesifik (mesin, durasi, foto, dll). Worker scan QR di struk untuk shortcut load order.
 
-Mirip aplikasi produksi SmartLink, tapi terintegrasi langsung di LaMaSy (no separate install).
+Mirip aplikasi produksi SmartLink, tapi terintegrasi langsung di LAMASY (no separate install).
 
 ## Non-tujuan
 

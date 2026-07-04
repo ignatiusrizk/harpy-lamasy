@@ -1,6 +1,6 @@
 # Notif Master Off-Switch — Design Spec
 
-> LaMaSy. Tanggal: 2026-06-30.
+> LAMASY. Tanggal: 2026-06-30.
 
 ## Goal
 

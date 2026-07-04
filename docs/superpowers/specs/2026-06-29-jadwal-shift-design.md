@@ -1,6 +1,6 @@
 # Jadwal Shift Karyawan — Design Spec
 
-> LaMaSy. Tanggal: 2026-06-29. Sub-proyek B dari enhancement Absensi (A = clock-in hardening sudah LIVE).
+> LAMASY. Tanggal: 2026-06-29. Sub-proyek B dari enhancement Absensi (A = clock-in hardening sudah LIVE).
 
 ## Goal
 

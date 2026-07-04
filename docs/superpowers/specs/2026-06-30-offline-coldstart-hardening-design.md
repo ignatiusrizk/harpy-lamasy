@@ -1,6 +1,6 @@
 # Offline Cold-Start Hardening — Design Spec
 
-> LaMaSy. Tanggal: 2026-06-30. Approach A (tambal cold-start, perluas yang sudah ada).
+> LAMASY. Tanggal: 2026-06-30. Approach A (tambal cold-start, perluas yang sudah ada).
 
 ## Goal
 

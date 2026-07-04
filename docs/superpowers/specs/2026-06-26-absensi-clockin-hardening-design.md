@@ -1,6 +1,6 @@
 # Absensi Clock-in Hardening (Selfie + Geofence) — Design Spec
 
-> LaMaSy. Tanggal: 2026-06-26. Sub-proyek A dari enhancement Absensi (B = Jadwal Shift menyusul, spec terpisah).
+> LAMASY. Tanggal: 2026-06-26. Sub-proyek A dari enhancement Absensi (B = Jadwal Shift menyusul, spec terpisah).
 
 ## Goal
 

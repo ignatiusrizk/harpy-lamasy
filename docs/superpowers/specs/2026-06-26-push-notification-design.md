@@ -1,6 +1,6 @@
 # Push Notification (FCM) — Design Spec
 
-> LaMaSy native app (Capacitor 7 Android). Tanggal: 2026-06-26.
+> LAMASY native app (Capacitor 7 Android). Tanggal: 2026-06-26.
 
 ## Goal
 

@@ -1,6 +1,6 @@
 # Notif Auto-Email — Kontrol Per-Channel + Perbaikan Engine — Design Spec
 
-> LaMaSy. Tanggal: 2026-06-30. Bugfix: disable notifikasi otomatis tidak berfungsi & tidak bisa diatur owner.
+> LAMASY. Tanggal: 2026-06-30. Bugfix: disable notifikasi otomatis tidak berfungsi & tidak bisa diatur owner.
 
 ## Goal
 

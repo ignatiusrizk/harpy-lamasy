@@ -1,6 +1,6 @@
 # Tambah Kas via Foto Struk (AI Vision) — Design Spec
 
-> LaMaSy. Tanggal: 2026-06-26.
+> LAMASY. Tanggal: 2026-06-26.
 
 ## Goal
 

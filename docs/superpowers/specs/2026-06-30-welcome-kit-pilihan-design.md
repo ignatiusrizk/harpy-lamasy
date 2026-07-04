@@ -1,6 +1,6 @@
 # Welcome Kit — Model Pilihan (Owner Pilih Kit) — Design Spec
 
-> LaMaSy. Tanggal: 2026-06-30. Enhancement dari [[project-welcome-kit]].
+> LAMASY. Tanggal: 2026-06-30. Enhancement dari [[project-welcome-kit]].
 
 ## Goal
 

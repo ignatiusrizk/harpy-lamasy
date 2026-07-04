@@ -1,6 +1,6 @@
 # Checklist — Opsi "Wajib Foto" per Item — Design Spec
 
-> LaMaSy. Tanggal: 2026-06-29.
+> LAMASY. Tanggal: 2026-06-29.
 
 ## Goal
 

@@ -11,7 +11,7 @@
 ## Global Constraints
 
 - Lokasi: `~/Documents/lamasy-app/` — DI LUAR repo PHP `/Users/rizky/Documents/lamasy` (jangan scaffold di dalam repo PHP; hindari deploy Hostinger).
-- App ID: `id.harpy.lamasy` (permanen). App name: `LaMaSy`.
+- App ID: `id.harpy.lamasy` (permanen). App name: `LAMASY`.
 - `server.url`: `https://lamasy.harpy.id`, `cleartext: false`, `allowNavigation: ["lamasy.harpy.id"]`.
 - v1 = shell-only: tanpa plugin offline/print/push, tanpa custom shell JS.
 - `.gitignore` WAJIB exclude: `node_modules/`, `android/`, `*.apk`, `*.keystore`, `*.jks`.
@@ -43,7 +43,7 @@ mkdir -p ~/Documents/lamasy-app/www ~/Documents/lamasy-app/resources
 {
   "name": "lamasy-app",
   "version": "1.0.0",
-  "description": "LaMaSy — aplikasi manajemen laundry (Capacitor thin-shell)",
+  "description": "LAMASY — aplikasi manajemen laundry (Capacitor thin-shell)",
   "private": true,
   "scripts": {
     "sync": "cap sync",
@@ -68,7 +68,7 @@ mkdir -p ~/Documents/lamasy-app/www ~/Documents/lamasy-app/resources
 ```json
 {
   "appId": "id.harpy.lamasy",
-  "appName": "LaMaSy",
+  "appName": "LAMASY",
   "webDir": "www",
   "server": {
     "url": "https://lamasy.harpy.id",
@@ -91,7 +91,7 @@ mkdir -p ~/Documents/lamasy-app/www ~/Documents/lamasy-app/resources
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>LaMaSy</title>
+  <title>LAMASY</title>
   <style>
     html,body{margin:0;height:100%;background:#0F1C3A;display:flex;align-items:center;justify-content:center;
       font-family:-apple-system,Roboto,sans-serif}
@@ -209,7 +209,7 @@ for name,size,fs in [("icon",1024,240),("splash",2732,360)]:
     img=Image.new("RGB",(size,size),"#0F1C3A"); d=ImageDraw.Draw(img)
     try: f=ImageFont.truetype("/System/Library/Fonts/Helvetica.ttc",fs)
     except: f=ImageFont.load_default()
-    t="LaMaSy"; b=d.textbbox((0,0),t,font=f); w=b[2]-b[0]; h=b[3]-b[1]
+    t="LAMASY"; b=d.textbbox((0,0),t,font=f); w=b[2]-b[0]; h=b[3]-b[1]
     d.text(((size-w)/2,(size-h)/2-b[1]),t,font=f,fill="#FFFFFF")
     img.save(f"/Users/rizky/Documents/lamasy-app/resources/{name}.png")
 print("PIL OK")
@@ -228,7 +228,7 @@ Expected: icon 1024×1024, splash 2732×2732 (atau file ada).
 - [ ] **Step 4: Commit**
 
 ```bash
-cd ~/Documents/lamasy-app && git add resources/ && git commit -q -m "chore: placeholder icon + splash (brand bg + LaMaSy)
+cd ~/Documents/lamasy-app && git add resources/ && git commit -q -m "chore: placeholder icon + splash (brand bg + LAMASY)
 
 Sumber 1024/2732 untuk capacitor-assets generate. Swap logo asli nanti."
 ```
@@ -248,7 +248,7 @@ Sumber 1024/2732 untuk capacitor-assets generate. Swap logo asli nanti."
 
 `~/Documents/lamasy-app/README.md`:
 ```markdown
-# LaMaSy — Android App (Capacitor)
+# LAMASY — Android App (Capacitor)
 
 Thin-shell webview ke https://lamasy.harpy.id. Semua fitur jalan dari server (PHP);
 update konten = deploy backend, TANPA rebuild app.
@@ -364,7 +364,7 @@ Konfirmasi ke user: scaffold selesai, langkah build/submit ada di README. Tegask
 ✓ Semua file isi lengkap. Icon/splash punya 3 fallback (rsvg/magick/PIL) + manual note — tidak blokir kalau converter absent.
 
 ### Konsistensi
-- ✅ appId `id.harpy.lamasy`, appName `LaMaSy`, server.url `https://lamasy.harpy.id` konsisten config + README
+- ✅ appId `id.harpy.lamasy`, appName `LAMASY`, server.url `https://lamasy.harpy.id` konsisten config + README
 - ✅ Capacitor `^6.2.0` konsisten (core/cli/android), @capacitor/assets `^3`
 - ✅ .gitignore exclude android/ + keystore → verify Task 1 Step 6 + Task 4
 

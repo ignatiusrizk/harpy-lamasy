@@ -1,6 +1,6 @@
 # Laporan Keuangan SuperAdmin — Design Spec
 
-> LaMaSy. Tanggal: 2026-07-02.
+> LAMASY. Tanggal: 2026-07-02.
 
 ## Goal
 

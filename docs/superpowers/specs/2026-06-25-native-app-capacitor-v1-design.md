@@ -1,4 +1,4 @@
-# LaMaSy Native App v1 (Capacitor Android) — Design Spec
+# LAMASY Native App v1 (Capacitor Android) — Design Spec
 
 **Tanggal:** 25 Juni 2026
 **Author:** Ignatius Rizky
@@ -8,7 +8,7 @@
 
 ## 1. Tujuan
 
-Bungkus PWA LaMaSy jadi aplikasi Android native pakai **Capacitor thin-shell** — webview yang load `https://lamasy.harpy.id`, releasable ke Google Play. v1 = shell-only (tanpa plugin native); plugin (offline/print/push) fase berikutnya. Sesuai strategi [[project-native-app-strategy]] (Capacitor, bukan rewrite; reuse 95% kode).
+Bungkus PWA LAMASY jadi aplikasi Android native pakai **Capacitor thin-shell** — webview yang load `https://lamasy.harpy.id`, releasable ke Google Play. v1 = shell-only (tanpa plugin native); plugin (offline/print/push) fase berikutnya. Sesuai strategi [[project-native-app-strategy]] (Capacitor, bukan rewrite; reuse 95% kode).
 
 **Scope v1:**
 - Project Capacitor di folder terpisah (`~/Documents/lamasy-app/`, git repo sendiri)
@@ -29,7 +29,7 @@ Bungkus PWA LaMaSy jadi aplikasi Android native pakai **Capacitor thin-shell** �
 
 ## 2. Background
 
-- PWA LaMaSy sudah jalan di `https://lamasy.harpy.id` (feature-complete cukup: POS, orders, inventori, mesin, antar-jemput, portal, loyalty, keuangan, dll)
+- PWA LAMASY sudah jalan di `https://lamasy.harpy.id` (feature-complete cukup: POS, orders, inventori, mesin, antar-jemput, portal, loyalty, keuangan, dll)
 - Strategi native diputuskan 2026-06-23: Capacitor thin-shell + remote webview
 - Native solve yang PWA tak bisa: offline WRITE, silent thermal print, push iOS reliable, background sync — **semua fase 2+**, v1 cukup wrapper
 - Mesin user: Mac + Xcode, **belum ada Android Studio / Android SDK**
@@ -62,7 +62,7 @@ Catatan teknis: saat `server.url` di-set, webview LANGSUNG load URL remote — i
 ```json
 {
   "appId": "id.harpy.lamasy",
-  "appName": "LaMaSy",
+  "appName": "LAMASY",
   "webDir": "www",
   "server": {
     "url": "https://lamasy.harpy.id",
@@ -85,7 +85,7 @@ Catatan teknis: saat `server.url` di-set, webview LANGSUNG load URL remote — i
 Konsekuensi: v1 murni wrapper, **nol custom JS di shell**. Semua logic tetap di PHP/JS server-side (remote). Ini sesuai prinsip thin-shell.
 
 ### 3.4 Icon & Splash
-- Placeholder: background brand `#0F1C3A` + teks "LaMaSy" warna `#35E8D5` (icon 1024², splash 2732²). Di-generate via `@capacitor/assets`.
+- Placeholder: background brand `#0F1C3A` + teks "LAMASY" warna `#35E8D5` (icon 1024², splash 2732²). Di-generate via `@capacitor/assets`.
 - User swap PNG logo asli kapan saja → re-generate.
 
 ---

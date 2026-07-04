@@ -251,7 +251,7 @@ Buka halaman pembayaran (QRIS pending) di browser → tampil tema light, header 
 - [ ] **Step 3: Build APK b15 (USER — butuh JDK 21 + Android SDK)**
 
 Run: `cd ~/Documents/lamasy-app && ./build-apk.sh`
-Expected: `~/Desktop/LaMaSy-v<ver>-b15-debug.apk`, versionCode naik ke b15.
+Expected: `~/Desktop/LAMASY-v<ver>-b15-debug.apk`, versionCode naik ke b15.
 
 - [ ] **Step 4: E2E native (device, APK b15)**
 

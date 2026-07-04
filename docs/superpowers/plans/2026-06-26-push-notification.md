@@ -413,7 +413,7 @@ Tambahkan method berikut ke kelas `PushSender` (sebelum `}` penutup kelas):
         $body = ['message' => [
             'token'        => $token,
             'notification' => [
-                'title' => (string)($payload['title'] ?? 'LaMaSy'),
+                'title' => (string)($payload['title'] ?? 'LAMASY'),
                 'body'  => (string)($payload['body'] ?? ''),
             ],
             'data'    => array_map('strval', ['url' => $payload['url'] ?? '']),
@@ -870,7 +870,7 @@ cd ~/Documents/lamasy-app
 npx cap sync android
 ./build-apk.sh
 ```
-Expected: APK baru di `~/Desktop/LaMaSy-v<ver>-b<code>-debug.apk`, build sukses (BUILD SUCCESSFUL).
+Expected: APK baru di `~/Desktop/LAMASY-v<ver>-b<code>-debug.apk`, build sukses (BUILD SUCCESSFUL).
 
 - [ ] **Step 4: Update README**
 

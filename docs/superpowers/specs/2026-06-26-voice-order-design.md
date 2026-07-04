@@ -1,6 +1,6 @@
 # Voice Order (POS) — Design Spec
 
-> LaMaSy native app (Capacitor 7). Tanggal: 2026-06-26.
+> LAMASY native app (Capacitor 7). Tanggal: 2026-06-26.
 
 ## Goal
 
