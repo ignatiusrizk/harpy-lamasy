@@ -25,7 +25,7 @@ if ($action) {
         catch (Throwable) { $hasNotaCols = false; }
 
         $cols = "id, tenant_id, nama_outlet, slug, kota, telepon, status, is_main";
-        if ($hasNotaCols) $cols .= ", nota_prefix, nota_format, label_size, antar_mode, absensi_selfie_wajib, absensi_geofence_aktif, absensi_lat, absensi_lng, absensi_radius_m";
+        if ($hasNotaCols) $cols .= ", nota_prefix, nota_format, label_size, antar_mode, absensi_selfie_wajib, absensi_geofence_aktif, absensi_lat, absensi_lng, absensi_radius_m, pickup_reminder_days";
         // Scope: di mode OUTLET tampilkan HANYA outlet aktif (jangan bocorkan config
         // outlet lain). Fallback semua outlet hanya kalau tak ada konteks outlet (HQ).
         $oid = TenantResolver::outletId();
@@ -218,6 +218,20 @@ if ($action) {
         exit;
     }
 
+    if ($action === 'save_pickup' && $_SERVER['REQUEST_METHOD']==='POST') {
+        verifyCsrf();
+        $d    = json_decode(file_get_contents('php://input'), true) ?: [];
+        $id   = (int)($d['id'] ?? 0);
+        $days = max(1, min(30, (int)($d['pickup_reminder_days'] ?? 2)));
+        try {
+            $st = $db->prepare("UPDATE outlets SET pickup_reminder_days=? WHERE id=? AND tenant_id=?");
+            $st->execute([$days, $id, $tid]);
+            logAudit('update', 'outlet', "Pickup reminder outlet #$id: $days hari");
+            echo json_encode(['success'=>true]);
+        } catch (Throwable $e) { apiErr($e, 'Gagal. Silakan coba lagi.'); }
+        exit;
+    }
+
     exit;
 }
 
@@ -401,6 +415,18 @@ if ($action) {
         <button class="hl-btn hl-btn-primary hl-btn-sm" style="margin-top:14px" onclick="saveAbsensiConfig()">💾 Simpan Absensi</button>
       </div>
 
+      <!-- Pengingat Pengambilan -->
+      <div style="margin:8px 0 14px;padding:14px;background:#F9FAFB;border:1px solid #E5E7EB;border-radius:8px">
+        <div style="font-weight:700;font-size:14px;color:#0F1C3A;margin-bottom:6px">🔔 Pengingat Pengambilan</div>
+        <div style="font-size:12px;color:var(--gray);margin-bottom:10px">Order yang sudah <b>siap</b> lebih dari sekian hari tapi belum diambil akan muncul di kartu "Belum Diambil" di dashboard untuk diingatkan via WhatsApp.</div>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <span style="font-size:13px">Tampilkan setelah siap</span>
+          <input type="number" id="pickupDays" min="1" max="30" value="2" class="hl-input" style="width:80px">
+          <span style="font-size:13px">hari</span>
+          <button class="hl-btn hl-btn-primary hl-btn-sm" onclick="savePickup()">💾 Simpan</button>
+        </div>
+      </div>
+
       <!-- Quick templates -->
       <div style="font-size:12px;color:#6B7280;margin-bottom:6px;font-weight:600">⚡ Quick Template:</div>
       <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px">
@@ -491,6 +517,7 @@ function openEdit(r) {
   abResetMap();
   document.getElementById('abSelfie').checked   = !!r.absensi_selfie_wajib;
   document.getElementById('abGeofence').checked = !!r.absensi_geofence_aktif;
+  document.getElementById('pickupDays').value   = Math.max(1, Math.min(30, parseInt(r.pickup_reminder_days) || 2));
   const savedRadius = r.absensi_radius_m ? Math.max(20, Math.min(1000, parseInt(r.absensi_radius_m))) : 100;
   document.getElementById('abRadius').value   = savedRadius;
   document.getElementById('abRadiusLbl').textContent = savedRadius + ' m';
@@ -729,6 +756,16 @@ async function saveAbsensiConfig(){
   const r = await fetch('outlet-settings.php?action=save_absensi', { method:'POST', headers:{'Content-Type':'application/json','X-CSRF-Token':csrfToken()}, body: JSON.stringify(body) });
   const d = await r.json();
   if (d.success) showToast('Setting absensi tersimpan','success'); else showToast(d.error||'Gagal','error');
+}
+
+async function savePickup(){
+  const body = {
+    id: parseInt(document.getElementById('ed_id').value),
+    pickup_reminder_days: +document.getElementById('pickupDays').value
+  };
+  const r = await fetch('outlet-settings.php?action=save_pickup', { method:'POST', headers:{'Content-Type':'application/json','X-CSRF-Token':csrfToken()}, body: JSON.stringify(body) });
+  const d = await r.json();
+  if (d.success) showToast('Pengingat pengambilan tersimpan','success'); else showToast(d.error||'Gagal','error');
 }
 
 // ── Printer Thermal (client-side, per device via ThermalPrint) ──

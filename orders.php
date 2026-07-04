@@ -862,7 +862,9 @@ if ($action) {
     // ── Belum Diambil: daftar order 'siap' ≥2 hari yg belum diambil ──
     if ($action === 'pickup_reminders') {
         header('Content-Type: application/json');
-        $days = 2; // ambang default
+        // Ambang bisa diatur owner per-outlet (default 2, clamp 1..30)
+        $cfg  = TenantQuery::rawOne("SELECT pickup_reminder_days FROM outlets WHERE id=? AND tenant_id=?", [$oid, $tid]);
+        $days = max(1, min(30, (int)($cfg['pickup_reminder_days'] ?? 2)));
         try {
             $rows = TenantQuery::raw(
                 "SELECT t.id, t.no_order, t.nama_pelanggan, t.telepon,

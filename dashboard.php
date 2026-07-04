@@ -1056,7 +1056,7 @@ if ($_dashRole === 'kasir'):
   <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:12px">
     <div>
       <h3 style="font-size:14px;font-weight:800;color:#0F1C3A;margin:0">🔔 Belum Diambil <span id="bdCount" style="background:#F59E0B;color:#fff;border-radius:100px;padding:1px 9px;font-size:12px;margin-left:4px">0</span></h3>
-      <div style="font-size:11.5px;color:#9CA3AF;margin-top:2px">Sudah siap ≥2 hari, belum diambil pelanggan. Ingatkan via WhatsApp.</div>
+      <div id="bdSubtitle" style="font-size:11.5px;color:#9CA3AF;margin-top:2px">Sudah siap & belum diambil pelanggan. Ingatkan via WhatsApp.</div>
     </div>
   </div>
   <div id="bdList"></div>
@@ -1951,6 +1951,7 @@ async function loadBelumDiambil(){
     const d = await r.json();
     if(!d || !d.ok || !d.count) return;
     document.getElementById('bdCount').textContent = d.count;
+    document.getElementById('bdSubtitle').textContent = 'Sudah siap ≥'+d.days+' hari, belum diambil. Ingatkan via WhatsApp.';
     document.getElementById('bdList').innerHTML = d.rows.map(bdRow).join('');
     document.getElementById('belumDiambilCard').style.display = '';
   }catch(e){}
