@@ -1650,7 +1650,7 @@ img { max-width: 100%; }
         <?php
         $rowsApps = [
           ['Model Biaya',           'Langganan bulanan, atau coin dgn biaya/transaksi tinggi', '1× setup + pay-per-use Coin — biaya per transaksi hemat, tanpa langganan'],
-          ['Trial Free',            'Biasanya 3-14 hari, fitur terbatas',           '14 hari penuh + 10.000 coin gratis'],
+          ['Trial Free',            'Biasanya 3-14 hari, fitur terbatas',           '14 hari penuh + 30.000 coin gratis'],
           ['AI Terintegrasi',       'Tidak ada / cuma chatbot CS',                 'AI Briefing, Chat Data, Migration, Upselling'],
           ['Laporan Keuangan',      'Laporan operasional saja',                    'SAK EMKM formal (Laba Rugi, Neraca, Arus Kas)'],
           ['WhatsApp Notif',        'Add-on terpisah berbayar',                    'Termasuk — pay-per-use via coin'],
@@ -1716,7 +1716,7 @@ function switchCmpTab(tab, btn) {
       <div class="step-card">
         <div class="step-num-wrap">1</div>
         <h3>Daftar Akun</h3>
-        <p>Isi form registrasi sederhana. Akun trial 14 hari langsung aktif dengan 10.000 coin gratis. Tidak perlu kartu kredit.</p>
+        <p>Isi form registrasi sederhana. Akun trial 14 hari langsung aktif dengan 30.000 coin gratis. Tidak perlu kartu kredit.</p>
       </div>
       <div class="step-card">
         <div class="step-num-wrap">2</div>
@@ -1862,7 +1862,7 @@ function switchCmpTab(tab, btn) {
       <div class="pricing-divider"></div>
       <ul class="pricing-features" style="flex:1;">
         <li>Semua fitur (POS, Keuangan, Karyawan)</li>
-        <li><strong>10.000 coin</strong> gratis untuk coba AI &amp; WA</li>
+        <li><strong>30.000 coin</strong> gratis untuk coba AI &amp; WA</li>
         <li>1 outlet, unlimited transaksi</li>
         <li>Coin sisa trial <strong>di-carry over</strong> kalau aktivasi</li>
         <li>Support via WhatsApp</li>
@@ -2052,10 +2052,10 @@ function switchCmpTab(tab, btn) {
     <?php
     $faqs = [
       ['Apakah LAMASY benar-benar gratis di awal?',
-       'Trial <strong>14 hari</strong> benar-benar gratis — tidak perlu kartu kredit, tidak ada biaya tersembunyi. Semua fitur (POS, Keuangan, Karyawan, AI, WA) terbuka. Dapat <strong>10.000 coin gratis</strong> untuk coba fitur AI &amp; WA. Setelah trial, aktivasi outlet permanen Rp 800rb (promo launching, normal Rp 1jt) sekali bayar.'],
+       'Trial <strong>14 hari</strong> benar-benar gratis — tidak perlu kartu kredit, tidak ada biaya tersembunyi. Semua fitur (POS, Keuangan, Karyawan, AI, WA) terbuka. Dapat <strong>30.000 coin gratis</strong> untuk coba fitur AI &amp; WA. Setelah trial, aktivasi outlet permanen Rp 800rb (promo launching, normal Rp 1jt) sekali bayar.'],
 
       ['Bagaimana sistem pricing-nya? Saya bingung soal coin.',
-       'Simpel: <strong>1× aktivasi Rp 800rb per outlet</strong> (promo launching) untuk akses permanen, sisanya pay-per-use via Coin. Saat aktivasi dapat <strong>100.000 coin bonus</strong> — plus sisa coin trial kamu otomatis ditambahkan ke saldo. Contoh harga fitur: WA notif = 50 coin, AI Chat = 50 coin, AI Briefing = 500 coin. Topup self-service mulai Rp 50rb / 10.000 coin. <strong>Tidak ada langganan bulanan wajib</strong> — kamu yang kontrol pemakaian.'],
+       'Simpel: <strong>1× aktivasi Rp 800rb per outlet</strong> (promo launching) untuk akses permanen, sisanya pay-per-use via Coin. Saat aktivasi dapat <strong>100.000 coin bonus</strong> — plus sisa coin trial kamu otomatis ditambahkan ke saldo. Contoh harga fitur: WA notif = 50 coin, AI Chat = 50 coin, AI Briefing = 500 coin. Topup self-service mulai Rp 20rb (1 coin = Rp 1, bonus s.d. 15%). <strong>Tidak ada langganan bulanan wajib</strong> — kamu yang kontrol pemakaian.'],
 
       ['Apa bedanya dengan aplikasi laundry lain?',
        'Tiga hal utama: <strong>(1)</strong> Pricing transparan pay-per-use — tidak ada paket bertingkat yang membatasi fitur. <strong>(2)</strong> AI terintegrasi — briefing pagi, chat dengan data laporan, deteksi pelanggan dormant. <strong>(3)</strong> Laporan keuangan formal SAK EMKM (Laba Rugi, Neraca, Arus Kas) — siap pajak, tanpa perlu akuntan.'],
@@ -2123,7 +2123,7 @@ function switchCmpTab(tab, btn) {
 <div class="cta-banner">
   <div class="cta-inner">
     <h2>Siap Digitalisasi Laundry Anda?</h2>
-    <p>Mulai trial 14 hari sekarang dengan 10.000 coin gratis — semua fitur, tanpa kartu kredit. Setelah cocok, aktivasi outlet permanen <strong>Rp 800rb</strong> (promo launching, normal Rp 1jt) + 100rb coin bonus.</p>
+    <p>Mulai trial 14 hari sekarang dengan 30.000 coin gratis — semua fitur, tanpa kartu kredit. Setelah cocok, aktivasi outlet permanen <strong>Rp 800rb</strong> (promo launching, normal Rp 1jt) + 100rb coin bonus.</p>
     <div class="cta-btns">
       <a href="/register.php" class="btn-primary">&#128640; Mulai Trial 14 Hari Gratis</a>
       <a href="https://wa.me/6285121519302?text=Halo+saya+ingin+tahu+lebih+lanjut+tentang+LAMASY" target="_blank" class="btn-secondary">&#128172; Chat WhatsApp</a>

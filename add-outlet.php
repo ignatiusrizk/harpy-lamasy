@@ -1,7 +1,7 @@
 <?php
 // ══════════════════════════════════════════════════════
 // add-outlet.php — Wizard tambah outlet
-// Outlet 1: trial 7 hari gratis, 10000 coin
+// Outlet 1: trial 14 hari gratis, 30000 coin
 // Outlet 2+: (fase berikutnya — butuh payment)
 // ══════════════════════════════════════════════════════
 
@@ -158,7 +158,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['step2_submit'])) {
         // Trial outlet = trial (langsung aktif dengan masa trial 14 hari)
         $trialStatus = $isPaid ? 'pending' : 'trial';
         $trialEnds   = $isPaid ? null : date('Y-m-d H:i:s', time() + 14 * 86400);
-        $trialCoins  = (!$isPaid && $isFirstOutlet) ? 10000 : 0;
+        $trialCoins  = (!$isPaid && $isFirstOutlet) ? 30000 : 0;
 
         $db->prepare("
             INSERT INTO outlets
@@ -526,7 +526,7 @@ if ($isHqMode) {
           <h1>Outlet Berhasil Ditambahkan!</h1>
           <p>
             <strong><?= htmlspecialchars($outletName ?? '') ?></strong> sudah aktif dan siap digunakan.<br>
-            Kamu mendapat <strong>10.000 coin trial</strong> gratis untuk 7 hari ke depan.
+            Kamu mendapat <strong>30.000 coin trial</strong> gratis untuk 14 hari ke depan.
           </p>
           <?php
           $wkStatus = isset($outletId) ? WelcomeKit::statusForOutlet($outletId) : null;
@@ -691,8 +691,8 @@ if ($isHqMode) {
                      <?= ($d['mode'] ?? 'trial') !== 'paid' ? 'checked' : '' ?>
                      onchange="switchMode(this.value)">
               <div class="mode-body">
-                <div class="mode-title">🎁 Trial 7 Hari — Gratis</div>
-                <div class="mode-desc">Coba semua fitur selama 7 hari tanpa biaya. Dapat 10.000 coin gratis.</div>
+                <div class="mode-title">🎁 Trial 14 Hari — Gratis</div>
+                <div class="mode-desc">Coba semua fitur selama 14 hari tanpa biaya. Dapat 30.000 coin gratis.</div>
               </div>
             </label>
             <label class="mode-card <?= ($d['mode'] ?? '') === 'paid' ? 'selected' : '' ?>" id="cardPaid">
@@ -873,7 +873,7 @@ if ($isHqMode) {
             <?php if (($d['mode'] ?? 'trial') === 'paid'): ?>
               <span class="rv-val" style="color:#F59E0B">⚡ Aktivasi Langsung</span>
             <?php else: ?>
-              <span class="rv-val" style="color:var(--teal-d)">🎁 Trial 7 Hari + 10.000 Coin</span>
+              <span class="rv-val" style="color:var(--teal-d)">🎁 Trial 14 Hari + 30.000 Coin</span>
             <?php endif; ?>
           </div>
           <div class="review-row">
