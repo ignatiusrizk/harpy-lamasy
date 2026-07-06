@@ -695,6 +695,8 @@ function saRenderHead(string $title = 'Super Admin'): void {
       /* fallback :where(.lmx-btn) harpy-erp.css = width:100% → semua filter/toolbar SA
          "lepas" (tiap select melebar 1 baris). Default SA: ikut konten. */
       width: auto;
+      /* reset global SA (*{padding:0}) menimpa padding :where() harpy-erp → teks mepet border */
+      padding: 8px 12px; font-size: 13px;
     }
     /* Konteks FORM/MODAL → kembalikan full-width (field memang selebar kolom) */
     .sa-modal .lmx-btn, .form-group .lmx-btn, .form-row .lmx-btn, .fg .lmx-btn,
