@@ -1181,13 +1181,13 @@ function openConfirmModal(){
 
   // Load packages & bundles if not yet loaded
   if (!_packages.length) {
-    saFetch('payments.php?action=get_packages').then(r=>r.json()).then(d => {
+    saFetch('payments.php?action=get_packages').then(d => {
       _packages = d;
       renderPackageOptions();
     });
   } else renderPackageOptions();
   if (!_bundles.length) {
-    saFetch('payments.php?action=get_bundles').then(r=>r.json()).then(d => {
+    saFetch('payments.php?action=get_bundles').then(d => {
       _bundles = d;
       renderBundleOptions();
     });
@@ -1249,7 +1249,7 @@ function submitConfirm(){
 function openWaLink(payId, ownerWa){
   // Buka modal konfirmasi WA untuk payment existing
   _selectedPaymentId = payId;
-  saFetch('payments.php?action=list&page=1').then(r=>r.json()).then(d => {
+  saFetch('payments.php?action=list&page=1').then(d => {
     const p = (d.rows||[]).find(r => r.id == payId);
     if (!p) return;
     const phone = ownerWa.replace(/[^0-9]/g,'').replace(/^0/, '62');

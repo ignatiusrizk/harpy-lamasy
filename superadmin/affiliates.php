@@ -475,7 +475,7 @@ function loadAffiliate(page){
   const q   = document.getElementById('affSearch').value;
   const st  = document.getElementById('affStatusFilter').value;
   const url = `affiliates.php?action=list_affiliate&q=${encodeURIComponent(q)}&status=${encodeURIComponent(st)}&page=${page}`;
-  saFetch(url).then(r=>r.json()).then(data=>{
+  saFetch(url).then(data=>{
     const tb = document.getElementById('affTbody');
     if(!data.rows || !data.rows.length){
       tb.innerHTML = '<tr><td colspan="10" style="color:var(--ash-dim);text-align:center;padding:24px;">Tidak ada data.</td></tr>';
@@ -527,7 +527,7 @@ function loadReferral(page){
   const q  = document.getElementById('refSearch').value;
   const st = document.getElementById('refStatusFilter').value;
   const url = `affiliates.php?action=list_referral&q=${encodeURIComponent(q)}&status=${encodeURIComponent(st)}&page=${page}`;
-  saFetch(url).then(r=>r.json()).then(data=>{
+  saFetch(url).then(data=>{
     const tb = document.getElementById('refTbody');
     if(!data.rows || !data.rows.length){
       tb.innerHTML = '<tr><td colspan="7" style="color:var(--ash-dim);text-align:center;padding:24px;">Tidak ada data.</td></tr>';
@@ -557,7 +557,7 @@ function loadPayout(page){
   window._payPage = page;
   const st  = document.getElementById('payStatusFilter').value;
   const url = `affiliates.php?action=list_payout&status=${encodeURIComponent(st)}&page=${page}`;
-  saFetch(url).then(r=>r.json()).then(data=>{
+  saFetch(url).then(data=>{
     const tb = document.getElementById('payTbody');
     if(!data.rows || !data.rows.length){
       tb.innerHTML = '<tr><td colspan="10" style="color:var(--ash-dim);text-align:center;padding:24px;">Tidak ada data.</td></tr>';
