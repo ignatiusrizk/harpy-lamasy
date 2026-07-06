@@ -1,8 +1,16 @@
 # Roadmap Legalitas LAMASY (SaaS Indonesia)
 
-**Tanggal:** 4 Juli 2026 · **Status:** Belum ada badan usaha (asumsi — koreksi kalau salah) · **Disclaimer:** ringkasan riset praktis, bukan nasihat hukum; untuk kasus spesifik konsultasikan ke konsultan hukum/notaris.
+**Tanggal:** 4 Juli 2026 · **Status: PT Perorangan ✅ + NIB ✅ SUDAH ADA** (update malam 4 Jul) — posisi sekarang: **tambah KBLI → PSE → merek**. · **Disclaimer:** ringkasan riset praktis, bukan nasihat hukum.
 
-> **Urutan penting:** PT Perorangan → NIB (OSS) → **PSE Komdigi (URGENT — enforcement aktif)** → Merek → PDP → Pajak. Total biaya jalur DIY: **± Rp 550rb – 2,5jt**. Estimasi waktu efektif: 2–4 minggu.
+> **Urutan penting:** ~~PT Perorangan → NIB~~ ✅ → **Tambah KBLI (63122 dkk)** → **PSE Komdigi (URGENT — enforcement aktif)** → Merek → PDP → Pajak.
+
+## ▶️ Posisi Sekarang: Tambah KBLI ke PT & NIB Existing (2 tahap, JANGAN dibalik)
+
+**Tahap A — AHU dulu** (ptp.ahu.go.id): pilih PT → **Pernyataan Perubahan** → tambahkan KBLI **63122** (Portal Web/Platform Digital Komersial — utama), **62019** (Pemrograman Komputer Lainnya), **62012** (Pengembangan Aplikasi Perdagangan via Internet) ke bidang usaha (yang lama biarkan) → bayar PNBP via kode billing (±Rp 50rb) → Sertifikat Pernyataan Perubahan terbit.
+
+**Tahap B — OSS** (oss.go.id): Perizinan Berusaha → **Perubahan / Ubah Data KBLI** → (kalau ada) tarik/refresh data AHU dulu → tambah 3 KBLI → isi detail per KBLI (uraian: "platform SaaS manajemen usaha laundry", lokasi, estimasi investasi, tenaga kerja) → submit. Risiko rendah → langsung terbit, **gratis**, nomor NIB tetap (cetak ulang lampiran KBLI).
+
+Setelah itu langsung lanjut **Tahap 3 (PSE)** di bawah — KBLI 63122 adalah prasyaratnya.
 
 ---
 
