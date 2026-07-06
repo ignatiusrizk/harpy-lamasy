@@ -163,23 +163,26 @@ $activePage = 'welcome_kit';
   display: flex; gap: 10px; align-items: center; margin-bottom: 8px;
 }
 .item-row input[type="text"] {
-  flex: 1; padding: 8px 11px; background: var(--crease-soft);
+  flex: 1; padding: 8px 11px; background: var(--navy); /* kontras dgn kartu opt-block (crease-soft) */
   border: 1.5px solid var(--crease); border-radius: 8px;
   color: var(--white); font-family: var(--font); font-size: 13px; outline: none;
 }
 .item-row input[type="number"] {
-  width: 72px; padding: 8px 10px; background: var(--crease-soft);
+  width: 64px; padding: 8px 6px; background: var(--navy);
   border: 1.5px solid var(--crease); border-radius: 8px;
   color: var(--white); font-family: var(--font); font-size: 13px; outline: none;
-  text-align: center;
+  text-align: center; -moz-appearance: textfield; appearance: textfield;
 }
+.item-row input[type="number"]::-webkit-outer-spin-button,
+.item-row input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 .item-row input:focus { border-color: var(--teal); }
-.item-row .remove-btn {
+.item-row .remove-btn, .opt-head .remove-btn {
   background: rgba(244,63,94,.1); border: 1px solid rgba(244,63,94,.25);
-  color: var(--coral); border-radius: 7px; padding: 6px 10px; cursor: pointer;
+  color: var(--coral); border-radius: 7px; padding: 0 10px; cursor: pointer;
   font-size: 13px; line-height: 1; transition: background .12s;
+  height: 34px; min-width: 38px; flex-shrink: 0; white-space: nowrap;
 }
-.item-row .remove-btn:hover { background: rgba(244,63,94,.2); }
+.item-row .remove-btn:hover, .opt-head .remove-btn:hover { background: rgba(244,63,94,.2); }
 
 /* ── Toggle switch ── */
 .sw { position: relative; display: inline-block; width: 36px; height: 20px; }
@@ -221,10 +224,22 @@ $activePage = 'welcome_kit';
 }
 .opt-head .opt-nama:focus { border-color: var(--teal); box-shadow: 0 0 0 3px rgba(53,232,213,.12); }
 .opt-def {
-  display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600;
+  display: flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 600;
   color: var(--ash); cursor: pointer; white-space: nowrap;
+  padding: 8px 12px; border: 1px solid var(--crease); border-radius: 100px;
+  background: var(--navy); transition: border-color .12s, color .12s;
 }
+.opt-def:has(input:checked) { border-color: rgba(53,232,213,.5); color: var(--teal); background: rgba(53,232,213,.08); }
 .opt-def input[type="radio"] { accent-color: var(--teal); width: 15px; height: 15px; cursor: pointer; }
+/* Header kolom item — grid selaras dgn .item-row (gap & lebar sama) */
+.item-cols {
+  display: flex; gap: 10px; margin: 2px 0 6px;
+  font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em;
+  color: var(--ash-dim);
+}
+.item-cols .c-nama { flex: 1; }
+.item-cols .c-qty  { width: 64px; text-align: center; }
+.item-cols .c-del  { width: 38px; }
 .opt-items { padding-left: 4px; }
 .opt-items .item-row { background: transparent; }
 </style>
@@ -492,13 +507,13 @@ function addOptionRow(o = {}) {
   wrap.innerHTML = `
     <div class="opt-head">
       <input type="text" class="opt-nama" placeholder="Nama opsi (cth: Paket Printer)" maxlength="80"/>
-      <label class="opt-def"><input type="radio" name="optDefault"/> Default</label>
-      <button class="remove-btn" onclick="this.closest('.opt-block').remove()">✕ Opsi</button>
+      <label class="opt-def" title="Jadikan opsi default saat aktivasi outlet"><input type="radio" name="optDefault"/> Default</label>
+      <button class="remove-btn" title="Hapus opsi ini beserta item-nya" onclick="this.closest('.opt-block').remove()">🗑 Hapus Opsi</button>
     </div>
-    <div style="display:flex;gap:8px;margin-bottom:6px;padding:0 2px;">
-      <span style="flex:1;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--ash-dim);">Nama Item</span>
-      <span style="width:72px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--ash-dim);text-align:center;">Qty</span>
-      <span style="width:36px;"></span>
+    <div class="item-cols">
+      <span class="c-nama">Nama Item</span>
+      <span class="c-qty">Qty</span>
+      <span class="c-del"></span>
     </div>
     <div class="opt-items"></div>
     <button class="sa-btn sa-btn-outline sa-btn-sm" onclick="addKitItem(this)" style="margin-top:4px;">＋ Item</button>`;
