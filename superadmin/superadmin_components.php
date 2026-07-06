@@ -692,10 +692,15 @@ function saRenderHead(string $title = 'Super Admin'): void {
     .lmx-btn {
       background: rgba(28,37,64,.5) !important; border: 1px solid var(--crease) !important;
       color: var(--glow) !important; border-radius: 8px; font-family: var(--font);
+      /* fallback :where(.lmx-btn) harpy-erp.css = width:100% → semua filter/toolbar SA
+         "lepas" (tiap select melebar 1 baris). Default SA: ikut konten. */
+      width: auto;
     }
-    /* fallback :where(.lmx-btn) di harpy-erp.css set width:100% → di filter bar SA tiap
-       select melebar satu baris penuh (style "lepas"). Kembalikan ke ukuran konten. */
-    .sa-filter-bar .lmx-btn { width: auto; min-width: 170px; flex: 0 1 auto; }
+    /* Konteks FORM/MODAL → kembalikan full-width (field memang selebar kolom) */
+    .sa-modal .lmx-btn, .form-group .lmx-btn, .form-row .lmx-btn, .fg .lmx-btn,
+    .ann-form-row .lmx-btn, .sa-grid-2 .lmx-btn { width: 100%; }
+    /* Filter bar: kasih lebar minimum biar tak terlalu ciut */
+    .sa-filter-bar .lmx-btn, .b-filter-bar .lmx-btn { min-width: 170px; flex: 0 1 auto; }
     .lmx-btn .lmx-car { color: var(--ash) !important; }
     .lmx-btn .lmx-lbl.ph { color: var(--ash-dim) !important; }
     .lmx-panel {
