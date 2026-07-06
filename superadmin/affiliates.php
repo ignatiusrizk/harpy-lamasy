@@ -304,10 +304,11 @@ $commissionNow = BillingConfig::getInt('affiliate_commission', 100000);
       <label style="font-size:13px;font-weight:600;color:var(--ash);">Komisi/Konversi</label>
       <div style="display:flex;align-items:center;gap:8px;">
         <span style="color:var(--ash-dim);font-size:13px;">Rp</span>
-        <input type="number" id="commissionInput" value="<?= (int)$commissionNow ?>"
-               min="0" step="1000"
+        <input type="text" inputmode="numeric" id="commissionInput"
+               value="<?= number_format((int)$commissionNow, 0, ',', '.') ?>"
+               oninput="this.value=(this.value.replace(/[^0-9]/g,'')||'').replace(/\B(?=(\d{3})+(?!\d))/g,'.')"
                style="width:120px;background:var(--slate-elev);border:1px solid var(--crease-soft);
-                      border-radius:8px;color:var(--white);padding:6px 10px;font-size:13px;">
+                      border-radius:8px;color:var(--white);padding:6px 10px;font-size:13px;text-align:right;">
         <button class="sa-btn-sm sa-btn-primary" onclick="doSetCommission()">Simpan</button>
       </div>
     </div>
@@ -616,7 +617,8 @@ async function doRejectPayout(id){
 
 // ── SET COMMISSION ────────────────────────────────────
 async function doSetCommission(){
-  const val = parseInt(document.getElementById('commissionInput').value);
+  // input ber-separator titik → strip non-digit dulu (parseInt('100.000') berhenti di titik = 100!)
+  const val = parseInt(document.getElementById('commissionInput').value.replace(/[^0-9]/g,''), 10);
   if(isNaN(val) || val < 0){ saShowToast('Nilai komisi tidak valid.','error'); return; }
   if(!await lmConfirm(`Set komisi affiliate ke Rp ${val.toLocaleString('id-ID')} per konversi?`)) return;
   saPost(`affiliates.php?action=set_commission`, { commission: val })
