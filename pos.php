@@ -2080,7 +2080,7 @@ function searchPelanggan(q) {
     if (!data.length) { list.classList.remove('open'); return; }
     list.innerHTML = data.map(p => `
       <div class="ac-item" onclick="selectPelanggan(${p.id},'${esc(p.nama)}','${esc(p.telepon||'')}',${parseInt(p.poin_balance||0)})">
-        <div>${esc(p.nama)}${LOYALTY.enabled && (p.poin_balance>0)?` <span style="font-size:11px;color:#0891B2">⭐${p.poin_balance}</span>`:''}</div>
+        <div>${esc(p.nama)}${LOYALTY.enabled && (p.poin_balance>0)?` <span style="font-size:11px;color:#0891B2">⭐${grpRibu(p.poin_balance)}</span>`:''}</div>
         <div class="ac-sub">${p.telepon||'No telepon'} · ${p.tipe} · ${p.total_order} order</div>
       </div>`).join('');
     list.classList.add('open');

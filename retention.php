@@ -109,7 +109,7 @@ async function loadList(){
     box.innerHTML = rows.map(p => {
       const hari   = p.hari_absen;
       const poin   = p.poin_balance > 0
-        ? `<span class="hl-badge" style="background:#F0FDFB;color:#0F766E;font-size:11px;margin-left:6px">⭐ ${p.poin_balance} poin</span>`
+        ? `<span class="hl-badge" style="background:#F0FDFB;color:#0F766E;font-size:11px;margin-left:6px">⭐ ${grpRibu(p.poin_balance)} poin</span>`
         : '';
       const previewMsg = String(p.pesan||'').substring(0,140) + (p.pesan && p.pesan.length>140 ? '...' : '');
       return `

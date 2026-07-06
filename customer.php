@@ -556,7 +556,7 @@ function renderCustomer() {
             <div class="cust-telp">${c.telepon||'No telepon'}</div>
             <div style="margin-top:5px;display:flex;gap:4px;flex-wrap:wrap">
               ${tierBadge(c.tier)} ${segmenBadge(c.segmen)}
-              ${parseInt(c.poin_balance||0) > 0 ? '<span class="hl-badge" style="background:#F0FDFB;color:#0F766E;font-size:10px">⭐ '+parseInt(c.poin_balance)+'</span>' : ''}
+              ${parseInt(c.poin_balance||0) > 0 ? '<span class="hl-badge" style="background:#F0FDFB;color:#0F766E;font-size:10px">⭐ '+grpRibu(c.poin_balance)+'</span>' : ''}
             </div>
           </div>
           <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">

@@ -229,7 +229,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
           <div style="font-weight:600;font-size:14px;<?= $r['bisa_redeem'] ? '' : 'color:#94A3B8' ?>">
             <?= $r['bisa_redeem'] ? '✅' : '⏳' ?> <?= htmlspecialchars($r['nama_reward']) ?>
           </div>
-          <div style="font-size:11px;color:#64748B;margin-top:2px"><?= (int)$r['poin_dibutuhkan'] ?> poin<?= $r['bisa_redeem'] ? '' : ' (butuh ' . (int)$r['kurang'] . ' lagi)' ?></div>
+          <div style="font-size:11px;color:#64748B;margin-top:2px"><?= number_format((int)$r['poin_dibutuhkan'], 0, ',', '.') ?> poin<?= $r['bisa_redeem'] ? '' : ' (butuh ' . number_format((int)$r['kurang'], 0, ',', '.') . ' lagi)' ?></div>
         </div>
         <?php if ($r['bisa_redeem']): ?>
           <button onclick="generateKupon(<?= (int)$r['id'] ?>, this)"
