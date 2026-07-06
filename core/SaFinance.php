@@ -16,6 +16,13 @@ class SaFinance
         return [$sql, $p];
     }
 
+    // Tenant demo (is_demo=1) dikecualikan dari SEMUA angka keuangan platform —
+    // aktivitas demo (coin seed 999rb, AI briefing pengunjung, dst.) bukan uang nyata.
+    private static function notDemo(string $col): string
+    {
+        return " AND $col NOT IN (SELECT id FROM tenants WHERE is_demo=1)";
+    }
+
     // Subquery revenue gabungan — sama persis dgn billing.php smpRevenueSource.
     // Kolom ternormalisasi: tenant_id, type(setup_fee|coin_topup|adjustment), nominal, coin, bayar(DATE).
     private static function revenueSource(): string
@@ -25,7 +32,7 @@ class SaFinance
                    CASE WHEN type='custom' THEN 'adjustment' ELSE type END AS type,
                    nominal_dibayar AS nominal, coin_dikreditkan AS coin,
                    tanggal_bayar AS bayar
-            FROM saas_manual_payments WHERE status='confirmed'
+            FROM saas_manual_payments WHERE status='confirmed'" . self::notDemo('tenant_id') . "
             UNION ALL
             SELECT sp.tenant_id,
                    CASE WHEN sp.type='topup_coin' THEN 'coin_topup' ELSE 'setup_fee' END AS type,
@@ -33,7 +40,7 @@ class SaFinance
                    COALESCE((SELECT cl.amount FROM coin_ledger cl
                              WHERE cl.payment_id=sp.id AND cl.type='topup' LIMIT 1),0) AS coin,
                    DATE(COALESCE(sp.paid_at, sp.created_at)) AS bayar
-            FROM saas_payments sp WHERE sp.status='paid'
+            FROM saas_payments sp WHERE sp.status='paid'" . self::notDemo('sp.tenant_id') . "
         ) rev";
     }
 
@@ -65,7 +72,7 @@ class SaFinance
         [$r, $p] = self::range('DATE(created_at)', $from, $to);
         try {
             $st = Database::get()->prepare(
-                "SELECT COALESCE(SUM(cost_estimated_idr),0) FROM hl_ai_usage WHERE 1=1" . $r);
+                "SELECT COALESCE(SUM(cost_estimated_idr),0) FROM hl_ai_usage WHERE 1=1" . self::notDemo('tenant_id') . $r);
             $st->execute($p);
             return (int)$st->fetchColumn();
         } catch (Throwable) { return 0; }
@@ -87,7 +94,7 @@ class SaFinance
         [$r, $p] = self::range('DATE(created_at)', $from, $to);
         try {
             $st = Database::get()->prepare(
-                "SELECT COALESCE(SUM(amount),0) FROM coin_ledger WHERE type='deduct'" . $r);
+                "SELECT COALESCE(SUM(amount),0) FROM coin_ledger WHERE type='deduct'" . self::notDemo('tenant_id') . $r);
             $st->execute($p);
             return (int)$st->fetchColumn();
         } catch (Throwable) { return 0; }
@@ -96,7 +103,7 @@ class SaFinance
     public static function coinFloat(): array
     {
         try {
-            $out = (int)Database::get()->query("SELECT COALESCE(SUM(coin_balance),0) FROM tenants")->fetchColumn();
+            $out = (int)Database::get()->query("SELECT COALESCE(SUM(coin_balance),0) FROM tenants WHERE is_demo=0")->fetchColumn();
         } catch (Throwable) { $out = 0; }
         return ['coin_outstanding' => $out, 'rp_estimate' => (int)round($out * self::COIN_TO_IDR)];
     }
