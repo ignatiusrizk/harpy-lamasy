@@ -55,7 +55,6 @@ function placesSearch(string $key, string $fields, array $body): array {
     ]);
     $raw  = curl_exec($ch);
     $http = (int)curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
-    curl_close($ch);
     $j = json_decode((string)$raw, true) ?: [];
     if ($http !== 200) {
         $msg = $j['error']['message'] ?? substr((string)$raw, 0, 200);
