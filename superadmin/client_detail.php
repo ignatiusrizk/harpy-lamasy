@@ -1129,7 +1129,7 @@ $billingStat = $bsSt->fetch(PDO::FETCH_ASSOC);
       <?php
       try {
           $actQ = Database::get()->prepare("
-              SELECT al.action, al.outlet_id, al.created_at,
+              SELECT al.aksi, al.modul, al.keterangan, al.user_nama, al.outlet_id, al.created_at,
                      o.nama_outlet AS outlet_nama
               FROM hl_audit_log al
               LEFT JOIN outlets o ON o.id = al.outlet_id
@@ -1143,12 +1143,17 @@ $billingStat = $bsSt->fetch(PDO::FETCH_ASSOC);
           if ($acts): ?>
           <div class="sa-table-wrap">
             <table class="sa-table">
-              <thead><tr><th>Waktu</th><th>Aksi</th><th>Outlet</th></tr></thead>
+              <thead><tr><th>Waktu</th><th>Aksi</th><th>Oleh</th><th>Outlet</th></tr></thead>
               <tbody>
               <?php foreach ($acts as $a): ?>
               <tr>
                 <td style="font-size:12px;font-family:var(--mono);color:var(--ash);"><?= htmlspecialchars(substr($a['created_at'],0,16)) ?></td>
-                <td style="font-size:13px;"><?= htmlspecialchars($a['action']) ?></td>
+                <td style="font-size:13px;">
+                  <span style="color:var(--ash-dim);font-size:11px;"><?= htmlspecialchars($a['modul'] ?? '') ?></span>
+                  <?= htmlspecialchars($a['aksi']) ?>
+                  <?php if (!empty($a['keterangan'])): ?><div style="font-size:11px;color:var(--ash-dim);"><?= htmlspecialchars(mb_strimwidth($a['keterangan'], 0, 80, '…')) ?></div><?php endif; ?>
+                </td>
+                <td style="font-size:12px;color:var(--ash);"><?= htmlspecialchars($a['user_nama'] ?? '-') ?></td>
                 <td style="font-size:12px;color:var(--ash);"><?= htmlspecialchars($a['outlet_nama'] ?? '#'.$a['outlet_id']) ?></td>
               </tr>
               <?php endforeach; ?>
