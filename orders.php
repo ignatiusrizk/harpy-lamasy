@@ -14,6 +14,30 @@ $user = currentUser();
 
 if (!hasPermission('orders.view_all') && !hasPermission('orders.view_own')) requirePermission('orders.view_all');
 
+// Helper: metode bayar aktif outlet (code => "emoji label") — validasi input & label log
+if (!function_exists('validPayMethods')) {
+    function validPayMethods(int $tid, int $oid): array {
+        static $cache = null;
+        if ($cache !== null) return $cache;
+        try {
+            $st = Database::get()->prepare(
+                "SELECT code, label, emoji FROM hl_payment_methods
+                 WHERE outlet_id=? AND tenant_id=? AND is_active=1
+                 ORDER BY sort_order, id");
+            $st->execute([$oid, $tid]);
+            $rows = $st->fetchAll(PDO::FETCH_ASSOC);
+        } catch (Throwable) { $rows = []; }
+        if (!$rows) $rows = [
+            ['code'=>'cash',     'label'=>'Tunai',         'emoji'=>'💵'],
+            ['code'=>'transfer', 'label'=>'Transfer Bank', 'emoji'=>'🏦'],
+            ['code'=>'qris',     'label'=>'QRIS',          'emoji'=>'📱'],
+        ];
+        $cache = [];
+        foreach ($rows as $r) $cache[$r['code']] = trim(($r['emoji'] ?? '') . ' ' . $r['label']);
+        return $cache;
+    }
+}
+
 // Helper: data filter scope berdasarkan permission
 if (!function_exists('getDataFilter')) {
     function getDataFilter(string $kode) {
@@ -532,8 +556,11 @@ if ($action) {
         $db = Database::get();
         $db->beginTransaction();
         try {
+            $pmMap    = validPayMethods($tid, $oid);
+            $metodeIn = $_POST['metode'] ?? 'cash';
+            if (!isset($pmMap[$metodeIn])) $metodeIn = 'cash';
             $upd    = "UPDATE hl_transaksi SET dp=?, sisa_bayar=?, status_bayar=?, metode_bayar=?";
-            $params = [$new_dp, $new_sisa, $new_status, $_POST['metode'] ?? 'cash'];
+            $params = [$new_dp, $new_sisa, $new_status, $metodeIn];
             if ($bukti_path) { $upd .= ", bukti_bayar=?"; $params[] = $bukti_path; }
             $upd .= " WHERE tenant_id=? AND outlet_id=? AND id=?"; $params[] = $tid; $params[] = $oid; $params[] = $id;
             $db->prepare($upd)->execute($params);
@@ -552,7 +579,7 @@ if ($action) {
             $trxData->execute([$tid, $oid, $id]);
             $trx = $trxData->fetch();
 
-            $metodeLabel = ['cash'=>'Cash','transfer'=>'Transfer','qris'=>'QRIS'][$_POST['metode'] ?? 'cash'] ?? 'Cash';
+            $metodeLabel = $pmMap[$metodeIn] ?? ucfirst($metodeIn);
             $kasKet = ($tipe === 'lunas' ? 'Pelunasan' : 'Pembayaran sebagian') .
                       ' order ' . ($trx['no_order'] ?? '') .
                       ' - ' . ($trx['nama_pelanggan'] ?? '') .
@@ -673,7 +700,7 @@ if ($action) {
         verifyCsrf();
         $data = json_decode(file_get_contents('php://input'), true);
         $ids = $data['ids'] ?? [];
-        $metode = in_array($data['metode'] ?? 'cash', ['cash','transfer','qris','ewallet'], true) ? $data['metode'] : 'cash';
+        $metode = isset(validPayMethods($tid, $oid)[$data['metode'] ?? '']) ? $data['metode'] : 'cash';
         $ids = array_values(array_unique(array_map('intval', $ids)));
         $ids = array_filter($ids, fn($x) => $x > 0);
         if (!$ids) { echo json_encode(['error'=>'Tidak ada order dipilih']); exit; }
@@ -972,6 +999,21 @@ if ($action) {
     }
 
     echo json_encode(['error'=>'Unknown']); exit;
+}
+
+// Metode bayar aktif per-outlet utk dropdown edit & modal bayar (selaras pos.php)
+$_pmStmt = Database::get()->prepare("
+    SELECT code, label, emoji FROM hl_payment_methods
+    WHERE outlet_id=? AND tenant_id=? AND is_active=1
+    ORDER BY sort_order, id");
+$_pmStmt->execute([TenantResolver::outletId(), TenantResolver::id()]);
+$activeMethods = $_pmStmt->fetchAll(PDO::FETCH_ASSOC);
+if (!$activeMethods) {
+    $activeMethods = [
+        ['code'=>'cash',     'label'=>'Tunai',         'emoji'=>'💵'],
+        ['code'=>'transfer', 'label'=>'Transfer Bank', 'emoji'=>'🏦'],
+        ['code'=>'qris',     'label'=>'QRIS',          'emoji'=>'📱'],
+    ];
 }
 ?>
 <!DOCTYPE html>
@@ -1388,9 +1430,9 @@ textarea{resize:vertical;min-height:64px}
       <div class="form-group">
         <label>Metode Pembayaran</label>
         <select id="bayarMetode" onchange="onMetodeChange()">
-          <option value="cash">💵 Cash</option>
-          <option value="transfer">🏦 Transfer Bank</option>
-          <option value="qris">📱 QRIS</option>
+          <?php foreach ($activeMethods as $_m): ?>
+          <option value="<?= htmlspecialchars($_m['code']) ?>"><?= htmlspecialchars(trim(($_m['emoji'] ?? '') . ' ' . $_m['label'])) ?></option>
+          <?php endforeach; ?>
         </select>
       </div>
 
@@ -1522,6 +1564,8 @@ const OUTLET_TELP  = <?= json_encode($_outletTelp) ?>;
 const CAN_BAYAR      = <?= hasPermission('orders.bayar')         ? 'true' : 'false' ?>;
 const CAN_EDIT_ORDER = <?= hasPermission('orders.edit')           ? 'true' : 'false' ?>;
 const CAN_DEL_ORDER  = <?= hasPermission('orders.delete')         ? 'true' : 'false' ?>;
+const PAY_METHODS  = <?= json_encode($activeMethods, JSON_UNESCAPED_UNICODE) ?>;
+const PM_LABEL     = Object.fromEntries(PAY_METHODS.map(m => [m.code, ((m.emoji||'') + ' ' + m.label).trim()]));
 
 document.addEventListener('DOMContentLoaded', async () => {
   initFilter('orderFilter');
@@ -1600,9 +1644,12 @@ function getBulkIds() {
 async function applyBulkPay() {
   const ids = getBulkIds();
   if (!ids.length) { showToast('Tidak ada order dipilih','error'); return; }
-  const metode = await lmPrompt('Metode bayar (cash/transfer/qris/ewallet):', 'cash');
+  const pmCodes = PAY_METHODS.map(m => m.code);
+  let metode = await lmPrompt('Metode bayar (' + pmCodes.join('/') + '):', pmCodes[0] || 'cash');
   if (!metode) return;
-  if (!(await lmConfirm('Tandai LUNAS ' + ids.length + ' order dengan metode "' + metode + '"?\n(Sudah lunas akan di-skip.)'))) return;
+  metode = metode.trim().toLowerCase();
+  if (!pmCodes.includes(metode)) { showToast('Metode tidak dikenal: ' + metode, 'error'); return; }
+  if (!(await lmConfirm('Tandai LUNAS ' + ids.length + ' order dengan metode "' + (PM_LABEL[metode] || metode) + '"?\n(Sudah lunas akan di-skip.)'))) return;
   try {
     const r = await fetch('orders.php?action=bulk_pay', {
       method:'POST',
@@ -1865,12 +1912,14 @@ async function openDetail(id) {
       <div class="form-group">
         <label>Metode Bayar</label>
         <select id="edit_metode">
-          ${['cash','transfer','qris'].map(m=>`<option value="${m}" ${d.metode_bayar===m?'selected':''}>${m.toUpperCase()}</option>`).join('')}
+          ${!d.metode_bayar ? '<option value="" selected>— Pilih metode —</option>' : ''}
+          ${PAY_METHODS.map(m=>`<option value="${esc(m.code)}" ${d.metode_bayar===m.code?'selected':''}>${esc(((m.emoji||'')+' '+m.label).trim())}</option>`).join('')}
+          ${d.metode_bayar && !PAY_METHODS.some(m=>m.code===d.metode_bayar) ? `<option value="${esc(d.metode_bayar)}" selected>${esc(d.metode_bayar.toUpperCase())}</option>` : ''}
         </select>
       </div>
       <div class="form-group">
         <label>Estimasi Selesai</label>
-        <input type="date" id="edit_estimasi" value="${d.estimasi_selesai||''}"/>
+        <input type="date" id="edit_estimasi" value="${(d.estimasi_selesai||'').slice(0,10)}"/>
       </div>
     </div>
     <div class="section-title">📸 Dokumentasi Pickup <span style="font-size:11px;font-weight:500;color:var(--gray)">— foto bukti saat pelanggan ambil</span></div>
@@ -1893,7 +1942,7 @@ async function openDetail(id) {
       <textarea id="edit_catatan_internal" placeholder="Catatan hanya untuk tim...">${esc(d.catatan_internal||'')}</textarea>
     </div>` : `
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;font-size:13px">
-      <div><span style="color:var(--gray)">Metode Bayar: </span><strong>${(d.metode_bayar||'cash').toUpperCase()}</strong></div>
+      <div><span style="color:var(--gray)">Metode Bayar: </span><strong>${PM_LABEL[d.metode_bayar] || (d.metode_bayar ? esc(d.metode_bayar.toUpperCase()) : '-')}</strong></div>
       <div><span style="color:var(--gray)">Est. Selesai: </span><strong>${d.estimasi_selesai ? fmtDate(d.estimasi_selesai) : '-'}</strong></div>
     </div>
     ${d.catatan ? `<div style="font-size:13px;margin-bottom:8px"><span style="color:var(--gray)">Catatan: </span>${esc(d.catatan)}</div>` : ''}
@@ -2368,7 +2417,7 @@ async function cetakUlang(id) {
   if (d.error) { document.getElementById('strukCetakUlang').innerHTML = '<div style="color:red">❌ ' + d.error + '</div>'; return; }
 
   const isFull = parseFloat(d.dp) >= parseFloat(d.total);
-  const metodeTxt = {'cash':'Cash','transfer':'Transfer Bank','qris':'QRIS'}[d.metode_bayar] || d.metode_bayar;
+  const metodeTxt = PM_LABEL[d.metode_bayar] || d.metode_bayar || '-';
   const statusProsesLabel = {'masuk':'Diterima','cuci':'Sedang Dicuci','kering':'Sedang Dikeringkan','setrika':'Sedang Disetrika','siap':'Siap Diambil','diambil':'Sudah Diambil/Diantar'}[d.status_proses] || d.status_proses;
 
   const itemRows = (d.items||[]).map(item => `
