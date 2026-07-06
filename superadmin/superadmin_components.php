@@ -693,6 +693,9 @@ function saRenderHead(string $title = 'Super Admin'): void {
       background: rgba(28,37,64,.5) !important; border: 1px solid var(--crease) !important;
       color: var(--glow) !important; border-radius: 8px; font-family: var(--font);
     }
+    /* fallback :where(.lmx-btn) di harpy-erp.css set width:100% → di filter bar SA tiap
+       select melebar satu baris penuh (style "lepas"). Kembalikan ke ukuran konten. */
+    .sa-filter-bar .lmx-btn { width: auto; min-width: 170px; flex: 0 1 auto; }
     .lmx-btn .lmx-car { color: var(--ash) !important; }
     .lmx-btn .lmx-lbl.ph { color: var(--ash-dim) !important; }
     .lmx-panel {
