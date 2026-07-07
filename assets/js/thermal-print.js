@@ -81,16 +81,27 @@
       } finally { document.body.removeChild(holder); }
     },
 
-    /* Cetak node ke printer tersimpan: connect → begin().image().cutPaper().write() → disconnect */
+    /* Cetak node ke printer tersimpan: connect → begin/align/image/cut/write → disconnect.
+     * ⚠️ JANGAN fluent-chain (begin().align()...) — itu API wrapper JS plugin yang TIDAK
+     * termuat di webview remote (server.url); yang ada hanya proxy bridge Capacitor:
+     * tiap method return Promise & butuh payload objek bernama + connectionId (lihat
+     * node_modules/.../dist/esm/index.js: payload = {connectionId, ...mappedArgs}). */
     print: async function (node, widthPx) {
       var p = pl(); if (!p) throw new Error('Printer tidak tersedia');
       var pr = TP.getPrinter(); if (!pr || !pr.address) throw new Error('Printer belum dipilih');
-      var base64 = await TP.renderBitmap(node, widthPx);
-      await p.connect({ address: pr.address });
+      var dataUrl = await TP.renderBitmap(node, widthPx);
+      var base64  = dataUrl.replace(/^data:[^,]*,/, ''); // native butuh base64 murni tanpa prefix dataURL
+      var res = await p.connect({ address: pr.address, encoding: 'GBK' });
+      var cid = res && res.connectionId ? { connectionId: res.connectionId } : {};
+      function arg(extra) { return Object.assign({}, cid, extra || {}); }
       try {
-        await p.begin().align('center').image(base64).feedCutPaper(false, 2).write();
+        await p.begin(arg());
+        await p.align(arg({ alignment: 'center' }));
+        await p.image(arg({ image: base64 }));
+        await p.feedCutPaper(arg({ half: false, feedLines: 2 }));
+        await p.write(arg());
       } finally {
-        try { await p.disconnect(); } catch (e) {}
+        try { await p.disconnect(arg()); } catch (e) {}
       }
     }
   };
