@@ -843,14 +843,16 @@ if ($action) {
         $ck = TenantQuery::rawOne("SELECT id FROM hl_transaksi WHERE tenant_id=? AND outlet_id=? AND id=?", [$tid, $oid, $oidv]);
         if (!$ck) { echo json_encode(['error'=>'Order tidak ditemukan']); exit; }
 
-        $userId   = $_SESSION['user_id']   ?? null;
-        $userNama = $_SESSION['user_nama'] ?? ($_SESSION['nama'] ?? null);
+        $userId   = $user['id']   ?? null;
+        $userNama = $user['nama'] ?? null;
         try {
             $db = Database::get();
+            // created_at ditulis eksplisit dari PHP (WIB) — default NOW() MySQL = UTC,
+            // tampil selisih 7 jam di riwayat (fmtDateTime baca apa adanya)
             $stmt = $db->prepare("INSERT INTO hl_order_notes
-                (tenant_id, outlet_id, transaksi_id, user_id, user_nama, catatan)
-                VALUES (?,?,?,?,?,?)");
-            $stmt->execute([$tid, $oid, $oidv, $userId, $userNama, $catatan]);
+                (tenant_id, outlet_id, transaksi_id, user_id, user_nama, catatan, created_at)
+                VALUES (?,?,?,?,?,?,?)");
+            $stmt->execute([$tid, $oid, $oidv, $userId, $userNama, $catatan, date('Y-m-d H:i:s')]);
             logAudit('note_add', 'order#'.$oidv, mb_substr($catatan,0,80));
             echo json_encode(['ok'=>true, 'id'=>(int)$db->lastInsertId()]);
         } catch (Throwable $e) {
@@ -1940,7 +1942,7 @@ async function openDetail(id) {
       <textarea id="edit_catatan">${esc(d.catatan||'')}</textarea>
     </div>
     <div class="form-group">
-      <label>Catatan Internal</label>
+      <label>Catatan Internal <span style="font-weight:500;color:var(--gray);text-transform:none;letter-spacing:0">— 🏷 ikut tercetak di label cucian</span></label>
       <textarea id="edit_catatan_internal" placeholder="Catatan hanya untuk tim...">${esc(d.catatan_internal||'')}</textarea>
     </div>` : `
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;font-size:13px">
@@ -1950,7 +1952,7 @@ async function openDetail(id) {
     ${d.catatan ? `<div style="font-size:13px;margin-bottom:8px"><span style="color:var(--gray)">Catatan: </span>${esc(d.catatan)}</div>` : ''}
     `}
 
-    <div class="section-title">🗒️ Catatan Internal (Tim) <span style="font-size:11px;font-weight:500;color:var(--gray)">— riwayat per-user</span></div>
+    <div class="section-title">🗒️ Catatan Tim <span style="font-size:11px;font-weight:500;color:var(--gray)">— riwayat antar-shift, tercatat siapa & kapan (tidak ikut tercetak)</span></div>
     <div id="notesList" style="margin-bottom:8px;max-height:200px;overflow-y:auto;border:1px solid rgba(27,45,90,.1);border-radius:8px;padding:8px;background:var(--off)">
       <div style="color:var(--gray);font-size:13px">⏳ Memuat catatan...</div>
     </div>

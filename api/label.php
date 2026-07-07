@@ -208,7 +208,7 @@ $qrSrc  = "https://api.qrserver.com/v1/create-qr-code/?size={$qrPx}x{$qrPx}&data
 
     <?php if ($catatanInt): ?>
       <hr class="sep">
-      <div class="catatan"><span class="t">Catatan Tim:</span> <?= htmlspecialchars($catatanInt) ?></div>
+      <div class="catatan"><span class="t">Internal:</span> <?= htmlspecialchars($catatanInt) ?></div>
     <?php endif; ?>
 
     <div class="bayar<?= $bayar === 'lunas' ? ' lunas' : '' ?>"><?= htmlspecialchars($bayarTxt) ?></div>
