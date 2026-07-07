@@ -1089,6 +1089,8 @@ tbody td{padding:11px 12px;vertical-align:middle}
 .form-group{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
 .form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .form-row.cols3{grid-template-columns:1fr 1fr 1fr}
+/* tombol lmx (pengganti select/date) di form modal: samakan persis dgn input,select,textarea di bawah */
+.form-group .lmx-btn{background:var(--off);border-radius:var(--r);color:var(--dark);font-weight:400}
 label{font-size:11px;font-weight:700;color:var(--navy);letter-spacing:.05em;text-transform:uppercase}
 input,select,textarea{padding:9px 12px;border:1.5px solid rgba(27,45,90,.14);border-radius:var(--r);font-family:var(--font);font-size:14px;color:var(--dark);background:var(--off);outline:none;transition:all .2s;width:100%}
 input:focus,select:focus,textarea:focus{border-color:var(--teal);background:var(--white);box-shadow:0 0 0 3px rgba(53,232,213,.1)}
