@@ -85,16 +85,23 @@ class AnomalyDetector
         $s->execute([$tenantId, $outletId]);
         if ((int)$s->fetchColumn() === 0) return; // tidak ada order = wajar tidak ada kas
 
+        // Umur outlet (hari) — alert "belum input X hari" tak boleh melebihi umur outlet.
+        // Tanpa cap ini, outlet baru yg belum pernah input kas manual kena "99 hari" (bug).
+        $s = $db->prepare("SELECT DATEDIFF(CURDATE(), DATE(created_at)) FROM outlets WHERE id=?");
+        $s->execute([$outletId]);
+        $umurHari = max(0, (int)$s->fetchColumn());
+
         // Last kas entry
         $s = $db->prepare("SELECT MAX(DATE(tanggal)) FROM hl_kas
                             WHERE tenant_id=? AND outlet_id=?");
         $s->execute([$tenantId, $outletId]);
         $last = $s->fetchColumn();
         if (!$last) {
-            $hari = 99; // never
+            $hari = $umurHari; // belum pernah input → seberapa lama outlet sudah ada
         } else {
             $hari = (int)((strtotime(date('Y-m-d')) - strtotime($last)) / 86400);
         }
+        $hari = min($hari, $umurHari); // tak mungkin lebih tua dari outletnya sendiri
         if ($hari < 2) return; // 0/1 hari ok
 
         $nama = self::outletNama($outletId);
