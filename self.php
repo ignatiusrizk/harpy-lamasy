@@ -19,7 +19,8 @@ require_once ROOT . '/core/Referral.php';
 
 date_default_timezone_set('Asia/Jakarta');
 
-$kode = strtoupper(preg_replace('/[^A-Z0-9]/i', '', $_GET['m'] ?? ''));
+// Izinkan - dan _ — kode mesin di DB memang berformat "MC-01"; strip dash bikin lookup selalu gagal
+$kode = strtoupper(preg_replace('/[^A-Z0-9\-_]/i', '', $_GET['m'] ?? ''));
 $action = $_GET['action'] ?? '';
 // Pre-fill referral code dari query string ?ref=
 $refPrefill = substr(trim(strip_tags($_GET['ref'] ?? '')), 0, 50);
@@ -256,7 +257,20 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:linear-gradient(180de
 <body>
 <div class="app">
 
-  <?php if (!$mesin): ?>
+  <?php if (!$mesin && $kode === '' && $refPrefill !== ''): ?>
+    <!-- ═════ LANDING REFERRAL (link share ?ref= tanpa kode mesin) ═════ -->
+    <div class="brand"><p class="brand-name">LAMASY</p></div>
+    <div class="card">
+      <div class="success-screen">
+        <div class="success-icon">🤝</div>
+        <h2 style="color:#065F46;margin:0 0 8px">Kamu Diajak Teman!</h2>
+        <p style="color:#374151;line-height:1.6">Pakai kode referral ini saat <strong>order pertamamu</strong> — sebutkan ke kasir, atau isi di kolom referral kalau pesan lewat mesin self-service:</p>
+        <div style="margin:16px auto;max-width:260px;background:#F0FDFA;border:2px dashed #14b8a6;border-radius:12px;padding:14px;font-size:22px;font-weight:800;letter-spacing:.06em;color:#0F766E" id="refCode"><?= htmlspecialchars($refPrefill) ?></div>
+        <button onclick="navigator.clipboard&&navigator.clipboard.writeText(document.getElementById('refCode').textContent.trim()).then(()=>{this.textContent='✓ Tersalin'})" style="padding:10px 18px;border:none;border-radius:9px;background:#14b8a6;color:#fff;font-weight:700;font-size:14px;cursor:pointer;font-family:inherit">📋 Salin Kode</button>
+        <p style="font-size:12px;color:#9CA3AF;margin-top:20px">Bonus poin otomatis masuk setelah order pertamamu lunas.</p>
+      </div>
+    </div>
+  <?php elseif (!$mesin): ?>
     <!-- ═════ MESIN NOT FOUND ═════ -->
     <div class="brand"><p class="brand-name">LAMASY</p></div>
     <div class="card">
