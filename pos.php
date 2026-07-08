@@ -1105,6 +1105,7 @@ textarea{resize:vertical;min-height:64px}
       Auto-cetak struk setelah simpan order
     </label>
     <p style="font-size:11px;color:#9CA3AF;margin:10px 0 0">Printer harus sudah di-pair di Setelan Bluetooth HP.</p>
+    <button class="btn btn-outline btn-sm" style="margin-top:12px;width:100%" onclick="posTestPrint()">🧪 Tes Cetak Teks (diagnostik)</button>
     <div style="text-align:right;margin-top:14px"><button class="btn btn-outline" onclick="document.getElementById('printerModal').style.display='none'">Tutup</button></div>
   </div>
 </div>
@@ -1114,6 +1115,34 @@ document.addEventListener('DOMContentLoaded', function () {
     var b = document.getElementById('btnPrinterSetting'); if (b) b.style.display = '';
   }
 });
+// Diagnostik: kirim TEKS polos (bukan gambar) untuk mengisolasi masalah cetak.
+// Teks bersih → masalah di raster image(); teks juga acak → encoding/koneksi.
+async function posTestPrint() {
+  const p = (window.Capacitor && Capacitor.Plugins) ? Capacitor.Plugins.CapacitorThermalPrinter : null;
+  const pr = window.ThermalPrint ? ThermalPrint.getPrinter() : null;
+  if (!p) { showToast('Plugin printer tak terdeteksi', 'error'); return; }
+  if (!pr || !pr.address) { showToast('Pilih printer dulu', 'error'); return; }
+  showToast('🧪 Tes cetak teks…', 'info');
+  try {
+    const res = await p.connect({ address: pr.address, encoding: 'GBK' });
+    const cid = (res && res.connectionId) ? { connectionId: res.connectionId } : {};
+    const arg = (x) => Object.assign({}, cid, x || {});
+    await p.begin(arg());
+    await p.align(arg({ alignment: 'center' }));
+    await p.text(arg({ text: 'LAMASY TES CETAK\n' }));
+    await p.align(arg({ alignment: 'left' }));
+    await p.text(arg({ text: 'Angka  : 1234567890\n' }));
+    await p.text(arg({ text: 'Rupiah : Rp 61.600\n' }));
+    await p.text(arg({ text: 'Item   : Reguler 7.7 kg\n' }));
+    await p.feedCutPaper(arg({ half: false, feedLines: 3 }));
+    await p.write(arg());
+    try { await p.disconnect(arg()); } catch (e) {}
+    showToast('✅ Perintah tes terkirim — lihat hasil kertas', 'success');
+  } catch (e) {
+    showToast('❌ ' + (e.message || 'Gagal tes'), 'error');
+  }
+}
+
 function posOpenPrinterModal() {
   var pr = ThermalPrint.getPrinter();
   document.getElementById('printerCurrent').textContent = pr ? pr.name : '—';
