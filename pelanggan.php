@@ -401,5 +401,8 @@ if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/sw.js').catch(e => console.warn('SW fail', e));
 }
 </script>
+<?php /* dialog lmConfirm/lmAlert — portal standalone (tak lewat renderToast tenant), tanpa ini
+         tombol Tukar Kupon & regen token mati (ReferenceError lmConfirm) */
+require __DIR__ . '/ui_dialog.php'; ?>
 </body>
 </html>
