@@ -79,7 +79,7 @@ if ($action === 'status') {
 if ($action === 'book' && $_SERVER['REQUEST_METHOD']==='POST') {
     header('Content-Type: application/json');
     $d = json_decode(file_get_contents('php://input'), true);
-    $kodeIn = strtoupper(preg_replace('/[^A-Z0-9]/i', '', $d['kode'] ?? ''));
+    $kodeIn = strtoupper(preg_replace('/[^A-Z0-9\-_]/i', '', $d['kode'] ?? ''));
     $mesin = findMesinByKode($kodeIn);
     if (!$mesin) { echo json_encode(['error'=>'Mesin tidak ditemukan']); exit; }
 
