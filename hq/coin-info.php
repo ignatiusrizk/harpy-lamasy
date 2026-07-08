@@ -252,7 +252,7 @@ $katMeta = [
   .cu-bar-row { display:flex; align-items:center; gap:10px; margin-bottom:8px; font-size:13px; }
   .cu-bar-row .cu-bar-lbl { width:150px; flex-shrink:0; }
   .cu-bar-track { flex:1; background:#F0F0F3; border-radius:6px; height:14px; overflow:hidden; }
-  .cu-bar-fill { height:100%; background:linear-gradient(90deg,#35E8D5,#1B9E92); }
+  .cu-bar-fill { display:block; height:100%; background:linear-gradient(90deg,#35E8D5,#1B9E92); } /* span inline → width/height diabaikan, bar tampil kosong */
   .cu-bar-val { width:130px; text-align:right; flex-shrink:0; color:#6B7280; font-family:'DM Mono',monospace; }
   .cu-ledger-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
   .cu-table { width:100%; border-collapse:collapse; font-size:13px; }
@@ -470,8 +470,9 @@ async function cuLoadLedger() {
   if (!d.ok || !d.rows.length) { box.innerHTML = '<div class="cu-empty">Belum ada transaksi periode ini</div>'; document.getElementById('cuPager').innerHTML=''; return; }
   let rows = d.rows.map(r => {
     const isDed = r.type === 'deduct';
-    const amt = (isDed ? '−' : '+') + fmtNum(r.amount);
-    const cls = isDed ? 'cu-amt-deduct' : 'cu-amt-topup';
+    const isFree = isDed && parseFloat(r.amount) === 0; // jejak trial boost (amount 0) — bukan potongan
+    const amt = isFree ? '🎁 gratis' : (isDed ? '−' : '+') + fmtNum(r.amount);
+    const cls = isFree ? '' : (isDed ? 'cu-amt-deduct' : 'cu-amt-topup');
     // created_at = UTC; tambah 'Z' agar di-parse sbg UTC, lalu format eksplisit ke WIB (jangan andalkan tz device)
     const tgl = new Date(r.created_at.replace(' ','T') + 'Z').toLocaleString('id-ID',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit',timeZone:'Asia/Jakarta'});
     return `<tr><td>${esc(tgl)}</td><td>${esc(r.nama_fitur||'-')}</td><td>${esc(r.nama_outlet||'—')}</td>
