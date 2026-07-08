@@ -108,6 +108,76 @@ if ($action) {
         TenantQuery::update('hl_layanan', ['is_active'=>0], 'id = ?', [intval($d['id'])]);
         echo json_encode(['success'=>true]); exit;
     }
+
+    // ── PRESET SA: daftar preset aktif + tanda "sudah ada" di outlet ini ──
+    if ($action === 'presets') {
+        if (!hasPermission('layanan.create')) { echo json_encode(['error'=>'Akses ditolak']); exit; }
+        $existing = [];
+        try {
+            $s = Database::get()->prepare("SELECT LOWER(nama) FROM hl_layanan WHERE tenant_id=? AND outlet_id=?");
+            $s->execute([$tid, $oid]);
+            $existing = array_flip($s->fetchAll(PDO::FETCH_COLUMN));
+        } catch (Throwable) {}
+        $out = [];
+        try {
+            $ps = Database::get()->query(
+                "SELECT nama, satuan, kategori, default_checked FROM saas_layanan_presets WHERE is_active=1 ORDER BY urutan, id"
+            )->fetchAll(PDO::FETCH_ASSOC);
+            foreach ($ps as $p) {
+                $out[] = [
+                    'nama'     => $p['nama'],
+                    'satuan'   => $p['satuan'],
+                    'kategori' => $p['kategori'],
+                    'sudah_ada'=> isset($existing[mb_strtolower($p['nama'])]),
+                    'default_checked' => (int)$p['default_checked'],
+                ];
+            }
+        } catch (Throwable $e) { error_log('[layanan presets] '.$e->getMessage()); }
+        echo json_encode(['ok'=>true, 'presets'=>$out]); exit;
+    }
+
+    // ── PRESET SA: simpan preset terpilih → hl_layanan (harga = input tenant) ──
+    if ($action === 'save_presets' && $_SERVER['REQUEST_METHOD']==='POST') {
+        if (!hasPermission('layanan.create')) { echo json_encode(['error'=>'Akses ditolak']); exit; }
+        verifyCsrf();
+        $d = json_decode(file_get_contents('php://input'), true) ?: [];
+        $items = is_array($d['items'] ?? null) ? $d['items'] : [];
+        if (!$items) { echo json_encode(['error'=>'Tidak ada layanan dipilih']); exit; }
+
+        // Whitelist server-side: nama/kategori/satuan HANYA dari preset SA aktif
+        // (klien cuma boleh mengirim nama + harga; kategori/satuan diambil dari DB).
+        $valid = [];
+        try {
+            foreach (Database::get()->query("SELECT nama, satuan, kategori FROM saas_layanan_presets WHERE is_active=1")->fetchAll(PDO::FETCH_ASSOC) as $p) {
+                $valid[mb_strtolower($p['nama'])] = $p;
+            }
+        } catch (Throwable) {}
+        // Dedup terhadap layanan existing outlet
+        $existing = [];
+        try {
+            $s = Database::get()->prepare("SELECT LOWER(nama) FROM hl_layanan WHERE tenant_id=? AND outlet_id=?");
+            $s->execute([$tid, $oid]);
+            $existing = array_flip($s->fetchAll(PDO::FETCH_COLUMN));
+        } catch (Throwable) {}
+
+        $added = 0; $skip = 0; $u = 0;
+        foreach ($items as $it) {
+            $key   = mb_strtolower(trim((string)($it['nama'] ?? '')));
+            $harga = (int)($it['harga'] ?? 0);
+            if (!isset($valid[$key]) || $harga <= 0) { $skip++; continue; }  // bukan preset asli / harga invalid
+            if (isset($existing[$key])) { $skip++; continue; }               // sudah ada → lewati
+            $p = $valid[$key];
+            try {
+                TenantQuery::insert('hl_layanan', [
+                    'nama'=>$p['nama'], 'kategori'=>$p['kategori'], 'satuan'=>$p['satuan'],
+                    'harga'=>$harga, 'estimasi_jam'=>24, 'urutan'=>$u++, 'is_active'=>1,
+                ]);
+                $existing[$key] = 1; $added++;
+            } catch (Throwable $e) { error_log('[layanan save_presets] '.$e->getMessage()); }
+        }
+        if ($added > 0) logAudit('create', 'layanan', "Tambah $added layanan dari preset");
+        echo json_encode(['ok'=>true, 'added'=>$added, 'skip'=>$skip]); exit;
+    }
     if ($action === 'toggle' && $_SERVER['REQUEST_METHOD']==='POST') {
         if (!hasPermission('layanan.edit')) { echo json_encode(['error'=>'Akses ditolak']); exit; }
         verifyCsrf();
@@ -294,6 +364,7 @@ input:checked + .toggle-slider::before{transform:translateX(18px)}
   <?php if (hasPermission('layanan.create')): ?>
   <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px">
     <button class="hl-btn hl-btn-primary" onclick="openModal()" style="flex:1;min-width:150px">+ Tambah Layanan</button>
+    <button class="hl-btn hl-btn-outline" onclick="openPresetModal()" style="flex:1;min-width:150px" title="Tambah cepat dari daftar layanan umum">📋 Dari Preset</button>
     <button class="hl-btn" onclick="openTierModal()" style="flex:1;min-width:150px;background:#F59E0B;color:#fff;border:none" title="Atur tier express: 12 jam, 6 jam, kilat, dll">⚡ Kelola Tier Express</button>
   </div>
   <?php endif; ?>
@@ -383,6 +454,24 @@ input:checked + .toggle-slider::before{transform:translateX(18px)}
     <div class="hl-modal-footer">
       <button class="hl-btn hl-btn-outline" onclick="closeModal()">Batal</button>
       <button class="hl-btn hl-btn-primary" onclick="saveLayanan()">💾 Simpan</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════ Modal Tambah dari Preset ════ -->
+<div class="hl-modal-overlay" id="modalPreset">
+  <div class="hl-modal">
+    <div class="hl-modal-header">
+      <span class="hl-modal-title">📋 Tambah dari Preset</span>
+      <button class="hl-modal-close" onclick="document.getElementById('modalPreset').classList.remove('open')">✕</button>
+    </div>
+    <div class="hl-modal-body">
+      <p style="font-size:12.5px;color:var(--gray);margin-bottom:12px">Centang layanan umum yang mau ditambahkan, lalu isi harganya. Layanan yang sudah ada dilewati otomatis.</p>
+      <div id="presetList" style="max-height:52vh;overflow-y:auto"></div>
+    </div>
+    <div class="hl-modal-footer">
+      <button class="hl-btn hl-btn-outline" onclick="document.getElementById('modalPreset').classList.remove('open')">Batal</button>
+      <button class="hl-btn hl-btn-primary" id="btnSavePreset" onclick="savePresets()">💾 Tambahkan</button>
     </div>
   </div>
 </div>
@@ -478,6 +567,72 @@ async function loadStats() {
   document.getElementById('sTotal').textContent    = d.total;
   document.getElementById('sKat').textContent      = d.kategori;
   document.getElementById('sTerlaris').textContent = d.terlaris;
+}
+
+// ── Tambah dari Preset (dikelola SuperAdmin) ──
+async function openPresetModal() {
+  const box = document.getElementById('presetList');
+  box.innerHTML = '<div style="text-align:center;padding:24px;color:var(--gray)">⏳ Memuat preset…</div>';
+  document.getElementById('modalPreset').classList.add('open');
+  try {
+    const r = await fetch('layanan.php?action=presets');
+    const d = await r.json();
+    if (d.error) { box.innerHTML = `<div style="color:#DC2626;padding:16px">${d.error}</div>`; return; }
+    const ps = d.presets || [];
+    if (!ps.length) { box.innerHTML = '<div style="text-align:center;padding:24px;color:var(--gray)">Belum ada preset tersedia.</div>'; return; }
+    box.innerHTML = ps.map((p, i) => {
+      const dis = p.sudah_ada;
+      return `<div style="display:flex;align-items:center;gap:10px;padding:10px 4px;border-bottom:1px solid var(--light);${dis?'opacity:.5':''}">
+        <input type="checkbox" class="pchk" data-i="${i}" data-nama="${esc(p.nama)}" ${p.default_checked && !dis ? 'checked':''} ${dis?'disabled':''}
+               style="width:18px;height:18px;flex-shrink:0" onchange="pToggleRow(${i})">
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:600;font-size:13.5px">${esc(p.nama)}${dis?' <span style="font-size:11px;color:var(--gray);font-weight:400">· sudah ada</span>':''}</div>
+          <div style="font-size:11px;color:var(--gray)">${esc(p.kategori)} · per ${esc(p.satuan)}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:4px;flex-shrink:0">
+          <span style="font-size:12px;color:var(--gray)">Rp</span>
+          <input type="text" inputmode="numeric" class="pharga" data-i="${i}" placeholder="Harga" ${dis?'disabled':''}
+                 oninput="this.value=(this.value.replace(/[^0-9]/g,'')||'').replace(/\\B(?=(\\d{3})+(?!\\d))/g,'.')"
+                 style="width:90px;padding:6px 8px;border:1.5px solid var(--light);border-radius:8px;font-size:13px;text-align:right">
+        </div>
+      </div>`;
+    }).join('');
+  } catch (e) {
+    box.innerHTML = `<div style="color:#DC2626;padding:16px">Gagal memuat: ${e.message}</div>`;
+  }
+}
+function pToggleRow(i) {
+  // fokuskan input harga saat dicentang
+  const chk = document.querySelector(`.pchk[data-i="${i}"]`);
+  const inp = document.querySelector(`.pharga[data-i="${i}"]`);
+  if (chk && chk.checked && inp && !inp.value) inp.focus();
+}
+async function savePresets() {
+  const items = [];
+  document.querySelectorAll('.pchk:checked').forEach(chk => {
+    const i = chk.dataset.i;
+    const inp = document.querySelector(`.pharga[data-i="${i}"]`);
+    const harga = parseInt((inp?.value || '').replace(/[^0-9]/g,''), 10) || 0;
+    items.push({ nama: chk.dataset.nama, harga });
+  });
+  if (!items.length) { showToast('Centang minimal 1 layanan', 'error'); return; }
+  const noPrice = items.filter(x => x.harga <= 0);
+  if (noPrice.length) { showToast(`Isi harga untuk: ${noPrice.map(x=>x.nama).join(', ')}`, 'error'); return; }
+  const btn = document.getElementById('btnSavePreset');
+  btn.disabled = true;
+  try {
+    const r = await fetch('layanan.php?action=save_presets', {
+      method:'POST', headers:{'Content-Type':'application/json','X-CSRF-Token':csrfToken()},
+      body: JSON.stringify({ items })
+    });
+    const d = await r.json();
+    if (d.error) { showToast(d.error, 'error'); return; }
+    showToast(`✅ ${d.added} layanan ditambahkan${d.skip ? ` (${d.skip} dilewati)` : ''}`, 'success');
+    document.getElementById('modalPreset').classList.remove('open');
+    loadLayanan(); loadStats();
+  } catch (e) {
+    showToast('Gagal: ' + e.message, 'error');
+  } finally { btn.disabled = false; }
 }
 
 // Rekomendasi kategori umum laundry — digabung dengan kategori yang sudah dipakai
