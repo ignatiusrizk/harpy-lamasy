@@ -102,14 +102,43 @@
         catch (e) { tlog('ERR ' + name, (e && (e.message || e.code)) || String(e)); throw e; }
       }
       tlog('widthPx', widthPx);
+      // Guard double-tap: klik beruntun bikin connect kedua ditolak native
+      // ("Printer already connecting!") padahal yang pertama masih jalan.
+      if (TP._printing) { throw new Error('Masih mencetak — tunggu sebentar'); }
+      TP._printing = true;
       try {
         var p = pl(); if (!p) { tlog('plugin', 'null'); throw new Error('Printer tidak tersedia'); }
         var pr = TP.getPrinter(); tlog('printer', pr);
         if (!pr || !pr.address) throw new Error('Printer belum dipilih');
-        var dataUrl = await step('renderBitmap', function () { return TP.renderBitmap(node, widthPx); });
-        var base64  = dataUrl.replace(/^data:[^,]*,/, ''); // native butuh base64 murni tanpa prefix dataURL
-        tlog('base64.len', base64.length);
-        var res = await step('connect', function () { return p.connect({ address: pr.address, encoding: 'GBK' }); });
+        await step('renderBitmap', async function () {
+          var dataUrl = await TP.renderBitmap(node, widthPx);
+          TP._lastB64 = dataUrl.replace(/^data:[^,]*,/, ''); // base64 murni tanpa prefix dataURL
+          return 'len=' + TP._lastB64.length; // JANGAN log dataURL utuh — bikin trace kepotong
+        });
+        var base64 = TP._lastB64;
+        // connect + timeout 12s (connect yang tak pernah resolve = pending nyangkut di native,
+        // hanya bisa pulih dgn restart app) + 1x retry utk kasus "already connecting" sesaat
+        function connectOnce() {
+          return Promise.race([
+            p.connect({ address: pr.address, encoding: 'GBK' }),
+            new Promise(function (_, rej) { setTimeout(function () { rej(new Error('Printer tidak merespons (timeout 12 dtk). Pastikan printer NYALA & dekat, lalu tutup-buka aplikasi.')); }, 12000); })
+          ]);
+        }
+        var res;
+        try {
+          res = await step('connect', connectOnce);
+        } catch (e1) {
+          if (/already connecting/i.test(String(e1 && e1.message))) {
+            tlog('retry connect 2.5s (already connecting)');
+            await new Promise(function (r) { setTimeout(r, 2500); });
+            try { res = await step('connect-retry', connectOnce); }
+            catch (e2) {
+              if (/already connecting/i.test(String(e2 && e2.message)))
+                throw new Error('Koneksi printer nyangkut — tutup aplikasi sepenuhnya (swipe dari recent apps), nyalakan printer, buka lagi.');
+              throw e2;
+            }
+          } else { throw e1; }
+        }
         var cid = res && res.connectionId ? { connectionId: res.connectionId } : {};
         function arg(extra) { return Object.assign({}, cid, extra || {}); }
         try {
@@ -124,9 +153,11 @@
         tlog('SELESAI tanpa error');
       } catch (e) {
         tlog('GAGAL', (e && (e.message || e.code)) || String(e));
+        TP._printing = false;
         tsend();
         throw e;
       }
+      TP._printing = false;
       tsend();
     }
   };
