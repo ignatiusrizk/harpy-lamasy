@@ -45,21 +45,29 @@ if ($action) {
     if ($action === 'list') {
         $stage = $_GET['stage'] ?? 'masuk';
         // Map stage tab to status_proses filter
+        // Tab = antrian "SIAP dikerjakan stage itu" (status asal), BUKAN yang sudah di stage
+        // tsb — dulu tab Cuci menampilkan status 'cuci' padahal form-nya butuh 'masuk' →
+        // selalu error "Order sudah diupdate worker lain"
         $statusMap = [
-            'terima'  => 'masuk',       // sama dengan masuk; differ by foto_paths existence
-            'cuci'    => 'cuci',
-            'kering'  => 'kering',
-            'setrika' => 'setrika',
-            'siap'    => 'siap',
-            'diambil' => 'diambil',
+            'terima'  => 'masuk',   // dokumentasi foto barang datang (status tetap)
+            'cuci'    => 'masuk',   // antre dicuci
+            'kering'  => 'cuci',
+            'setrika' => 'kering',
+            'siap'    => 'setrika',
+            'diambil' => 'siap',
         ];
         $statusFilter = $statusMap[$stage] ?? 'masuk';
+        // Tab Terima: hanya yang BELUM didokumentasikan (belum ada input stage terima)
+        $extra = $stage === 'terima'
+            ? " AND NOT EXISTS (SELECT 1 FROM hl_proses_input pi
+                                 WHERE pi.transaksi_id=t.id AND pi.tenant_id=t.tenant_id AND pi.stage='terima')"
+            : '';
         $rows = TenantQuery::raw(
             "SELECT t.id, t.no_order, t.nama_pelanggan, t.telepon, t.total,
                     t.status_proses, t.tanggal, t.estimasi_selesai,
                     (SELECT COUNT(*) FROM hl_transaksi_item WHERE transaksi_id=t.id) AS jml_item
                FROM hl_transaksi t
-              WHERE t.tenant_id=? AND t.outlet_id=? AND t.status_proses=?
+              WHERE t.tenant_id=? AND t.outlet_id=? AND t.status_proses=?{$extra}
               ORDER BY t.tanggal DESC LIMIT 100",
             [$tid, $oid, $statusFilter]
         );
@@ -378,7 +386,7 @@ $pageTitle  = '🧺 Produksi';
   </div>
 </main>
 
-<button class="scan-fab" data-tour="t_prod_scan" onclick="startScan()" aria-label="Scan QR Order" title="Scan QR Order">📷</button>
+<!-- Scan QR dipindah ke halaman Orders (scan → buka detail order) — antrian stage di sini cukup lewat tab -->
 <!-- Kamera native utk scan QR (andal di WebView) + area decode tersembunyi -->
 <input type="file" id="qrPhoto" accept="image/*" capture="environment" style="display:none" onchange="onQrPhoto(this)">
 <div id="qrScanArea" style="display:none"></div>

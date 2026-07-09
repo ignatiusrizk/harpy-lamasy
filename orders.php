@@ -813,6 +813,19 @@ if ($action) {
         exit;
     }
 
+    // LOOKUP order by no_order — untuk scan QR (label/struk) → buka detail
+    if ($action === 'find_by_kode') {
+        $kode = trim($_GET['kode'] ?? '');
+        if ($kode === '' || !preg_match('/^[A-Z0-9\-\/_]{4,40}$/i', $kode)) {
+            echo json_encode(['error' => 'Kode tidak valid']); exit;
+        }
+        $row = TenantQuery::rawOne(
+            "SELECT id, no_order FROM hl_transaksi WHERE tenant_id=? AND outlet_id=? AND no_order=? LIMIT 1",
+            [$tid, $oid, $kode]
+        );
+        echo json_encode($row ?: ['error' => 'Order tidak ditemukan di outlet ini']); exit;
+    }
+
     // LIST CATATAN INTERNAL (multi-row, hl_order_notes)
     if ($action === 'notes_list') {
         $oidv = intval($_GET['order_id'] ?? 0);
@@ -2806,6 +2819,102 @@ async function submitBayar() {
 <!-- Cetak thermal Bluetooth (dipakai doPrint di modal Cetak Ulang Nota) -->
 <script src="/assets/vendor/html2canvas.min.js?v=<?= @filemtime(__DIR__.'/assets/vendor/html2canvas.min.js') ?: '1' ?>"></script>
 <script src="/assets/js/thermal-print.js?v=<?= @filemtime(__DIR__.'/assets/js/thermal-print.js') ?: '1' ?>"></script>
+
+<!-- ── SCAN QR ORDER (label/struk → buka detail) ─────────────────────────
+     Live scan via getUserMedia + BarcodeDetector (butuh izin CAMERA di APK —
+     build berikutnya). Fallback otomatis: jepret foto → decode. -->
+<button id="scanFab" onclick="scanOpen()" aria-label="Scan QR Order" title="Scan QR Order"
+  style="position:fixed;right:18px;bottom:18px;z-index:150;width:54px;height:54px;border-radius:50%;border:none;
+         background:linear-gradient(135deg,var(--teal),var(--teal-d));color:#04211d;font-size:24px;cursor:pointer;
+         box-shadow:0 6px 20px rgba(28,196,178,.45)">📷</button>
+<div id="scanOverlay" style="display:none;position:fixed;inset:0;z-index:9998;background:rgba(10,15,31,.92);
+     flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:20px">
+  <video id="scanVideo" playsinline muted style="width:min(92vw,420px);max-height:60vh;border-radius:14px;background:#000"></video>
+  <div id="scanStatus" style="color:#fff;font-size:14px;font-weight:600;text-align:center">Menyiapkan kamera…</div>
+  <div style="display:flex;gap:10px">
+    <button class="btn btn-teal-sm" onclick="scanPhotoTrigger()">📸 Jepret Foto</button>
+    <button class="btn btn-outline" style="color:#fff;border-color:rgba(255,255,255,.4)" onclick="scanClose()">Tutup</button>
+  </div>
+</div>
+<input type="file" id="scanPhotoInput" accept="image/*" capture="environment" style="display:none" onchange="scanOnPhoto(this)">
+<script>
+let _scanStream = null, _scanTimer = null;
+
+function scanExtractKode(decoded) {
+  decoded = String(decoded || '').trim();
+  const url = decoded.match(/[?&](?:o|order|n)=([A-Za-z0-9\-\/_%]+)/);
+  if (url) return decodeURIComponent(url[1]);
+  if (/^[A-Z0-9][A-Z0-9\-\/]{4,}$/i.test(decoded)) return decoded;
+  const any = decoded.replace(/https?:\/\/\S*/gi, ' ').match(/([A-Z0-9][A-Z0-9-]{5,})/i);
+  return any ? any[1] : null;
+}
+
+async function scanHandle(decoded) {
+  const kode = scanExtractKode(decoded);
+  if (!kode) { showToast('QR tidak dikenali', 'error'); return; }
+  try {
+    const r = await fetch('orders.php?action=find_by_kode&kode=' + encodeURIComponent(kode));
+    const d = await r.json();
+    if (d.error) { showToast('❌ ' + d.error, 'error'); return; }
+    showToast('✓ ' + d.no_order, 'success');
+    openDetail(d.id);
+  } catch (e) { showToast('Network error', 'error'); }
+}
+
+async function scanOpen() {
+  const ov = document.getElementById('scanOverlay');
+  const status = document.getElementById('scanStatus');
+  const vid = document.getElementById('scanVideo');
+  ov.style.display = 'flex'; vid.style.display = ''; status.textContent = 'Menyiapkan kamera…';
+  if ('BarcodeDetector' in window && navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+    try {
+      _scanStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+      vid.srcObject = _scanStream; await vid.play();
+      status.textContent = 'Arahkan kamera ke QR pada label/struk…';
+      const det = new BarcodeDetector({ formats: ['qr_code'] });
+      _scanTimer = setInterval(async () => {
+        try {
+          const found = await det.detect(vid);
+          if (found && found.length) { const v = found[0].rawValue; scanClose(); scanHandle(v); }
+        } catch (e) {}
+      }, 300);
+      return;
+    } catch (e) { /* izin kamera ditolak (APK lama belum ada permission CAMERA) → fallback foto */ }
+  }
+  vid.style.display = 'none';
+  status.textContent = 'Live scan tak tersedia di versi aplikasi ini — jepret foto QR-nya';
+  scanPhotoTrigger();
+}
+
+function scanClose() {
+  if (_scanTimer) { clearInterval(_scanTimer); _scanTimer = null; }
+  if (_scanStream) { try { _scanStream.getTracks().forEach(t => t.stop()); } catch (e) {} _scanStream = null; }
+  document.getElementById('scanOverlay').style.display = 'none';
+}
+
+function scanPhotoTrigger() {
+  const inp = document.getElementById('scanPhotoInput');
+  inp.value = ''; inp.click();
+}
+
+async function scanOnPhoto(input) {
+  const file = input.files && input.files[0];
+  input.value = '';
+  if (!file) return;
+  scanClose();
+  let decoded = null;
+  try {
+    if ('BarcodeDetector' in window) {
+      const bmp = await createImageBitmap(file);
+      const found = await new BarcodeDetector({ formats: ['qr_code'] }).detect(bmp);
+      if (found && found.length) decoded = found[0].rawValue;
+    }
+  } catch (e) {}
+  if (decoded) { await scanHandle(decoded); return; }
+  const kode = await lmPrompt('QR tak terbaca dari foto. Coba lebih dekat & terang, atau ketik no. order:');
+  if (kode) await scanHandle(kode.trim());
+}
+</script>
 <?php renderToast(); ?>
 </body>
 </html>
