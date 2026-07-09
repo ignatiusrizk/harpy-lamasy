@@ -681,6 +681,7 @@ let qrInstance = null;
 
 // Scan QR = ambil foto pakai kamera native (andal di WebView APK) lalu decode via html5-qrcode.
 // getUserMedia live-stream sering gagal di WebView → pakai capture foto seperti "Scan Struk" di Kas.
+// PENTING: ini bukan live-scan — user harus MENJEPRET foto QR-nya, baru dide-code.
 function startScan() {
   const inp = document.getElementById('qrPhoto');
   if (inp) { inp.value = ''; inp.click(); }
@@ -688,17 +689,29 @@ function startScan() {
 
 async function onQrPhoto(input) {
   const file = input.files && input.files[0];
+  input.value = ''; // reset — biar jepret ulang tetap memicu onchange
   if (!file) return;
+  let decoded = null;
+  // 1) BarcodeDetector native (Chrome/WebView Android) — paling andal untuk foto
   try {
-    const scanner = new Html5Qrcode('qrScanArea');
-    const decoded = await scanner.scanFile(file, false);
-    try { await scanner.clear(); } catch (e) {}
-    await processScanned(decoded);
-  } catch (e) {
-    // QR tak terbaca dari foto → tawarkan input manual
-    const kode = await lmPrompt('QR tak terbaca dari foto. Ketik no_order manual:');
-    if (kode) await lookupAndOpen(kode.trim());
+    if ('BarcodeDetector' in window) {
+      const bmp = await createImageBitmap(file);
+      const found = await new BarcodeDetector({ formats: ['qr_code'] }).detect(bmp);
+      if (found && found.length) decoded = found[0].rawValue;
+    }
+  } catch (e) {}
+  // 2) Fallback: Html5Qrcode.scanFile
+  if (!decoded) {
+    try {
+      const scanner = new Html5Qrcode('qrScanArea');
+      decoded = await scanner.scanFile(file, false);
+      try { await scanner.clear(); } catch (e) {}
+    } catch (e) {}
   }
+  if (decoded) { await processScanned(decoded); return; }
+  // 3) Tak terbaca → input manual
+  const kode = await lmPrompt('QR tak terbaca dari foto. Coba jepret lebih dekat & terang, atau ketik no_order manual:');
+  if (kode) await lookupAndOpen(kode.trim());
 }
 
 async function processScanned(decoded) {
