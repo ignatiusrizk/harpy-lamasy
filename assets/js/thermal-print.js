@@ -55,17 +55,28 @@
       });
     },
 
-    /* Render node struk → base64 PNG monokrom selebar widthPx (384=58mm / 576=80mm) */
+    /* Render node struk → base64 PNG monokrom selebar widthPx dot printer (384=58mm / 576=80mm).
+     * PENTING: node dirender di LEBAR ALAMINYA (layout 96dpi, mis. 219px utk 58mm) lalu
+     * kanvas di-upscale ke widthPx dot — kalau layout dipaksa selebar widthPx, font tetap
+     * ukuran layar → hasil cetak mengecil (~separuh lebar kertas). */
     renderBitmap: async function (node, widthPx) {
       if (typeof html2canvas !== 'function') throw new Error('html2canvas belum dimuat');
+      var srcDoc  = node.ownerDocument || document;
+      var natural = Math.round((node.getBoundingClientRect ? node.getBoundingClientRect().width : 0)) || node.scrollWidth || 0;
+      if (!natural || natural < 120) natural = widthPx; // node belum ter-layout → fallback
       var clone = node.cloneNode(true);
       var holder = document.createElement('div');
-      holder.style.cssText = 'position:fixed;left:-99999px;top:0;background:#fff;width:' + widthPx + 'px;';
-      clone.style.width = widthPx + 'px'; clone.style.margin = '0'; clone.style.maxWidth = 'none';
+      holder.style.cssText = 'position:fixed;left:-99999px;top:0;background:#fff;width:' + natural + 'px;';
+      // Node dari iframe (struk/label): bawa <style> dokumen asalnya — tanpa ini
+      // clone di dokumen induk kehilangan seluruh CSS → hasil polos/kosong.
+      if (srcDoc !== document) {
+        srcDoc.querySelectorAll('style').forEach(function (s) { holder.appendChild(s.cloneNode(true)); });
+      }
+      clone.style.width = natural + 'px'; clone.style.margin = '0'; clone.style.maxWidth = 'none';
       holder.appendChild(clone);
       document.body.appendChild(holder);
       try {
-        var canvas = await html2canvas(clone, { backgroundColor: '#fff', scale: 2, width: widthPx, logging: false });
+        var canvas = await html2canvas(clone, { backgroundColor: '#fff', scale: 2, width: natural, logging: false, useCORS: true });
         var out = document.createElement('canvas');
         out.width = widthPx;
         out.height = Math.max(1, Math.round(canvas.height * (widthPx / canvas.width)));
