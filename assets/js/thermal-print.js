@@ -64,7 +64,16 @@
       var srcDoc  = node.ownerDocument || document;
       var natural = Math.round((node.getBoundingClientRect ? node.getBoundingClientRect().width : 0)) || node.scrollWidth || 0;
       if (!natural || natural < 120) natural = widthPx; // node belum ter-layout → fallback
-      var clone = node.cloneNode(true);
+      // <body> tak boleh di-clone mentah ke dalam <div> (invalid → tak dirender → kanvas
+      // kosong → struk blank). Pindahkan clone anak-anaknya ke div. (Label aman krn div.label.)
+      var clone;
+      if (node.tagName === 'BODY' || node.tagName === 'HTML') {
+        var src = node.tagName === 'HTML' ? (node.ownerDocument.body || node) : node;
+        clone = document.createElement('div');
+        Array.prototype.forEach.call(src.childNodes, function (ch) { clone.appendChild(ch.cloneNode(true)); });
+      } else {
+        clone = node.cloneNode(true);
+      }
       var holder = document.createElement('div');
       holder.style.cssText = 'position:fixed;left:-99999px;top:0;background:#fff;width:' + natural + 'px;';
       // Node dari iframe (struk/label): bawa <style> dokumen asalnya — tanpa ini
