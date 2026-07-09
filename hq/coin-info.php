@@ -46,10 +46,12 @@ try {
 
 // Saldo coin usable = pool tenant + trial coin outlet yang MASIH trial (bisa dipakai HQ).
 $saldo = (int)($hqTenant['coin_balance'] ?? 0);
+$trialCoin = 0; // coin trial yg masih ada (utk peringatan sebelum top-up berbayar)
 try {
     $tp = $db->prepare("SELECT COALESCE(SUM(trial_coin_balance),0) FROM outlets WHERE tenant_id=? AND status='trial'");
     $tp->execute([$tid]);
-    $saldo += (int)$tp->fetchColumn();
+    $trialCoin = (int)$tp->fetchColumn();
+    $saldo += $trialCoin;
 } catch (Throwable) {}
 // Coin trial yang beku (outlet dalam masa tenggang / grace) — tampil terpisah, tak bisa dipakai.
 $frozenCoin = 0;
@@ -308,6 +310,17 @@ $katMeta = [
 <?php if (!empty($bundles)): ?>
   <div class="bundle-section">
     <h2>💳 Top-up Coin Sekarang</h2>
+    <?php if ($trialCoin > 0): ?>
+    <!-- Peringatan: masih ada coin trial gratis — top-up berbayar belum mendesak -->
+    <div style="display:flex;gap:12px;align-items:flex-start;background:#FFFBEB;border:1px solid #FDE68A;border-left:4px solid #F59E0B;border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:13px;color:#92400E;line-height:1.55">
+      <span style="font-size:18px;flex-shrink:0">💡</span>
+      <div>
+        Kamu masih punya <strong><?= number_format($trialCoin, 0, ',', '.') ?> coin trial gratis</strong> yang bisa dipakai sekarang.
+        Top-up berbayar belum mendesak — coin trial akan terpakai lebih dulu.
+        <span style="color:#B45309">Coin hasil top-up bersifat <strong>permanen</strong> (tak hangus saat trial berakhir), jadi tetap aman kalau kamu mau isi lebih dulu.</span>
+      </div>
+    </div>
+    <?php endif; ?>
     <div class="bundle-grid">
       <?php foreach ($bundles as $b): ?>
         <div class="bundle-card <?= !empty($b['is_featured']) ? 'featured' : '' ?>">
