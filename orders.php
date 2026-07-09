@@ -1018,10 +1018,20 @@ if (!$activeMethods) {
     ];
 }
 
-// Lebar kertas printer thermal outlet (58mm→384 dot, 80mm→576) — ikut label_size
-$_lsStmt = Database::get()->prepare("SELECT label_size FROM outlets WHERE id=? AND tenant_id=?");
-$_lsStmt->execute([TenantResolver::outletId(), TenantResolver::id()]);
-$paperWidthPx = ($_lsStmt->fetchColumn() === '58') ? 384 : 576;
+// Lebar dot printer utk cetak struk BT: ikut Format Struk outlet (thermal_58→384,
+// lainnya→576); fallback label_size 58/80
+try {
+    $_fmtStmt = Database::get()->prepare("SELECT format FROM hl_struk_template WHERE tenant_id=? AND outlet_id=? AND tipe='retail' AND is_active=1 LIMIT 1");
+    $_fmtStmt->execute([TenantResolver::id(), TenantResolver::outletId()]);
+    $_strukFmt = (string)$_fmtStmt->fetchColumn();
+} catch (Throwable) { $_strukFmt = ''; }
+if ($_strukFmt === 'thermal_58') { $paperWidthPx = 384; }
+elseif ($_strukFmt !== '')       { $paperWidthPx = 576; }
+else {
+    $_lsStmt = Database::get()->prepare("SELECT label_size FROM outlets WHERE id=? AND tenant_id=?");
+    $_lsStmt->execute([TenantResolver::outletId(), TenantResolver::id()]);
+    $paperWidthPx = ($_lsStmt->fetchColumn() === '58') ? 384 : 576;
+}
 ?>
 <!DOCTYPE html>
 <html lang="id">

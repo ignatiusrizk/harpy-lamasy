@@ -2730,10 +2730,20 @@ function posStrukNode() {
   return null;
 }
 function posStrukWidthPx() {
-  // Ikut ukuran kertas outlet (Pengaturan → Outlet: label_size 58/80).
-  // 58mm→384 dot, 80mm→576 dot. (POS_STRUK_FORMAT lama tak pernah di-set → selalu 576,
-  // bikin cetakan mengecil di printer 58mm.)
-  return <?= (($outletQrisData['label_size'] ?? '80') === '58') ? 384 : 576 ?>;
+  // Lebar dot printer utk struk: ikut Format Struk outlet (Pengaturan → Struk:
+  // thermal_58→384, thermal_80/A4 dst→576); fallback ukuran label 58/80.
+  // (POS_STRUK_FORMAT lama tak pernah di-set → selalu 576, cetakan mengecil di printer 58mm.)
+  <?php
+    try {
+        $_fmtStmt = Database::get()->prepare("SELECT format FROM hl_struk_template WHERE tenant_id=? AND outlet_id=? AND tipe='retail' AND is_active=1 LIMIT 1");
+        $_fmtStmt->execute([$_pageTid, $_pageOid]);
+        $_strukFmt = (string)$_fmtStmt->fetchColumn();
+    } catch (Throwable) { $_strukFmt = ''; }
+    if ($_strukFmt === 'thermal_58') { $_strukW = 384; }
+    elseif ($_strukFmt !== '')       { $_strukW = 576; }
+    else { $_strukW = (($outletQrisData['label_size'] ?? '80') === '58') ? 384 : 576; }
+  ?>
+  return <?= $_strukW ?>;
 }
 async function posPrintStrukBT() {
   const node = posStrukNode();
