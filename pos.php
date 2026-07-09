@@ -1120,27 +1120,43 @@ document.addEventListener('DOMContentLoaded', function () {
 async function posTestPrint() {
   const p = (window.Capacitor && Capacitor.Plugins) ? Capacitor.Plugins.CapacitorThermalPrinter : null;
   const pr = window.ThermalPrint ? ThermalPrint.getPrinter() : null;
-  if (!p) { showToast('Plugin printer tak terdeteksi', 'error'); return; }
-  if (!pr || !pr.address) { showToast('Pilih printer dulu', 'error'); return; }
+  // Trace tiap langkah → dikirim ke server (saas_error_log type=print_debug)
+  // supaya hasil di device bisa dibaca dari server tanpa remote debugging.
+  const T = [];
+  const log = (s, v) => { try { T.push(s + (v !== undefined ? ': ' + (typeof v === 'string' ? v : JSON.stringify(v)) : '')); } catch (e) { T.push(s + ': [unserializable]'); } };
+  const send = async () => { try { await fetch('/api/print_debug.php', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken() }, body: JSON.stringify({ trace: T.join('\n') }) }); } catch (e) {} };
+  log('ts', new Date().toISOString());
+  log('ua', navigator.userAgent.slice(0, 100));
+  log('plugin ada', !!p);
+  log('printer tersimpan', pr);
+  if (!p) { showToast('Plugin printer tak terdeteksi', 'error'); await send(); return; }
+  if (!pr || !pr.address) { showToast('Pilih printer dulu', 'error'); await send(); return; }
   showToast('🧪 Tes cetak teks…', 'info');
+  let cid = {};
+  const arg = (x) => Object.assign({}, cid, x || {});
+  const step = async (name, fn) => {
+    try { const r = await fn(); log('OK ' + name, r); return r; }
+    catch (e) { log('ERR ' + name, (e && (e.message || e.code)) || String(e)); throw e; }
+  };
   try {
-    const res = await p.connect({ address: pr.address, encoding: 'GBK' });
-    const cid = (res && res.connectionId) ? { connectionId: res.connectionId } : {};
-    const arg = (x) => Object.assign({}, cid, x || {});
-    await p.begin(arg());
-    await p.align(arg({ alignment: 'center' }));
-    await p.text(arg({ text: 'LAMASY TES CETAK\n' }));
-    await p.align(arg({ alignment: 'left' }));
-    await p.text(arg({ text: 'Angka  : 1234567890\n' }));
-    await p.text(arg({ text: 'Rupiah : Rp 61.600\n' }));
-    await p.text(arg({ text: 'Item   : Reguler 7.7 kg\n' }));
-    await p.feedCutPaper(arg({ half: false, feedLines: 3 }));
-    await p.write(arg());
-    try { await p.disconnect(arg()); } catch (e) {}
-    showToast('✅ Perintah tes terkirim — lihat hasil kertas', 'success');
+    const res = await step('connect', () => p.connect({ address: pr.address, encoding: 'GBK' }));
+    if (res && res.connectionId) cid = { connectionId: res.connectionId };
+    try { await step('isConnected', () => p.isConnected(arg())); } catch (e) {}
+    await step('begin', () => p.begin(arg()));
+    await step('align-center', () => p.align(arg({ alignment: 'center' })));
+    await step('text-judul', () => p.text(arg({ text: 'LAMASY TES CETAK\n' })));
+    await step('align-left', () => p.align(arg({ alignment: 'left' })));
+    await step('text-angka', () => p.text(arg({ text: 'Angka  : 1234567890\n' })));
+    await step('text-rupiah', () => p.text(arg({ text: 'Rupiah : Rp 61.600\n' })));
+    await step('text-item', () => p.text(arg({ text: 'Item   : Reguler 7.7 kg\n' })));
+    await step('feedCutPaper', () => p.feedCutPaper(arg({ half: false, feedLines: 3 })));
+    await step('write', () => p.write(arg()));
+    try { await step('disconnect', () => p.disconnect(arg())); } catch (e) {}
+    showToast('✅ Tes terkirim & trace tercatat — cek kertasnya', 'success');
   } catch (e) {
-    showToast('❌ ' + (e.message || 'Gagal tes'), 'error');
+    showToast('❌ ' + (e.message || 'Gagal tes') + ' (trace tercatat)', 'error');
   }
+  await send();
 }
 
 function posOpenPrinterModal() {
