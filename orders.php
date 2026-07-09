@@ -2823,10 +2823,14 @@ async function submitBayar() {
 <!-- ── SCAN QR ORDER (label/struk → buka detail) ─────────────────────────
      Live scan via getUserMedia + BarcodeDetector (butuh izin CAMERA di APK —
      build berikutnya). Fallback otomatis: jepret foto → decode. -->
-<button id="scanFab" onclick="scanOpen()" aria-label="Scan QR Order" title="Scan QR Order"
-  style="position:fixed;right:18px;bottom:18px;z-index:150;width:54px;height:54px;border-radius:50%;border:none;
-         background:linear-gradient(135deg,var(--teal),var(--teal-d));color:#04211d;font-size:24px;cursor:pointer;
-         box-shadow:0 6px 20px rgba(28,196,178,.45)">📷</button>
+<style>
+#scanFab{position:fixed;right:18px;bottom:18px;z-index:150;width:54px;height:54px;border-radius:50%;border:none;
+  background:linear-gradient(135deg,var(--teal),var(--teal-d));color:#04211d;font-size:24px;cursor:pointer;
+  box-shadow:0 6px 20px rgba(28,196,178,.45)}
+/* Mobile: naikkan di atas bottom-nav (.ol-bottomnav tampil ≤900px) */
+@media (max-width:900px){ #scanFab{ bottom:calc(86px + env(safe-area-inset-bottom, 0px)); } }
+</style>
+<button id="scanFab" onclick="scanOpen()" aria-label="Scan QR Order" title="Scan QR Order">📷</button>
 <div id="scanOverlay" style="display:none;position:fixed;inset:0;z-index:9998;background:rgba(10,15,31,.92);
      flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:20px">
   <video id="scanVideo" playsinline muted style="width:min(92vw,420px);max-height:60vh;border-radius:14px;background:#000"></video>
