@@ -1017,6 +1017,11 @@ if (!$activeMethods) {
         ['code'=>'qris',     'label'=>'QRIS',          'emoji'=>'📱'],
     ];
 }
+
+// Lebar kertas printer thermal outlet (58mm→384 dot, 80mm→576) — ikut label_size
+$_lsStmt = Database::get()->prepare("SELECT label_size FROM outlets WHERE id=? AND tenant_id=?");
+$_lsStmt->execute([TenantResolver::outletId(), TenantResolver::id()]);
+$paperWidthPx = ($_lsStmt->fetchColumn() === '58') ? 384 : 576;
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -1569,6 +1574,7 @@ const CAN_BAYAR      = <?= hasPermission('orders.bayar')         ? 'true' : 'fal
 const CAN_EDIT_ORDER = <?= hasPermission('orders.edit')           ? 'true' : 'false' ?>;
 const CAN_DEL_ORDER  = <?= hasPermission('orders.delete')         ? 'true' : 'false' ?>;
 const PAY_METHODS  = <?= json_encode($activeMethods, JSON_UNESCAPED_UNICODE) ?>;
+const PAPER_WIDTH_PX = <?= (int)$paperWidthPx ?>; // lebar dot printer thermal outlet (384=58mm, 576=80mm)
 const PM_LABEL     = Object.fromEntries(PAY_METHODS.map(m => [m.code, ((m.emoji||'') + ' ' + m.label).trim()]));
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -1674,6 +1680,29 @@ async function applyBulkPay() {
 async function applyBulkPrint() {
   const ids = getBulkIds();
   if (!ids.length) { showToast('Tidak ada order dipilih','error'); return; }
+  // APK + printer thermal → cetak beruntun via iframe tersembunyi.
+  // (Jalur lama window.open diblok WebView → tombol tampak mati total.)
+  if (window.ThermalPrint && ThermalPrint.isAvailable()) {
+    const pr = ThermalPrint.getPrinter();
+    if (!pr || !pr.address) { showToast('Belum ada printer dipilih — pilih dulu lewat POS → struk → ⚙️ Printer', 'error'); return; }
+    if (ids.length > 1 && !(await lmConfirm('Cetak ' + ids.length + ' struk ke printer thermal?'))) return;
+    let f = document.getElementById('bulkPrintFrame');
+    if (!f) { f = document.createElement('iframe'); f.id = 'bulkPrintFrame'; f.style.cssText = 'position:fixed;left:-9999px;top:0;width:420px;height:800px;border:0'; document.body.appendChild(f); }
+    let ok = 0;
+    for (let i = 0; i < ids.length; i++) {
+      showToast('🖨 Mencetak struk ' + (i + 1) + '/' + ids.length + '…', 'info');
+      try {
+        await new Promise((res) => { f.onload = res; setTimeout(res, 6000); f.src = '/api/struk.php?action=generate&id=' + ids[i] + '&tipe=retail&_=' + Date.now(); });
+        const node = f.contentDocument && (f.contentDocument.querySelector('.struk') || f.contentDocument.body);
+        if (!node || !node.innerHTML.trim()) throw new Error('struk tidak termuat');
+        await ThermalPrint.print(node, PAPER_WIDTH_PX);
+        ok++;
+      } catch (e) { showToast('❌ Struk ke-' + (i + 1) + ': ' + (e.message || 'gagal'), 'error'); }
+    }
+    showToast('✅ ' + ok + '/' + ids.length + ' struk tercetak', ok ? 'success' : 'error');
+    clearBulkSelection();
+    return;
+  }
   if (ids.length > 20 && !(await lmConfirm('Print struk untuk ' + ids.length + ' order? Akan buka tab baru per order, browser bisa block popup.'))) return;
   let opened = 0, blocked = 0;
   ids.forEach((id, i) => {
@@ -2485,7 +2514,7 @@ async function doPrint() {
       if (!node) { showToast('Struk belum siap', 'error'); return; }
       try {
         showToast('🖨 Mencetak…', 'info');
-        await ThermalPrint.print(node, 576); // 80mm default (sama dgn POS)
+        await ThermalPrint.print(node, PAPER_WIDTH_PX);
         showToast('✅ Struk tercetak', 'success');
       } catch (e) { showToast('❌ ' + (e.message || 'Gagal cetak'), 'error'); }
       return;

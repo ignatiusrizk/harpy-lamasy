@@ -800,7 +800,7 @@ if ($action) {
 // Load QRIS data untuk modal display di payment method
 $_pageOid = TenantResolver::outletId();
 $_pageTid = TenantResolver::id();
-$outletQrisStmt = Database::get()->prepare("SELECT qris_image, qris_label FROM outlets WHERE id=? AND tenant_id=?");
+$outletQrisStmt = Database::get()->prepare("SELECT qris_image, qris_label, label_size FROM outlets WHERE id=? AND tenant_id=?");
 $outletQrisStmt->execute([$_pageOid, $_pageTid]);
 $outletQrisData = $outletQrisStmt->fetch(PDO::FETCH_ASSOC) ?: ['qris_image'=>null, 'qris_label'=>null];
 
@@ -2730,8 +2730,10 @@ function posStrukNode() {
   return null;
 }
 function posStrukWidthPx() {
-  // 58mm→384, 80mm→576. Default 576 (thermal_80). Sesuaikan saat tuning device.
-  return (window.POS_STRUK_FORMAT === 'thermal_58') ? 384 : 576;
+  // Ikut ukuran kertas outlet (Pengaturan → Outlet: label_size 58/80).
+  // 58mm→384 dot, 80mm→576 dot. (POS_STRUK_FORMAT lama tak pernah di-set → selalu 576,
+  // bikin cetakan mengecil di printer 58mm.)
+  return <?= (($outletQrisData['label_size'] ?? '80') === '58') ? 384 : 576 ?>;
 }
 async function posPrintStrukBT() {
   const node = posStrukNode();
