@@ -58,8 +58,17 @@ $st->execute([$body['order_id']]);
 $payment = $st->fetch(PDO::FETCH_ASSOC);
 
 if (!$payment) {
-    http_response_code(404);
-    echo json_encode(['error' => 'Payment not found']);
+    // Signature SUDAH valid (genuine dari Midtrans) tapi order tak ada di DB kita —
+    // ini terjadi pada "Test notification URL" Midtrans (order_id dummy) atau race.
+    // Ack 200 agar Midtrans tak retry berulang + tombol Test hijau. Tetap dicatat.
+    http_response_code(200);
+    if (class_exists('ErrorLogger')) {
+        ErrorLogger::log('midtrans_webhook_order_notfound', json_encode([
+            'order_id' => $body['order_id'] ?? null,
+            'status'   => $body['transaction_status'] ?? null,
+        ]));
+    }
+    echo json_encode(['ok' => true, 'note' => 'Order tidak ditemukan — di-ack (kemungkinan test/dummy)']);
     exit;
 }
 
