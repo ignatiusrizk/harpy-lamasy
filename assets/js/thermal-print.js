@@ -148,7 +148,11 @@
           await step('feedCutPaper', function () { return p.feedCutPaper(arg({ half: false, feedLines: 2 })); });
           await step('write', function () { return p.write(arg()); });
         } finally {
-          try { await p.disconnect(arg()); tlog('OK disconnect'); } catch (e) { tlog('ERR disconnect', e && e.message); }
+          // JANGAN disconnect setelah cetak: thread BT native masih mengirim buffer —
+          // disconnect terlalu cepat memicu crash APK (app close pasca-print).
+          // Koneksi dibiarkan hidup; connect() berikutnya otomatis re-pakai koneksi
+          // yang sudah tersambung (native resolve existing) → cetakan ke-2 lebih cepat.
+          tlog('skip disconnect (biarkan koneksi hidup)');
         }
         tlog('SELESAI tanpa error');
       } catch (e) {
