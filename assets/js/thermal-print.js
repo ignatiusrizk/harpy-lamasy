@@ -87,22 +87,47 @@
      * tiap method return Promise & butuh payload objek bernama + connectionId (lihat
      * node_modules/.../dist/esm/index.js: payload = {connectionId, ...mappedArgs}). */
     print: async function (node, widthPx) {
-      var p = pl(); if (!p) throw new Error('Printer tidak tersedia');
-      var pr = TP.getPrinter(); if (!pr || !pr.address) throw new Error('Printer belum dipilih');
-      var dataUrl = await TP.renderBitmap(node, widthPx);
-      var base64  = dataUrl.replace(/^data:[^,]*,/, ''); // native butuh base64 murni tanpa prefix dataURL
-      var res = await p.connect({ address: pr.address, encoding: 'GBK' });
-      var cid = res && res.connectionId ? { connectionId: res.connectionId } : {};
-      function arg(extra) { return Object.assign({}, cid, extra || {}); }
-      try {
-        await p.begin(arg());
-        await p.align(arg({ alignment: 'center' }));
-        await p.image(arg({ image: base64 }));
-        await p.feedCutPaper(arg({ half: false, feedLines: 2 }));
-        await p.write(arg());
-      } finally {
-        try { await p.disconnect(arg()); } catch (e) {}
+      // Trace tiap langkah → /api/print_debug.php (dibaca dari server; device tanpa remote debug)
+      var T = [];
+      function tlog(s, v) { try { T.push(s + (v !== undefined ? ': ' + (typeof v === 'string' ? v : JSON.stringify(v)) : '')); } catch (e) { T.push(s); } }
+      function tsend() {
+        try {
+          var h = { 'Content-Type': 'application/json' };
+          if (typeof window.csrfToken === 'function') h['X-CSRF-Token'] = window.csrfToken();
+          fetch('/api/print_debug.php', { method: 'POST', headers: h, body: JSON.stringify({ trace: 'TP.print ' + new Date().toISOString() + '\n' + T.join('\n') }) });
+        } catch (e) {}
       }
+      async function step(name, fn) {
+        try { var r = await fn(); tlog('OK ' + name, r); return r; }
+        catch (e) { tlog('ERR ' + name, (e && (e.message || e.code)) || String(e)); throw e; }
+      }
+      tlog('widthPx', widthPx);
+      try {
+        var p = pl(); if (!p) { tlog('plugin', 'null'); throw new Error('Printer tidak tersedia'); }
+        var pr = TP.getPrinter(); tlog('printer', pr);
+        if (!pr || !pr.address) throw new Error('Printer belum dipilih');
+        var dataUrl = await step('renderBitmap', function () { return TP.renderBitmap(node, widthPx); });
+        var base64  = dataUrl.replace(/^data:[^,]*,/, ''); // native butuh base64 murni tanpa prefix dataURL
+        tlog('base64.len', base64.length);
+        var res = await step('connect', function () { return p.connect({ address: pr.address, encoding: 'GBK' }); });
+        var cid = res && res.connectionId ? { connectionId: res.connectionId } : {};
+        function arg(extra) { return Object.assign({}, cid, extra || {}); }
+        try {
+          await step('begin', function () { return p.begin(arg()); });
+          await step('align', function () { return p.align(arg({ alignment: 'center' })); });
+          await step('image', function () { return p.image(arg({ image: base64 })); });
+          await step('feedCutPaper', function () { return p.feedCutPaper(arg({ half: false, feedLines: 2 })); });
+          await step('write', function () { return p.write(arg()); });
+        } finally {
+          try { await p.disconnect(arg()); tlog('OK disconnect'); } catch (e) { tlog('ERR disconnect', e && e.message); }
+        }
+        tlog('SELESAI tanpa error');
+      } catch (e) {
+        tlog('GAGAL', (e && (e.message || e.code)) || String(e));
+        tsend();
+        throw e;
+      }
+      tsend();
     }
   };
   window.ThermalPrint = TP;
