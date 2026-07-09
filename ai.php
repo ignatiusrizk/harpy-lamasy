@@ -378,8 +378,11 @@ if ($action === 'upselling' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     // Ambil profil + history
     try {
         $db = Database::get();
-        $st = $db->prepare("SELECT nama, telepon, total_order, total_visit_count, COALESCE(total_spent, 0) total_spent
-                              FROM hl_pelanggan WHERE id=? AND tenant_id=?");
+        // total_spent bukan kolom hl_pelanggan → hitung dari transaksi nyata (subquery)
+        $st = $db->prepare("SELECT p.nama, p.telepon, p.total_order, p.total_visit_count,
+                                   (SELECT COALESCE(SUM(t.total),0) FROM hl_transaksi t
+                                     WHERE t.tenant_id=p.tenant_id AND t.pelanggan_id=p.id) AS total_spent
+                              FROM hl_pelanggan p WHERE p.id=? AND p.tenant_id=?");
         $st->execute([$pid, $tid]);
         $pel = $st->fetch(PDO::FETCH_ASSOC);
         if (!$pel) ai_err('Pelanggan tidak ditemukan');
