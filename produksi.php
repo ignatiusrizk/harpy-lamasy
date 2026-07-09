@@ -702,9 +702,18 @@ async function onQrPhoto(input) {
 }
 
 async function processScanned(decoded) {
-  const m = decoded.match(/order=([A-Z0-9-]+)/i) || decoded.match(/([A-Z0-9][A-Z0-9-]{4,})/i);
-  if (!m) { alert('QR tidak dikenali: ' + decoded.slice(0, 60)); return; }
-  await lookupAndOpen(m[1]);
+  decoded = String(decoded || '').trim();
+  let kode = null;
+  // QR struk/portal = URL (…?t=TOKEN&o=NO_ORDER / track.php?order=NO) → ambil paramnya.
+  // Regex lama salah tangkap 'https' dari URL → selalu "Order tidak ditemukan".
+  const url = decoded.match(/[?&](?:o|order|n)=([A-Za-z0-9\-\/_%]+)/);
+  if (url) kode = decodeURIComponent(url[1]);
+  // QR label = no_order polos
+  else if (/^[A-Z0-9][A-Z0-9\-\/]{4,}$/i.test(decoded)) kode = decoded;
+  // fallback: token panjang pertama yang bukan skema URL
+  else { const any = decoded.replace(/https?:\/\/\S*/gi, ' ').match(/([A-Z0-9][A-Z0-9-]{5,})/i); if (any) kode = any[1]; }
+  if (!kode) { alert('QR tidak dikenali: ' + decoded.slice(0, 60)); return; }
+  await lookupAndOpen(kode);
 }
 
 async function lookupAndOpen(kode) {
