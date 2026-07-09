@@ -1115,6 +1115,29 @@ document.addEventListener('DOMContentLoaded', function () {
     var b = document.getElementById('btnPrinterSetting'); if (b) b.style.display = '';
   }
 });
+// Diagnostik boot: snapshot kemampuan APK dikirim ke server saat POS dibuka dari
+// WebView Android — mendeteksi kenapa plugin printer tak terdeteksi tanpa akses device.
+document.addEventListener('DOMContentLoaded', function () {
+  try {
+    var ua = navigator.userAgent || '';
+    if (!/Android/i.test(ua)) return; // browser desktop: jangan spam log
+    var cap = window.Capacitor || null;
+    var info = {
+      boot: 'pos-print-diag',
+      ua: ua.slice(0, 140),
+      capacitor: !!cap,
+      isNative: !!(cap && typeof cap.isNativePlatform === 'function' && cap.isNativePlatform()),
+      platform: (cap && typeof cap.getPlatform === 'function') ? cap.getPlatform() : null,
+      plugins: (cap && cap.Plugins) ? Object.keys(cap.Plugins).slice(0, 30) : null,
+      thermalPlugin: !!(cap && cap.Plugins && cap.Plugins.CapacitorThermalPrinter),
+      tpAvail: window.ThermalPrint ? ThermalPrint.isAvailable() : 'ThermalPrint undefined',
+      printerSaved: window.ThermalPrint ? ThermalPrint.getPrinter() : null
+    };
+    fetch('/api/print_debug.php', { method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken() },
+      body: JSON.stringify({ trace: JSON.stringify(info) }) });
+  } catch (e) {}
+});
 // Diagnostik: kirim TEKS polos (bukan gambar) untuk mengisolasi masalah cetak.
 // Teks bersih → masalah di raster image(); teks juga acak → encoding/koneksi.
 async function posTestPrint() {
