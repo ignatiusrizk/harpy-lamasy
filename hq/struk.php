@@ -481,7 +481,7 @@ async function refreshPreview() {
 
   const r    = await fetch('/hq/struk.php?action=preview', {
     method:'POST',
-    headers:{'Content-Type':'application/json','X-CSRF-TOKEN':CSRF},
+    headers:{'Content-Type':'application/json','X-CSRF-Token':CSRF},
     body: JSON.stringify(data),
   });
   const html = await r.text();
@@ -575,7 +575,7 @@ async function doPush(targets) {
   const data = { ...collectForm(), targets };
   const r    = await fetch('/hq/struk.php?action=push', {
     method:'POST',
-    headers:{'Content-Type':'application/json','X-CSRF-TOKEN':CSRF},
+    headers:{'Content-Type':'application/json','X-CSRF-Token':CSRF},
     body: JSON.stringify(data),
   });
   const j = await r.json();

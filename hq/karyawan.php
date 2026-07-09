@@ -1064,7 +1064,7 @@ async function toggleActive(id, nama, activate){
   if (!await lmConfirm(msg)) return;
   const r = await fetch('/hq/karyawan.php?action=toggle_active', {
     method:'POST',
-    headers:{'Content-Type':'application/json','X-CSRF-TOKEN':csrf},
+    headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},
     body: JSON.stringify({karyawan_id: id, activate: activate ? 1 : 0}),
   });
   const j = await r.json();
@@ -1153,7 +1153,7 @@ async function submitMutasi(){
   if (mutMode === 'assign' || mutMode === 'bantu') {
     const r = await fetch('/hq/karyawan.php?action=add_assignment', {
       method:'POST',
-      headers:{'Content-Type':'application/json','X-CSRF-TOKEN':csrf},
+      headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},
       body: JSON.stringify({ karyawan_id: karyawanId, outlet_id: toOutletId, notes: notes }),
     });
     const j = await r.json();
@@ -1179,7 +1179,7 @@ async function submitMutasi(){
 
   const r = await fetch('/hq/karyawan.php?action=mutasi', {
     method:'POST',
-    headers:{'Content-Type':'application/json','X-CSRF-TOKEN':csrf},
+    headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},
     body: JSON.stringify(data),
   });
   const j = await r.json();
@@ -1208,7 +1208,7 @@ async function submitAdd(){
   };
   const r = await fetch('/hq/karyawan.php?action=add_assignment', {
     method:'POST',
-    headers:{'Content-Type':'application/json','X-CSRF-TOKEN':csrf},
+    headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},
     body: JSON.stringify(data),
   });
   const j = await r.json();
@@ -1221,7 +1221,7 @@ async function removeAssignment(kid, oid, outletName){
   if (!await lmConfirm(`Cabut penugasan karyawan dari outlet "${outletName}"?`)) return;
   const r = await fetch('/hq/karyawan.php?action=remove_assignment', {
     method:'POST',
-    headers:{'Content-Type':'application/json','X-CSRF-TOKEN':csrf},
+    headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},
     body: JSON.stringify({karyawan_id: kid, outlet_id: oid}),
   });
   const j = await r.json();
@@ -1281,7 +1281,7 @@ async function submitCreate(){
 
   const r = await fetch('/hq/karyawan.php?action=create', {
     method:'POST',
-    headers:{'Content-Type':'application/json','X-CSRF-TOKEN':csrf},
+    headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},
     body: JSON.stringify(data),
   });
   const j = await r.json();

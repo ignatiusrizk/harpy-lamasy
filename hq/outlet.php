@@ -518,7 +518,7 @@ async function submitEdit(){
 
   const r = await fetch('/hq/outlet.php?action=update', {
     method:'POST',
-    headers:{'Content-Type':'application/json','X-CSRF-TOKEN':csrf},
+    headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},
     body: JSON.stringify(data),
   });
   const j = await r.json();

@@ -788,7 +788,7 @@ async function submitForm(){
 
   const r = await fetch('/hq/promo.php?action=save', {
     method:'POST',
-    headers:{'Content-Type':'application/json','X-CSRF-TOKEN':csrf},
+    headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},
     body: JSON.stringify(data),
   });
   const j = await r.json();
@@ -801,7 +801,7 @@ async function deletePromo(id, nama){
   if (!await lmConfirm(`Non-aktifkan promo "${nama}"?\n(Promo akan tetap di history, tidak terhapus permanen)`)) return;
   const r = await fetch('/hq/promo.php?action=delete', {
     method:'POST',
-    headers:{'Content-Type':'application/json','X-CSRF-TOKEN':csrf},
+    headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},
     body: JSON.stringify({id}),
   });
   const j = await r.json();
@@ -869,7 +869,7 @@ async function generateVoucher(){
 
   const r = await fetch('/hq/promo.php?action=voucher_generate', {
     method:'POST',
-    headers:{'Content-Type':'application/json','X-CSRF-TOKEN':csrf},
+    headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},
     body: JSON.stringify(data),
   });
   const j = await r.json();

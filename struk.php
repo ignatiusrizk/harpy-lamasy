@@ -622,7 +622,7 @@ async function refreshPreview() {
   try {
     const r = await fetch('/struk.php?action=preview', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF },
+      headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': CSRF },
       body: JSON.stringify(data),
     });
     const html = await r.text();
@@ -675,7 +675,7 @@ async function saveTemplate() {
   const data = collectForm();
   const r = await fetch('/struk.php?action=save', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF },
+    headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': CSRF },
     body: JSON.stringify(data),
   });
   const j = await r.json();
@@ -690,7 +690,7 @@ async function resetTemplate() {
   if (!await lmConfirm(`Reset template ${activeTab.toUpperCase()} ke pengaturan default?`)) return;
   const r = await fetch('/struk.php?action=reset', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF },
+    headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': CSRF },
     body: JSON.stringify({ tipe: activeTab }),
   });
   const j = await r.json();
@@ -717,7 +717,7 @@ async function uploadLogo(input) {
   try {
     const r = await fetch('/struk.php?action=upload_logo', {
       method: 'POST',
-      headers: { 'X-CSRF-TOKEN': CSRF },
+      headers: { 'X-CSRF-Token': CSRF },
       body: fd,
     });
     const j = await r.json();

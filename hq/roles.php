@@ -580,7 +580,7 @@ async function submitForm(){
 
   const r = await fetch('/hq/roles.php?action=save', {
     method:'POST',
-    headers:{'Content-Type':'application/json','X-CSRF-TOKEN':csrf},
+    headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},
     body: JSON.stringify(data),
   });
   const j = await r.json();
@@ -597,7 +597,7 @@ async function deleteRole(id, nama, userCount){
   if (!await lmConfirm(`Hapus role "${nama}"?\nSemua permission yang ter-assign akan ikut terhapus.`)) return;
   const r = await fetch('/hq/roles.php?action=delete', {
     method:'POST',
-    headers:{'Content-Type':'application/json','X-CSRF-TOKEN':csrf},
+    headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},
     body: JSON.stringify({id}),
   });
   const j = await r.json();
