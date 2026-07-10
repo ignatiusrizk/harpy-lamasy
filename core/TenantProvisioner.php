@@ -184,7 +184,6 @@ class TenantProvisioner
             ['mesin.view',           'mesin',     'view',          'Lihat status mesin self-service'],
             ['mesin.operate',        'mesin',     'operate',       'Konfirmasi mulai/selesai sesi mesin'],
             ['mesin.manage',         'mesin',     'manage',        'Tambah/edit/hapus mesin & atur cycle'],
-            ['produksi.work',        'produksi',  'work',          'Akses /produksi & update stage order'],
             ['antar.view',           'antar',     'view',          'Lihat list antar jemput & report'],
             ['antar.manage',         'antar',     'manage',        'Create antar jemput, assign kurir, kelola master'],
             ['antar.kurir',          'antar',     'kurir',         'Akses /kurir mobile (untuk role kurir)'],
@@ -251,10 +250,10 @@ class TenantProvisioner
         $kasirInclude   = ['pos.view','pos.create','orders.view_all','orders.create',
                            'orders.update_status','orders.bayar','pelanggan.view',
                            'pelanggan.create','absensi.clock','absensi.view','layanan.view',
-                           'mesin.view','mesin.operate','produksi.work','antar.view',
+                           'mesin.view','mesin.operate','antar.view',
                            'bantuan.view','bantuan.submit','bantuan.reply','bantuan.close'];
         $karyawanInclude = ['absensi.clock','absensi.view','orders.view_own','orders.update_status',
-                            'produksi.work','antar.view','bantuan.view','bantuan.submit','bantuan.reply','bantuan.close'];
+                            'antar.view','bantuan.view','bantuan.submit','bantuan.reply','bantuan.close'];
         $kurirInclude   = ['antar.kurir'];
 
         foreach ($permissions as [$kode, $modul, $aksi, $desc]) {

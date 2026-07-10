@@ -718,9 +718,9 @@ function renderGlobalJsHelpers(): void { ?>
     window.HarpyTour = (function(){
       const KEY = 'lamasy_tour_state_v2';
       const DONE = 'lamasy_tour_done_v2';
-      const SEQ  = ['dashboard','pos','orders','kas','produksi'];
-      const LBL  = {dashboard:'Dashboard', pos:'Kasir (POS)', orders:'Order', kas:'Kas', produksi:'Produksi'};
-      const URL  = {dashboard:'/dashboard', pos:'/pos', orders:'/orders', kas:'/kas', produksi:'/produksi'};
+      const SEQ  = ['dashboard','pos','orders','kas'];
+      const LBL  = {dashboard:'Dashboard', pos:'Kasir (POS)', orders:'Order', kas:'Kas'};
+      const URL  = {dashboard:'/dashboard', pos:'/pos', orders:'/orders', kas:'/kas'};
       const STEP = {
         dashboard: [
           {t:'t_dash_summary', title:'📊 Command Center', body:'Ringkasan omzet & order hari ini langsung terlihat di sini — cek tiap pagi sebelum mulai operasional.'},
@@ -741,11 +741,6 @@ function renderGlobalJsHelpers(): void { ?>
           {t:'t_kas_saldo',    title:'💎 Saldo Kas',        body:'Pantau uang masuk, keluar, & saldo bersih outlet di sini.'},
           {t:'t_kas_catat',    title:'✍️ Catat Kas',        body:'Catat pemasukan / pengeluaran manual — mis. beli deterjen atau bayar listrik.'},
           {t:'t_kas_riwayat',  title:'📜 Riwayat Kas',      body:'Semua arus kas tercatat rapi, otomatis masuk laporan keuangan SAK EMKM.'},
-        ],
-        produksi: [
-          {t:'t_prod_list',    title:'🧺 Antrian Produksi', body:'Daftar cucian yang perlu dikerjakan — urut prioritas.'},
-          {t:'t_prod_stage',   title:'🔄 Tahap Produksi',   body:'Pilih tahap: cuci → kering → setrika → siap. Pelanggan lihat progress real-time.'},
-          {t:'t_prod_scan',    title:'📷 Scan QR',          body:'Scan QR di struk untuk update order super cepat, tanpa cari manual.'},
         ],
       };
 
@@ -870,7 +865,7 @@ function renderGlobalJsHelpers(): void { ?>
         destroy();
         confetti();
         if(typeof showToast==='function') showToast('Tur selesai 🎉 Replay kapan saja via tombol "Tour Sistem".','success');
-        track(true, 'produksi');
+        track(true, 'kas');
       }
       function close(){
         S.clear();
@@ -1021,7 +1016,6 @@ function renderTopbar(string $activePage = '', bool $minimalMode = false): void 
                 'inventori'  => ['label'=>'Inventori', 'url'=>'/inventori', 'perms'=>['inventori.view','kas.view']],
                 'pembelian'  => ['label'=>'Pembelian', 'url'=>'/pembelian', 'perm'=>'inventori.manage'],
                 'mesin'     => ['label'=>'Mesin Koin', 'url'=>'/mesin',     'perms'=>['mesin.view','pos.view']],
-                'produksi'     => ['label'=>'Produksi',     'url'=>'/produksi',     'perm'=>'produksi.work'],
                 'antar-jemput' => ['label'=>'Antar Jemput', 'url'=>'/antar-jemput', 'perm'=>'antar.view'],
                 'checklist'    => ['label'=>'Checklist',    'url'=>'/checklist',    'perm'=>null],
             ],
@@ -1123,7 +1117,7 @@ function renderTopbar(string $activePage = '', bool $minimalMode = false): void 
       'karyawan'=>'👤','absensi'=>'📅','settings'=>'⚙️','audit'=>'🔍','outlet-settings'=>'🏪','payment-settings'=>'💳',
       'checklist'=>'✅','droppoint'=>'📦','owner_report'=>'📨','piutang'=>'💼','kanban'=>'🗂️','struk'=>'🧾',
       'loyalty'=>'⭐','retention'=>'😴','support'=>'🎧','import'=>'📥',
-      'inventori'=>'🧴','pembelian'=>'🛒','mesin'=>'🪙','produksi'=>'🧺',
+      'inventori'=>'🧴','pembelian'=>'🛒','mesin'=>'🪙',
       'antar-jemput'=>'🚚','kurir-master'=>'🛵',
     ];
     ?>
