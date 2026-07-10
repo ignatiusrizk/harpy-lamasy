@@ -84,7 +84,9 @@ RedirectMatch 403 ^/core/
   Header set X-Content-Type-Options "nosniff"
   Header set X-Frame-Options "SAMEORIGIN"
   Header set Referrer-Policy "strict-origin-when-cross-origin"
-  Header set Permissions-Policy "geolocation=(), microphone=(), camera=()"
+  # self = fitur kita sendiri boleh (live-scan QR kamera, geofence absensi); pihak ketiga tetap terblokir.
+  # () total dulu → getUserMedia NotAllowedError instan tanpa dialog izin (live scan & geolocation mati)
+  Header set Permissions-Policy "geolocation=(self), microphone=(self), camera=(self)"
   Header set X-Permitted-Cross-Domain-Policies "none"
   # HSTS — paksa HTTPS 1 tahun (anti SSL-stripping). Tanpa preload (aman, bisa dicabut).
   Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
