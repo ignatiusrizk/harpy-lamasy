@@ -2870,7 +2870,8 @@ async function scanOpen() {
   const status = document.getElementById('scanStatus');
   const vid = document.getElementById('scanVideo');
   ov.style.display = 'flex'; vid.style.display = ''; status.textContent = 'Menyiapkan kamera…';
-  if ('BarcodeDetector' in window && navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+  const diag = { where: 'scanOpen', bd: ('BarcodeDetector' in window), md: !!navigator.mediaDevices, gum: !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia) };
+  if (diag.bd && diag.gum) {
     try {
       _scanStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
       vid.srcObject = _scanStream; await vid.play();
@@ -2883,10 +2884,14 @@ async function scanOpen() {
         } catch (e) {}
       }, 300);
       return;
-    } catch (e) { /* izin kamera ditolak (APK lama belum ada permission CAMERA) → fallback foto */ }
+    } catch (e) {
+      diag.err = (e && (e.name + ': ' + e.message)) || String(e);
+    }
   }
+  // Kirim alasan gagal ke server (print_debug) — biar kelihatan dari server kenapa fallback
+  try { fetch('/api/print_debug.php', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken() }, body: JSON.stringify({ trace: 'scan-live-fallback ' + JSON.stringify(diag) + ' ua=' + navigator.userAgent.slice(0, 80) }) }); } catch (e) {}
   vid.style.display = 'none';
-  status.textContent = 'Live scan tak tersedia di versi aplikasi ini — jepret foto QR-nya';
+  status.textContent = 'Live scan tak tersedia — jepret foto QR-nya';
   scanPhotoTrigger();
 }
 
