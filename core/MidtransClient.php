@@ -72,7 +72,19 @@ class MidtransClient
             'unit'            => 'minute',
         ];
 
-        return self::callApi('/v2/charge', $payload);
+        $res = self::callApi('/v2/charge', $payload);
+
+        // Midtrans bisa balas HTTP 2xx TAPI body status_code 4xx/5xx (mis. 402
+        // "Payment channel is not activated"). callApi cuma cek HTTP → di sini
+        // cek status_code body supaya charge gagal terdeteksi (bukan QR kosong).
+        if (!empty($res['ok'])) {
+            $sc = (int)($res['data']['status_code'] ?? 0);
+            if ($sc >= 400) {
+                return ['ok' => false,
+                    'error' => $res['data']['status_message'] ?? "Charge ditolak (status $sc)"];
+            }
+        }
+        return $res;
     }
 
     /**
