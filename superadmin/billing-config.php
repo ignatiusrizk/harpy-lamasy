@@ -4,6 +4,7 @@ require_once SA_ROOT . '/middleware/superadmin_guard.php';
 require_once SA_ROOT . '/superadmin_components.php';
 require_once SA_ROOT . '/../core/SaPermission.php';
 require_once SA_ROOT . '/../core/BillingConfig.php';
+require_once SA_ROOT . '/../core/ManualPay.php';
 
 SaPermission::require('super_admins.manage');
 
@@ -30,6 +31,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         BillingConfig::set($key, trim($val), $saId);
     }
+
+    // ── Field jalur bayar manual ──
+    BillingConfig::set('manual_payment_enabled', isset($_POST['manual_payment_enabled']) ? '1' : '0', $saId);
+    foreach (['manual_bank_name','manual_bank_account_no','manual_bank_holder','manual_payment_expiry_hours'] as $mk) {
+        BillingConfig::set($mk, trim($_POST[$mk] ?? ''), $saId);
+    }
+
     logSuperAdminAction('billing_config_update', null, 'Update Midtrans config');
     $msg = 'Config berhasil disimpan.';
 }
@@ -106,6 +114,43 @@ function maskKey(?string $key): string {
           <input type="number" name="payment_expiry_minutes" value="<?= htmlspecialchars($conf['payment_expiry_minutes']['value_text'] ?? '15') ?>" min="5" max="1440" required
                  style="width:100%;padding:10px 14px;background:var(--slate-elev);border:1px solid var(--crease);border-radius:8px;color:var(--glow);">
           <small style="color:var(--ash-dim);font-size:11px;">Berapa menit sampai payment expire. Default 15 menit.</small>
+        </div>
+      </div>
+    </div>
+
+    <div class="sa-card">
+      <div class="sa-card-head">
+        <h3>🏦 Pembayaran Manual (Transfer Bank)</h3>
+      </div>
+      <div class="sa-card-body" style="padding: 22px 24px;">
+        <div class="form-group" style="margin-bottom:16px;">
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+            <input type="checkbox" name="manual_payment_enabled" value="1"
+                   <?= (($conf['manual_payment_enabled']['value_text'] ?? '0') === '1') ? 'checked' : '' ?>>
+            Aktifkan jalur transfer manual (fallback saat QRIS/Midtrans belum aktif)
+          </label>
+          <small style="color:var(--ash-dim);font-size:11px;">Muncul hanya jika switch ini ON dan ketiga field rekening di bawah terisi.</small>
+        </div>
+        <div class="form-group" style="margin-bottom:16px;">
+          <label>Nama Bank</label>
+          <input type="text" name="manual_bank_name" value="<?= htmlspecialchars($conf['manual_bank_name']['value_text'] ?? '') ?>" placeholder="BCA"
+                 style="width:100%;padding:10px 14px;background:var(--slate-elev);border:1px solid var(--crease);border-radius:8px;color:var(--glow);">
+        </div>
+        <div class="form-group" style="margin-bottom:16px;">
+          <label>No Rekening</label>
+          <input type="text" name="manual_bank_account_no" value="<?= htmlspecialchars($conf['manual_bank_account_no']['value_text'] ?? '') ?>" placeholder="1234567890"
+                 style="width:100%;padding:10px 14px;background:var(--slate-elev);border:1px solid var(--crease);border-radius:8px;color:var(--glow);font-family:var(--mono);">
+        </div>
+        <div class="form-group" style="margin-bottom:16px;">
+          <label>Atas Nama</label>
+          <input type="text" name="manual_bank_holder" value="<?= htmlspecialchars($conf['manual_bank_holder']['value_text'] ?? '') ?>" placeholder="Ignatius Rizky"
+                 style="width:100%;padding:10px 14px;background:var(--slate-elev);border:1px solid var(--crease);border-radius:8px;color:var(--glow);">
+        </div>
+        <div class="form-group" style="margin-bottom:0;">
+          <label>Masa Berlaku (jam)</label>
+          <input type="number" name="manual_payment_expiry_hours" value="<?= htmlspecialchars($conf['manual_payment_expiry_hours']['value_text'] ?? '24') ?>" min="1" max="168"
+                 style="width:100%;padding:10px 14px;background:var(--slate-elev);border:1px solid var(--crease);border-radius:8px;color:var(--glow);">
+          <small style="color:var(--ash-dim);font-size:11px;">Berapa jam row manual berlaku sebelum kedaluwarsa. Default 24.</small>
         </div>
       </div>
     </div>
