@@ -85,6 +85,14 @@ if ($action) {
                 $o['karyawan_count'] = (int)$s->fetchColumn();
             } catch (Throwable) { $o['karyawan_count'] = 0; }
 
+            // Status welcome kit terakhir outlet ini (null = tak pernah ada antrian)
+            try {
+                $s = $db->prepare("SELECT status, kurir, resi FROM saas_welcome_kit
+                                     WHERE tenant_id=? AND outlet_id=? ORDER BY id DESC LIMIT 1");
+                $s->execute([$tid, $oid]);
+                $o['welcome_kit'] = $s->fetch(PDO::FETCH_ASSOC) ?: null;
+            } catch (Throwable) { $o['welcome_kit'] = null; }
+
             // Pembayaran aktivasi pending yang belum expired → tombol "Cek Pembayaran" vs "Aktivasi"
             try {
                 // expires_at ditulis pakai date() WIB → bandingkan dgn waktu PHP (WIB),
@@ -457,6 +465,11 @@ async function loadList(){
             <small>${escapeHtml(o.kota || 'Tanpa kota')}${o.telepon ? ' · 📞 '+escapeHtml(o.telepon) : ''}</small>
             ${o.alamat ? `<small>${escapeHtml(o.alamat)}</small>` : ''}
             ${o.operating_hours ? `<small>🕐 ${escapeHtml(o.operating_hours)}</small>` : ''}
+            ${o.welcome_kit ? `<small>📦 Welcome kit: ${
+                o.welcome_kit.status === 'delivered' ? '✅ diterima'
+              : o.welcome_kit.status === 'shipped'   ? '🚚 dikirim — ' + escapeHtml(o.welcome_kit.kurir||'') + ' ' + escapeHtml(o.welcome_kit.resi||'')
+              : o.welcome_kit.status === 'cancelled' ? 'dibatalkan'
+              : '⏳ sedang disiapkan'}</small>` : ''}
           </div>
           ${lifecycle}
         </div>

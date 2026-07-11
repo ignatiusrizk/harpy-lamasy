@@ -961,6 +961,25 @@ foreach ($banners as $b):
 <?php endforeach; ?>
 
 <?php
+// ── Banner Welcome Kit (pending = disiapkan, shipped = dalam perjalanan; hilang saat delivered) ──
+try {
+    require_once ROOT . '/core/WelcomeKit.php';
+    $_wk = WelcomeKit::statusForOutlet((int)TenantResolver::outletId());
+    if ($_wk && in_array($_wk['status'] ?? '', ['pending', 'shipped'], true)):
+        $_wkShipped = ($_wk['status'] === 'shipped');
+?>
+<div style="background:linear-gradient(90deg,#E8FBF9,#D1FAE5);border-left:4px solid #14B8A6;color:#0F766E;
+            padding:10px 16px;border-radius:8px;font-size:13px;margin-bottom:14px;line-height:1.5">
+    <?php if ($_wkShipped): ?>
+        📦 <strong>Welcome kit dalam perjalanan!</strong> Dikirim via <strong><?= htmlspecialchars((string)($_wk['kurir'] ?? '-')) ?></strong>,
+        resi <strong><?= htmlspecialchars((string)($_wk['resi'] ?? '-')) ?></strong> — berisi perlengkapan outlet (kertas thermal dkk).
+    <?php else: ?>
+        📦 <strong>Welcome kit sedang disiapkan</strong> — perlengkapan outlet (kertas thermal dkk) akan dikirim ke alamat outletmu. Kabar pengiriman + resi menyusul via notifikasi.
+    <?php endif; ?>
+</div>
+<?php endif; } catch (Throwable $e) { /* banner opsional — jangan ganggu dashboard */ } ?>
+
+<?php
 // ── Promo/Feature Banner Carousel (Smartlink-inspired) ──
 require_once ROOT . '/core/BannerLoader.php';
 echo BannerLoader::renderCarousel(TenantResolver::id());

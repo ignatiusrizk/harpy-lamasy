@@ -11,6 +11,44 @@ require_once dirname(__DIR__) . '/core/WelcomeKit.php';
 
 date_default_timezone_set('Asia/Jakarta');
 
+// Kabari owner tenant saat kit dikirim/diterima (in-app + email) — best-effort,
+// gagal notif tidak menggagalkan aksi SA. Gratis (bukan fitur coin).
+function wkNotifyOwner(int $kitId, string $event): void
+{
+    try {
+        require_once dirname(__DIR__) . '/core/ErrorLogger.php';
+        require_once dirname(__DIR__) . '/core/CoinLedger.php';
+        require_once dirname(__DIR__) . '/core/Notifier.php';
+        $st = Database::get()->prepare(
+            "SELECT k.tenant_id, k.outlet_id, k.kit_nama, k.kurir, k.resi, o.nama_outlet
+               FROM saas_welcome_kit k LEFT JOIN outlets o ON o.id = k.outlet_id
+              WHERE k.id = ? LIMIT 1");
+        $st->execute([$kitId]);
+        $k = $st->fetch(PDO::FETCH_ASSOC);
+        if (!$k || !$k['tenant_id']) return;
+        $outlet = $k['nama_outlet'] ?: 'outletmu';
+        if ($event === 'shipped') {
+            $subject = "📦 Welcome kit outlet {$outlet} sudah dikirim";
+            $body    = "Welcome kit \"{$k['kit_nama']}\" untuk outlet <strong>" . htmlspecialchars($outlet) . "</strong> sudah dikirim via <strong>" . htmlspecialchars((string)$k['kurir']) . "</strong>, nomor resi <strong>" . htmlspecialchars((string)$k['resi']) . "</strong>. Paket dialamatkan ke alamat outlet yang terdaftar.";
+            $summary = "Kit dikirim via {$k['kurir']} · resi {$k['resi']}";
+        } else {
+            $subject = "✅ Welcome kit outlet {$outlet} sudah diterima";
+            $body    = "Welcome kit untuk outlet <strong>" . htmlspecialchars($outlet) . "</strong> tercatat sudah diterima. Selamat memakai perlengkapannya — semoga laris! 🧺";
+            $summary = "Kit welcome sudah diterima";
+        }
+        Notifier::notifyOwner((int)$k['tenant_id'], (int)$k['outlet_id'], [
+            'type'           => 'welcome_kit_' . $event,
+            'subject'        => $subject,
+            'body_html'      => $body,
+            'body_summary'   => $summary,
+            'channels'       => ['email', 'inapp'],
+            'rate_limit_min' => 5, // anti dobel-klik; event beda type jadi tak saling blokir
+        ]);
+    } catch (Throwable $e) {
+        try { ErrorLogger::logException('welcome_kit_notify', $e, (int)($k['tenant_id'] ?? 0)); } catch (Throwable) {}
+    }
+}
+
 $action = $_GET['action'] ?? '';
 
 // ── API LAYER ─────────────────────────────────────────
@@ -49,7 +87,8 @@ if ($action) {
             exit;
         }
         WelcomeKit::markShipped($id, $kurir, $resi);
-        echo json_encode(['ok' => true, 'msg' => 'Ditandai dikirim.']);
+        wkNotifyOwner($id, 'shipped');
+        echo json_encode(['ok' => true, 'msg' => 'Ditandai dikirim & owner dinotifikasi.']);
         exit;
     }
 
@@ -58,7 +97,8 @@ if ($action) {
         $id = (int)($d['id'] ?? 0);
         if ($id < 1) { echo json_encode(['error' => 'ID tidak valid.']); exit; }
         WelcomeKit::markDelivered($id);
-        echo json_encode(['ok' => true, 'msg' => 'Ditandai terkirim.']);
+        wkNotifyOwner($id, 'delivered');
+        echo json_encode(['ok' => true, 'msg' => 'Ditandai diterima & owner dinotifikasi.']);
         exit;
     }
 
