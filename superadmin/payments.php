@@ -1395,8 +1395,8 @@ function renderMidtransRows(rows){
       actionBtn = `<button class="sa-btn sa-btn-sm sa-btn-danger" ${withinWindow ? '' : 'title="Mungkin di luar 90-hari refund window Midtrans"'}
                     onclick="openRefundModal(${JSON.stringify(p).replace(/"/g,'&quot;')})">↩ Refund</button>`;
     } else if (p.payment_type === 'manual_transfer' && p.status === 'pending') {
-      actionBtn = `<button class="sa-btn sa-btn-sm sa-btn-primary" onclick="confirmManual(${p.id}, '${esc(p.order_id)}')">✓ Konfirmasi Lunas</button>
-                   <button class="sa-btn sa-btn-sm sa-btn-outline" onclick="rejectManual(${p.id})">✗ Tolak</button>`;
+      actionBtn = `<button class="sa-btn sa-btn-sm sa-btn-primary" onclick="confirmManual(${p.id}, '${esc(p.order_id)}', this)">✓ Konfirmasi Lunas</button>
+                   <button class="sa-btn sa-btn-sm sa-btn-outline" onclick="rejectManual(${p.id}, this)">✗ Tolak</button>`;
     }
 
     return `<tr>
@@ -1452,25 +1452,29 @@ function submitRefund(){
     });
 }
 
-function confirmManual(id, orderId){
+function confirmManual(id, orderId, btn){
   if (!confirm('Konfirmasi transfer manual sudah masuk untuk order ' + orderId + '?\nCoin/aktivasi akan langsung dikreditkan.')) return;
+  if (btn) btn.disabled = true;
   const form = new FormData(); form.append('id', id);
   saFetch('payments.php?action=confirm_manual', { method:'POST', body: form })
     .then(r => r.json()).then(d => {
-      if (d.error) { saShowToast(d.error, 'error'); return; }
+      if (d.error) { if (btn) btn.disabled = false; saShowToast(d.error, 'error'); return; }
       saShowToast(d.msg || 'Dikonfirmasi.', 'success');
       loadMidtrans();
-    });
+    })
+    .catch(() => { if (btn) btn.disabled = false; saShowToast('Gagal menghubungi server.', 'error'); });
 }
-function rejectManual(id){
+function rejectManual(id, btn){
   if (!confirm('Tolak pembayaran manual ini? Status jadi cancelled.')) return;
+  if (btn) btn.disabled = true;
   const form = new FormData(); form.append('id', id);
   saFetch('payments.php?action=reject_manual', { method:'POST', body: form })
     .then(r => r.json()).then(d => {
-      if (d.error) { saShowToast(d.error, 'error'); return; }
+      if (d.error) { if (btn) btn.disabled = false; saShowToast(d.error, 'error'); return; }
       saShowToast(d.msg || 'Ditolak.', 'success');
       loadMidtrans();
-    });
+    })
+    .catch(() => { if (btn) btn.disabled = false; saShowToast('Gagal menghubungi server.', 'error'); });
 }
 
 // Initial load
