@@ -20,6 +20,7 @@
 $activePage = 'hq-outlet';
 define('ROOT', dirname(__DIR__));
 require_once ROOT . '/middleware/hq_guard.php';
+require_once ROOT . '/core/ManualPay.php';
 
 $db   = Database::get();
 $tid  = (int)$hqTenant['id'];
@@ -210,6 +211,8 @@ require __DIR__ . '/_layout_open.php';
   .btn-dark{background:#0F1C3A;color:#fff}
   .btn-wa{background:#25D366;color:#fff}
   .btn-warn{background:#F59E0B;color:#fff}
+  .btn-outline{background:#fff;border:1.5px solid #E5E7EB;color:#374151}
+  .btn-outline:hover{background:#F9FAFB}
   .btn-sm{padding:6px 12px;font-size:11px}
 
   .summary-bar{background:#fff;border-radius:12px;padding:14px 18px;margin-bottom:16px;
@@ -391,6 +394,7 @@ const hasTarget  = <?= $hasTarget  ? 'true' : 'false' ?>;
 const coinMode = <?= json_encode($coinMode) ?>;
 const supportWa = <?= json_encode($supportWa) ?>;
 const canManageOutlet = <?= json_encode((bool)($hqCanManageOutlet ?? false)) ?>;
+const MANUAL_ON = <?= ManualPay::isEnabled() ? 'true' : 'false' ?>;
 
 function escapeHtml(s){return String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
 function fmtRp(n){return 'Rp ' + Number(n||0).toLocaleString('id-ID')}
@@ -452,7 +456,8 @@ async function loadList(){
     const activateBtn = (canManageOutlet && needsActivation)
       ? (o.has_active_payment
           ? `<a href="/billing-checkout?type=outlet_activation&outlet_id=${o.id}" class="btn btn-dark btn-sm">🧾 Cek Pembayaran</a>`
-          : `<a href="/billing-checkout?type=outlet_activation&outlet_id=${o.id}" class="btn btn-warn btn-sm">⚡ Aktivasi</a>`)
+          : `<a href="/billing-checkout?type=outlet_activation&outlet_id=${o.id}" class="btn btn-warn btn-sm">⚡ Aktivasi</a>`
+            + (MANUAL_ON ? ` <a href="/billing-checkout?type=outlet_activation&outlet_id=${o.id}&method=manual" class="btn btn-outline btn-sm">🏦 Manual</a>` : ''))
       : '';
 
     return `

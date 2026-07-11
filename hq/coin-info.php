@@ -10,6 +10,7 @@ $pageTitle  = 'Harga Fitur Coin';
 define('ROOT', dirname(__DIR__));
 require_once ROOT . '/middleware/hq_guard.php';
 require_once ROOT . '/core/CoinLedger.php';
+require_once ROOT . '/core/ManualPay.php';
 
 $db   = Database::get();
 $tid  = (int)$hqTenant['id'];
@@ -307,6 +308,7 @@ $katMeta = [
 </div>
 
 <!-- Coin Bundles Top-up Section (dipindah ke atas — sebelum daftar harga fitur) -->
+<?php $manualOn = ManualPay::isEnabled(); ?>
 <?php if (!empty($bundles)): ?>
   <div class="bundle-section">
     <h2>💳 Top-up Coin Sekarang</h2>
@@ -347,6 +349,12 @@ $katMeta = [
              class="btn-topup">
             💳 Top-up Sekarang
           </a>
+          <?php if ($manualOn): ?>
+          <a href="/billing-checkout.php?type=topup_coin&bundle_id=<?= (int)$b['id'] ?>&method=manual"
+             class="btn-topup" style="margin-top:8px;background:transparent;color:#0F1C3A;border:1px solid #CBD5E1;">
+            🏦 Transfer Manual
+          </a>
+          <?php endif; ?>
         </div>
       <?php endforeach; ?>
     </div>
