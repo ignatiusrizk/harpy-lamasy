@@ -41,6 +41,49 @@ eqv($info['holder'], 'Test Holder', 'bankInfo holder benar');
 
 echo "OK test_manual_pay Task1\n";
 
+// ── Task 2: uniqueAmount + createPayment ──────────────────────
+require_once dirname(__DIR__, 2) . '/core/MidtransClient.php';
+
+// Siapkan tenant + bundle sintetis
+$db->beginTransaction();
+$db->prepare("INSERT INTO tenants (slug, nama_perusahaan, owner_name, owner_wa, email, status, coin_balance, created_at)
+              VALUES (?, 'MP-TEST', 'MP Owner', '0811', 'mp@test.local', 'pending_verification', 0, NOW())")
+   ->execute(['mp-test-' . time() . '-' . rand(1000,9999)]);
+$mpTid = (int)$db->lastInsertId();
+$db->prepare("INSERT INTO saas_coin_bundles (nama, harga, coin_didapat, bonus_pct, is_active, urutan)
+              VALUES ('MP Bundle', 20000, 100, 0, 1, 999)")->execute();
+$mpBundle = (int)$db->lastInsertId();
+$db->commit();
+
+// uniqueAmount: base+code dalam range
+$u1 = ManualPay::uniqueAmount($db, 20000);
+ok($u1['code'] >= 1 && $u1['code'] <= 999, 'code dalam [1,999]');
+eqv($u1['amount'], 20000 + $u1['code'], 'amount = base + code');
+
+// createPayment: buat row manual pending
+$row1 = ManualPay::createPayment($db, $mpTid, 'topup_coin', ['bundle'=>$mpBundle], 20000);
+eqv($row1['payment_type'], 'manual_transfer', 'row payment_type=manual_transfer');
+eqv($row1['status'], 'pending', 'row status pending');
+ok((int)$row1['amount'] >= 20001 && (int)$row1['amount'] <= 20999, 'amount row = base+code unik');
+ok(empty($row1['qr_string']), 'qr_string kosong utk manual');
+
+// createPayment lagi utk type+ref sama → resume row yang sama (bukan buat baru)
+$row2 = ManualPay::createPayment($db, $mpTid, 'topup_coin', ['bundle'=>$mpBundle], 20000);
+eqv((int)$row2['id'], (int)$row1['id'], 'createPayment kedua me-resume row pending yang sama');
+
+// uniqueAmount hindari tabrakan dgn amount pending yg sudah ada
+$taken = (int)$row1['amount'];
+$distinct = true;
+for ($i=0;$i<20;$i++){ if (ManualPay::uniqueAmount($db, $taken - ($taken % 1000))['amount'] === $taken) { $distinct=false; break; } }
+ok($distinct, 'uniqueAmount tak pernah tabrakan dgn amount pending existing');
+
+echo "OK test_manual_pay Task2\n";
+
+// Bersihkan data sintetis Task 2
+$db->prepare("DELETE FROM saas_payments WHERE tenant_id=?")->execute([$mpTid]);
+$db->prepare("DELETE FROM saas_coin_bundles WHERE id=?")->execute([$mpBundle]);
+$db->prepare("DELETE FROM tenants WHERE id=?")->execute([$mpTid]);
+
 // Pulihkan config lama (biar tak ganggu prod DB lokal)
 foreach ($prev as $k => $v) {
     if ($v === null) { Database::get()->prepare("DELETE FROM saas_billing_config WHERE key_name=?")->execute([$k]); }
