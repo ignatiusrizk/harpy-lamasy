@@ -84,6 +84,62 @@ $db->prepare("DELETE FROM saas_payments WHERE tenant_id=?")->execute([$mpTid]);
 $db->prepare("DELETE FROM saas_coin_bundles WHERE id=?")->execute([$mpBundle]);
 $db->prepare("DELETE FROM tenants WHERE id=?")->execute([$mpTid]);
 
+// ── Task 3: confirm (settle idempoten) + reject ───────────────
+require_once dirname(__DIR__, 2) . '/core/PaymentSettler.php';
+
+// Setup tenant + bundle utk confirm
+$db->beginTransaction();
+$db->prepare("INSERT INTO tenants (slug, nama_perusahaan, owner_name, owner_wa, email, status, coin_balance, created_at)
+              VALUES (?, 'MP-CONF', 'MP Conf', '0811', 'mpc@test.local', 'active', 0, NOW())")
+   ->execute(['mp-conf-' . time() . '-' . rand(1000,9999)]);
+$cTid = (int)$db->lastInsertId();
+$db->prepare("INSERT INTO saas_coin_bundles (nama, harga, coin_didapat, bonus_pct, is_active, urutan)
+              VALUES ('MP Conf Bundle', 20000, 150, 0, 1, 999)")->execute();
+$cBundle = (int)$db->lastInsertId();
+$db->commit();
+
+$rowC = ManualPay::createPayment($db, $cTid, 'topup_coin', ['bundle'=>$cBundle], 20000);
+$pidC = (int)$rowC['id'];
+
+// confirm → coin bertambah 150 (dari bundle), sekali
+$rc1 = ManualPay::confirm($pidC);
+ok(!empty($rc1['ok']), 'confirm pertama ok');
+$balC = (int)$db->query("SELECT coin_balance FROM tenants WHERE id=$cTid")->fetchColumn();
+eqv($balC, 150, 'coin_balance = coin_didapat bundle setelah confirm');
+$stC = $db->query("SELECT status FROM saas_payments WHERE id=$pidC")->fetchColumn();
+eqv($stC, 'paid', 'status row jadi paid');
+
+// double confirm → tak double-credit (idempoten)
+$rc2 = ManualPay::confirm($pidC);
+$balC2 = (int)$db->query("SELECT coin_balance FROM tenants WHERE id=$cTid")->fetchColumn();
+eqv($balC2, 150, 'confirm kedua tak menambah coin (idempoten)');
+$ledC = (int)$db->query("SELECT COUNT(*) FROM coin_ledger WHERE payment_id=$pidC")->fetchColumn();
+eqv($ledC, 1, 'tetap 1 baris ledger');
+
+// reject row pending baru → cancelled, tanpa kredit
+$rowR = ManualPay::createPayment($db, $cTid, 'topup_coin', ['bundle'=>$cBundle], 30000);
+$pidR = (int)$rowR['id'];
+$rr = ManualPay::reject($pidR);
+ok(!empty($rr['ok']), 'reject ok');
+$stR = $db->query("SELECT status FROM saas_payments WHERE id=$pidR")->fetchColumn();
+eqv($stR, 'cancelled', 'status row jadi cancelled');
+$balR = (int)$db->query("SELECT coin_balance FROM tenants WHERE id=$cTid")->fetchColumn();
+eqv($balR, 150, 'reject tak mengubah coin');
+
+// confirm row yang sudah cancelled → ditolak (bukan paid, tak kredit)
+$rcBad = ManualPay::confirm($pidR);
+ok(empty($rcBad['ok']), 'confirm row cancelled ditolak');
+$stR2 = $db->query("SELECT status FROM saas_payments WHERE id=$pidR")->fetchColumn();
+eqv($stR2, 'cancelled', 'row tetap cancelled (tak berubah jadi paid)');
+
+echo "OK test_manual_pay Task3\n";
+
+// Bersihkan
+$db->prepare("DELETE FROM coin_ledger WHERE tenant_id=?")->execute([$cTid]);
+$db->prepare("DELETE FROM saas_payments WHERE tenant_id=?")->execute([$cTid]);
+$db->prepare("DELETE FROM saas_coin_bundles WHERE id=?")->execute([$cBundle]);
+$db->prepare("DELETE FROM tenants WHERE id=?")->execute([$cTid]);
+
 // Pulihkan config lama (biar tak ganggu prod DB lokal)
 foreach ($prev as $k => $v) {
     if ($v === null) { Database::get()->prepare("DELETE FROM saas_billing_config WHERE key_name=?")->execute([$k]); }

@@ -97,4 +97,51 @@ class ManualPay
         $g->execute([$pid]);
         return $g->fetch(PDO::FETCH_ASSOC);
     }
+
+    /**
+     * SA konfirmasi lunas: flip pending→paid (khusus row manual), lalu settle.
+     * Guard status='pending' di UPDATE mencegah re-settle. settle idempoten.
+     */
+    public static function confirm(int $paymentId): array
+    {
+        require_once __DIR__ . '/PaymentSettler.php';
+        $db = Database::get();
+
+        $upd = $db->prepare(
+            "UPDATE saas_payments SET status='paid', paid_at=NOW()
+             WHERE id=? AND status='pending' AND payment_type='manual_transfer'"
+        );
+        $upd->execute([$paymentId]);
+
+        if ($upd->rowCount() === 0) {
+            // Sudah paid (retry settle idempoten) atau bukan row manual pending.
+            $st = $db->prepare("SELECT status, payment_type FROM saas_payments WHERE id=?");
+            $st->execute([$paymentId]);
+            $r = $st->fetch(PDO::FETCH_ASSOC);
+            if (!$r || $r['payment_type'] !== 'manual_transfer') {
+                return ['ok' => false, 'error' => 'Bukan pembayaran manual.'];
+            }
+            if ($r['status'] !== 'paid') {
+                return ['ok' => false, 'error' => "Status bukan pending (status: {$r['status']})."];
+            }
+            // status sudah paid → lanjut settle (idempoten)
+        }
+
+        return PaymentSettler::settle($paymentId);
+    }
+
+    /** SA tolak: pending→cancelled (khusus row manual). Tak ada kredit. */
+    public static function reject(int $paymentId): array
+    {
+        $db  = Database::get();
+        $upd = $db->prepare(
+            "UPDATE saas_payments SET status='cancelled'
+             WHERE id=? AND status='pending' AND payment_type='manual_transfer'"
+        );
+        $upd->execute([$paymentId]);
+        if ($upd->rowCount() === 0) {
+            return ['ok' => false, 'error' => 'Hanya pembayaran manual pending yang bisa ditolak.'];
+        }
+        return ['ok' => true];
+    }
 }
