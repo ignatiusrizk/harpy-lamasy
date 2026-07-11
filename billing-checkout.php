@@ -2,6 +2,7 @@
 require_once __DIR__ . '/middleware/tenant_guard.php';
 require_once __DIR__ . '/core/MidtransClient.php';
 require_once __DIR__ . '/core/BillingConfig.php';
+require_once __DIR__ . '/core/ManualPay.php';
 
 date_default_timezone_set('Asia/Jakarta');
 
@@ -29,6 +30,23 @@ if (($_GET['action'] ?? '') === 'qr_img') {
     header('Content-Type: ' . $ct);
     header('Cache-Control: private, max-age=300');
     echo $img; exit;
+}
+
+// ── Owner menandai "sudah transfer" → ping SA (best-effort) ──
+if (($_GET['action'] ?? '') === 'notify_sa') {
+    header('Content-Type: application/json');
+    $pid = (int)($_GET['pid'] ?? 0);
+    $db  = Database::get();
+    // Scope tenant + hanya row manual pending milik sendiri
+    $st  = $db->prepare("SELECT id FROM saas_payments
+                         WHERE id=? AND tenant_id=? AND payment_type='manual_transfer' AND status='pending'");
+    $st->execute([$pid, $tenantId]);
+    if ($st->fetchColumn()) {
+        require_once __DIR__ . '/core/SaNotifier.php';
+        try { SaNotifier::manualPaymentSubmitted($pid); } catch (Throwable) {}
+    }
+    echo json_encode(['ok' => true]);
+    exit;
 }
 
 $type = $_GET['type'] ?? '';
@@ -82,88 +100,111 @@ elseif ($type === 'outlet_activation') {
     $itemName = "Aktivasi Outlet — {$outlet['nama_outlet']}";
 }
 
-// Check existing pending payment (resume kalau ada)
-// Strict AND-clause: semua ref harus cocok — hindari false match antar bundle/outlet berbeda
-$existing = $db->prepare(
-    // expires_at dibandingkan dgn waktu PHP (WIB) — sama dgn cara expires_at ditulis
-    // (date() Asia/Jakarta). MySQL NOW() = UTC → dulu bikin pending "hidup" 7 jam ekstra.
-    "SELECT * FROM saas_payments
-     WHERE tenant_id=? AND type=? AND status='pending' AND expires_at > ?
-       AND COALESCE(ref_bundle_id, 0) = COALESCE(?, 0)
-       AND COALESCE(ref_outlet_id, 0) = COALESCE(?, 0)
-       AND COALESCE(ref_package_id, 0) = COALESCE(?, 0)
-     ORDER BY id DESC LIMIT 1"
-);
-$existing->execute([
-    $tenantId, $type,
-    date('Y-m-d H:i:s'),
-    $refBundleId,
-    $refOutletId,
-    $refPackageId,
-]);
-$payment = $existing->fetch(PDO::FETCH_ASSOC);
+$method = $_GET['method'] ?? 'qris';
 
-// Kalau gak ada pending, create baru
-if (!$payment) {
-    $orderId = MidtransClient::generateOrderId($type, $tenantId);
-
-    // Get tenant info untuk customer_details
-    $tn = $db->prepare("SELECT nama_perusahaan, owner_name, email, owner_wa FROM tenants WHERE id=?");
-    $tn->execute([$tenantId]);
-    $tenant = $tn->fetch(PDO::FETCH_ASSOC);
-
-    $customer = [
-        'first_name' => $tenant['owner_name'] ?: $tenant['nama_perusahaan'],
-        'email'      => $tenant['email'] ?: 'noreply@harpy.id',
-        'phone'      => $tenant['owner_wa'] ?: '',
-    ];
-
-    // Call Midtrans Charge — QRIS dulu (default), VA via tab di UI bisa add later
-    $method = $_GET['method'] ?? 'qris';
-    if (!in_array($method, ['qris', 'bank_transfer'], true)) $method = 'qris';
-
-    $res = MidtransClient::charge($orderId, $amount, $method, $customer);
-    if (!$res['ok']) {
-        die('Gagal generate payment: ' . htmlspecialchars($res['error'] ?? 'Unknown error'));
+// ── Cabang MANUAL: bypass Midtrans, pakai ManualPay ──
+if ($method === 'manual') {
+    if (!ManualPay::isEnabled()) {
+        die('Jalur transfer manual sedang tidak tersedia. Hubungi admin.');
     }
-
-    $mtData = $res['data'];
-    $expiryMin = BillingConfig::getInt('payment_expiry_minutes', 15);
-    $expiresAt = date('Y-m-d H:i:s', time() + $expiryMin * 60);
-
-    // Extract QR / VA dari response
-    $qrString = null;
-    $vaBank = null;
-    $vaNumber = null;
-    if ($method === 'qris') {
-        foreach ($mtData['actions'] ?? [] as $a) {
-            if (($a['name'] ?? '') === 'generate-qr-code') {
-                $qrString = $a['url'] ?? null; break;
-            }
-        }
-    } elseif ($method === 'bank_transfer') {
-        $vaBank = $mtData['va_numbers'][0]['bank'] ?? null;
-        $vaNumber = $mtData['va_numbers'][0]['va_number'] ?? null;
-    }
-
-    $db->prepare(
-        "INSERT INTO saas_payments
-            (order_id, tenant_id, type, amount, ref_bundle_id, ref_package_id, ref_outlet_id,
-             midtrans_tx_id, payment_type, va_bank, va_number, qr_string, expires_at, raw_response)
-         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
-    )->execute([
-        $orderId, $tenantId, $type, $amount,
-        $refBundleId, $refPackageId, $refOutletId,
-        $mtData['transaction_id'] ?? null,
-        $method,
-        $vaBank, $vaNumber, $qrString,
-        $expiresAt,
-        json_encode($mtData),
+    $payment = ManualPay::createPayment($db, $tenantId, $type, [
+        'bundle'  => $refBundleId,
+        'package' => $refPackageId,
+        'outlet'  => $refOutletId,
+    ], $amount);
+    $manualInfo = ManualPay::bankInfo();
+} else {
+    // Check existing pending payment (resume kalau ada)
+    // Strict AND-clause: semua ref harus cocok — hindari false match antar bundle/outlet berbeda
+    $existing = $db->prepare(
+        // expires_at dibandingkan dgn waktu PHP (WIB) — sama dgn cara expires_at ditulis
+        // (date() Asia/Jakarta). MySQL NOW() = UTC → dulu bikin pending "hidup" 7 jam ekstra.
+        "SELECT * FROM saas_payments
+         WHERE tenant_id=? AND type=? AND status='pending' AND expires_at > ?
+           AND COALESCE(ref_bundle_id, 0) = COALESCE(?, 0)
+           AND COALESCE(ref_outlet_id, 0) = COALESCE(?, 0)
+           AND COALESCE(ref_package_id, 0) = COALESCE(?, 0)
+           AND (payment_type IS NULL OR payment_type <> 'manual_transfer')
+         ORDER BY id DESC LIMIT 1"
+    );
+    $existing->execute([
+        $tenantId, $type,
+        date('Y-m-d H:i:s'),
+        $refBundleId,
+        $refOutletId,
+        $refPackageId,
     ]);
-    $paymentId = (int)$db->lastInsertId();
-    $p = $db->prepare("SELECT * FROM saas_payments WHERE id=?");
-    $p->execute([$paymentId]);
-    $payment = $p->fetch(PDO::FETCH_ASSOC);
+    $payment = $existing->fetch(PDO::FETCH_ASSOC);
+
+    // Kalau gak ada pending, create baru
+    if (!$payment) {
+        $orderId = MidtransClient::generateOrderId($type, $tenantId);
+
+        // Get tenant info untuk customer_details
+        $tn = $db->prepare("SELECT nama_perusahaan, owner_name, email, owner_wa FROM tenants WHERE id=?");
+        $tn->execute([$tenantId]);
+        $tenant = $tn->fetch(PDO::FETCH_ASSOC);
+
+        $customer = [
+            'first_name' => $tenant['owner_name'] ?: $tenant['nama_perusahaan'],
+            'email'      => $tenant['email'] ?: 'noreply@harpy.id',
+            'phone'      => $tenant['owner_wa'] ?: '',
+        ];
+
+        // Call Midtrans Charge — QRIS dulu (default), VA via tab di UI bisa add later
+        if (!in_array($method, ['qris', 'bank_transfer'], true)) $method = 'qris';
+
+        $res = MidtransClient::charge($orderId, $amount, $method, $customer);
+        if (!$res['ok']) {
+            $errMsg = $res['error'] ?? 'Gagal membuat pembayaran.';
+            $manualUrl = $_SERVER['REQUEST_URI'];
+            $manualUrl = preg_replace('/([?&])method=[^&]*/', '$1method=manual', $manualUrl);
+            if (!str_contains($manualUrl, 'method=')) {
+                $manualUrl .= (str_contains($manualUrl, '?') ? '&' : '?') . 'method=manual';
+            }
+            $showManual = ManualPay::isEnabled();
+            include __DIR__ . '/partials/checkout_error.php'; // render kartu error (Step 5)
+            exit;
+        }
+
+        $mtData = $res['data'];
+        $expiryMin = BillingConfig::getInt('payment_expiry_minutes', 15);
+        $expiresAt = date('Y-m-d H:i:s', time() + $expiryMin * 60);
+
+        // Extract QR / VA dari response
+        $qrString = null;
+        $vaBank = null;
+        $vaNumber = null;
+        if ($method === 'qris') {
+            foreach ($mtData['actions'] ?? [] as $a) {
+                if (($a['name'] ?? '') === 'generate-qr-code') {
+                    $qrString = $a['url'] ?? null; break;
+                }
+            }
+        } elseif ($method === 'bank_transfer') {
+            $vaBank = $mtData['va_numbers'][0]['bank'] ?? null;
+            $vaNumber = $mtData['va_numbers'][0]['va_number'] ?? null;
+        }
+
+        $db->prepare(
+            "INSERT INTO saas_payments
+                (order_id, tenant_id, type, amount, ref_bundle_id, ref_package_id, ref_outlet_id,
+                 midtrans_tx_id, payment_type, va_bank, va_number, qr_string, expires_at, raw_response)
+             VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
+        )->execute([
+            $orderId, $tenantId, $type, $amount,
+            $refBundleId, $refPackageId, $refOutletId,
+            $mtData['transaction_id'] ?? null,
+            $method,
+            $vaBank, $vaNumber, $qrString,
+            $expiresAt,
+            json_encode($mtData),
+        ]);
+        $paymentId = (int)$db->lastInsertId();
+        $p = $db->prepare("SELECT * FROM saas_payments WHERE id=?");
+        $p->execute([$paymentId]);
+        $payment = $p->fetch(PDO::FETCH_ASSOC);
+    }
 }
 
 $secondsRemaining = max(0, strtotime($payment['expires_at']) - time());
@@ -249,7 +290,37 @@ $secondsRemaining = max(0, strtotime($payment['expires_at']) - time());
     </div>
   </div>
 
-  <?php if ($payment['payment_type'] === 'qris' && $payment['qr_string']): ?>
+  <?php if ($payment['payment_type'] === 'manual_transfer'): ?>
+  <div class="card" id="payCard">
+    <h3 style="margin-bottom:14px;">Transfer Bank Manual</h3>
+    <div class="va-box"><div>
+      <div style="font-size:11px;color:#94A3B8;">Bank</div>
+      <div class="va-num" style="font-size:16px;"><?= htmlspecialchars($manualInfo['name']) ?></div>
+    </div></div>
+    <div class="va-box"><div>
+      <div style="font-size:11px;color:#94A3B8;">No Rekening</div>
+      <div class="va-num"><?= htmlspecialchars($manualInfo['account_no']) ?></div>
+    </div>
+      <button class="copy" onclick="navigator.clipboard.writeText('<?= htmlspecialchars($manualInfo['account_no']) ?>');this.textContent='Copied'">Copy</button>
+    </div>
+    <div class="va-box"><div>
+      <div style="font-size:11px;color:#94A3B8;">Atas Nama</div>
+      <div class="va-num" style="font-size:15px;"><?= htmlspecialchars($manualInfo['holder']) ?></div>
+    </div></div>
+    <div class="va-box" style="background:#FFF7ED;border-color:#FED7AA;"><div>
+      <div style="font-size:11px;color:#B45309;">Nominal PERSIS (termasuk 3 angka terakhir)</div>
+      <div class="va-num" style="color:#B45309;">Rp <?= number_format((int)$payment['amount'],0,',','.') ?></div>
+    </div>
+      <button class="copy" onclick="navigator.clipboard.writeText('<?= (int)$payment['amount'] ?>');this.textContent='Copied'">Copy</button>
+    </div>
+    <p style="font-size:12px;color:#94A3B8;margin-top:14px;">
+      Transfer <b>nominal persis</b> (3 angka terakhir adalah kode unik untuk pencocokan). Setelah transfer, tap tombol di bawah.
+    </p>
+    <div class="qr-actions">
+      <button class="act-btn alt" onclick="sudahTransfer(this)">✅ Saya sudah transfer</button>
+    </div>
+  </div>
+  <?php elseif ($payment['payment_type'] === 'qris' && $payment['qr_string']): ?>
   <div class="card" id="payCard">
     <h3 style="margin-bottom: 14px;">Scan QRIS</h3>
     <div class="qr-wrap">
@@ -288,6 +359,14 @@ const orderId = <?= json_encode($payment['order_id']) ?>;
 const expiresAt = <?= strtotime($payment['expires_at']) * 1000 ?>;
 
 let expiredHandled = false;
+
+async function sudahTransfer(btn){
+  btn.disabled = true; btn.textContent = 'Mengirim…';
+  try { await fetch('billing-checkout.php?action=notify_sa&pid=<?= (int)$payment['id'] ?>'); } catch(e){}
+  btn.textContent = '✅ Menunggu konfirmasi admin';
+  const st = document.getElementById('status');
+  if (st) st.textContent = 'Transfer kamu sedang menunggu konfirmasi admin. Halaman ini akan otomatis lanjut begitu dikonfirmasi.';
+}
 
 function fmtTime(secs) {
   const m = Math.floor(secs / 60);

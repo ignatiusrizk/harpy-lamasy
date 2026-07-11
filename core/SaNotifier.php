@@ -281,6 +281,34 @@ class SaNotifier
         }
     }
 
+    /** Owner menandai sudah transfer manual — minta SA cek & konfirmasi. */
+    public static function manualPaymentSubmitted(int $paymentId): void
+    {
+        try {
+            $db = Database::get();
+            $st = $db->prepare(
+                "SELECT sp.order_id, sp.type, sp.amount, t.nama_perusahaan, t.owner_name
+                 FROM saas_payments sp LEFT JOIN tenants t ON t.id=sp.tenant_id
+                 WHERE sp.id=?"
+            );
+            $st->execute([$paymentId]);
+            $p = $st->fetch(PDO::FETCH_ASSOC);
+            if (!$p) return;
+
+            $rp   = 'Rp ' . number_format((int)$p['amount'], 0, ',', '.');
+            $body = self::layout('Transfer Manual Masuk', [
+                ['Tenant',   ($p['nama_perusahaan'] ?? '—') . ' (' . ($p['owner_name'] ?? '—') . ')'],
+                ['Tipe',     $p['type']],
+                ['Nominal',  $rp . ' (termasuk kode unik — cocokkan persis di mutasi)'],
+                ['Order ID', $p['order_id']],
+            ], '/superadmin/payments.php', 'Buka & Konfirmasi');
+
+            self::notify('manual_payment', 'Transfer manual masuk — ' . $rp, $body, $p['order_id']);
+        } catch (Throwable $e) {
+            error_log('[SaNotifier manualPaymentSubmitted] ' . $e->getMessage());
+        }
+    }
+
     // ──────────────────────────────────────────────────────
     // HTML LAYOUT — consistent template buat semua event
     // ──────────────────────────────────────────────────────
