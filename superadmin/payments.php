@@ -474,6 +474,36 @@ if ($action) {
         exit;
     }
 
+    // ── KONFIRMASI TRANSFER MANUAL (saas_payments) ────
+    if ($action === 'confirm_manual') {
+        SaPermission::require('payments.approve');
+        require_once SA_ROOT . '/../core/ManualPay.php';
+        $id = (int)($_POST['id'] ?? 0);
+        if (!$id) { echo json_encode(['error' => 'ID tidak valid.']); exit; }
+        try {
+            $res = ManualPay::confirm($id);
+            if (empty($res['ok'])) { echo json_encode(['error' => $res['error'] ?? 'Konfirmasi gagal.']); exit; }
+            logSuperAdminAction('confirm_manual_transfer', null, "Konfirmasi transfer manual saas_payments #$id");
+            echo json_encode(['ok' => true, 'msg' => 'Pembayaran manual dikonfirmasi. Coin/aktivasi diproses.']);
+        } catch (Throwable $e) { apiErr($e, 'Gagal konfirmasi. Coba lagi.'); }
+        exit;
+    }
+
+    // ── TOLAK TRANSFER MANUAL ─────────────────────────
+    if ($action === 'reject_manual') {
+        SaPermission::require('payments.approve');
+        require_once SA_ROOT . '/../core/ManualPay.php';
+        $id = (int)($_POST['id'] ?? 0);
+        if (!$id) { echo json_encode(['error' => 'ID tidak valid.']); exit; }
+        try {
+            $res = ManualPay::reject($id);
+            if (empty($res['ok'])) { echo json_encode(['error' => $res['error'] ?? 'Tolak gagal.']); exit; }
+            logSuperAdminAction('reject_manual_transfer', null, "Tolak transfer manual saas_payments #$id");
+            echo json_encode(['ok' => true, 'msg' => 'Pembayaran manual ditolak.']);
+        } catch (Throwable $e) { apiErr($e, 'Gagal menolak. Coba lagi.'); }
+        exit;
+    }
+
     // ── MARK WA SENT ──────────────────────────────────
     if ($action === 'mark_wa_sent') {
         $d  = json_decode(file_get_contents('php://input'), true) ?: [];
@@ -1317,7 +1347,7 @@ let _mtLoaded     = false;
 
 const mtTypeLabel   = { topup_coin:'Topup Coin', setup_fee:'Setup Fee', outlet_activation:'Outlet Activation' };
 const mtTypeCls     = { topup_coin:'mt-type-topup', setup_fee:'mt-type-setup', outlet_activation:'mt-type-outlet' };
-const payTypeLabel  = { qris:'QRIS', bank_transfer:'VA Bank', gopay:'GoPay', shopeepay:'ShopeePay' };
+const payTypeLabel  = { qris:'QRIS', bank_transfer:'VA Bank', gopay:'GoPay', shopeepay:'ShopeePay', manual_transfer:'🏦 Transfer Manual' };
 
 function mtDebounceLoad(){ clearTimeout(mtDebTimer); mtDebTimer = setTimeout(() => { mtCurrentPage=1; loadMidtrans(); }, 380); }
 
@@ -1355,14 +1385,18 @@ function renderMidtransRows(rows){
       ? new Date(p.paid_at).toLocaleDateString('id-ID', {day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})
       : '—';
 
-    // Show refund button only for paid, within 90-day window (informational check)
-    let refundBtn = '';
+    // Show refund button only for paid, within 90-day window (informational check);
+    // manual_transfer pending rows get confirm/reject buttons instead
+    let actionBtn = '';
     if (p.status === 'paid') {
       const paidTs = p.paid_at ? new Date(p.paid_at).getTime() : 0;
       const daysOld = (now - paidTs) / 86400000;
       const withinWindow = daysOld <= 90;
-      refundBtn = `<button class="sa-btn sa-btn-sm sa-btn-danger" ${withinWindow ? '' : 'title="Mungkin di luar 90-hari refund window Midtrans"'}
+      actionBtn = `<button class="sa-btn sa-btn-sm sa-btn-danger" ${withinWindow ? '' : 'title="Mungkin di luar 90-hari refund window Midtrans"'}
                     onclick="openRefundModal(${JSON.stringify(p).replace(/"/g,'&quot;')})">↩ Refund</button>`;
+    } else if (p.payment_type === 'manual_transfer' && p.status === 'pending') {
+      actionBtn = `<button class="sa-btn sa-btn-sm sa-btn-primary" onclick="confirmManual(${p.id}, '${esc(p.order_id)}')">✓ Konfirmasi Lunas</button>
+                   <button class="sa-btn sa-btn-sm sa-btn-outline" onclick="rejectManual(${p.id})">✗ Tolak</button>`;
     }
 
     return `<tr>
@@ -1374,7 +1408,7 @@ function renderMidtransRows(rows){
       <td style="font-size:12px;color:var(--ash);">${payTypeLabel[p.payment_type] || (p.payment_type ? esc(p.payment_type) : '—')}${p.va_bank ? ' · '+p.va_bank.toUpperCase() : ''}</td>
       <td><span class="${statusCls}">${statusIcon} ${statusLabel}</span></td>
       <td style="font-size:12px;color:var(--ash);">${paidAt}</td>
-      <td>${refundBtn}</td>
+      <td>${actionBtn}</td>
     </tr>`;
   }).join('');
 }
@@ -1414,6 +1448,27 @@ function submitRefund(){
       if (d.error) { saShowToast(d.error, 'error'); return; }
       saShowToast(d.msg || 'Refund berhasil.', 'success');
       closeModal('refundModal');
+      loadMidtrans();
+    });
+}
+
+function confirmManual(id, orderId){
+  if (!confirm('Konfirmasi transfer manual sudah masuk untuk order ' + orderId + '?\nCoin/aktivasi akan langsung dikreditkan.')) return;
+  const form = new FormData(); form.append('id', id);
+  saFetch('payments.php?action=confirm_manual', { method:'POST', body: form })
+    .then(r => r.json()).then(d => {
+      if (d.error) { saShowToast(d.error, 'error'); return; }
+      saShowToast(d.msg || 'Dikonfirmasi.', 'success');
+      loadMidtrans();
+    });
+}
+function rejectManual(id){
+  if (!confirm('Tolak pembayaran manual ini? Status jadi cancelled.')) return;
+  const form = new FormData(); form.append('id', id);
+  saFetch('payments.php?action=reject_manual', { method:'POST', body: form })
+    .then(r => r.json()).then(d => {
+      if (d.error) { saShowToast(d.error, 'error'); return; }
+      saShowToast(d.msg || 'Ditolak.', 'success');
       loadMidtrans();
     });
 }
