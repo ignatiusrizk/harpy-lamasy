@@ -71,14 +71,17 @@ class PaymentSettler
             $bal->execute([$payment['tenant_id']]);
             $newBal = (int)$bal->fetchColumn();
 
-            // Insert ledger
+            // Insert ledger — label sesuai jalur bayar (dulu hardcode qris_midtrans,
+            // bikin top-up transfer manual tercatat sbg QRIS di riwayat coin)
+            $isManual = ($payment['payment_type'] ?? '') === 'manual_transfer';
             $db->prepare(
                 "INSERT INTO coin_ledger (tenant_id, outlet_id, type, amount, feature_used, description, balance_after, payment_id)
-                 VALUES (?, NULL, 'topup', ?, 'qris_midtrans', ?, ?, ?)"
+                 VALUES (?, NULL, 'topup', ?, ?, ?, ?, ?)"
             )->execute([
                 $payment['tenant_id'],
                 $coinAmount,
-                "Top-up via Midtrans — {$bundle['nama']} ({$bundle['bonus_pct']}% bonus)",
+                $isManual ? 'manual_transfer' : 'qris_midtrans',
+                'Top-up via ' . ($isManual ? 'Transfer Manual' : 'Midtrans') . " — {$bundle['nama']} ({$bundle['bonus_pct']}% bonus)",
                 $newBal,
                 $payment['id'],
             ]);

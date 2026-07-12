@@ -85,6 +85,7 @@ if ($action !== '') {
             $s->execute([$tid, $periodeStart, $periodeEnd]);
             $r = $s->fetch(PDO::FETCH_ASSOC) ?: ['topup'=>0,'deduct'=>0,'cnt'=>0];
             echo json_encode(['ok'=>true, 'saldo'=>$saldo,
+                'saldo_paid'=>$saldo - $trialCoin, 'saldo_trial'=>$trialCoin,
                 'topup'=>(int)$r['topup'], 'deduct'=>(int)$r['deduct'], 'count'=>(int)$r['cnt']]);
             exit;
         }
@@ -462,8 +463,12 @@ async function cuLoadAll() { cuPage = 1; await Promise.all([cuLoadSummary(), cuL
 async function cuLoadSummary() {
   const d = await cuFetch('coin_summary');
   if (!d.ok) return;
+  // Rincian kantong: kartu saldo = berbayar + trial, sedang kolom Saldo di tabel = sisa kantong
+  // yang dipakai transaksi tsb — tanpa rincian ini angkanya terlihat "tidak nyambung".
+  const brk = d.saldo_trial > 0
+    ? `<div style="font-size:11px;color:#6B7280;margin-top:4px">${fmtNum(d.saldo_paid)} berbayar + ${fmtNum(d.saldo_trial)} trial</div>` : '';
   document.getElementById('cuCards').innerHTML =
-    `<div class="cu-card"><div class="lbl">Saldo Coin</div><div class="val" style="color:#0F1C3A">${fmtNum(d.saldo)}</div></div>
+    `<div class="cu-card"><div class="lbl">Saldo Coin</div><div class="val" style="color:#0F1C3A">${fmtNum(d.saldo)}</div>${brk}</div>
      <div class="cu-card"><div class="lbl">Terpakai (periode)</div><div class="val" style="color:#DC2626">−${fmtNum(d.deduct)}</div></div>
      <div class="cu-card"><div class="lbl">Top-up (periode)</div><div class="val" style="color:#059669">+${fmtNum(d.topup)}</div></div>`;
 }
@@ -496,8 +501,15 @@ async function cuLoadLedger() {
     const cls = isFree ? '' : (isDed ? 'cu-amt-deduct' : 'cu-amt-topup');
     // created_at = UTC; tambah 'Z' agar di-parse sbg UTC, lalu format eksplisit ke WIB (jangan andalkan tz device)
     const tgl = new Date(r.created_at.replace(' ','T') + 'Z').toLocaleString('id-ID',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit',timeZone:'Asia/Jakarta'});
-    return `<tr><td>${esc(tgl)}</td><td>${esc(r.nama_fitur||'-')}</td><td>${esc(r.nama_outlet||'—')}</td>
-      <td class="${cls}">${amt}</td><td style="font-family:'DM Mono',monospace">${fmtNum(r.balance_after)}</td></tr>`;
+    // balance_after = sisa KANTONG yang dipakai transaksi ini (trial vs berbayar) — tandai
+    // supaya tidak dibaca sbg saldo total. Deteksi trial dari prefix [TRIAL di description.
+    const isTrialPool = (r.description || '').indexOf('[TRIAL') === 0;
+    const pool = r.type === 'topup' ? 'berbayar' : (isTrialPool ? 'trial' : 'berbayar');
+    const fitur = r.type === 'topup'
+      ? (r.feature_used === 'manual_transfer' ? 'Top-up (Transfer Manual)' : 'Top-up (QRIS/VA)')
+      : (r.nama_fitur || '-');
+    return `<tr><td>${esc(tgl)}</td><td>${esc(fitur)}</td><td>${esc(r.nama_outlet||'—')}</td>
+      <td class="${cls}">${amt}</td><td style="font-family:'DM Mono',monospace">${fmtNum(r.balance_after)} <small style="color:#9CA3AF;font-size:10px">${pool}</small></td></tr>`;
   }).join('');
   box.innerHTML = `<table class="cu-table"><thead><tr><th>Tanggal</th><th>Fitur</th><th>Outlet</th><th>Coin</th><th>Saldo</th></tr></thead><tbody>${rows}</tbody></table>`;
   document.getElementById('cuPager').innerHTML =

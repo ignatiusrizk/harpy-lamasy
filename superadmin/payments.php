@@ -662,8 +662,8 @@ if ($action) {
 
 <!-- Tabs -->
 <div class="pay-tabs">
-  <button class="pay-tab active" id="tabManualBtn" onclick="switchTab('manual')">💰 Pembayaran Manual</button>
-  <button class="pay-tab"        id="tabMidtransBtn" onclick="switchTab('midtrans')">🏦 Midtrans Payments</button>
+  <button class="pay-tab active" id="tabManualBtn" onclick="switchTab('manual')">📝 Catatan SA</button>
+  <button class="pay-tab"        id="tabMidtransBtn" onclick="switchTab('midtrans')">🧾 Checkout Tenant (QRIS · VA · Transfer Manual)</button>
 </div>
 
 <!-- ══ PANEL: PEMBAYARAN MANUAL ══════════════════════ -->
