@@ -113,6 +113,9 @@ if ($method === 'manual') {
         'outlet'  => $refOutletId,
     ], $amount);
     $manualInfo = ManualPay::bankInfo();
+    // Nominal transfer = amount row (sudah termasuk kode unik 3 digit) — BUKAN harga dasar.
+    // Tanpa ini, header/tombol-salin menampilkan harga dasar → owner transfer nominal salah.
+    $amount = (int)$payment['amount'];
 } else {
     // Check existing pending payment (resume kalau ada)
     // Strict AND-clause: semua ref harus cocok — hindari false match antar bundle/outlet berbeda
@@ -156,7 +159,9 @@ if ($method === 'manual') {
 
         $res = MidtransClient::charge($orderId, $amount, $method, $customer);
         if (!$res['ok']) {
-            $errMsg = $res['error'] ?? 'Gagal membuat pembayaran.';
+            // Error teknis Midtrans (key/aktivasi/dsb) hanya ke log — user cukup pesan ramah.
+            error_log('[billing-checkout] charge gagal tenant=' . $tenantId . ' type=' . $type . ': ' . ($res['error'] ?? 'unknown'));
+            $errMsg = 'Pembayaran otomatis (QRIS/VA) sedang tidak tersedia. Silakan coba lagi nanti.';
             $manualUrl = $_SERVER['REQUEST_URI'];
             $manualUrl = preg_replace('/([?&])method=[^&]*/', '$1method=manual', $manualUrl);
             if (!str_contains($manualUrl, 'method=')) {
@@ -269,11 +274,14 @@ $secondsRemaining = max(0, strtotime($payment['expires_at']) - time());
 </header>
 <div class="wrap">
   <div class="card">
-    <h1>Pembayaran QRIS / VA</h1>
+    <h1><?= $payment['payment_type'] === 'manual_transfer' ? 'Transfer Bank Manual' : 'Pembayaran QRIS / VA' ?></h1>
     <div class="item"><?= htmlspecialchars($itemName) ?></div>
     <div>Total Pembayaran:</div>
     <div class="amount">Rp <?= number_format($amount, 0, ',', '.') ?></div>
-    <div class="timer" id="timerBox">&#x23F1; Selesaikan pembayaran dalam <span id="timer"><?= floor($secondsRemaining / 60) ?> menit</span></div>
+    <div class="timer" id="timerBox">&#x23F1; Selesaikan pembayaran dalam <span id="timer"><?php
+      $bcMnt = (int)floor($secondsRemaining / 60);
+      echo $bcMnt >= 60 ? floor($bcMnt / 60) . ' jam ' . ($bcMnt % 60) . ' menit' : $bcMnt . ' menit';
+    ?></span></div>
     <div class="ref-row">
       <div>
         <div class="lbl">Nominal</div>
@@ -369,8 +377,10 @@ async function sudahTransfer(btn){
 }
 
 function fmtTime(secs) {
-  const m = Math.floor(secs / 60);
+  const h = Math.floor(secs / 3600);
+  const m = Math.floor((secs % 3600) / 60);
   const s = secs % 60;
+  if (h > 0) return h + ' jam ' + m + ' menit';
   return m + ' menit ' + (s < 10 ? '0' : '') + s + ' detik';
 }
 

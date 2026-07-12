@@ -987,7 +987,7 @@ function loadPayments(){
     to:     document.getElementById('fTo').value,
   });
   saFetch('payments.php?' + params)
-    .then(r => r.json()).then(d => {
+    .then(d => {
       if (!d.ok) return;
       renderStats(d.stats);
       renderRows(d.rows);
@@ -1069,7 +1069,7 @@ function searchTenant(){
     const q = document.getElementById('tenantSearchInput').value.trim();
     if (q.length < 2) { document.getElementById('tenantDropdown').style.display='none'; return; }
     saFetch('payments.php?action=tenant_search&q=' + encodeURIComponent(q))
-      .then(r => r.json()).then(results => {
+      .then(results => {
         const dd = document.getElementById('tenantDropdown');
         if (!results.length){ dd.style.display='none'; return; }
         dd.innerHTML = results.map(t => `
@@ -1258,7 +1258,7 @@ function submitConfirm(){
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
-  }).then(r => r.json()).then(d => {
+  }).then(d => {
     if (d.error) { saShowToast(d.error, 'error'); return; }
     closeModal('confirmModal');
     _selectedPaymentId = d.payment_id;
@@ -1362,7 +1362,7 @@ function loadMidtrans(){
     to:     document.getElementById('mtTo').value,
   });
   saFetch('payments.php?' + params)
-    .then(r => r.json()).then(d => {
+    .then(d => {
       if (!d.ok) return;
       renderMidtransRows(d.rows);
       renderMtPagination(d.page, d.pages, d.total);
@@ -1444,7 +1444,7 @@ function submitRefund(){
   form.append('reason',   reason);
 
   saFetch('payments.php?action=refund', { method:'POST', body: form })
-    .then(r => r.json()).then(d => {
+    .then(d => {
       if (d.error) { saShowToast(d.error, 'error'); return; }
       saShowToast(d.msg || 'Refund berhasil.', 'success');
       closeModal('refundModal');
@@ -1457,7 +1457,7 @@ function confirmManual(id, orderId, btn){
   if (btn) btn.disabled = true;
   const form = new FormData(); form.append('id', id);
   saFetch('payments.php?action=confirm_manual', { method:'POST', body: form })
-    .then(r => r.json()).then(d => {
+    .then(d => {
       if (d.error) { if (btn) btn.disabled = false; saShowToast(d.error, 'error'); return; }
       saShowToast(d.msg || 'Dikonfirmasi.', 'success');
       loadMidtrans();
@@ -1469,7 +1469,7 @@ function rejectManual(id, btn){
   if (btn) btn.disabled = true;
   const form = new FormData(); form.append('id', id);
   saFetch('payments.php?action=reject_manual', { method:'POST', body: form })
-    .then(r => r.json()).then(d => {
+    .then(d => {
       if (d.error) { if (btn) btn.disabled = false; saShowToast(d.error, 'error'); return; }
       saShowToast(d.msg || 'Ditolak.', 'success');
       loadMidtrans();

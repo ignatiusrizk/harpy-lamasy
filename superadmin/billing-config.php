@@ -25,11 +25,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     ];
 
     foreach ($fields as $key => $val) {
+        $val = trim($val);
         // Untuk server_key/client_key: kalau kosong, jangan overwrite (allow blank submit untuk update field lain)
-        if (in_array($key, ['midtrans_server_key', 'midtrans_client_key'], true) && trim($val) === '') {
+        if (in_array($key, ['midtrans_server_key', 'midtrans_client_key'], true) && $val === '') {
             continue;
         }
-        BillingConfig::set($key, trim($val), $saId);
+        // Guard format key Midtrans — password manager pernah auto-fill field ini dgn
+        // password acak dan menimpa key production. Tolak nilai yang bukan format key.
+        if ($key === 'midtrans_server_key' && !preg_match('/^(SB-)?Mid-server-/', $val)) {
+            $err = 'Server Key ditolak: harus diawali "Mid-server-" (atau "SB-Mid-server-" utk sandbox). Key TIDAK diubah.';
+            continue;
+        }
+        if ($key === 'midtrans_client_key' && !preg_match('/^(SB-)?Mid-client-/', $val)) {
+            $err = 'Client Key ditolak: harus diawali "Mid-client-" (atau "SB-Mid-client-" utk sandbox). Key TIDAK diubah.';
+            continue;
+        }
+        BillingConfig::set($key, $val, $saId);
     }
 
     // ── Field jalur bayar manual ──
@@ -66,7 +77,7 @@ function maskKey(?string $key): string {
   <?php if ($msg): ?><div class="sa-alert-banner info"><?= htmlspecialchars($msg) ?></div><?php endif; ?>
   <?php if ($err): ?><div class="sa-alert-banner danger"><?= htmlspecialchars($err) ?></div><?php endif; ?>
 
-  <form method="POST">
+  <form method="POST" autocomplete="off">
     <input type="hidden" name="_csrf" value="<?= htmlspecialchars(saGetCsrf()) ?>">
 
     <div class="sa-card">
@@ -84,7 +95,7 @@ function maskKey(?string $key): string {
 
         <div class="form-group" style="margin-bottom: 16px;">
           <label>Server Key <span style="color:var(--ash-dim);font-weight:400;font-size:11px">(masked — kosongkan untuk tidak ubah)</span></label>
-          <input type="password" name="midtrans_server_key" placeholder="<?= htmlspecialchars(maskKey($conf['midtrans_server_key']['value_text'] ?? '') ?: 'Belum di-set') ?>"
+          <input type="password" name="midtrans_server_key" autocomplete="new-password" placeholder="<?= htmlspecialchars(maskKey($conf['midtrans_server_key']['value_text'] ?? '') ?: 'Belum di-set') ?>"
                  style="width:100%;padding:10px 14px;background:var(--slate-elev);border:1px solid var(--crease);border-radius:8px;color:var(--glow);font-family:var(--mono);">
           <small style="color:var(--ash-dim);font-size:11px;">Ambil di Midtrans Dashboard → Settings → Access Keys</small>
         </div>
