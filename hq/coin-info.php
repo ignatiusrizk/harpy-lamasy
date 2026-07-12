@@ -272,7 +272,7 @@ $katMeta = [
   @media (max-width:900px){
     /* Tabel ledger coin bisa digeser mendatar */
     #cuLedger{overflow-x:auto;-webkit-overflow-scrolling:touch}
-    #cuLedger table.cu-table{min-width:480px}
+    #cuLedger table.cu-table{min-width:560px}
     .cu-table th,.cu-table td{white-space:nowrap}
     .cu-toolbar{gap:10px}
   }
@@ -501,17 +501,20 @@ async function cuLoadLedger() {
     const cls = isFree ? '' : (isDed ? 'cu-amt-deduct' : 'cu-amt-topup');
     // created_at = UTC; tambah 'Z' agar di-parse sbg UTC, lalu format eksplisit ke WIB (jangan andalkan tz device)
     const tgl = new Date(r.created_at.replace(' ','T') + 'Z').toLocaleString('id-ID',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit',timeZone:'Asia/Jakarta'});
-    // balance_after = sisa KANTONG yang dipakai transaksi ini (trial vs berbayar) — tandai
-    // supaya tidak dibaca sbg saldo total. Deteksi trial dari prefix [TRIAL di description.
+    // balance_after = sisa KANTONG yang dipakai transaksi ini (trial vs berbayar).
+    // Dipisah 2 kolom supaya deret angka tiap kantong berdiri sendiri — kalau digabung
+    // 1 kolom, top-up berbayar 20.000 di bawah trial 29.700 terbaca "saldo turun".
     const isTrialPool = (r.description || '').indexOf('[TRIAL') === 0;
-    const pool = r.type === 'topup' ? 'berbayar' : (isTrialPool ? 'trial' : 'berbayar');
+    const isPaidPool = r.type === 'topup' || !isTrialPool;
     const fitur = r.type === 'topup'
       ? (r.feature_used === 'manual_transfer' ? 'Top-up (Transfer Manual)' : 'Top-up (QRIS/VA)')
       : (r.nama_fitur || '-');
+    const saldoCell = `<td style="font-family:'DM Mono',monospace">${isPaidPool ? fmtNum(r.balance_after) : '<span style="color:#D1D5DB">—</span>'}</td>`
+                    + `<td style="font-family:'DM Mono',monospace;color:#6B7280">${isTrialPool ? fmtNum(r.balance_after) : '<span style="color:#D1D5DB">—</span>'}</td>`;
     return `<tr><td>${esc(tgl)}</td><td>${esc(fitur)}</td><td>${esc(r.nama_outlet||'—')}</td>
-      <td class="${cls}">${amt}</td><td style="font-family:'DM Mono',monospace">${fmtNum(r.balance_after)} <small style="color:#9CA3AF;font-size:10px">${pool}</small></td></tr>`;
+      <td class="${cls}">${amt}</td>${saldoCell}</tr>`;
   }).join('');
-  box.innerHTML = `<table class="cu-table"><thead><tr><th>Tanggal</th><th>Fitur</th><th>Outlet</th><th>Coin</th><th>Saldo</th></tr></thead><tbody>${rows}</tbody></table>`;
+  box.innerHTML = `<table class="cu-table"><thead><tr><th>Tanggal</th><th>Fitur</th><th>Outlet</th><th>Coin</th><th>Saldo Berbayar</th><th>Saldo Trial</th></tr></thead><tbody>${rows}</tbody></table>`;
   document.getElementById('cuPager').innerHTML =
     `<button onclick="cuPage--;cuLoadLedger()" ${d.page<=1?'disabled':''}>‹ Prev</button>
      <span style="align-self:center;font-size:13px;color:#6B7280">Hal ${d.page}/${d.pages||1}</span>
