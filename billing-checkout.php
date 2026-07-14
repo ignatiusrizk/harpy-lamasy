@@ -329,8 +329,12 @@ if (($payment['payment_type'] ?? '') === 'snap') {
   <?php elseif ($payment['payment_type'] === 'snap' && $snapToken && $snapClientKey): ?>
   <div class="card" id="payCard" style="padding:0;overflow:hidden;">
     <!-- UI pembayaran Midtrans (VA bank dst) ter-embed di sini — user tidak meninggalkan halaman -->
-    <div id="snap-container" style="min-height:420px;"></div>
+    <div id="snap-container" style="min-height:560px;"></div>
   </div>
+  <style>
+    /* iframe snap embed default tidak full-width → paksa selebar kartu */
+    #snap-container iframe { width:100% !important; min-height:560px; border:0; }
+  </style>
   <script src="<?= htmlspecialchars($snapJsUrl) ?>" data-client-key="<?= htmlspecialchars($snapClientKey) ?>"></script>
   <script>
     (function(){
