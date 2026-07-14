@@ -15,8 +15,23 @@ if (!$payment) { header('Location: /dashboard'); exit; }
 $title = '';
 $body = '';
 $cta = ['url' => '/dashboard', 'label' => 'Ke Dashboard'];
+$autoRefresh = false;
 
-if ($payment['type'] === 'topup_coin') {
+// Snap "finish" bisa mendarat SEBELUM webhook settle tiba — jangan klaim sukses
+// saat status masih pending; refresh otomatis sampai webhook mengubah status.
+if ($payment['status'] === 'pending') {
+    $autoRefresh = true;
+    $title = '⏳ Menunggu Konfirmasi…';
+    $body  = 'Pembayaranmu sedang dikonfirmasi otomatis (biasanya beberapa detik). Halaman ini akan menyegarkan sendiri.';
+    $cta   = ['url' => '/billing-checkout?' . http_build_query(['type' => $payment['type'],
+                'bundle_id' => $payment['ref_bundle_id'], 'outlet_id' => $payment['ref_outlet_id']]),
+              'label' => 'Kembali ke Halaman Bayar'];
+}
+elseif (in_array($payment['status'], ['expired', 'failed', 'cancelled'], true)) {
+    $title = '⚠️ Pembayaran Belum Selesai';
+    $body  = 'Status pembayaran: ' . htmlspecialchars($payment['status']) . '. Kalau kamu merasa sudah membayar, tunggu 1–2 menit lalu muat ulang; kalau belum, ulangi dari halaman top-up/aktivasi.';
+}
+elseif ($payment['type'] === 'topup_coin') {
     $b = $db->prepare("SELECT coin_didapat, nama FROM saas_coin_bundles WHERE id=?");
     $b->execute([$payment['ref_bundle_id']]);
     $bundle = $b->fetch(PDO::FETCH_ASSOC);
@@ -42,7 +57,8 @@ elseif ($payment['type'] === 'outlet_activation') {
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<title>Berhasil — LAMASY</title>
+<?php if ($autoRefresh): ?><meta http-equiv="refresh" content="4"><?php endif; ?>
+<title><?= $autoRefresh ? 'Menunggu Konfirmasi' : 'Berhasil' ?> — LAMASY</title>
 <link rel="stylesheet" href="/harpy-erp.css?v=<?= date('Ymd') ?>">
 <style>
   body { font-family: 'Plus Jakarta Sans', sans-serif; background: #0F1C3A; color: #fff; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }

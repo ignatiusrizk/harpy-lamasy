@@ -154,10 +154,12 @@ if ($method === 'manual') {
             'phone'      => $tenant['owner_wa'] ?: '',
         ];
 
-        // Call Midtrans Charge — QRIS dulu (default), VA via tab di UI bisa add later
-        if (!in_array($method, ['qris', 'bank_transfer'], true)) $method = 'qris';
-
-        $res = MidtransClient::charge($orderId, $amount, $method, $customer);
+        // Snap checkout (halaman bayar hosted Midtrans) — charge langsung /v2/charge
+        // ditolak utk akun production baru ("Payment channel is not activated");
+        // di Snap semua channel aktif tampil otomatis (VA Mandiri/BNI/BRI/Permata
+        // sekarang; BCA/QRIS menyusul begitu disetujui, tanpa ubah kode).
+        $finishUrl = 'https://lamasy.harpy.id/billing-success?order_id=' . urlencode($orderId);
+        $res = MidtransClient::createSnap($orderId, $amount, $customer, $finishUrl);
         if (!$res['ok']) {
             // Error teknis Midtrans (key/aktivasi/dsb) hanya ke log — user cukup pesan ramah.
             error_log('[billing-checkout] charge gagal tenant=' . $tenantId . ' type=' . $type . ': ' . ($res['error'] ?? 'unknown'));
@@ -172,24 +174,8 @@ if ($method === 'manual') {
             exit;
         }
 
-        $mtData = $res['data'];
-        $expiryMin = BillingConfig::getInt('payment_expiry_minutes', 15);
+        $expiryMin = max(15, BillingConfig::getInt('payment_expiry_minutes', 15));
         $expiresAt = date('Y-m-d H:i:s', time() + $expiryMin * 60);
-
-        // Extract QR / VA dari response
-        $qrString = null;
-        $vaBank = null;
-        $vaNumber = null;
-        if ($method === 'qris') {
-            foreach ($mtData['actions'] ?? [] as $a) {
-                if (($a['name'] ?? '') === 'generate-qr-code') {
-                    $qrString = $a['url'] ?? null; break;
-                }
-            }
-        } elseif ($method === 'bank_transfer') {
-            $vaBank = $mtData['va_numbers'][0]['bank'] ?? null;
-            $vaNumber = $mtData['va_numbers'][0]['va_number'] ?? null;
-        }
 
         $db->prepare(
             "INSERT INTO saas_payments
@@ -199,11 +185,12 @@ if ($method === 'manual') {
         )->execute([
             $orderId, $tenantId, $type, $amount,
             $refBundleId, $refPackageId, $refOutletId,
-            $mtData['transaction_id'] ?? null,
-            $method,
-            $vaBank, $vaNumber, $qrString,
+            null,
+            'snap',
+            null, null,
+            $res['redirect_url'], // qr_string dipinjam utk URL halaman bayar Snap (hindari migration)
             $expiresAt,
-            json_encode($mtData),
+            json_encode(['snap_token' => $res['token'], 'redirect_url' => $res['redirect_url']]),
         ]);
         $paymentId = (int)$db->lastInsertId();
         $p = $db->prepare("SELECT * FROM saas_payments WHERE id=?");
@@ -328,6 +315,18 @@ $secondsRemaining = max(0, strtotime($payment['expires_at']) - time());
       <button class="act-btn alt" onclick="sudahTransfer(this)">✅ Saya sudah transfer</button>
     </div>
   </div>
+  <?php elseif ($payment['payment_type'] === 'snap' && $payment['qr_string']): ?>
+  <div class="card" id="payCard" style="text-align:center">
+    <h3 style="margin-bottom:10px;">Pembayaran Online</h3>
+    <p style="font-size:13px;color:#6B7280;margin:0 0 16px;">
+      Kamu akan diarahkan ke halaman pembayaran aman Midtrans — pilih metode
+      (Virtual Account bank, dll) di sana. Setelah bayar, coin/aktivasi masuk otomatis.
+    </p>
+    <a class="act-btn" id="snapGo" href="<?= htmlspecialchars($payment['qr_string']) ?>"
+       style="display:inline-block;text-decoration:none;">💳 Lanjutkan ke Pembayaran</a>
+    <p style="font-size:11px;color:#94A3B8;margin-top:12px;">Mengalihkan otomatis dalam 2 detik…</p>
+  </div>
+  <script>setTimeout(function(){ location.href = document.getElementById('snapGo').href; }, 2000);</script>
   <?php elseif ($payment['payment_type'] === 'qris' && $payment['qr_string']): ?>
   <div class="card" id="payCard">
     <h3 style="margin-bottom: 14px;">Scan QRIS</h3>

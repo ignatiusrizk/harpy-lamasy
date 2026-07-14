@@ -25,6 +25,48 @@ class MidtransClient
         return $key;
     }
 
+    /**
+     * Snap checkout (halaman bayar hosted Midtrans). Dipakai sejak akun production
+     * baru TIDAK bisa charge langsung per-channel via /v2/charge ("Payment channel
+     * is not activated") — semua channel aktif otomatis tampil di halaman Snap,
+     * termasuk BCA VA/QRIS begitu disetujui, tanpa perubahan kode. Webhook
+     * notification-nya berformat sama dengan Core API → PaymentSettler tak berubah.
+     */
+    public static function createSnap(string $orderId, int $amount, array $customer, string $finishUrl = ''): array
+    {
+        $env  = BillingConfig::get('midtrans_env', 'sandbox');
+        $base = $env === 'production' ? 'https://app.midtrans.com' : 'https://app.sandbox.midtrans.com';
+        $payload = [
+            'transaction_details' => ['order_id' => $orderId, 'gross_amount' => $amount],
+            'customer_details'    => $customer,
+            'item_details'        => [[ 'id' => $orderId, 'price' => $amount, 'quantity' => 1,
+                                        'name' => 'LAMASY Payment - ' . $orderId ]],
+            'expiry' => ['unit' => 'minutes',
+                         'duration' => max(15, BillingConfig::getInt('payment_expiry_minutes', 15))],
+        ];
+        if ($finishUrl !== '') $payload['callbacks'] = ['finish' => $finishUrl];
+
+        $ch = curl_init($base . '/snap/v1/transactions');
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_POST           => true,
+            CURLOPT_POSTFIELDS     => json_encode($payload),
+            CURLOPT_HTTPHEADER     => ['Content-Type: application/json', 'Accept: application/json',
+                                       'Authorization: ' . self::authHeader()],
+            CURLOPT_TIMEOUT        => 30,
+        ]);
+        $res  = curl_exec($ch);
+        $code = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $err  = curl_error($ch);
+        if ($res === false) return ['ok' => false, 'error' => 'Koneksi Midtrans gagal: ' . $err];
+        $j = json_decode($res, true) ?: [];
+        if ($code === 201 && !empty($j['token']) && !empty($j['redirect_url'])) {
+            return ['ok' => true, 'token' => $j['token'], 'redirect_url' => $j['redirect_url']];
+        }
+        return ['ok' => false,
+            'error' => implode('; ', (array)($j['error_messages'] ?? ["HTTP $code"]))];
+    }
+
     private static function authHeader(): string
     {
         return 'Basic ' . base64_encode(self::serverKey() . ':');
