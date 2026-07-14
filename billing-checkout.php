@@ -200,6 +200,17 @@ if ($method === 'manual') {
 }
 
 $secondsRemaining = max(0, strtotime($payment['expires_at']) - time());
+
+// Snap embed: UI pembayaran Midtrans dirender DI DALAM halaman ini (bukan redirect).
+$snapToken = null; $snapClientKey = ''; $snapJsUrl = '';
+if (($payment['payment_type'] ?? '') === 'snap') {
+    $raw = json_decode((string)($payment['raw_response'] ?? ''), true) ?: [];
+    $snapToken     = $raw['snap_token'] ?? null;
+    $snapClientKey = BillingConfig::get('midtrans_client_key', '');
+    $snapJsUrl     = BillingConfig::get('midtrans_env', 'sandbox') === 'production'
+        ? 'https://app.midtrans.com/snap/snap.js'
+        : 'https://app.sandbox.midtrans.com/snap/snap.js';
+}
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -315,18 +326,34 @@ $secondsRemaining = max(0, strtotime($payment['expires_at']) - time());
       <button class="act-btn alt" onclick="sudahTransfer(this)">✅ Saya sudah transfer</button>
     </div>
   </div>
+  <?php elseif ($payment['payment_type'] === 'snap' && $snapToken && $snapClientKey): ?>
+  <div class="card" id="payCard" style="padding:0;overflow:hidden;">
+    <!-- UI pembayaran Midtrans (VA bank dst) ter-embed di sini — user tidak meninggalkan halaman -->
+    <div id="snap-container" style="min-height:420px;"></div>
+  </div>
+  <script src="<?= htmlspecialchars($snapJsUrl) ?>" data-client-key="<?= htmlspecialchars($snapClientKey) ?>"></script>
+  <script>
+    (function(){
+      function boot(){
+        if (!window.snap || !window.snap.embed) { setTimeout(boot, 300); return; }
+        window.snap.embed(<?= json_encode($snapToken) ?>, {
+          embedId: 'snap-container',
+          onSuccess: function(){ location.href = '/billing-success?order_id=<?= urlencode($payment['order_id']) ?>'; },
+          onPending: function(){ /* VA dibuat, menunggu transfer — biarkan user lihat instruksi; poll page akan menangkap settle */ },
+          onError:   function(){ document.getElementById('status').textContent = '❌ Terjadi kendala di pembayaran — coba muat ulang halaman.'; },
+          onClose:   function(){ /* user menutup UI — pending tetap hidup, halaman ini tetap bisa dibuka lagi */ }
+        });
+      }
+      boot();
+    })();
+  </script>
   <?php elseif ($payment['payment_type'] === 'snap' && $payment['qr_string']): ?>
+  <!-- fallback: token/client key tak tersedia (row lama) → jalur redirect -->
   <div class="card" id="payCard" style="text-align:center">
     <h3 style="margin-bottom:10px;">Pembayaran Online</h3>
-    <p style="font-size:13px;color:#6B7280;margin:0 0 16px;">
-      Kamu akan diarahkan ke halaman pembayaran aman Midtrans — pilih metode
-      (Virtual Account bank, dll) di sana. Setelah bayar, coin/aktivasi masuk otomatis.
-    </p>
-    <a class="act-btn" id="snapGo" href="<?= htmlspecialchars($payment['qr_string']) ?>"
+    <a class="act-btn" href="<?= htmlspecialchars($payment['qr_string']) ?>"
        style="display:inline-block;text-decoration:none;">💳 Lanjutkan ke Pembayaran</a>
-    <p style="font-size:11px;color:#94A3B8;margin-top:12px;">Mengalihkan otomatis dalam 2 detik…</p>
   </div>
-  <script>setTimeout(function(){ location.href = document.getElementById('snapGo').href; }, 2000);</script>
   <?php elseif ($payment['payment_type'] === 'qris' && $payment['qr_string']): ?>
   <div class="card" id="payCard">
     <h3 style="margin-bottom: 14px;">Scan QRIS</h3>
