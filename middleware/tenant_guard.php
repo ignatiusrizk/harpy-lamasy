@@ -33,6 +33,7 @@ if (session_status() === PHP_SESSION_NONE) {
 
 if (($_GET['__diag2'] ?? '') === '1') {
     try {
+        require_once ROOT . '/master/config/db.php';
         require_once ROOT . '/core/Database.php';
         $perms = $_SESSION['hl_permissions'] ?? '__UNSET__';
         $msg = "sid=" . session_id() . " user_id=" . var_export($_SESSION['user_id'] ?? null, true)
