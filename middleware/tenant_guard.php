@@ -31,17 +31,6 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-if (($_GET['__diag2'] ?? '') === '1') {
-    try {
-        require_once ROOT . '/master/config/db.php';
-        require_once ROOT . '/core/Database.php';
-        $perms = $_SESSION['hl_permissions'] ?? '__UNSET__';
-        $msg = "sid=" . session_id() . " user_id=" . var_export($_SESSION['user_id'] ?? null, true)
-             . " permsType=" . gettype($perms) . " perms=" . (is_array($perms) ? json_encode($perms) : var_export($perms, true));
-        Database::get()->prepare("INSERT INTO saas_error_log (tanggal,jam,url,method,error_type,error_message,first_seen,last_seen) VALUES (CURDATE(),CURTIME(),'diag_guard','GET','diag_guard',?,NOW(),NOW())")->execute([$msg]);
-    } catch (Throwable $e) {}
-}
-
 // ── Security headers ──────────────────────────────────
 if (!headers_sent()) {
     header('X-Content-Type-Options: nosniff');
@@ -325,12 +314,13 @@ function hasPermission(string $kode): bool
     if (class_exists('TenantResolver') && method_exists('TenantResolver', 'can')) {
         return TenantResolver::can($kode);
     }
-    // Fallback kalau resolver belum loaded
+    // Fallback kalau resolver belum loaded — array_key_exists (bukan isset): permission
+    // tanpa filter_data tersimpan sbg value null, isset() akan salah anggap "tak ada".
     $perms = $_SESSION['hl_permissions'] ?? [];
-    if (isset($perms['*'])) return true;
+    if (array_key_exists('*', $perms)) return true;
     $role = $_SESSION['hl_user']['role'] ?? '';
     if (in_array($role, ['owner','superadmin'], true)) return true;
-    return isset($perms[$kode]);
+    return array_key_exists($kode, $perms);
 }
 
 function requirePermission(string $kode): void

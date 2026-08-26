@@ -472,16 +472,20 @@ class TenantResolver
     public static function can(string $perm): bool
     {
         $perms = $_SESSION['hl_permissions'] ?? [];
-        if (isset($perms['*'])) return true;                   // superadmin wildcard
+        // array_key_exists, BUKAN isset — permission tanpa filter_data (kasus paling umum,
+        // "grant tanpa batasan") tersimpan sbg value NULL. isset() bernilai FALSE untuk key
+        // dgn value null, jadi SETIAP permission unfiltered selama ini dianggap "tidak ada"
+        // di sini — role custom manapun (non owner/superadmin) efektif nyaris tanpa akses.
+        if (array_key_exists('*', $perms)) return true;         // superadmin wildcard
         if (self::isOwnerOrAdmin()) return true;               // owner = full access (brief 6.8)
 
         // Try alias mapping (brief naming → codebase naming)
         if (array_key_exists($perm, self::$permissionAlias)) {
             $aliased = self::$permissionAlias[$perm];
             if ($aliased === null) return true; // permission yang always-allowed
-            if (isset($perms[$aliased])) return true;
+            if (array_key_exists($aliased, $perms)) return true;
         }
-        return isset($perms[$perm]);
+        return array_key_exists($perm, $perms);
     }
 
     /** Return semua permission key user aktif */
