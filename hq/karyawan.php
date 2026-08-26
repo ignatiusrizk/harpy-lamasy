@@ -379,6 +379,17 @@ if ($action) {
         $email    = substr(trim($d['email'] ?? ''), 0, 150);
         $password = $d['password'] ?? '';
         $role     = in_array($d['role'] ?? '', ['owner','manager','admin','kasir','staff','kurir'], true) ? $d['role'] : 'staff';
+        // Resolve role_id (hl_roles) dari enum $role — TANPA ini permission asli KOSONG
+        // (login.php: role_id null → hl_permissions=[] → menu & akses karyawan gagal total,
+        // dan hitungan "N karyawan" di halaman Role selalu 0 karena itu COUNT by role_id).
+        // 'manager' sengaja tak dipetakan — belum ada system role terkait (lihat karyawan.php outlet).
+        $roleNamaMap = ['owner'=>'Owner', 'admin'=>'Admin', 'kasir'=>'Kasir', 'staff'=>'Karyawan', 'kurir'=>'Kurir'];
+        $roleId = null;
+        if (isset($roleNamaMap[$role])) {
+            $rRow = $db->prepare("SELECT id FROM hl_roles WHERE tenant_id=? AND is_system=1 AND nama=? LIMIT 1");
+            $rRow->execute([$tid, $roleNamaMap[$role]]);
+            $roleId = $rRow->fetchColumn() ?: null;
+        }
         $jabatan  = substr(trim(strip_tags($d['jabatan'] ?? '')), 0, 100);
         $telepon  = substr(preg_replace('/[^0-9+\-\s]/', '', $d['telepon'] ?? ''), 0, 20);
         $nik      = substr(preg_replace('/\D/', '', $d['nik'] ?? ''), 0, 50);
@@ -424,28 +435,28 @@ if ($action) {
             if ($hasExtra) {
                 $db->prepare(
                     "INSERT INTO hl_users
-                       (tenant_id, outlet_id, username, email, password, nama, role, jabatan, telepon,
+                       (tenant_id, outlet_id, username, email, password, nama, role, role_id, jabatan, telepon,
                         nik, kontrak_tipe, kontrak_mulai, kontrak_selesai,
                         bank_nama, no_rekening, bank_atasnama,
                         is_active, email_verified)
-                     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1,1)"
+                     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1,1)"
                 )->execute([
                     $tid, $primaryOid, $username, $email ?: null,
                     password_hash($password, PASSWORD_DEFAULT),
-                    $nama, $role, $jabatan ?: null, $telepon ?: null,
+                    $nama, $role, $roleId, $jabatan ?: null, $telepon ?: null,
                     $nik ?: null, $kontrakTipe, $kontrakMulai, $kontrakSelesai,
                     $bankNama ?: null, $noRekening ?: null, $bankAtasnama ?: null,
                 ]);
             } else {
                 $db->prepare(
                     "INSERT INTO hl_users
-                       (tenant_id, outlet_id, username, email, password, nama, role, jabatan, telepon,
+                       (tenant_id, outlet_id, username, email, password, nama, role, role_id, jabatan, telepon,
                         is_active, email_verified)
-                     VALUES (?,?,?,?,?,?,?,?,?,1,1)"
+                     VALUES (?,?,?,?,?,?,?,?,?,?,1,1)"
                 )->execute([
                     $tid, $primaryOid, $username, $email ?: null,
                     password_hash($password, PASSWORD_DEFAULT),
-                    $nama, $role, $jabatan ?: null, $telepon ?: null,
+                    $nama, $role, $roleId, $jabatan ?: null, $telepon ?: null,
                 ]);
             }
             $newId = (int)$db->lastInsertId();
