@@ -1079,7 +1079,17 @@ function renderTopbar(string $activePage = '', bool $minimalMode = false): void 
         }
         if (array_key_exists('perm', $item)) {
             if ($item['perm'] === null) return true;           // selalu tampil
-            return hasPermission($item['perm']);
+            $r = hasPermission($item['perm']);
+            if (($_GET['__diag3'] ?? '') === '1' && $item['perm'] === 'pos.view') {
+                try {
+                    $tr = class_exists('TenantResolver');
+                    $can = $tr ? (TenantResolver::can('pos.view') ? 'true' : 'false') : 'NO_CLASS';
+                    $sessperm = isset($_SESSION['hl_permissions']) ? json_encode(array_slice($_SESSION['hl_permissions'],0,3,true)) : '__UNSET__';
+                    $msg = "hasPermission(pos.view)=".($r?'true':'false')." TenantResolver::can=".$can." role=".($user['role']??'?')." sessPermsSample=".$sessperm;
+                    Database::get()->prepare("INSERT INTO saas_error_log (tanggal,jam,url,method,error_type,error_message,first_seen,last_seen) VALUES (CURDATE(),CURTIME(),'diag_menu','GET','diag_menu',?,NOW(),NOW())")->execute([$msg]);
+                } catch (Throwable $e) {}
+            }
+            return $r;
         }
         if (isset($item['perms'])) {                           // cukup salah satu
             foreach ($item['perms'] as $p) {
