@@ -101,10 +101,14 @@ function loadPermissions(array $user, int $tenantId): void {
             foreach ($stmt->fetchAll() as $row) {
                 $perms[$row['kode']] = $row['filter_data'];
             }
+            if (($_GET['__diag'] ?? '') === '1') { file_put_contents(__DIR__.'/storage/diag_loadperm.log', date('c')." role_id={$user['role_id']} tenantId=$tenantId rows=".count($perms)." keys=".implode(',', array_keys($perms))."\n", FILE_APPEND); }
             $_SESSION['hl_permissions'] = $perms;
             return;
-        } catch (Exception $e) {}
+        } catch (Exception $e) {
+            if (($_GET['__diag'] ?? '') === '1') { file_put_contents(__DIR__.'/storage/diag_loadperm.log', date('c')." EXCEPTION: ".$e->getMessage()."\n", FILE_APPEND); }
+        }
     }
+    if (($_GET['__diag'] ?? '') === '1') { file_put_contents(__DIR__.'/storage/diag_loadperm.log', date('c')." FALLTHROUGH role_id=".var_export($user['role_id'] ?? null, true)."\n", FILE_APPEND); }
     $_SESSION['hl_permissions'] = [];
 }
 
