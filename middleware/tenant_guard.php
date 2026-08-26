@@ -31,6 +31,16 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
+if (($_GET['__diag2'] ?? '') === '1') {
+    try {
+        require_once ROOT . '/core/Database.php';
+        $perms = $_SESSION['hl_permissions'] ?? '__UNSET__';
+        $msg = "sid=" . session_id() . " user_id=" . var_export($_SESSION['user_id'] ?? null, true)
+             . " permsType=" . gettype($perms) . " perms=" . (is_array($perms) ? json_encode($perms) : var_export($perms, true));
+        Database::get()->prepare("INSERT INTO saas_error_log (tanggal,jam,url,method,error_type,error_message,first_seen,last_seen) VALUES (CURDATE(),CURTIME(),'diag_guard','GET','diag_guard',?,NOW(),NOW())")->execute([$msg]);
+    } catch (Throwable $e) {}
+}
+
 // ── Security headers ──────────────────────────────────
 if (!headers_sent()) {
     header('X-Content-Type-Options: nosniff');
