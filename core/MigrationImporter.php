@@ -262,7 +262,10 @@ class MigrationImporter
             'april'=>'April','mei'=>'May','juni'=>'June','juli'=>'July','agustus'=>'August',
             'september'=>'September','oktober'=>'October','nopember'=>'November','november'=>'November','desember'=>'December',
             'jan'=>'Jan','peb'=>'Feb','feb'=>'Feb','mar'=>'Mar','apr'=>'Apr','jun'=>'Jun','jul'=>'Jul',
-            'agu'=>'Aug','agt'=>'Aug','sep'=>'Sep','okt'=>'Oct','nop'=>'Nov','nov'=>'Nov','des'=>'Dec',
+            // 'Ags' = singkatan baku Agustus (dipakai Smartlink dkk) — dulu tak ada, cuma 'agu'/'agt' →
+            // strtotime gagal parse "26 Ags 2026" → normalizeDate return null → caller fallback date('Y-m-d')
+            // (HARI IMPORT DIJALANKAN, bukan tanggal transaksi asli) — SEMUA baris kena tanggal salah senyap.
+            'ags'=>'Aug','agu'=>'Aug','agt'=>'Aug','sep'=>'Sep','okt'=>'Oct','nop'=>'Nov','nov'=>'Nov','des'=>'Dec',
         ];
         $valEn = $val;
         foreach ($idMonths as $id => $en) {
