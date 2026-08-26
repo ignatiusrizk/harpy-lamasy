@@ -101,14 +101,14 @@ function loadPermissions(array $user, int $tenantId): void {
             foreach ($stmt->fetchAll() as $row) {
                 $perms[$row['kode']] = $row['filter_data'];
             }
-            if (($_GET['__diag'] ?? '') === '1') { file_put_contents(__DIR__.'/storage/diag_loadperm.log', date('c')." role_id={$user['role_id']} tenantId=$tenantId rows=".count($perms)." keys=".implode(',', array_keys($perms))."\n", FILE_APPEND); }
+            if (($_GET['__diag'] ?? '') === '1') { try { Database::get()->prepare("INSERT INTO saas_error_log (tanggal,jam,url,method,error_type,error_message,first_seen,last_seen) VALUES (CURDATE(),CURTIME(),'diag_loadperm','GET','diag_loadperm',?,NOW(),NOW())")->execute(["role_id={$user['role_id']} (".gettype($user['role_id']).") tenantId=$tenantId (".gettype($tenantId).") rows=".count($perms)." keys=".implode(',', array_keys($perms))]); } catch (Throwable) {} }
             $_SESSION['hl_permissions'] = $perms;
             return;
         } catch (Exception $e) {
-            if (($_GET['__diag'] ?? '') === '1') { file_put_contents(__DIR__.'/storage/diag_loadperm.log', date('c')." EXCEPTION: ".$e->getMessage()."\n", FILE_APPEND); }
+            if (($_GET['__diag'] ?? '') === '1') { try { Database::get()->prepare("INSERT INTO saas_error_log (tanggal,jam,url,method,error_type,error_message,first_seen,last_seen) VALUES (CURDATE(),CURTIME(),'diag_loadperm','GET','diag_loadperm',?,NOW(),NOW())")->execute(["EXCEPTION: ".$e->getMessage()]); } catch (Throwable) {} }
         }
     }
-    if (($_GET['__diag'] ?? '') === '1') { file_put_contents(__DIR__.'/storage/diag_loadperm.log', date('c')." FALLTHROUGH role_id=".var_export($user['role_id'] ?? null, true)."\n", FILE_APPEND); }
+    if (($_GET['__diag'] ?? '') === '1') { try { Database::get()->prepare("INSERT INTO saas_error_log (tanggal,jam,url,method,error_type,error_message,first_seen,last_seen) VALUES (CURDATE(),CURTIME(),'diag_loadperm','GET','diag_loadperm',?,NOW(),NOW())")->execute(["FALLTHROUGH role_id=".var_export($user['role_id'] ?? null, true)]); } catch (Throwable) {} }
     $_SESSION['hl_permissions'] = [];
 }
 
