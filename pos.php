@@ -1517,7 +1517,7 @@ function posSelectPrinter(p) {
                 <input type="number" id="f_diskon" value="0" min="0"
                   onfocus="this.value=''"
                   onblur="if(this.value===''){ this.value='0'; recalc(); }"
-                  oninput="recalc()"/>
+                  oninput="lmCleanNum(this,false);recalc()"/>
               </div>
               <div class="form-group">
                 <label>DP / Bayar</label>
@@ -1931,6 +1931,16 @@ function removeItem(idx) { items.splice(idx,1); renderItems(); recalc(); applyMa
 // Pemisah ribuan manual (tak bergantung Intl locale — konsisten di WebView APK)
 function grpRibu(n){ return String(Math.round(n)||0).replace(/\B(?=(\d{3})+(?!\d))/g,'.'); }
 
+// type="number" di WebView (terutama Android lawas/entry-level) tidak konsisten
+// nolak huruf/simbol spt Chrome desktop — huruf bisa ketik masuk. Bersihkan
+// manual tiap oninput: digit doang (decimal=true izinkan satu titik desimal).
+function lmCleanNum(el, decimal){
+  var v = el.value;
+  var cleaned = decimal ? v.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1') : v.replace(/[^0-9]/g, '');
+  if (cleaned !== v) el.value = cleaned;
+  return cleaned;
+}
+
 function renderItems() {
   const tbody = document.getElementById('itemsBody');
   const empty = document.getElementById('emptyItems');
@@ -1955,7 +1965,7 @@ function renderItems() {
           <input class="item-input" type="number" value="${item.jumlah}" min="0.1" step="0.1" style="${item.qty_minimum > 0 && item.jumlah < item.qty_minimum ? 'border:1px solid #DC2626;background:#FEF2F2;' : ''}"
             onfocus="this.value=''"
             onblur="if(this.value===''){ this.value=(${item.qty_minimum}>0?${item.qty_minimum}:1); items[${i}].jumlah=parseFloat(this.value); recalc(); }"
-            oninput="items[${i}].jumlah=parseFloat(this.value)||0;recalc()"/>
+            oninput="lmCleanNum(this,true);items[${i}].jumlah=parseFloat(this.value)||0;recalc()"/>
         </span>
       </td>
       <td data-lbl="Harga"><input class="item-input" type="text" inputmode="numeric" value="${grpRibu(Math.round(item.harga_satuan||0))}" style="width:96px"
