@@ -816,6 +816,7 @@ require __DIR__ . '/_layout_open.php';
             <option value="kurir">Kurir (delivery)</option>
             <option value="manager">Manager (HQ terbatas)</option>
             <option value="admin">Admin (ops penuh)</option>
+            <option value="owner">Owner (akses penuh)</option>
           </select>
         </div>
       </div>
