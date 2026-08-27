@@ -1514,11 +1514,17 @@ function posSelectPrinter(p) {
             <div class="form-row cols3">
               <div class="form-group">
                 <label>Diskon (Rp)</label>
-                <input type="number" id="f_diskon" value="0" min="0" oninput="recalc()"/>
+                <input type="number" id="f_diskon" value="0" min="0"
+                  onfocus="this.value=''"
+                  onblur="if(this.value===''){ this.value='0'; recalc(); }"
+                  oninput="recalc()"/>
               </div>
               <div class="form-group">
                 <label>DP / Bayar</label>
-                <input class="lm-rp" type="number" id="f_dp" value="0" min="0" oninput="recalc()"/>
+                <input class="lm-rp" type="number" id="f_dp" value="0" min="0"
+                  onfocus="this.value=''"
+                  onblur="if(this.value===''){ this.value='0'; recalc(); }"
+                  oninput="recalc()"/>
               </div>
               <div class="form-group">
                 <label>Metode</label>
