@@ -1526,6 +1526,25 @@ function posSelectPrinter(p) {
                   onblur="if(this.value===''){ this.value='0'; recalc(); }"
                   oninput="recalc()"/>
               </div>
+              <script>
+                // f_dp punya class lm-rp -> components.php enhanceRp() sembunyikan input asli
+                // & bikin sibling <input> visible ("vis") yg beneran disentuh user (buat separator
+                // ribuan live). onfocus/onblur di elemen asli di atas gak pernah kepanggil krn user
+                // gak pernah fokus ke situ. Delegasikan ke vis (nextElementSibling dari #f_dp).
+                (function(){
+                  document.addEventListener('focus', function(e){
+                    var dp = document.getElementById('f_dp');
+                    if (dp && e.target === dp.nextElementSibling) e.target.value = '';
+                  }, true);
+                  document.addEventListener('blur', function(e){
+                    var dp = document.getElementById('f_dp');
+                    if (dp && e.target === dp.nextElementSibling && e.target.value === '') {
+                      e.target.value = '0';
+                      e.target.dispatchEvent(new Event('input', { bubbles: true }));
+                    }
+                  }, true);
+                })();
+              </script>
               <div class="form-group">
                 <label>Metode</label>
                 <select id="f_metode" onchange="onMetodeChange()">
