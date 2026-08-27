@@ -1,69 +1,118 @@
-# QRIS di Struk — Design Spec
+# QRIS & Rekening di Struk — Design Spec
 
 ## Goal
 
-Tampilkan gambar QRIS outlet (yang sudah di-upload lewat halaman Pembayaran) di
-struk — supaya customer yang order via antar-jemput (tidak ketemu langsung
-dengan staf) tidak perlu tanya "bayarnya kemana", tinggal scan dari struk yang
-mereka terima.
+Tampilkan alat bayar yang relevan di struk — QRIS outlet (upload di halaman
+Pembayaran) kalau metode bayarnya QRIS, atau nomor rekening terdaftar kalau
+metode bayarnya Transfer Bank — supaya customer yang order via antar-jemput
+(tidak ketemu langsung dengan staf) tidak perlu tanya "bayarnya kemana",
+tinggal scan/transfer dari struk yang mereka terima.
 
 ## Kapan QRIS muncul
 
 Kondisi (SEMUA harus terpenuhi):
 1. `hl_transaksi.status_bayar` IN `('belum_bayar', 'dp')` DAN `sisa_bayar > 0`.
    Order Lunas tidak menampilkan QRIS.
-2. Outlet punya `qris_image` ter-upload (kalau kosong, blok QRIS tidak
+2. `hl_transaksi.metode_bayar === 'qris'` — HANYA tampil kalau ini memang
+   metode yang dipilih staf saat input order. Metode lain (cash/transfer/
+   kosong) tidak memicu blok QRIS.
+3. Outlet punya `qris_image` ter-upload (kalau kosong, blok QRIS tidak
    dirender sama sekali — tidak ada error).
-3. Toggle "Tampilkan QRIS" di Kustomisasi Struk (retail) untuk outlet
+4. Toggle "Tampilkan QRIS" di Kustomisasi Struk (retail) untuk outlet
    tersebut ON (default ON).
 
-Toggle #3 adalah **satu sumber kebenaran** yang mengontrol SEMUA channel di
-bawah — mati di satu tempat, mati di semua tempat.
+## Kapan Info Rekening muncul (BARU, ditambahkan menyusul QRIS)
+
+Kondisi (SEMUA harus terpenuhi) — pola sama persis dengan QRIS, cuma beda
+metode & sumber data:
+1. `status_bayar` IN `('belum_bayar', 'dp')` DAN `sisa_bayar > 0`.
+2. `metode_bayar === 'transfer'`.
+3. Template punya `rekening_bank` & `rekening_nomor` terisi (kalau kosong,
+   blok tidak dirender).
+4. Toggle "Info Rekening Pembayaran" (`show_rekening` — KOLOM SUDAH ADA di
+   `hl_struk_template`, sebelumnya cuma dipakai invoice B2B) ON.
+
+`rekening_bank`, `rekening_nomor`, `rekening_atas_nama` — 3 kolom yang sudah
+ada di `hl_struk_template`, saat ini cuma bisa diisi & dipakai di invoice PDF
+B2B (`renderPdf`). Untuk fitur ini, field yang SAMA dibuka juga di tab
+template retail (saat ini UI-nya di `struk.php` dibatasi `isB2b ? ... : ''`
+— dihilangkan pembatasannya supaya retail juga bisa isi rekening sendiri,
+independen dari isian B2B karena memang row template terpisah per `tipe`).
+
+Kedua toggle (`show_qris`, `show_rekening`) masing-masing **independen** —
+bukan satu toggle gabungan — karena masing-masing sudah otomatis exclusive
+lewat pengecekan `metode_bayar` (order yang sama tidak akan menampilkan
+QRIS dan Rekening bersamaan, karena `metode_bayar` cuma satu nilai).
 
 ## Channel yang terdampak
 
-### 1. Kustomisasi Struk (toggle baru)
+### 1. Kustomisasi Struk (toggle baru + buka field rekening utk retail)
 - **File:** `struk.php`, `core/StrukGenerator.php`
-- Kolom baru `hl_struk_template.show_qris TINYINT(1) DEFAULT 1`.
-- UI: checkbox baru "Tampilkan QRIS (saat belum lunas)" di `struk.php`,
-  ditempatkan setelah toggle "Sisa Bayar" yang sudah ada — pola sama persis
-  (`checkRow('show_qris', 'Tampilkan QRIS (saat belum lunas)', t)`).
+- Kolom baru `hl_struk_template.show_qris TINYINT(1) DEFAULT 1`. Kolom
+  `show_rekening`/`rekening_bank`/`rekening_nomor`/`rekening_atas_nama`
+  SUDAH ADA, tidak perlu migrasi — tinggal dibuka aksesnya utk tipe retail.
+- UI di `struk.php`:
+  - Checkbox baru "Tampilkan QRIS (saat belum lunas & metode QRIS)" —
+    ditempatkan setelah toggle "Sisa Bayar" yang sudah ada, pola sama
+    persis (`checkRow('show_qris', ..., t)`).
+  - Section "Info Rekening Pembayaran" (checkbox + 3 input Bank/Nomor/Atas
+    Nama) yang sekarang cuma muncul di `isB2b ? ... : ''` — hilangkan
+    pembatasan itu supaya section yang SAMA juga muncul di tab retail.
+    Ubah label checkbox jadi lebih umum: "Tampilkan Rekening (saat belum
+    lunas & metode Transfer)".
 - Field `show_qris` ditambahkan ke whitelist load & save (2 array literal di
-  `struk.php`, dan default value di `StrukGenerator::defaultTemplate()`).
+  `struk.php`) dan default value di `StrukGenerator::defaultTemplate()`.
+  Field rekening yang sudah ada di whitelist TIDAK perlu diubah (sudah ada),
+  cuma perlu dipastikan default `show_rekening` utk row retail baru
+  tetap masuk akal (`0` — biar owner aktifkan manual setelah isi datanya,
+  beda dgn QRIS yg default `1` krn datanya sudah otomatis ada dari
+  `outlets.qris_image`).
 
 ### 2. Struk cetak thermal (& otomatis ikut modal preview POS)
 - **File:** `core/StrukGenerator.php` → `renderThermal()`
 - Fungsi ini sama persis dipakai untuk cetak fisik dan preview modal POS
   setelah simpan order (satu fungsi render, dua pemakai) — sudah dikonfirmasi
-  user oke QRIS ikut tampil juga di preview modal.
+  user oke QRIS/Rekening ikut tampil juga di preview modal.
 - Blok baru diletakkan setelah baris "Sisa Bayar" / "Bayar" yang sudah ada,
-  sebelum blok "QR Code Tracking" yang sudah ada:
+  sebelum blok "QR Code Tracking" yang sudah ada. Dua varian, saling
+  eksklusif krn beda kondisi `metode_bayar`:
   ```
+  // metode_bayar === 'qris' && show_qris && outlet.qris_image:
   [gambar qris_image, max-width sesuai lebar kertas]
   qris_label (kalau ada)
   "Sisa Bayar: Rp {sisa_bayar} — masukkan nominal ini saat scan"
+
+  // metode_bayar === 'transfer' && show_rekening && rekening_bank+rekening_nomor:
+  "Transfer ke:"
+  "{rekening_bank} — {rekening_nomor}"
+  "a.n. {rekening_atas_nama}" (kalau ada)
+  "Sisa Bayar: Rp {sisa_bayar}"
   ```
 - `$outlet` yang dipassing ke `render()`/`renderThermal()` sudah berisi
   `qris_image`/`qris_label` (berasal dari `TenantResolver::getOutlet()`,
-  `SELECT *` — tidak perlu query tambahan).
+  `SELECT *` — tidak perlu query tambahan). `$tmpl` (hasil `loadTemplate()`)
+  sudah berisi field rekening juga, tidak perlu query tambahan.
 
 ### 3. Halaman Lacak Pesanan (`track.php`, termasuk portal `/p` yang redirect ke sini)
 - Tambahkan `o.qris_image, o.qris_label` ke 2 query SELECT yang sudah ada
   (by `no_order` dan by `hp`).
-- Load `show_qris` dari `hl_struk_template` (tipe `retail`) untuk
-  `outlet_id` order tsb — pakai `StrukGenerator::loadTemplate()` yang sudah
-  ada (return default `show_qris=>1` kalau outlet belum pernah simpan
-  template).
-- Blok QRIS baru ditaruh tepat di bawah baris "Pembayaran" yang sudah ada di
+- Load template lewat `StrukGenerator::loadTemplate()` yang sudah ada (return
+  default kalau outlet belum pernah simpan template) untuk `outlet_id` order
+  tsb — dapat `show_qris`, `show_rekening`, `rekening_bank`, `rekening_nomor`,
+  `rekening_atas_nama` sekaligus.
+- Blok baru (QRIS ATAU Rekening, sesuai `metode_bayar`, sama seperti di
+  struk cetak) ditaruh tepat di bawah baris "Pembayaran" yang sudah ada di
   detail order, dengan nominal sisa bayar ditulis besar di sampingnya.
 
 ### 4. Pesan WA Nota (`pos.php` action=`wa_nota`)
 - WA cuma teks (wa.me), tidak bisa embed gambar — jadi cukup tambah 1 baris
-  kalimat penunjuk kalau order belum lunas & `show_qris` ON, mengarahkan ke
-  link tracking yang sudah ada di pesan itu:
-  > "💳 Bayar via QRIS: buka link di atas"
-- Baris ini hanya muncul kalau kondisi QRIS terpenuhi (lihat "Kapan QRIS
-  muncul"); kalau tidak, teks pesan tetap seperti sekarang (tidak berubah).
+  kalimat penunjuk kalau kondisi terpenuhi, mengarahkan ke link tracking
+  yang sudah ada di pesan itu (di situ customer baru lihat gambar QRIS-nya):
+  > "💳 Bayar via QRIS: buka link di atas" (kalau kondisi QRIS terpenuhi)
+  > "🏦 Transfer ke {rekening_bank} {rekening_nomor}: buka link di atas
+  >   utk detail" (kalau kondisi Rekening terpenuhi)
+- Baris ini hanya muncul kalau salah satu kondisi di atas terpenuhi; kalau
+  tidak, teks pesan tetap seperti sekarang (tidak berubah).
 
 ## Nominal tidak ter-encode di QR
 
