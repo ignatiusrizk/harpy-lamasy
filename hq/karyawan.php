@@ -482,6 +482,79 @@ if ($action) {
         exit;
     }
 
+    if ($action === 'update' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+        $d = json_decode(file_get_contents('php://input'), true);
+        verifyCsrf();
+
+        $kid = (int)($d['id'] ?? 0);
+        if (!$kid) { echo json_encode(['error'=>'ID karyawan tidak valid']); exit; }
+        $existing = $db->prepare("SELECT id FROM hl_users WHERE id=? AND tenant_id=? LIMIT 1");
+        $existing->execute([$kid, $tid]);
+        if (!$existing->fetchColumn()) { echo json_encode(['error'=>'Karyawan tidak ditemukan']); exit; }
+
+        $nama     = substr(trim(strip_tags($d['nama'] ?? '')), 0, 100);
+        $username = substr(trim(strip_tags($d['username'] ?? '')), 0, 50);
+        $email    = substr(trim($d['email'] ?? ''), 0, 150);
+        $password = $d['password'] ?? ''; // kosong = tak diubah
+        $role     = in_array($d['role'] ?? '', ['owner','manager','admin','kasir','staff','kurir'], true) ? $d['role'] : 'staff';
+        // Sama persis dgn resolusi role_id di action=create (lihat komentar di sana) —
+        // wajib diresolve ulang tiap update, kalau role diganti role_id harus ikut berubah.
+        $roleNamaMap = ['owner'=>'Owner', 'admin'=>'Admin', 'kasir'=>'Kasir', 'staff'=>'Karyawan', 'kurir'=>'Kurir'];
+        $roleId = null;
+        if (isset($roleNamaMap[$role])) {
+            $rRow = $db->prepare("SELECT id FROM hl_roles WHERE tenant_id=? AND is_system=1 AND nama=? LIMIT 1");
+            $rRow->execute([$tid, $roleNamaMap[$role]]);
+            $roleId = $rRow->fetchColumn() ?: null;
+        }
+        $jabatan  = substr(trim(strip_tags($d['jabatan'] ?? '')), 0, 100);
+        $telepon  = substr(preg_replace('/[^0-9+\-\s]/', '', $d['telepon'] ?? ''), 0, 20);
+        $nik      = substr(preg_replace('/\D/', '', $d['nik'] ?? ''), 0, 50);
+        $kontrakTipe = in_array($d['kontrak_tipe'] ?? '', ['tetap','kontrak','harian','partime'], true) ? $d['kontrak_tipe'] : null;
+        $kontrakMulai   = !empty($d['kontrak_mulai'])   && preg_match('/^\d{4}-\d{2}-\d{2}$/', $d['kontrak_mulai'])   ? $d['kontrak_mulai']   : null;
+        $kontrakSelesai = !empty($d['kontrak_selesai']) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $d['kontrak_selesai']) ? $d['kontrak_selesai'] : null;
+        $bankNama     = substr(trim(strip_tags($d['bank_nama'] ?? '')), 0, 100);
+        $noRekening   = substr(preg_replace('/[^0-9\-]/', '', $d['no_rekening'] ?? ''), 0, 50);
+        $bankAtasnama = substr(trim(strip_tags($d['bank_atasnama'] ?? '')), 0, 100);
+
+        if (!$nama)     { echo json_encode(['error'=>'Nama wajib diisi']); exit; }
+        if (!$username) { echo json_encode(['error'=>'Username wajib diisi']); exit; }
+        if ($password !== '' && strlen($password) < 6) { echo json_encode(['error'=>'Password baru minimal 6 karakter']); exit; }
+        if ($email && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            echo json_encode(['error'=>'Format email tidak valid']); exit;
+        }
+
+        // Cek duplikat username per tenant, kecualikan diri sendiri
+        $chk = $db->prepare("SELECT id FROM hl_users WHERE tenant_id=? AND username=? AND id<>? LIMIT 1");
+        $chk->execute([$tid, $username, $kid]);
+        if ($chk->fetchColumn()) { echo json_encode(['error'=>'Username sudah digunakan']); exit; }
+
+        $hasExtra = true;
+        try { $db->query("SELECT nik, kontrak_tipe, bank_nama FROM hl_users LIMIT 1"); }
+        catch (Throwable) { $hasExtra = false; }
+
+        try {
+            $set = "username=?, email=?, nama=?, role=?, role_id=?, jabatan=?, telepon=?";
+            $params = [$username, $email ?: null, $nama, $role, $roleId, $jabatan ?: null, $telepon ?: null];
+            if ($hasExtra) {
+                $set .= ", nik=?, kontrak_tipe=?, kontrak_mulai=?, kontrak_selesai=?, bank_nama=?, no_rekening=?, bank_atasnama=?";
+                array_push($params, $nik ?: null, $kontrakTipe, $kontrakMulai, $kontrakSelesai, $bankNama ?: null, $noRekening ?: null, $bankAtasnama ?: null);
+            }
+            if ($password !== '') {
+                $set .= ", password=?";
+                $params[] = password_hash($password, PASSWORD_DEFAULT);
+            }
+            $params[] = $kid; $params[] = $tid;
+            $db->prepare("UPDATE hl_users SET $set WHERE id=? AND tenant_id=?")->execute($params);
+
+            hqAudit($db, $tid, $uid, 'update_karyawan', "karyawan=$kid nama=$nama role=$role".($password !== '' ? ' (password diubah)' : ''));
+            echo json_encode(['success'=>true, 'id'=>$kid]);
+        } catch (Throwable $e) {
+            error_log('[hq update karyawan] '.$e->getMessage());
+            apiErr($e, 'Gagal simpan. Silakan coba lagi.');
+        }
+        exit;
+    }
+
     if ($action === 'remove_assignment' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         $d = json_decode(file_get_contents('php://input'), true);
         verifyCsrf();
@@ -713,10 +786,11 @@ require __DIR__ . '/_layout_open.php';
 <div class="modal-backdrop" id="createModal" onclick="if(event.target===this)closeModal('createModal')">
   <div class="modal">
     <div class="modal-header">
-      <div class="modal-title">➕ Tambah Karyawan Baru</div>
+      <div class="modal-title" id="crModalTitle">➕ Tambah Karyawan Baru</div>
       <button class="modal-close" onclick="closeModal('createModal')">×</button>
     </div>
     <div id="createAlert"></div>
+    <input type="hidden" id="crId" value="">
     <div class="form-grid">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
         <div>
@@ -730,8 +804,9 @@ require __DIR__ . '/_layout_open.php';
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
         <div>
-          <label>Password <span style="color:#EF4444">*</span></label>
+          <label>Password <span id="crPasswordReq" style="color:#EF4444">*</span></label>
           <input type="password" id="crPassword" minlength="6" placeholder="Min 6 karakter">
+          <small id="crPasswordHint" style="display:none;color:#9CA3AF;font-size:11px">Kosongkan jika tidak diubah</small>
         </div>
         <div>
           <label>Role <span style="color:#EF4444">*</span></label>
@@ -813,10 +888,11 @@ require __DIR__ . '/_layout_open.php';
         </div>
       </div>
 
-      <div>
+      <div id="crOutletSection">
         <label>Tugaskan ke Outlet <span style="font-weight:400;color:#9CA3AF">(bisa pilih banyak)</span></label>
         <div id="crOutletList" style="background:#F9FAFB;border:1.5px solid #E5E7EB;border-radius:8px;
                                        padding:10px;max-height:140px;overflow-y:auto"></div>
+        <small style="color:#9CA3AF;font-size:11px">Untuk karyawan yang sudah ada, atur outlet lewat tombol Mutasi/Assign di halaman Detail.</small>
       </div>
       <button class="btn btn-primary" style="padding:12px;font-size:14px" onclick="submitCreate()">
         ✓ Simpan Karyawan
@@ -1025,12 +1101,42 @@ async function showDetail(id){
       <div id="perfBox" style="color:#9CA3AF;font-size:12px;text-align:center;padding:14px">Memuat…</div>
     </div>
 
-    <div class="section" style="border-top:1px dashed #E5E7EB;padding-top:14px">
+    <div class="section" style="border-top:1px dashed #E5E7EB;padding-top:14px;display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-light" onclick="openEditModal(${k.id})">✏️ Edit Data</button>
       ${toggleBtn}
     </div>
   `;
+  window._karyawanDetail = window._karyawanDetail || {};
+  window._karyawanDetail[k.id] = k;
   openModal('detailModal');
   loadPerformance(k.id);
+}
+
+function openEditModal(id){
+  const k = (window._karyawanDetail || {})[id];
+  if (!k) { alert('Data karyawan tidak ditemukan, buka Detail dulu.'); return; }
+  document.getElementById('crId').value = k.id;
+  document.getElementById('crModalTitle').textContent = '✏️ Edit Karyawan';
+  document.getElementById('crNama').value = k.nama || '';
+  document.getElementById('crUsername').value = k.username || '';
+  document.getElementById('crPassword').value = '';
+  document.getElementById('crPasswordReq').style.display = 'none';
+  document.getElementById('crPasswordHint').style.display = 'block';
+  document.getElementById('crRole').value = ['owner','manager','admin','kasir','staff','kurir'].includes(k.role) ? k.role : 'staff';
+  document.getElementById('crTelepon').value = k.telepon || '';
+  document.getElementById('crEmail').value = k.email || '';
+  document.getElementById('crJabatan').value = k.jabatan || '';
+  document.getElementById('crNik').value = k.nik || '';
+  document.getElementById('crKontrakTipe').value = k.kontrak_tipe || '';
+  document.getElementById('crKontrakMulai').value = k.kontrak_mulai || '';
+  document.getElementById('crKontrakSelesai').value = k.kontrak_selesai || '';
+  document.getElementById('crBankNama').value = k.bank_nama || '';
+  document.getElementById('crNoRek').value = k.no_rekening || '';
+  document.getElementById('crBankAtasnama').value = k.bank_atasnama || '';
+  document.getElementById('crOutletSection').style.display = 'none';
+  document.getElementById('createAlert').innerHTML = '';
+  closeModal('detailModal');
+  openModal('createModal');
 }
 
 async function loadPerformance(kid){
@@ -1242,10 +1348,15 @@ async function removeAssignment(kid, oid, outletName){
 }
 
 function openCreate(){
-  // Reset form
+  // Reset form (mode TAMBAH — beda dgn openEditModal yg mode UBAH)
   ['crNama','crUsername','crPassword','crTelepon','crEmail','crJabatan',
    'crNik','crKontrakMulai','crKontrakSelesai','crBankNama','crNoRek','crBankAtasnama']
    .forEach(id=>{ const el = document.getElementById(id); if (el) el.value=''; });
+  document.getElementById('crId').value = '';
+  document.getElementById('crModalTitle').textContent = '➕ Tambah Karyawan Baru';
+  document.getElementById('crPasswordReq').style.display = 'inline';
+  document.getElementById('crPasswordHint').style.display = 'none';
+  document.getElementById('crOutletSection').style.display = 'block';
   document.getElementById('crRole').value = 'kasir';
   document.getElementById('crKontrakTipe').value = '';
   document.getElementById('createAlert').innerHTML = '';
@@ -1267,6 +1378,8 @@ function openCreate(){
 async function submitCreate(){
   const alertEl = document.getElementById('createAlert');
   alertEl.innerHTML = '';
+  const editId = document.getElementById('crId').value;
+  const isEdit = !!editId;
 
   const data = {
     nama: document.getElementById('crNama').value.trim(),
@@ -1283,21 +1396,26 @@ async function submitCreate(){
     bank_nama: document.getElementById('crBankNama').value.trim(),
     no_rekening: document.getElementById('crNoRek').value.trim(),
     bank_atasnama: document.getElementById('crBankAtasnama').value.trim(),
-    outlet_ids: Array.from(document.querySelectorAll('.cr-outlet-cb:checked')).map(c => parseInt(c.value)),
   };
+  if (!isEdit) {
+    data.outlet_ids = Array.from(document.querySelectorAll('.cr-outlet-cb:checked')).map(c => parseInt(c.value));
+  } else {
+    data.id = parseInt(editId);
+  }
 
   if (!data.nama)     { alertEl.innerHTML = '<div class="alert error">Nama wajib diisi</div>'; return; }
   if (!data.username) { alertEl.innerHTML = '<div class="alert error">Username wajib diisi</div>'; return; }
-  if (data.password.length < 6) { alertEl.innerHTML = '<div class="alert error">Password minimal 6 karakter</div>'; return; }
+  if (!isEdit && data.password.length < 6) { alertEl.innerHTML = '<div class="alert error">Password minimal 6 karakter</div>'; return; }
+  if (isEdit && data.password && data.password.length < 6) { alertEl.innerHTML = '<div class="alert error">Password baru minimal 6 karakter (atau kosongkan)</div>'; return; }
 
-  const r = await fetch('/hq/karyawan.php?action=create', {
+  const r = await fetch('/hq/karyawan.php?action=' + (isEdit ? 'update' : 'create'), {
     method:'POST',
     headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},
     body: JSON.stringify(data),
   });
   const j = await r.json();
   if (j.error) { alertEl.innerHTML = '<div class="alert error">'+escapeHtml(j.error)+'</div>'; return; }
-  alertEl.innerHTML = '<div class="alert success">✓ Karyawan berhasil ditambahkan</div>';
+  alertEl.innerHTML = '<div class="alert success">✓ Karyawan berhasil ' + (isEdit ? 'diperbarui' : 'ditambahkan') + '</div>';
   setTimeout(() => { closeModal('createModal'); loadList(); }, 800);
 }
 
