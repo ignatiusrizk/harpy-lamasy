@@ -160,6 +160,10 @@ if ($action) {
 
 /* LAYOUT 2 COL */
 .layout-2{display:grid;grid-template-columns:360px 1fr;gap:20px;align-items:start}
+/* Grid item default min-width:auto -> kolom kanan (kartu Riwayat Kas) bisa
+   melebar ngikutin tabel yg lebar & bocor keluar viewport, bukan scroll
+   internal (pola sama dgn fix .hl-stat-grid-4/6 di harpy-erp.css). */
+.layout-2 > *{min-width:0}
 
 /* FORM */
 .tipe-toggle{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
