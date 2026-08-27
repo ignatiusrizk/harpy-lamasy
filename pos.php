@@ -1928,6 +1928,8 @@ function renderItems() {
         <span class="qty-wrap">
           ${item.qty_minimum > 0 ? `<span class="qty-min${item.jumlah < item.qty_minimum ? ' bad' : ''}">min ${item.qty_minimum}</span>` : ''}
           <input class="item-input" type="number" value="${item.jumlah}" min="0.1" step="0.1" style="${item.qty_minimum > 0 && item.jumlah < item.qty_minimum ? 'border:1px solid #DC2626;background:#FEF2F2;' : ''}"
+            onfocus="this.value=''"
+            onblur="if(this.value===''){ this.value=(${item.qty_minimum}>0?${item.qty_minimum}:1); items[${i}].jumlah=parseFloat(this.value); recalc(); }"
             oninput="items[${i}].jumlah=parseFloat(this.value)||0;recalc()"/>
         </span>
       </td>
