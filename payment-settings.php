@@ -346,8 +346,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'uploa
 
         <div style="margin-bottom:16px">
           <label style="display:block;font-weight:600;margin-bottom:6px;color:#374151">Upload Gambar QRIS *</label>
-          <input type="file" name="qris_image" accept="image/jpeg,image/png,image/webp" required
+          <input type="file" name="qris_image" id="qrisFileInput" accept="image/jpeg,image/png,image/webp" required
                  style="width:100%;padding:10px;border:1px dashed #d1d5db;border-radius:8px;background:#f9fafb">
+          <div id="qrisCropPreview" style="display:none;margin-top:10px;padding:10px;background:#f0fdf4;border:1px solid #86efac;border-radius:8px">
+            <div style="font-size:12px;color:#166534;margin-bottom:6px">✓ Sudah di-crop:</div>
+            <img id="qrisCropPreviewImg" style="max-width:120px;border-radius:6px;display:block;margin-bottom:8px">
+            <button type="button" onclick="openQrisCrop()" style="background:#fff;border:1px solid #d1d5db;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px">
+              Crop ulang
+            </button>
+          </div>
         </div>
 
         <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:12px;margin-bottom:16px;font-size:13px;color:#0c4a6e">
@@ -364,6 +371,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'uploa
           💾 Simpan QRIS
         </button>
       </form>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ Modal Crop QRIS ═══ -->
+<div id="qrisCropModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:2000;align-items:center;justify-content:center">
+  <div style="background:#fff;border-radius:12px;padding:20px;max-width:420px;width:92%;box-shadow:0 20px 60px rgba(0,0,0,0.3)">
+    <h3 style="margin:0 0 6px 0;font-size:16px">✂️ Crop area QRIS</h3>
+    <p style="margin:0 0 14px 0;font-size:12.5px;color:#6b7280">
+      Geser & perbesar-kecilkan kotak putih supaya pas menutupi kode QR-nya
+      saja (buang twibon/border/logo di sekelilingnya). Kalau gambar sudah
+      cuma QR polos, langsung klik "Pakai Crop Ini" tanpa perlu digeser.
+    </p>
+    <div id="qrisCropStage" style="position:relative;width:100%;aspect-ratio:1;background:#111;border-radius:8px;overflow:hidden;touch-action:none">
+      <img id="qrisCropImg" style="position:absolute;top:0;left:0;max-width:none;pointer-events:none">
+      <div id="qrisCropBox" style="position:absolute;border:2px solid #fff;box-shadow:0 0 0 2000px rgba(0,0,0,0.5);cursor:move">
+        <div class="qris-crop-handle" data-corner="nw" style="position:absolute;top:-6px;left:-6px;width:16px;height:16px;background:#fff;border-radius:50%;cursor:nwse-resize"></div>
+        <div class="qris-crop-handle" data-corner="ne" style="position:absolute;top:-6px;right:-6px;width:16px;height:16px;background:#fff;border-radius:50%;cursor:nesw-resize"></div>
+        <div class="qris-crop-handle" data-corner="sw" style="position:absolute;bottom:-6px;left:-6px;width:16px;height:16px;background:#fff;border-radius:50%;cursor:nesw-resize"></div>
+        <div class="qris-crop-handle" data-corner="se" style="position:absolute;bottom:-6px;right:-6px;width:16px;height:16px;background:#fff;border-radius:50%;cursor:nwse-resize"></div>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:16px">
+      <button type="button" onclick="closeQrisCrop()" style="flex:1;background:#fff;border:1px solid #d1d5db;padding:10px;border-radius:8px;cursor:pointer;font-weight:600">
+        Batal
+      </button>
+      <button type="button" onclick="applyQrisCrop()" style="flex:1;background:#0d9488;color:#fff;border:0;padding:10px;border-radius:8px;cursor:pointer;font-weight:600">
+        ✓ Pakai Crop Ini
+      </button>
     </div>
   </div>
 </div>
@@ -537,6 +573,160 @@ async function toggleMethod(id) {
 
 // Initial load
 loadMethods();
+
+// ═══════════════════════════════════════════════════════
+// Crop QRIS manual — vanilla Canvas, tanpa library eksternal
+// ═══════════════════════════════════════════════════════
+let qrisNaturalImg = null;   // Image() object, dimensi asli
+let qrisCroppedBlob = null;  // hasil crop terakhir (dipakai submit)
+let qrisBox = { x: 0, y: 0, size: 0 }; // posisi kotak crop, px relatif ke stage
+let qrisDrag = null; // {mode:'move'|'resize', corner, startX, startY, startBox}
+
+document.getElementById('qrisFileInput').addEventListener('change', function (e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const img = new Image();
+  img.onload = function () {
+    qrisNaturalImg = img;
+    openQrisCrop();
+  };
+  img.src = URL.createObjectURL(file);
+});
+
+function openQrisCrop() {
+  if (!qrisNaturalImg) return;
+  document.getElementById('qrisCropModal').style.display = 'flex';
+  const stage = document.getElementById('qrisCropStage');
+  const imgEl = document.getElementById('qrisCropImg');
+  const stageSize = stage.clientWidth; // stage persegi (aspect-ratio:1)
+
+  // Skala gambar biar SELURUH gambar (contain-fit) muat di stage — supaya
+  // twibon portrait (QR di tengah, branding bank/e-wallet di atas-bawah)
+  // tidak kepotong overflow:hidden sebelum sempat dijangkau kotak crop.
+  const iw = qrisNaturalImg.naturalWidth, ih = qrisNaturalImg.naturalHeight;
+  const scale = stageSize / Math.max(iw, ih);
+  imgEl.style.width = (iw * scale) + 'px';
+  imgEl.style.height = (ih * scale) + 'px';
+  imgEl.style.left = ((stageSize - iw * scale) / 2) + 'px';
+  imgEl.style.top = ((stageSize - ih * scale) / 2) + 'px';
+  imgEl.src = qrisNaturalImg.src;
+
+  // Kotak crop awal = full stage (persegi penuh)
+  qrisBox = { x: 0, y: 0, size: stageSize };
+  drawQrisBox();
+}
+
+function closeQrisCrop() {
+  document.getElementById('qrisCropModal').style.display = 'none';
+}
+
+function drawQrisBox() {
+  const box = document.getElementById('qrisCropBox');
+  box.style.left = qrisBox.x + 'px';
+  box.style.top = qrisBox.y + 'px';
+  box.style.width = qrisBox.size + 'px';
+  box.style.height = qrisBox.size + 'px';
+}
+
+// ── Drag kotak (move) ──────────────────────────────────
+document.getElementById('qrisCropBox').addEventListener('pointerdown', function (e) {
+  if (e.target.classList.contains('qris-crop-handle')) return; // ditangani listener resize
+  qrisDrag = { mode: 'move', startX: e.clientX, startY: e.clientY, startBox: { ...qrisBox } };
+  e.preventDefault();
+});
+
+// ── Resize dari handle sudut ────────────────────────────
+document.querySelectorAll('.qris-crop-handle').forEach(function (h) {
+  h.addEventListener('pointerdown', function (e) {
+    qrisDrag = { mode: 'resize', corner: h.dataset.corner, startX: e.clientX, startY: e.clientY, startBox: { ...qrisBox } };
+    e.preventDefault();
+    e.stopPropagation();
+  });
+});
+
+document.addEventListener('pointermove', function (e) {
+  if (!qrisDrag) return;
+  const stage = document.getElementById('qrisCropStage');
+  const stageSize = stage.clientWidth;
+  const dx = e.clientX - qrisDrag.startX;
+  const dy = e.clientY - qrisDrag.startY;
+
+  if (qrisDrag.mode === 'move') {
+    let x = qrisDrag.startBox.x + dx;
+    let y = qrisDrag.startBox.y + dy;
+    x = Math.max(0, Math.min(x, stageSize - qrisDrag.startBox.size));
+    y = Math.max(0, Math.min(y, stageSize - qrisDrag.startBox.size));
+    qrisBox = { x, y, size: qrisDrag.startBox.size };
+  } else if (qrisDrag.mode === 'resize') {
+    // Semua handle: pertahankan kotak persegi, ambil delta terbesar (x atau y)
+    const delta = qrisDrag.corner.includes('e') || qrisDrag.corner.includes('s')
+      ? Math.max(dx, dy) : Math.max(-dx, -dy);
+    let size = qrisDrag.startBox.size + delta;
+    size = Math.max(40, Math.min(size, stageSize));
+
+    let x = qrisDrag.startBox.x, y = qrisDrag.startBox.y;
+    if (qrisDrag.corner.includes('w')) x = qrisDrag.startBox.x + (qrisDrag.startBox.size - size);
+    if (qrisDrag.corner.includes('n')) y = qrisDrag.startBox.y + (qrisDrag.startBox.size - size);
+    x = Math.max(0, Math.min(x, stageSize - size));
+    y = Math.max(0, Math.min(y, stageSize - size));
+    qrisBox = { x, y, size };
+  }
+  drawQrisBox();
+});
+
+document.addEventListener('pointerup', function () { qrisDrag = null; });
+
+// ── Terapkan crop: hitung koordinat asli, gambar ke canvas, jadi Blob ──
+function applyQrisCrop() {
+  const stage = document.getElementById('qrisCropStage');
+  const imgEl = document.getElementById('qrisCropImg');
+  const stageSize = stage.clientWidth;
+
+  const iw = qrisNaturalImg.naturalWidth, ih = qrisNaturalImg.naturalHeight;
+  const scale = stageSize / Math.max(iw, ih); // contain-fit, samakan dgn openQrisCrop()
+  const imgLeft = parseFloat(imgEl.style.left);
+  const imgTop  = parseFloat(imgEl.style.top);
+
+  // Koordinat kotak crop RELATIF ke gambar asli (bukan ke stage)
+  const srcX = (qrisBox.x - imgLeft) / scale;
+  const srcY = (qrisBox.y - imgTop) / scale;
+  const srcSize = qrisBox.size / scale;
+
+  const OUT = 600; // ukuran output persegi, cukup besar utk cetak thermal
+  const canvas = document.createElement('canvas');
+  canvas.width = OUT; canvas.height = OUT;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(qrisNaturalImg, srcX, srcY, srcSize, srcSize, 0, 0, OUT, OUT);
+
+  const MAX_BYTES = 500 * 1024; // sinkron dgn limit validasi server (JANGAN diubah di sini)
+
+  canvas.toBlob(function (blob) {
+    if (blob.size <= MAX_BYTES) { finishQrisCrop(blob, 'qris-cropped.png'); return; }
+    // PNG 600x600 lossless gampang >500KB kalau sumbernya foto/gradient →
+    // fallback JPEG quality 0.9 (masih cukup jelas utk QR discan) biar lolos
+    // validasi server tanpa owner dapat error generik yang membingungkan.
+    canvas.toBlob(function (jpegBlob) {
+      finishQrisCrop(jpegBlob, 'qris-cropped.jpg');
+    }, 'image/jpeg', 0.9);
+  }, 'image/png');
+}
+
+function finishQrisCrop(blob, filename) {
+  qrisCroppedBlob = blob;
+  const mime = filename.endsWith('.jpg') ? 'image/jpeg' : 'image/png';
+
+  // Ganti isi <input type=file> dgn hasil crop (DataTransfer API)
+  const file = new File([blob], filename, { type: mime });
+  const dt = new DataTransfer();
+  dt.items.add(file);
+  document.getElementById('qrisFileInput').files = dt.files;
+
+  // Tampilkan preview hasil crop
+  document.getElementById('qrisCropPreviewImg').src = URL.createObjectURL(blob);
+  document.getElementById('qrisCropPreview').style.display = 'block';
+
+  closeQrisCrop();
+}
 </script>
 
 </body>

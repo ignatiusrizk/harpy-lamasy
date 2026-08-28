@@ -727,6 +727,7 @@ if ($action) {
     if ($action === 'wa_nota') {
         require_once ROOT . '/core/CoinLedger.php';
         require_once ROOT . '/core/WaLogger.php';
+        require_once ROOT . '/core/StrukGenerator.php';
 
         $id = (int)($_GET['id'] ?? 0);
         if ($id <= 0) { echo json_encode(['error'=>'id wajib']); exit; }
@@ -771,6 +772,10 @@ if ($action) {
         $metode   = $t['metode_bayar'] ? ((['cash'=>'Cash','transfer'=>'Transfer','qris'=>'QRIS'][$t['metode_bayar']]) ?? $t['metode_bayar']) : '';
         $trackUrl = (defined('APP_URL') ? APP_URL : 'https://lamasy.harpy.id') . '/track.php?order=' . urlencode($t['no_order']);
 
+        $waTmpl  = StrukGenerator::loadTemplate($tid, $oid, 'retail');
+        $waAid   = StrukGenerator::paymentAidFor($t, $waTmpl, $outlet);
+        $waNudge = StrukGenerator::waPaymentNudgeLine($waAid);
+
         $msg = "Halo *{$t['nama_pelanggan']}*,\n\n"
              . "Pesanan Anda di *{$brandName}* sudah kami terima.\n\n"
              . "*No. Order:* {$t['no_order']}\n"
@@ -781,7 +786,8 @@ if ($action) {
                  ? ("*Bayar ({$metode}):* {$dpFmt}\n" . ($t['sisa_bayar'] > 0 ? "*Sisa Bayar:* {$sisaFmt}\n" : "*Status Bayar:* Lunas\n"))
                  : "*Status Bayar:* Belum Bayar\n")
              . "*Est. Selesai:* {$est}\n\n"
-             . "Cek status real-time:\n{$trackUrl}\n\n"
+             . "Cek status real-time:\n{$trackUrl}\n"
+             . $waNudge . "\n"
              . ($alamat ? "*Alamat outlet:*\n{$outletNama}\n{$alamat}\n\n" : "")
              . "Terima kasih sudah mempercayakan cucian Anda kepada kami.\n"
              . "_" . $brandName . "_";

@@ -100,6 +100,68 @@ class StrukGenerator
         return $cache[$key] = $defaults[$code] ?? ucfirst($code);
     }
 
+    /**
+     * Tentukan alat bayar digital yang relevan ditampilkan utk 1 transaksi,
+     * berdasarkan metode_bayar yang dipilih & status pelunasannya. Satu
+     * sumber kebenaran dipakai oleh renderThermal(), track.php, & wa_nota
+     * (pos.php) — supaya kondisinya tidak didekati beda-beda per channel.
+     *
+     * @param array $trx    Perlu: status_bayar, sisa_bayar, metode_bayar
+     * @param array $tmpl   Hasil loadTemplate() — perlu: show_qris,
+     *                      show_rekening, rekening_bank, rekening_nomor,
+     *                      rekening_atas_nama
+     * @param array $outlet Baris outlets — perlu: qris_image, qris_label
+     * @return array{type:string}|null
+     */
+    public static function paymentAidFor(array $trx, array $tmpl, array $outlet): ?array
+    {
+        $statusBayar = $trx['status_bayar'] ?? '';
+        $sisaBayar   = (float)($trx['sisa_bayar'] ?? 0);
+        if (!in_array($statusBayar, ['belum_bayar', 'dp'], true) || $sisaBayar <= 0) {
+            return null;
+        }
+
+        $metode = $trx['metode_bayar'] ?? '';
+
+        if ($metode === 'qris' && !empty($tmpl['show_qris']) && !empty($outlet['qris_image'])) {
+            return [
+                'type'       => 'qris',
+                'image'      => $outlet['qris_image'],
+                'label'      => $outlet['qris_label'] ?? null,
+                'sisa_bayar' => $sisaBayar,
+            ];
+        }
+
+        if ($metode === 'transfer' && !empty($tmpl['show_rekening'])
+            && !empty($tmpl['rekening_bank']) && !empty($tmpl['rekening_nomor'])) {
+            return [
+                'type'       => 'rekening',
+                'bank'       => $tmpl['rekening_bank'],
+                'nomor'      => $tmpl['rekening_nomor'],
+                'atas_nama'  => $tmpl['rekening_atas_nama'] ?? null,
+                'sisa_bayar' => $sisaBayar,
+            ];
+        }
+
+        return null;
+    }
+
+    /**
+     * 1 baris kalimat penunjuk pembayaran utk pesan WA (teks polos, tidak
+     * bisa embed gambar) — kosong kalau $aid null.
+     */
+    public static function waPaymentNudgeLine(?array $aid): string
+    {
+        if (!$aid) return '';
+        if ($aid['type'] === 'qris') {
+            return "💳 Bayar via QRIS: buka link di atas\n";
+        }
+        if ($aid['type'] === 'rekening') {
+            return "🏦 Transfer ke {$aid['bank']} {$aid['nomor']}: buka link di atas utk detail\n";
+        }
+        return '';
+    }
+
     // ── Coin cost per tipe ─────────────────────────────
     const COIN_RETAIL     = 'generate_nota'; // 50 coin — per generate (model lama, tetap)
     // Kanonik invoice B2B: 'invoice_b2b'. Dulu dobel dgn 'generate_invoice'
@@ -389,7 +451,7 @@ class StrukGenerator
             'show_no_order','show_tanggal','show_nama_kasir','show_nama_pelanggan',
             'show_telp_pelanggan','show_alamat_pelanggan','show_detail_item',
             'show_subtotal','show_diskon','show_dp','show_total','show_metode_bayar',
-            'show_sisa_bayar','show_estimasi','show_catatan',
+            'show_sisa_bayar','show_qris','show_estimasi','show_catatan',
             'show_poin_earned','show_saldo_poin',
             'show_periode_invoice','show_jatuh_tempo','show_rekening',
             'rekening_bank','rekening_nomor','rekening_atas_nama',
@@ -625,6 +687,30 @@ body {
                 . "<span class='l'>SISA BAYAR</span>"
                 . "<span class='rv'>Rp " . self::rpNum($trx['sisa_bayar']) . "</span>"
                 . "</div>\n";
+        }
+
+        // ── Alat Bayar (QRIS / Rekening) — cuma kalau belum lunas & ──
+        // ── metode_bayar cocok, lihat StrukGenerator::paymentAidFor ──
+        $aid = self::paymentAidFor($trx, $tmpl, $outlet);
+        if ($aid) {
+            $h .= "<hr class='sep'>\n";
+            if ($aid['type'] === 'qris') {
+                $h .= "<div class='c' style='margin-top:4px'>"
+                    . "<img src='" . self::esc($aid['image']) . "' alt='QRIS' style='width:140px;max-width:90%;height:auto'/>"
+                    . "</div>\n";
+                if (!empty($aid['label'])) {
+                    $h .= "<div class='c sm'>" . self::esc($aid['label']) . "</div>\n";
+                }
+                $h .= "<div class='c b' style='margin-top:2px'>Sisa Bayar: Rp " . self::rpNum($aid['sisa_bayar']) . "</div>\n";
+                $h .= "<div class='c sm'>Scan lalu masukkan nominal di atas</div>\n";
+            } elseif ($aid['type'] === 'rekening') {
+                $h .= "<div class='c b'>Transfer ke:</div>\n";
+                $h .= "<div class='c b'>" . self::esc($aid['bank']) . " — " . self::esc($aid['nomor']) . "</div>\n";
+                if (!empty($aid['atas_nama'])) {
+                    $h .= "<div class='c sm'>a.n. " . self::esc($aid['atas_nama']) . "</div>\n";
+                }
+                $h .= "<div class='c b' style='margin-top:2px'>Sisa Bayar: Rp " . self::rpNum($aid['sisa_bayar']) . "</div>\n";
+            }
         }
 
         // ── Estimasi ──────────────────────────────────
@@ -1040,6 +1126,7 @@ if (window.autoPrint) { window.print(); }
             'show_total'             => 1,
             'show_metode_bayar'      => 1,
             'show_sisa_bayar'        => 1,
+            'show_qris'              => $isB2b ? 0 : 1,
             'show_estimasi'          => $isB2b ? 0 : 1,
             'show_catatan'           => 1,
             'show_poin_earned'       => $isB2b ? 0 : 1,
