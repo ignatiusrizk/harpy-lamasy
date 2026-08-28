@@ -8,6 +8,7 @@
 define('ROOT', __DIR__);
 require_once ROOT . '/master/config/db.php';
 require_once ROOT . '/core/Database.php';
+require_once ROOT . '/core/StrukGenerator.php';
 
 $db = Database::get();
 
@@ -23,7 +24,8 @@ $poinEarned = 0;
 
 if ($noOrder) {
     try {
-        $st = $db->prepare("SELECT t.*, o.nama_outlet, o.alamat AS outlet_alamat, o.telepon AS outlet_wa
+        $st = $db->prepare("SELECT t.*, o.nama_outlet, o.alamat AS outlet_alamat, o.telepon AS outlet_wa,
+                                    o.qris_image, o.qris_label
                               FROM hl_transaksi t
                          LEFT JOIN outlets o ON o.id=t.outlet_id
                              WHERE (t.no_order=? OR t.offline_ref=?) LIMIT 1");
@@ -36,7 +38,8 @@ if ($noOrder) {
     try {
         $clean = preg_replace('/[^0-9]/', '', $hp);
         if (str_starts_with($clean, '62')) $clean = '0' . substr($clean, 2);
-        $st = $db->prepare("SELECT t.*, o.nama_outlet, o.alamat AS outlet_alamat, o.telepon AS outlet_wa
+        $st = $db->prepare("SELECT t.*, o.nama_outlet, o.alamat AS outlet_alamat, o.telepon AS outlet_wa,
+                                    o.qris_image, o.qris_label
                               FROM hl_transaksi t
                          LEFT JOIN outlets o ON o.id=t.outlet_id
                              WHERE REPLACE(REPLACE(REPLACE(t.telepon,'-',''),' ',''),'+','') LIKE ?
@@ -309,6 +312,30 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
           </span>
         </div>
       </div>
+
+      <?php
+        $trackTmpl = StrukGenerator::loadTemplate((int)$order['tenant_id'], (int)$order['outlet_id'], 'retail');
+        $trackAid  = StrukGenerator::paymentAidFor($order, $trackTmpl, $order);
+      ?>
+      <?php if ($trackAid): ?>
+      <div style="margin-top:14px;padding:14px 16px;background:#F0FDF4;border:1px solid #86EFAC;border-radius:12px;text-align:center">
+        <?php if ($trackAid['type'] === 'qris'): ?>
+          <img src="<?= htmlspecialchars($trackAid['image']) ?>" alt="QRIS"
+               style="max-width:200px;width:100%;border-radius:8px;margin-bottom:8px">
+          <?php if (!empty($trackAid['label'])): ?>
+            <div style="font-size:13px;color:#166534;margin-bottom:4px"><?= htmlspecialchars($trackAid['label']) ?></div>
+          <?php endif; ?>
+          <div style="font-weight:700;color:#166534">Sisa Bayar: Rp <?= number_format($trackAid['sisa_bayar'], 0, ',', '.') ?></div>
+          <div style="font-size:12px;color:#166534;margin-top:4px">Scan lalu masukkan nominal di atas secara manual</div>
+        <?php else: ?>
+          <div style="font-weight:700;color:#166534">Transfer ke <?= htmlspecialchars($trackAid['bank']) ?> — <?= htmlspecialchars($trackAid['nomor']) ?></div>
+          <?php if (!empty($trackAid['atas_nama'])): ?>
+            <div style="font-size:13px;color:#166534">a.n. <?= htmlspecialchars($trackAid['atas_nama']) ?></div>
+          <?php endif; ?>
+          <div style="font-weight:700;color:#166534;margin-top:4px">Sisa Bayar: Rp <?= number_format($trackAid['sisa_bayar'], 0, ',', '.') ?></div>
+        <?php endif; ?>
+      </div>
+      <?php endif; ?>
 
       <!-- POIN INFO -->
       <?php if ($poinEarned > 0): ?>
