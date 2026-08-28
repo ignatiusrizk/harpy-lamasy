@@ -600,9 +600,11 @@ function openQrisCrop() {
   const imgEl = document.getElementById('qrisCropImg');
   const stageSize = stage.clientWidth; // stage persegi (aspect-ratio:1)
 
-  // Skala gambar biar sisi TERPENDEK pas dengan stage (contain-cover style)
+  // Skala gambar biar SELURUH gambar (contain-fit) muat di stage — supaya
+  // twibon portrait (QR di tengah, branding bank/e-wallet di atas-bawah)
+  // tidak kepotong overflow:hidden sebelum sempat dijangkau kotak crop.
   const iw = qrisNaturalImg.naturalWidth, ih = qrisNaturalImg.naturalHeight;
-  const scale = stageSize / Math.min(iw, ih);
+  const scale = stageSize / Math.max(iw, ih);
   imgEl.style.width = (iw * scale) + 'px';
   imgEl.style.height = (ih * scale) + 'px';
   imgEl.style.left = ((stageSize - iw * scale) / 2) + 'px';
@@ -681,7 +683,7 @@ function applyQrisCrop() {
   const stageSize = stage.clientWidth;
 
   const iw = qrisNaturalImg.naturalWidth, ih = qrisNaturalImg.naturalHeight;
-  const scale = stageSize / Math.min(iw, ih);
+  const scale = stageSize / Math.max(iw, ih); // contain-fit, samakan dgn openQrisCrop()
   const imgLeft = parseFloat(imgEl.style.left);
   const imgTop  = parseFloat(imgEl.style.top);
 
@@ -696,21 +698,34 @@ function applyQrisCrop() {
   const ctx = canvas.getContext('2d');
   ctx.drawImage(qrisNaturalImg, srcX, srcY, srcSize, srcSize, 0, 0, OUT, OUT);
 
+  const MAX_BYTES = 500 * 1024; // sinkron dgn limit validasi server (JANGAN diubah di sini)
+
   canvas.toBlob(function (blob) {
-    qrisCroppedBlob = blob;
-
-    // Ganti isi <input type=file> dgn hasil crop (DataTransfer API)
-    const file = new File([blob], 'qris-cropped.png', { type: 'image/png' });
-    const dt = new DataTransfer();
-    dt.items.add(file);
-    document.getElementById('qrisFileInput').files = dt.files;
-
-    // Tampilkan preview hasil crop
-    document.getElementById('qrisCropPreviewImg').src = URL.createObjectURL(blob);
-    document.getElementById('qrisCropPreview').style.display = 'block';
-
-    closeQrisCrop();
+    if (blob.size <= MAX_BYTES) { finishQrisCrop(blob, 'qris-cropped.png'); return; }
+    // PNG 600x600 lossless gampang >500KB kalau sumbernya foto/gradient →
+    // fallback JPEG quality 0.9 (masih cukup jelas utk QR discan) biar lolos
+    // validasi server tanpa owner dapat error generik yang membingungkan.
+    canvas.toBlob(function (jpegBlob) {
+      finishQrisCrop(jpegBlob, 'qris-cropped.jpg');
+    }, 'image/jpeg', 0.9);
   }, 'image/png');
+}
+
+function finishQrisCrop(blob, filename) {
+  qrisCroppedBlob = blob;
+  const mime = filename.endsWith('.jpg') ? 'image/jpeg' : 'image/png';
+
+  // Ganti isi <input type=file> dgn hasil crop (DataTransfer API)
+  const file = new File([blob], filename, { type: mime });
+  const dt = new DataTransfer();
+  dt.items.add(file);
+  document.getElementById('qrisFileInput').files = dt.files;
+
+  // Tampilkan preview hasil crop
+  document.getElementById('qrisCropPreviewImg').src = URL.createObjectURL(blob);
+  document.getElementById('qrisCropPreview').style.display = 'block';
+
+  closeQrisCrop();
 }
 </script>
 

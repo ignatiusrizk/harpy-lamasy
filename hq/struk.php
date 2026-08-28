@@ -443,6 +443,7 @@ function collectForm() {
   const g  = id => document.getElementById(id);
   const gv = id => { const el=g(id); return el?el.value:null; };
   const gc = id => { const el=g(id); return el?(el.checked?1:0):0; };
+  const isB2b = activeTab === 'b2b';
 
   const bools = [
     'show_logo','show_alamat','show_telp',
@@ -451,14 +452,21 @@ function collectForm() {
     'show_subtotal','show_diskon','show_dp','show_total',
     'show_metode_bayar','show_sisa_bayar','show_estimasi','show_catatan',
     'show_poin_earned','show_saldo_poin',
-    'show_jatuh_tempo','show_rekening',
+    'show_jatuh_tempo',
+    // show_rekening hanya elemen di tab B2B (lihat renderForm). Di tab Retail
+    // checkbox-nya tidak ada di DOM → gc() akan return 0 tanpa owner sentuh
+    // sama sekali, dan nilai "0" itu ikut ke-push & menimpa outlet lain.
+    ...(isB2b ? ['show_rekening'] : []),
     'show_footer_ucapan','show_footer_syarat','show_footer_sosmed',
     'show_border','show_watermark',
   ];
   const strings = [
     'format','logo_size','tagline','header_extra',
     'footer_ucapan','footer_syarat','footer_sosmed',
-    'rekening_bank','rekening_nomor','rekening_atas_nama','font_size',
+    // rekening_bank/nomor/atas_nama juga cuma dirender di tab B2B — pola exclude
+    // sama seperti show_rekening di atas, biar tak ikut ke-push saat !isB2b.
+    ...(isB2b ? ['rekening_bank','rekening_nomor','rekening_atas_nama'] : []),
+    'font_size',
   ];
   const out = { tipe: activeTab };
   bools.forEach(f => out[f] = gc('f_' + f));
