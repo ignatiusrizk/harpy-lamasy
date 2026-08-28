@@ -452,11 +452,10 @@ function collectForm() {
     'show_subtotal','show_diskon','show_dp','show_total',
     'show_metode_bayar','show_sisa_bayar','show_estimasi','show_catatan',
     'show_poin_earned','show_saldo_poin',
-    'show_jatuh_tempo',
-    // show_rekening hanya elemen di tab B2B (lihat renderForm). Di tab Retail
+    // show_jatuh_tempo & show_rekening hanya elemen di tab B2B (lihat renderForm). Di tab Retail
     // checkbox-nya tidak ada di DOM → gc() akan return 0 tanpa owner sentuh
     // sama sekali, dan nilai "0" itu ikut ke-push & menimpa outlet lain.
-    ...(isB2b ? ['show_rekening'] : []),
+    ...(isB2b ? ['show_jatuh_tempo', 'show_rekening'] : []),
     'show_footer_ucapan','show_footer_syarat','show_footer_sosmed',
     'show_border','show_watermark',
   ];
