@@ -652,7 +652,7 @@ body {
 
         // ── Totals ────────────────────────────────────
         $biayaTbh = (float)($trx['biaya_tambahan'] ?? 0);
-        $hasBreakdown = (float)($trx['diskon'] ?? 0) > 0 || $biayaTbh > 0;
+        $hasBreakdown = (float)($trx['diskon'] ?? 0) > 0 || $biayaTbh > 0 || (float)($trx['biaya_lainnya'] ?? 0) > 0;
         if (!empty($tmpl['show_subtotal']) && $hasBreakdown) {
             $h .= self::tRow('Subtotal', 'Rp ' . self::rpNum($trx['subtotal']), $maxChar);
         }
@@ -669,6 +669,11 @@ body {
                     default   => 'Biaya Tambahan',
                   };
             $h .= self::tRow($tipeLabel, 'Rp ' . self::rpNum($biayaTbh), $maxChar);
+        }
+        $biayaLainnya = (float)($trx['biaya_lainnya'] ?? 0);
+        if ($biayaLainnya > 0) {
+            $lainnyaLabel = trim((string)($trx['biaya_lainnya_label'] ?? '')) ?: 'Biaya Lainnya';
+            $h .= self::tRow($lainnyaLabel, 'Rp ' . self::rpNum($biayaLainnya), $maxChar);
         }
         if (!empty($tmpl['show_total'])) {
             $h .= "<div class='row b'>"
@@ -1000,7 +1005,7 @@ tbody tr:nth-child(even) td { background: #f8faff; }
 <table>\n";
 
         $biayaTbhPdf = (float)($trx['biaya_tambahan'] ?? 0);
-        $hasBreakdownPdf = (float)($trx['diskon'] ?? 0) > 0 || $biayaTbhPdf > 0;
+        $hasBreakdownPdf = (float)($trx['diskon'] ?? 0) > 0 || $biayaTbhPdf > 0 || (float)($trx['biaya_lainnya'] ?? 0) > 0;
         if (!empty($tmpl['show_subtotal']) && $hasBreakdownPdf) {
             $h .= "  <tr><td>Subtotal</td><td class='r'>Rp " . self::rpNum($trx['subtotal']) . "</td></tr>\n";
         }
@@ -1016,6 +1021,11 @@ tbody tr:nth-child(even) td { background: #f8faff; }
                     default   => 'Biaya Tambahan',
                   };
             $h .= "  <tr><td>" . htmlspecialchars($tipeLabel) . "</td><td class='r'>+Rp " . self::rpNum($biayaTbhPdf) . "</td></tr>\n";
+        }
+        $biayaLainnyaPdf = (float)($trx['biaya_lainnya'] ?? 0);
+        if ($biayaLainnyaPdf > 0) {
+            $lainnyaLabelPdf = trim((string)($trx['biaya_lainnya_label'] ?? '')) ?: 'Biaya Lainnya';
+            $h .= "  <tr><td>" . htmlspecialchars($lainnyaLabelPdf) . "</td><td class='r'>+Rp " . self::rpNum($biayaLainnyaPdf) . "</td></tr>\n";
         }
 
         // ── PPN (B2B invoice, hanya kalau pajak_persen > 0) ──

@@ -97,4 +97,22 @@ $trxLunas = array_merge($trxQris, ['status_bayar' => 'lunas', 'sisa_bayar' => 0]
 $html3 = StrukGenerator::renderThermal($trxLunas, [], $tmpl, null, null, $outlet, 58);
 ok(!str_contains($html3, '/assets/outlet-qris/foo.png'), 'renderThermal TIDAK render QRIS kalau sudah lunas');
 
+// ── Biaya Lainnya muncul di struk (renderThermal & renderPdf) ──
+$trxBiayaLainnya = array_merge($trxQris, [
+    'metode_bayar' => 'cash',
+    'biaya_lainnya' => 7000,
+    'biaya_lainnya_label' => 'Biaya Packing Kardus',
+]);
+$htmlBl = StrukGenerator::renderThermal($trxBiayaLainnya, [], $tmpl, null, null, $outlet, 58);
+ok(str_contains($htmlBl, 'Biaya Packing Kardus'), 'renderThermal tampilkan label biaya_lainnya custom');
+ok(str_contains($htmlBl, 'Rp 7.000') || str_contains($htmlBl, 'Rp 7,000'), 'renderThermal tampilkan nominal biaya_lainnya');
+
+$trxBiayaLainnyaNoLabel = array_merge($trxBiayaLainnya, ['biaya_lainnya_label' => '']);
+$htmlBl2 = StrukGenerator::renderThermal($trxBiayaLainnyaNoLabel, [], $tmpl, null, null, $outlet, 58);
+ok(str_contains($htmlBl2, 'Biaya Lainnya'), 'renderThermal fallback label generik "Biaya Lainnya" kalau kosong');
+
+$trxNoBiayaLainnya = array_merge($trxQris, ['metode_bayar' => 'cash', 'biaya_lainnya' => 0]);
+$htmlBl3 = StrukGenerator::renderThermal($trxNoBiayaLainnya, [], $tmpl, null, null, $outlet, 58);
+ok(!str_contains($htmlBl3, 'Biaya Lainnya') && !str_contains($htmlBl3, 'Biaya Packing'), 'renderThermal TIDAK render baris biaya_lainnya kalau 0');
+
 echo "\nAll tests passed.\n";
