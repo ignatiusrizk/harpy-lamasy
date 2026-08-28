@@ -1514,12 +1514,37 @@ function posSelectPrinter(p) {
             <div class="form-row cols3">
               <div class="form-group">
                 <label>Diskon (Rp)</label>
-                <input type="number" id="f_diskon" value="0" min="0" oninput="recalc()"/>
+                <input type="number" id="f_diskon" value="0" min="0"
+                  onfocus="this.value=''"
+                  onblur="if(this.value===''){ this.value='0'; recalc(); }"
+                  oninput="lmCleanNum(this,false);recalc()"/>
               </div>
               <div class="form-group">
                 <label>DP / Bayar</label>
-                <input class="lm-rp" type="number" id="f_dp" value="0" min="0" oninput="recalc()"/>
+                <input class="lm-rp" type="number" id="f_dp" value="0" min="0"
+                  onfocus="this.value=''"
+                  onblur="if(this.value===''){ this.value='0'; recalc(); }"
+                  oninput="recalc()"/>
               </div>
+              <script>
+                // f_dp punya class lm-rp -> components.php enhanceRp() sembunyikan input asli
+                // & bikin sibling <input> visible ("vis") yg beneran disentuh user (buat separator
+                // ribuan live). onfocus/onblur di elemen asli di atas gak pernah kepanggil krn user
+                // gak pernah fokus ke situ. Delegasikan ke vis (nextElementSibling dari #f_dp).
+                (function(){
+                  document.addEventListener('focus', function(e){
+                    var dp = document.getElementById('f_dp');
+                    if (dp && e.target === dp.nextElementSibling) e.target.value = '';
+                  }, true);
+                  document.addEventListener('blur', function(e){
+                    var dp = document.getElementById('f_dp');
+                    if (dp && e.target === dp.nextElementSibling && e.target.value === '') {
+                      e.target.value = '0';
+                      e.target.dispatchEvent(new Event('input', { bubbles: true }));
+                    }
+                  }, true);
+                })();
+              </script>
               <div class="form-group">
                 <label>Metode</label>
                 <select id="f_metode" onchange="onMetodeChange()">
@@ -1906,6 +1931,16 @@ function removeItem(idx) { items.splice(idx,1); renderItems(); recalc(); applyMa
 // Pemisah ribuan manual (tak bergantung Intl locale — konsisten di WebView APK)
 function grpRibu(n){ return String(Math.round(n)||0).replace(/\B(?=(\d{3})+(?!\d))/g,'.'); }
 
+// type="number" di WebView (terutama Android lawas/entry-level) tidak konsisten
+// nolak huruf/simbol spt Chrome desktop — huruf bisa ketik masuk. Bersihkan
+// manual tiap oninput: digit doang (decimal=true izinkan satu titik desimal).
+function lmCleanNum(el, decimal){
+  var v = el.value;
+  var cleaned = decimal ? v.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1') : v.replace(/[^0-9]/g, '');
+  if (cleaned !== v) el.value = cleaned;
+  return cleaned;
+}
+
 function renderItems() {
   const tbody = document.getElementById('itemsBody');
   const empty = document.getElementById('emptyItems');
@@ -1930,7 +1965,7 @@ function renderItems() {
           <input class="item-input" type="number" value="${item.jumlah}" min="0.1" step="0.1" style="${item.qty_minimum > 0 && item.jumlah < item.qty_minimum ? 'border:1px solid #DC2626;background:#FEF2F2;' : ''}"
             onfocus="this.value=''"
             onblur="if(this.value===''){ this.value=(${item.qty_minimum}>0?${item.qty_minimum}:1); items[${i}].jumlah=parseFloat(this.value); recalc(); }"
-            oninput="items[${i}].jumlah=parseFloat(this.value)||0;recalc()"/>
+            oninput="lmCleanNum(this,true);items[${i}].jumlah=parseFloat(this.value)||0;recalc()"/>
         </span>
       </td>
       <td data-lbl="Harga"><input class="item-input" type="text" inputmode="numeric" value="${grpRibu(Math.round(item.harga_satuan||0))}" style="width:96px"
