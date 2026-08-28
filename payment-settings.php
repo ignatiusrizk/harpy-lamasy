@@ -595,6 +595,7 @@ document.getElementById('qrisFileInput').addEventListener('change', function (e)
 
 function openQrisCrop() {
   if (!qrisNaturalImg) return;
+  document.getElementById('qrisCropModal').style.display = 'flex';
   const stage = document.getElementById('qrisCropStage');
   const imgEl = document.getElementById('qrisCropImg');
   const stageSize = stage.clientWidth; // stage persegi (aspect-ratio:1)
@@ -611,8 +612,6 @@ function openQrisCrop() {
   // Kotak crop awal = full stage (persegi penuh)
   qrisBox = { x: 0, y: 0, size: stageSize };
   drawQrisBox();
-
-  document.getElementById('qrisCropModal').style.display = 'flex';
 }
 
 function closeQrisCrop() {
