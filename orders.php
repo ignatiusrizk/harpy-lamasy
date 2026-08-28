@@ -247,7 +247,19 @@ if ($action) {
             $itemsChanged = ($sigItems($oldItems) != $sigItems($data['items'] ?? []));
 
             $diskonBerubah = abs((float)($data['diskon'] ?? 0) - (float)$oldRow['diskon']) > 0.001;
-            if (($itemsChanged || $diskonBerubah) && !hasPermission('orders.edit')) {
+
+            // biaya_lainnya — manual bebas, kalau request ini TIDAK mengirim field-nya
+            // (mis. request yang cuma ubah status_proses) pertahankan nilai lama,
+            // JANGAN reset ke 0 diam-diam.
+            $biayaLainnya = array_key_exists('biaya_lainnya', $data)
+                ? max(0, floatval($data['biaya_lainnya']))
+                : (float)($oldRow['biaya_lainnya'] ?? 0);
+            $biayaLainnyaLabel = array_key_exists('biaya_lainnya_label', $data)
+                ? substr(trim(strip_tags($data['biaya_lainnya_label'] ?? '')), 0, 100)
+                : (string)($oldRow['biaya_lainnya_label'] ?? '');
+            $biayaLainnyaBerubah = abs($biayaLainnya - (float)($oldRow['biaya_lainnya'] ?? 0)) > 0.001;
+
+            if (($itemsChanged || $diskonBerubah || $biayaLainnyaBerubah) && !hasPermission('orders.edit')) {
                 $db->rollBack();
                 echo json_encode(['error' => 'Butuh izin edit order untuk mengubah layanan/diskon']); exit;
             }
@@ -266,16 +278,6 @@ if ($action) {
             // dari total setiap kali item order diedit.
             $biayaTambahanLama = (float)($oldRow['biaya_tambahan'] ?? 0);
 
-            // biaya_lainnya — manual bebas, kalau request ini TIDAK mengirim field-nya
-            // (mis. request yang cuma ubah status_proses) pertahankan nilai lama,
-            // JANGAN reset ke 0 diam-diam.
-            $biayaLainnya = array_key_exists('biaya_lainnya', $data)
-                ? max(0, floatval($data['biaya_lainnya']))
-                : (float)($oldRow['biaya_lainnya'] ?? 0);
-            $biayaLainnyaLabel = array_key_exists('biaya_lainnya_label', $data)
-                ? substr(trim(strip_tags($data['biaya_lainnya_label'] ?? '')), 0, 100)
-                : (string)($oldRow['biaya_lainnya_label'] ?? '');
-
             $diskon = floatval($data['diskon'] ?? 0);
             $total  = $subtotal > 0
                 ? max(0, $subtotal - $diskon + $biayaTambahanLama + $biayaLainnya)
@@ -290,7 +292,7 @@ if ($action) {
                 'total_lama'      => (float)$oldRow['total'],
                 'dp_lama'         => (float)$oldRow['dp'],
                 'total_baru'      => (float)$total,
-                'berubah'         => $itemsChanged || $diskonBerubah,
+                'berubah'         => $itemsChanged || $diskonBerubah || $biayaLainnyaBerubah,
                 'resolusi'        => $data['confirm_resolution'] ?? null,
                 'punya_pelanggan' => !empty($oldRow['pelanggan_id']),
             ]);
@@ -1605,6 +1607,7 @@ function editStateJSON() {
   return JSON.stringify({
     s:  g('edit_status_proses'), c: g('edit_catatan'), ci: g('edit_catatan_internal'),
     m:  g('edit_metode'), d: g('edit_diskon'), dp: g('edit_dp'), e: g('edit_estimasi'),
+    bl: g('edit_biaya_lainnya'), bll: g('edit_biaya_lainnya_label'),
     fp: (document.getElementById('edit_foto_pickup_path')?.value || ''),
     items: (editItems || []).map(it => ({ l: it.nama_layanan, s: it.satuan, j: it.jumlah, h: it.harga_satuan, k: it.catatan_item || '' }))
   });
