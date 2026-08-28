@@ -227,7 +227,8 @@ if ($action) {
         try {
             // Verify ownership
             $oldRow = $db->prepare("SELECT status_proses,status_bayar,catatan,dp,total,diskon,
-                                           pelanggan_id,telepon,no_order,nama_pelanggan
+                                           pelanggan_id,telepon,no_order,nama_pelanggan,
+                                           biaya_tambahan,biaya_lainnya,biaya_lainnya_label
                                       FROM hl_transaksi
                                      WHERE tenant_id=? AND outlet_id=? AND id=? FOR UPDATE");
             $oldRow->execute([$tid, $oid, $id]);
@@ -259,8 +260,26 @@ if ($action) {
                 }
             }
 
+            // biaya_tambahan = snapshot dari saat order dibuat, TIDAK di-recompute
+            // di sini (edit order tidak mengelola ulang express tier). BUGFIX: dulu
+            // rumus di bawah cuma "subtotal - diskon", biaya_tambahan ikut hilang
+            // dari total setiap kali item order diedit.
+            $biayaTambahanLama = (float)($oldRow['biaya_tambahan'] ?? 0);
+
+            // biaya_lainnya — manual bebas, kalau request ini TIDAK mengirim field-nya
+            // (mis. request yang cuma ubah status_proses) pertahankan nilai lama,
+            // JANGAN reset ke 0 diam-diam.
+            $biayaLainnya = array_key_exists('biaya_lainnya', $data)
+                ? max(0, floatval($data['biaya_lainnya']))
+                : (float)($oldRow['biaya_lainnya'] ?? 0);
+            $biayaLainnyaLabel = array_key_exists('biaya_lainnya_label', $data)
+                ? substr(trim(strip_tags($data['biaya_lainnya_label'] ?? '')), 0, 100)
+                : (string)($oldRow['biaya_lainnya_label'] ?? '');
+
             $diskon = floatval($data['diskon'] ?? 0);
-            $total  = $subtotal > 0 ? ($subtotal - $diskon) : floatval($data['total'] ?? 0);
+            $total  = $subtotal > 0
+                ? max(0, $subtotal - $diskon + $biayaTambahanLama + $biayaLainnya)
+                : max(0, floatval($data['total'] ?? 0));
             $dp     = floatval($data['dp'] ?? 0);
             $sisa   = $total - $dp;
             $sbayar = $dp >= $total && $total > 0 ? 'lunas' : ($dp > 0 ? 'dp' : 'belum_bayar');
@@ -311,7 +330,7 @@ if ($action) {
             $setParts = [
                 'status_proses=?', 'status_bayar=?', 'catatan=?', 'catatan_internal=?',
                 'metode_bayar=?', 'dp=?', 'sisa_bayar=?', 'diskon=?', 'total=?',
-                'subtotal=?', 'estimasi_selesai=?',
+                'subtotal=?', 'estimasi_selesai=?', 'biaya_lainnya=?', 'biaya_lainnya_label=?',
             ];
             $params = [
                 $sp, $sbayar,
@@ -319,6 +338,7 @@ if ($action) {
                 $data['metode_bayar'] ?? 'cash',
                 $dp, $sisa, $diskon, $total, $subtotal > 0 ? $subtotal : null,
                 $data['estimasi'] ?: null,
+                $biayaLainnya, $biayaLainnyaLabel !== '' ? $biayaLainnyaLabel : null,
             ];
             // Foto pickup — disimpan saat status 'diambil' & ada foto dari upload
             $fotoPickup = trim((string)($data['foto_pickup'] ?? ''));
@@ -1574,6 +1594,7 @@ $_outletTelp  = $_outletInfo['telepon'] ?? '';
 <script>
 let searchTimer = null;
 let currentEditId = null;
+let currentOrderBiayaTambahan = 0;
 let currentOrderData = null;
 let editItems = [];
 let editSnapshot = null;   // snapshot state form saat modal dibuka → deteksi "tidak ada perubahan"
@@ -1912,6 +1933,7 @@ async function openDetail(id) {
   const d = await r.json();
   if (d.error) { document.getElementById('modalBody').innerHTML = '<div class="empty">❌ ' + d.error + '</div>'; return; }
 
+  currentOrderBiayaTambahan = parseFloat(d.biaya_tambahan) || 0;
   editItems = d.items || [];
   currentOrderData = d;
   document.getElementById('modalTitle').textContent = '📋 ' + d.no_order;
@@ -1958,6 +1980,7 @@ async function openDetail(id) {
     <div class="total-box" id="editTotalBox">
       <div class="tb-row"><span class="tb-label">Subtotal</span><span class="tb-value" id="etSubtotal">-</span></div>
       <div class="tb-row"><span class="tb-label">Diskon</span><span class="tb-value">- Rp ${CAN_EDIT_ORDER ? `<input type="number" id="edit_diskon" value="${Math.round(d.diskon||0)}" min="0" step="500" oninput="recalcEdit()" style="width:80px;background:transparent;border:none;border-bottom:1px solid rgba(255,255,255,.3);color:white;font-family:var(--mono);font-size:13px;padding:0;outline:none"/>` : `<span id="edit_diskon" style="font-family:var(--mono);color:white">${grpRibu(d.diskon||0)}</span>`}</span></div>
+      <div class="tb-row"><span class="tb-label">Biaya Lainnya</span><span class="tb-value">${CAN_EDIT_ORDER ? `<input type="text" id="edit_biaya_lainnya_label" value="${(d.biaya_lainnya_label||'').replace(/"/g,'&quot;')}" placeholder="label" maxlength="100" oninput="recalcEdit()" style="width:90px;background:transparent;border:none;border-bottom:1px solid rgba(255,255,255,.3);color:white;font-size:12px;padding:0;outline:none;margin-right:4px"/><input type="number" id="edit_biaya_lainnya" value="${Math.round(d.biaya_lainnya||0)}" min="0" step="500" oninput="recalcEdit()" style="width:70px;background:transparent;border:none;border-bottom:1px solid rgba(255,255,255,.3);color:white;font-family:var(--mono);font-size:13px;padding:0;outline:none"/>` : (d.biaya_lainnya > 0 ? `<span style="font-family:var(--mono);color:white">${d.biaya_lainnya_label||'Biaya Lainnya'}: Rp ${grpRibu(d.biaya_lainnya)}</span>` : '<span style="color:rgba(255,255,255,.5)">-</span>')}</span></div>
       <div class="tb-row tb-total"><span style="color:white;font-weight:700">TOTAL</span><span class="tb-value tb-big" id="etTotal">-</span></div>
       <div class="tb-row"><span class="tb-label">DP/Bayar</span><span class="tb-value">Rp ${CAN_EDIT_ORDER ? `<input class="lm-rp" type="number" id="edit_dp" value="${Math.round(d.dp||0)}" min="0" step="1000" oninput="recalcEdit()" style="width:90px;background:transparent;border:none;border-bottom:1px solid rgba(255,255,255,.3);color:white;font-family:var(--mono);font-size:13px;padding:0;outline:none"/>` : `<span id="edit_dp" style="font-family:var(--mono);color:white">${grpRibu(d.dp||0)}</span>`}</span></div>
       <div class="tb-row"><span class="tb-label">Sisa Bayar</span><span class="tb-value tb-sisa" id="etSisa">-</span></div>
@@ -2296,7 +2319,8 @@ async function saveLayananQuick() {
 function recalcEdit() {
   const sub  = editItems.reduce((s,i) => s + i.jumlah * i.harga_satuan, 0);
   const dis  = parseFloat(document.getElementById('edit_diskon')?.value) || 0;
-  const tot  = Math.max(sub - dis, 0);
+  const biayaLainnya = parseFloat(document.getElementById('edit_biaya_lainnya')?.value) || 0;
+  const tot  = Math.max(sub - dis + (currentOrderBiayaTambahan || 0) + biayaLainnya, 0);
   const dp   = parseFloat(document.getElementById('edit_dp')?.value) || 0;
   const sisa = tot - dp;
   const subEl = document.getElementById('etSubtotal');
@@ -2331,6 +2355,8 @@ async function saveEdit() {
     dp:               document.getElementById('edit_dp').value,
     estimasi:         document.getElementById('edit_estimasi').value,
     foto_pickup:      document.getElementById('edit_foto_pickup_path')?.value || '',
+    biaya_lainnya:       document.getElementById('edit_biaya_lainnya')?.value ?? '0',
+    biaya_lainnya_label: document.getElementById('edit_biaya_lainnya_label')?.value ?? '',
     items:            editItems,
     confirm_resolution: window.__editResolution || null,
   };
