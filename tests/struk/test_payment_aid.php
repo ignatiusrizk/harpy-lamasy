@@ -115,4 +115,14 @@ $trxNoBiayaLainnya = array_merge($trxQris, ['metode_bayar' => 'cash', 'biaya_lai
 $htmlBl3 = StrukGenerator::renderThermal($trxNoBiayaLainnya, [], $tmpl, null, null, $outlet, 58);
 ok(!str_contains($htmlBl3, 'Biaya Lainnya') && !str_contains($htmlBl3, 'Biaya Packing'), 'renderThermal TIDAK render baris biaya_lainnya kalau 0');
 
+// ── renderPdf() coverage untuk Biaya Lainnya ──────────────
+// Reuse: $trxBiayaLainnya (biaya_lainnya=7000, label='Biaya Packing Kardus')
+$pdfBl = StrukGenerator::renderPdf($trxBiayaLainnya, [], $tmpl, null, null, $outlet, 'a4');
+ok(str_contains($pdfBl, 'Biaya Packing Kardus'), 'renderPdf tampilkan label biaya_lainnya custom');
+ok(str_contains($pdfBl, 'Rp 7.000') || str_contains($pdfBl, 'Rp 7,000'), 'renderPdf tampilkan nominal biaya_lainnya');
+
+// Reuse: $trxNoBiayaLainnya (biaya_lainnya=0)
+$pdfBl4 = StrukGenerator::renderPdf($trxNoBiayaLainnya, [], $tmpl, null, null, $outlet, 'a4');
+ok(!str_contains($pdfBl4, 'Biaya Lainnya') && !str_contains($pdfBl4, 'Biaya Packing'), 'renderPdf TIDAK render baris biaya_lainnya kalau 0');
+
 echo "\nAll tests passed.\n";
