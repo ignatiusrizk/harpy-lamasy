@@ -46,7 +46,7 @@ if ($action) {
             'show_no_order','show_tanggal','show_nama_kasir','show_nama_pelanggan',
             'show_telp_pelanggan','show_alamat_pelanggan','show_detail_item',
             'show_subtotal','show_diskon','show_dp','show_total',
-            'show_metode_bayar','show_sisa_bayar','show_estimasi','show_catatan',
+            'show_metode_bayar','show_sisa_bayar','show_qris','show_estimasi','show_catatan',
             'show_poin_earned','show_saldo_poin',
             'show_periode_invoice','show_jatuh_tempo','show_rekening',
             'show_footer_ucapan','show_footer_syarat','show_footer_sosmed',
@@ -489,6 +489,7 @@ function renderForm(tipe, t) {
   ${checkRow('show_total',       'Total', t)}
   ${checkRow('show_metode_bayar','Metode Bayar', t)}
   ${checkRow('show_sisa_bayar',  'Sisa Bayar', t)}
+  ${!isB2b ? checkRow('show_qris', 'Tampilkan QRIS (saat belum lunas & metode QRIS)', t) : ''}
   ${!isB2b ? checkRow('show_estimasi', 'Estimasi Selesai', t) : ''}
   ${checkRow('show_catatan',     'Catatan Order', t)}
   ${!isB2b ? checkRow('show_poin_earned', 'Poin Didapat', t) : ''}
@@ -498,7 +499,11 @@ function renderForm(tipe, t) {
   <!-- ── B2B EXTRA ── -->
   <div class="section-title">🏢 Khusus B2B / Invoice</div>
   ${checkRow('show_jatuh_tempo', 'Tanggal Jatuh Tempo', t)}
-  ${checkRow('show_rekening',    'Info Rekening Pembayaran', t)}
+  ` : ''}
+
+  <!-- ── REKENING (retail & B2B) ── -->
+  <div class="section-title">🏦 Info Rekening</div>
+  ${checkRow('show_rekening', isB2b ? 'Info Rekening Pembayaran' : 'Tampilkan Rekening (saat belum lunas & metode Transfer)', t)}
   <div class="form-field" style="margin-top:8px">
     <label>Nama Bank</label>
     <input type="text" id="f_rekening_bank" value="${escHtml(v('rekening_bank'))}" maxlength="50"
@@ -514,7 +519,6 @@ function renderForm(tipe, t) {
     <input type="text" id="f_rekening_atas_nama" value="${escHtml(v('rekening_atas_nama'))}" maxlength="100"
            placeholder="cth: Bersih Laundry" oninput="onFieldChange()">
   </div>
-  ` : ''}
 
   <!-- ── FOOTER ── -->
   <div class="section-title">🙏 Footer</div>
@@ -579,7 +583,7 @@ function collectForm() {
     'show_no_order','show_tanggal','show_nama_kasir','show_nama_pelanggan',
     'show_telp_pelanggan','show_alamat_pelanggan','show_detail_item',
     'show_subtotal','show_diskon','show_dp','show_total',
-    'show_metode_bayar','show_sisa_bayar','show_estimasi','show_catatan',
+    'show_metode_bayar','show_sisa_bayar','show_qris','show_estimasi','show_catatan',
     'show_poin_earned','show_saldo_poin',
     'show_periode_invoice','show_jatuh_tempo','show_rekening',
     'show_footer_ucapan','show_footer_syarat','show_footer_sosmed',
