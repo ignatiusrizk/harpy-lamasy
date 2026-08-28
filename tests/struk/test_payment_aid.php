@@ -75,4 +75,26 @@ $rekAid = ['type' => 'rekening', 'bank' => 'BCA', 'nomor' => '111', 'atas_nama' 
 $nudge = StrukGenerator::waPaymentNudgeLine($rekAid);
 ok(str_contains($nudge, 'BCA') && str_contains($nudge, '111'), 'nudge rekening mention bank+nomor');
 
+// ── renderThermal() render blok QRIS/Rekening ──────────
+$trxQris = [
+    'no_order' => 'TEST-001', 'total' => 50000, 'subtotal' => 50000,
+    'diskon' => 0, 'biaya_tambahan' => 0, 'dp' => 0,
+    'status_bayar' => 'belum_bayar', 'sisa_bayar' => 50000,
+    'metode_bayar' => 'qris', 'tipe_order' => 'reguler',
+    'created_at' => date('Y-m-d H:i:s'), 'tanggal' => date('Y-m-d H:i:s'),
+];
+$tmpl = array_merge(StrukGenerator::defaultTemplate('retail'), baseTmpl());
+$outlet = baseOutlet(['nama_outlet' => 'Test Outlet']);
+$html = StrukGenerator::renderThermal($trxQris, [], $tmpl, null, null, $outlet, 58);
+ok(str_contains($html, '/assets/outlet-qris/foo.png'), 'renderThermal render gambar QRIS saat metode qris+belum lunas');
+ok(str_contains($html, 'Sisa Bayar: Rp 50.000') || str_contains($html, 'Sisa Bayar: Rp 50,000'), 'renderThermal tampilkan sisa bayar dekat QRIS');
+
+$trxTransfer = array_merge($trxQris, ['metode_bayar' => 'transfer']);
+$html2 = StrukGenerator::renderThermal($trxTransfer, [], $tmpl, null, null, $outlet, 58);
+ok(str_contains($html2, 'BCA') && str_contains($html2, '1234567890'), 'renderThermal render info rekening saat metode transfer+belum lunas');
+
+$trxLunas = array_merge($trxQris, ['status_bayar' => 'lunas', 'sisa_bayar' => 0]);
+$html3 = StrukGenerator::renderThermal($trxLunas, [], $tmpl, null, null, $outlet, 58);
+ok(!str_contains($html3, '/assets/outlet-qris/foo.png'), 'renderThermal TIDAK render QRIS kalau sudah lunas');
+
 echo "\nAll tests passed.\n";

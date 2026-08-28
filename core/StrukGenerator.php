@@ -689,6 +689,30 @@ body {
                 . "</div>\n";
         }
 
+        // ── Alat Bayar (QRIS / Rekening) — cuma kalau belum lunas & ──
+        // ── metode_bayar cocok, lihat StrukGenerator::paymentAidFor ──
+        $aid = self::paymentAidFor($trx, $tmpl, $outlet);
+        if ($aid) {
+            $h .= "<hr class='sep'>\n";
+            if ($aid['type'] === 'qris') {
+                $h .= "<div class='c' style='margin-top:4px'>"
+                    . "<img src='" . self::esc($aid['image']) . "' alt='QRIS' style='width:140px;max-width:90%;height:auto'/>"
+                    . "</div>\n";
+                if (!empty($aid['label'])) {
+                    $h .= "<div class='c sm'>" . self::esc($aid['label']) . "</div>\n";
+                }
+                $h .= "<div class='c b' style='margin-top:2px'>Sisa Bayar: Rp " . self::rpNum($aid['sisa_bayar']) . "</div>\n";
+                $h .= "<div class='c sm'>Scan lalu masukkan nominal di atas</div>\n";
+            } elseif ($aid['type'] === 'rekening') {
+                $h .= "<div class='c b'>Transfer ke:</div>\n";
+                $h .= "<div class='c b'>" . self::esc($aid['bank']) . " — " . self::esc($aid['nomor']) . "</div>\n";
+                if (!empty($aid['atas_nama'])) {
+                    $h .= "<div class='c sm'>a.n. " . self::esc($aid['atas_nama']) . "</div>\n";
+                }
+                $h .= "<div class='c b' style='margin-top:2px'>Sisa Bayar: Rp " . self::rpNum($aid['sisa_bayar']) . "</div>\n";
+            }
+        }
+
         // ── Estimasi ──────────────────────────────────
         if (!empty($tmpl['show_estimasi']) && !empty($trx['estimasi_selesai'])) {
             $h .= "<hr class='sep'>\n";
