@@ -302,18 +302,39 @@ if ($action) {
         }
         verifyCsrf();
         $d      = json_decode(file_get_contents('php://input'), true);
-        $nama   = substr(trim((string)($d['nama'] ?? '')), 0, 50);
+        $nama   = substr(trim(strip_tags((string)($d['nama'] ?? ''))), 0, 50);
         $tipe   = in_array($d['tipe_biaya'] ?? '', ['flat','percent'], true) ? $d['tipe_biaya'] : 'flat';
         $nilai  = max(0, (float)($d['nilai_biaya'] ?? 0));
         $aktif  = (int)($d['is_active'] ?? 1) ? 1 : 0;
         $urut   = (int)($d['urutan'] ?? 0);
         $tierOutletId = !empty($d['outlet_id']) ? (int)$d['outlet_id'] : null;
+        $tierId = !empty($d['id']) ? (int)$d['id'] : null;
         if ($nama === '' || $nilai < 0) {
             echo json_encode(['error'=>'Nama & nilai wajib diisi']); exit;
         }
         if ($tierOutletId !== null) {
             $own = TenantQuery::rawOne("SELECT id FROM outlets WHERE id=? AND tenant_id=?", [$tierOutletId, $tid]);
             if (!$own) { echo json_encode(['error'=>'Outlet tidak valid']); exit; }
+        }
+
+        // Cek manual nama duplikat — UNIQUE index DB tidak cukup krn MySQL/MariaDB
+        // menganggap outlet_id NULL beda-beda tiap baris (2 tier global nama sama
+        // tetap lolos dari sisi DB). Tier global vs tier per-outlet nama sama juga
+        // harus dicegah (skenario override harus disadari user, bukan bikin 2 entry).
+        $dupSql    = "SELECT id FROM hl_biaya_lainnya_tier WHERE tenant_id = ? AND nama = ?";
+        $dupParams = [$tid, $nama];
+        if ($tierOutletId !== null) {
+            $dupSql      .= " AND (outlet_id IS NULL OR outlet_id = ?)";
+            $dupParams[]  = $tierOutletId;
+        }
+        if ($tierId !== null) {
+            $dupSql      .= " AND id != ?";
+            $dupParams[]  = $tierId;
+        }
+        $dup = TenantQuery::rawOne($dupSql, $dupParams);
+        if ($dup) {
+            echo json_encode(['error'=>'Nama "'.$nama.'" sudah ada (gunakan nama beda kalau mau per-outlet, atau hapus yg sebelumnya)']);
+            exit;
         }
 
         $db = Database::get();
@@ -335,7 +356,12 @@ if ($action) {
             }
             echo json_encode(['success'=>true]);
         } catch (Throwable $e) {
-            echo json_encode(['error' => 'Gagal simpan: ' . $e->getMessage()]);
+            $msg = $e->getMessage();
+            if (str_contains($msg, 'uniq_tenant_outlet_biaya') || str_contains($msg, 'Duplicate')) {
+                echo json_encode(['error'=>'Nama "'.$nama.'" sudah ada (gunakan nama beda kalau mau per-outlet, atau hapus yg sebelumnya)']);
+            } else {
+                echo json_encode(['error' => 'Gagal simpan: ' . $msg]);
+            }
         }
         exit;
     }
@@ -1065,7 +1091,10 @@ async function loadBiayaLainnyaTiers() {
   }
 }
 
+let currentBiayaLainnyaTiers = [];
+
 function renderBiayaLainnyaList(tiers) {
+  currentBiayaLainnyaTiers = tiers;
   const list = document.getElementById('biayaLainnyaList');
   if (!tiers.length) {
     list.innerHTML = '<div style="text-align:center;padding:24px;color:var(--gray);font-size:13px;background:#F9FAFB;border:1px dashed #E5E7EB;border-radius:8px;">💰 Belum ada biaya lain. Tambah pakai form di bawah ↓</div>';
@@ -1098,7 +1127,7 @@ function renderBiayaLainnyaList(tiers) {
             </td>
             <td style="padding:10px;">${t.is_active == 1 ? '<span style="color:#059669;">● Aktif</span>' : '<span style="color:#9CA3AF;">○ Off</span>'}</td>
             <td style="padding:10px;text-align:right;white-space:nowrap;">
-              <button class="hl-btn hl-btn-outline hl-btn-sm" onclick='editBiayaLainnya(${JSON.stringify(t)})'>✏️</button>
+              <button class="hl-btn hl-btn-outline hl-btn-sm" onclick="editBiayaLainnya(${t.id})">✏️</button>
               <button class="hl-btn hl-btn-danger hl-btn-sm" onclick="deleteBiayaLainnya(${t.id})">🗑️</button>
             </td>
           </tr>`;
@@ -1127,7 +1156,9 @@ function resetBiayaLainnyaForm() {
   updateBlNilaiUnit();
 }
 
-function editBiayaLainnya(t) {
+function editBiayaLainnya(id) {
+  const t = currentBiayaLainnyaTiers.find(x => x.id == id);
+  if (!t) return;
   document.getElementById('bl_id').value     = t.id;
   document.getElementById('bl_nama').value   = t.nama;
   document.getElementById('bl_tipe').value   = t.tipe_biaya;

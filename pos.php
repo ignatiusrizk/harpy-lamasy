@@ -2210,7 +2210,7 @@ function recalc() {
     if (biayaLainnyaRows.length > 0) {
       blBox.style.display = 'block';
       blBreakdownEl.innerHTML = biayaLainnyaRows.map(r =>
-        `<div>${r.nama}: Rp ${r.nominal.toLocaleString('id-ID')}</div>`
+        `<div>${esc(r.nama)}: Rp ${r.nominal.toLocaleString('id-ID')}</div>`
       ).join('');
     } else {
       blBox.style.display = 'none';
