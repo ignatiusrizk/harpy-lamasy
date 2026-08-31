@@ -1474,6 +1474,10 @@ function posSelectPrinter(p) {
               <span class="sum-label">Sisa Bayar</span>
               <span class="sum-value sisa" id="sumSisa">Rp 0</span>
             </div>
+            <div class="sum-row" id="sumKembalianRow" style="display:none">
+              <span class="sum-label">Kembalian</span>
+              <span class="sum-value" style="color:#6EE7B7" id="sumKembalian">Rp 0</span>
+            </div>
           </div>
 
           <div style="margin-top:16px;display:flex;flex-direction:column;gap:10px">
@@ -2179,6 +2183,15 @@ function recalc() {
     (depositPay > 0 ? ` <span style="font-size:10px;color:#0F7B6C">(+Rp ${depositPay.toLocaleString('id-ID')} saldo)</span>` : '');
   document.getElementById('sumSisa').textContent     = 'Rp ' + sisa.toLocaleString('id-ID');
 
+  // Kembalian — cuma relevan buat Cash (uang fisik), muncul kalau bayar > total
+  const metodeVal = document.getElementById('f_metode')?.value;
+  const kembalian = metodeVal === 'cash' ? Math.max(0, totalPaid - total) : 0;
+  const kembalianRow = document.getElementById('sumKembalianRow');
+  if (kembalianRow) {
+    kembalianRow.style.display = kembalian > 0 ? 'flex' : 'none';
+    document.getElementById('sumKembalian').textContent = 'Rp ' + kembalian.toLocaleString('id-ID');
+  }
+
   const cells = document.querySelectorAll('.item-subtotal');
   items.forEach((item, i) => { if(cells[i]) cells[i].textContent='Rp '+(item.jumlah*item.harga_satuan).toLocaleString('id-ID'); });
 
@@ -2481,6 +2494,7 @@ function onMetodeChange() {
     }
     openQrisModal();
   }
+  recalc(); // baris Kembalian cuma tampil utk metode cash — perlu re-evaluasi tiap ganti metode
 }
 
 function openQrisModal() {
