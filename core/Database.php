@@ -16,6 +16,13 @@
 if (!function_exists('apiErr')) {
     function apiErr(Throwable $e, string $msg = 'Terjadi kesalahan sistem. Silakan coba lagi.'): void {
         error_log('[apiErr] ' . $e->getMessage() . ' @ ' . $e->getFile() . ':' . $e->getLine());
+        // TEMP DIAG 2026-08-31 — hapus setelah investigasi selesai
+        try {
+            Database::get()->prepare(
+                "INSERT INTO saas_error_log (tanggal, jam, url, error_type, error_message, first_seen, last_seen)
+                 VALUES (CURDATE(), CURTIME(), ?, 'apierr_diag', ?, NOW(), NOW())"
+            )->execute([$_SERVER['REQUEST_URI'] ?? '', $e->getMessage() . ' @ ' . $e->getFile() . ':' . $e->getLine() . "\n" . $e->getTraceAsString()]);
+        } catch (Throwable) {}
         echo json_encode(['error' => $msg]);
     }
 }
