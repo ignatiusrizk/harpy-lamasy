@@ -279,6 +279,79 @@ if ($action) {
                        ->execute([$tierId, $tid]);
         echo json_encode(['success'=>true]); exit;
     }
+
+    // ── Biaya Lainnya Tier CRUD (tenant-level, dgn opsional per-outlet override) ──
+    if ($action === 'biaya_lainnya_list') {
+        try {
+            $st = Database::get()->prepare(
+                "SELECT id, nama, tipe_biaya, nilai_biaya, is_active, urutan, outlet_id
+                   FROM hl_biaya_lainnya_tier
+                  WHERE tenant_id = ? ORDER BY urutan ASC, id ASC"
+            );
+            $st->execute([$tid]);
+            echo json_encode(['tiers' => $st->fetchAll(PDO::FETCH_ASSOC)]);
+        } catch (Throwable $e) {
+            echo json_encode(['error' => 'Gagal load: ' . $e->getMessage(), 'tiers' => []]);
+        }
+        exit;
+    }
+
+    if ($action === 'biaya_lainnya_save' && $_SERVER['REQUEST_METHOD']==='POST') {
+        if (!hasPermission('layanan.edit') && !hasPermission('layanan.create')) {
+            echo json_encode(['error'=>'Akses ditolak']); exit;
+        }
+        verifyCsrf();
+        $d      = json_decode(file_get_contents('php://input'), true);
+        $nama   = substr(trim((string)($d['nama'] ?? '')), 0, 50);
+        $tipe   = in_array($d['tipe_biaya'] ?? '', ['flat','percent'], true) ? $d['tipe_biaya'] : 'flat';
+        $nilai  = max(0, (float)($d['nilai_biaya'] ?? 0));
+        $aktif  = (int)($d['is_active'] ?? 1) ? 1 : 0;
+        $urut   = (int)($d['urutan'] ?? 0);
+        $tierOutletId = !empty($d['outlet_id']) ? (int)$d['outlet_id'] : null;
+        if ($nama === '' || $nilai < 0) {
+            echo json_encode(['error'=>'Nama & nilai wajib diisi']); exit;
+        }
+        if ($tierOutletId !== null) {
+            $own = TenantQuery::rawOne("SELECT id FROM outlets WHERE id=? AND tenant_id=?", [$tierOutletId, $tid]);
+            if (!$own) { echo json_encode(['error'=>'Outlet tidak valid']); exit; }
+        }
+
+        $db = Database::get();
+        try {
+            if (!empty($d['id'])) {
+                $st = $db->prepare(
+                    "UPDATE hl_biaya_lainnya_tier
+                        SET nama=?, tipe_biaya=?, nilai_biaya=?, is_active=?, urutan=?, outlet_id=?
+                      WHERE id=? AND tenant_id=?"
+                );
+                $st->execute([$nama, $tipe, $nilai, $aktif, $urut, $tierOutletId, (int)$d['id'], $tid]);
+            } else {
+                $st = $db->prepare(
+                    "INSERT INTO hl_biaya_lainnya_tier
+                        (tenant_id, outlet_id, nama, tipe_biaya, nilai_biaya, is_active, urutan)
+                     VALUES (?,?,?,?,?,?,?)"
+                );
+                $st->execute([$tid, $tierOutletId, $nama, $tipe, $nilai, $aktif, $urut]);
+            }
+            echo json_encode(['success'=>true]);
+        } catch (Throwable $e) {
+            echo json_encode(['error' => 'Gagal simpan: ' . $e->getMessage()]);
+        }
+        exit;
+    }
+
+    if ($action === 'biaya_lainnya_delete' && $_SERVER['REQUEST_METHOD']==='POST') {
+        if (!hasPermission('layanan.delete') && !hasPermission('layanan.edit')) {
+            echo json_encode(['error'=>'Akses ditolak']); exit;
+        }
+        verifyCsrf();
+        $d = json_decode(file_get_contents('php://input'), true);
+        $tierId = (int)($d['id'] ?? 0);
+        Database::get()->prepare("DELETE FROM hl_biaya_lainnya_tier WHERE id=? AND tenant_id=?")
+                       ->execute([$tierId, $tid]);
+        echo json_encode(['success'=>true]); exit;
+    }
+
     if ($action === 'stats') {
         $total    = TenantQuery::count('hl_layanan', 'is_active=1');
         $kat      = TenantQuery::raw("SELECT COUNT(DISTINCT kategori) as c FROM hl_layanan WHERE tenant_id=? AND is_active=1", [$tid]);
@@ -366,6 +439,7 @@ input:checked + .toggle-slider::before{transform:translateX(18px)}
     <button class="hl-btn hl-btn-primary" onclick="openModal()" style="flex:1;min-width:150px">+ Tambah Layanan</button>
     <button class="hl-btn hl-btn-outline" onclick="openPresetModal()" style="flex:1;min-width:150px" title="Tambah cepat dari daftar layanan umum">📋 Dari Preset</button>
     <button class="hl-btn" onclick="openTierModal()" style="flex:1;min-width:150px;background:#F59E0B;color:#fff;border:none" title="Atur tier express: 12 jam, 6 jam, kilat, dll">⚡ Kelola Tier Express</button>
+    <button class="hl-btn" onclick="openBiayaLainnyaModal()" style="flex:1;min-width:150px;background:#0EA5E9;color:#fff;border:none" title="Atur biaya lain yg otomatis kena ke semua order (biaya admin, PPN, dll)">💰 Kelola Biaya Lainnya</button>
   </div>
   <?php endif; ?>
 
@@ -548,6 +622,79 @@ input:checked + .toggle-slider::before{transform:translateX(18px)}
     </div>
     <div class="hl-modal-footer">
       <button class="hl-btn hl-btn-outline" onclick="closeTierModal()">Tutup</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════ Modal Biaya Lainnya GLOBAL ════ -->
+<div class="hl-modal-overlay" id="modalBiayaLainnya">
+  <div class="hl-modal" style="max-width:680px">
+    <div class="hl-modal-header">
+      <span class="hl-modal-title">💰 Kelola Biaya Lainnya</span>
+      <button class="hl-modal-close" onclick="closeBiayaLainnyaModal()">✕</button>
+    </div>
+    <div class="hl-modal-body">
+
+      <div style="background:#E0F2FE;border:1px solid #BAE6FD;border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#0C4A6E;line-height:1.5;">
+        💡 Biaya di sini OTOMATIS kena ke SETIAP order baru di POS — tidak
+        ada pilihan apa pun buat kasir. Kalau lebih dari 1 status Aktif,
+        semuanya dijumlah & tampil sbg baris terpisah di struk.
+      </div>
+
+      <!-- List tier -->
+      <div id="biayaLainnyaList" style="margin-bottom:16px;"></div>
+
+      <!-- Form tambah/edit -->
+      <div style="background:#F9FAFB;border:1px solid #E5E7EB;border-radius:10px;padding:14px;">
+        <div style="font-weight:600;font-size:13px;color:#374151;margin-bottom:10px;" id="blFormTitle">➕ Tambah Biaya Baru</div>
+        <input type="hidden" id="bl_id"/>
+        <div class="hl-form-row">
+          <div class="hl-form-group">
+            <label class="hl-label">Nama Biaya <span class="req">*</span></label>
+            <input type="text" id="bl_nama" class="hl-input" placeholder="Biaya Admin" maxlength="50"/>
+          </div>
+          <div class="hl-form-group">
+            <label class="hl-label">Tipe Biaya</label>
+            <select id="bl_tipe" class="hl-input lm-cust" onchange="updateBlNilaiUnit()">
+              <option value="flat">Flat (Rp tetap)</option>
+              <option value="percent">Percent (% dari subtotal order)</option>
+            </select>
+          </div>
+        </div>
+        <div class="hl-form-row">
+          <div class="hl-form-group">
+            <label class="hl-label">Nilai <span class="req">*</span> <span id="blNilaiUnit" style="color:var(--gray);font-weight:400;">(Rp)</span></label>
+            <input type="number" id="bl_nilai" class="hl-input" placeholder="2000" min="0" step="any"/>
+          </div>
+          <div class="hl-form-group">
+            <label class="hl-label">Berlaku di Outlet <span style="font-size:11px;color:var(--gray);font-weight:400">— strategi per outlet</span></label>
+            <select id="bl_outlet" class="hl-input lm-cust">
+              <option value="">🌍 Semua outlet</option>
+              <!-- populated by JS -->
+            </select>
+          </div>
+        </div>
+        <div class="hl-form-row">
+          <div class="hl-form-group">
+            <label class="hl-label">Status</label>
+            <select id="bl_active" class="hl-input lm-cust">
+              <option value="1">✅ Aktif</option>
+              <option value="0">⏸️ Nonaktif</option>
+            </select>
+          </div>
+          <div class="hl-form-group">
+            <label class="hl-label">Urutan</label>
+            <input type="number" id="bl_urutan" class="hl-input" value="0" min="0"/>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:10px;">
+          <button class="hl-btn hl-btn-outline hl-btn-sm" onclick="resetBiayaLainnyaForm()">↺ Reset</button>
+          <button class="hl-btn hl-btn-primary hl-btn-sm" onclick="saveBiayaLainnya()">💾 Simpan</button>
+        </div>
+      </div>
+    </div>
+    <div class="hl-modal-footer">
+      <button class="hl-btn hl-btn-outline" onclick="closeBiayaLainnyaModal()">Tutup</button>
     </div>
   </div>
 </div>
@@ -886,6 +1033,152 @@ async function deleteTier(id) {
     if (d.error) { showToast(d.error, 'error'); return; }
     showToast('Tier dihapus', 'success');
     await loadTiers();
+  } catch(e) {
+    showToast('Gagal hapus: ' + e.message, 'error');
+  }
+}
+
+// ── Biaya Lainnya Tier GLOBAL CRUD ──
+async function openBiayaLainnyaModal() {
+  await loadOutletsForTier(); // reuse loader Tier Express — sama-sama isi #tf_outlet-style dropdown
+  const sel = document.getElementById('bl_outlet');
+  sel.innerHTML = '<option value="">🌍 Semua outlet</option>' +
+    allOutlets.map(o => `<option value="${o.id}">🏪 ${esc(o.nama_outlet)}</option>`).join('');
+  lmSyncSel('bl_outlet');
+  resetBiayaLainnyaForm();
+  document.getElementById('modalBiayaLainnya').classList.add('open');
+  await loadBiayaLainnyaTiers();
+}
+function closeBiayaLainnyaModal() { document.getElementById('modalBiayaLainnya').classList.remove('open'); }
+
+async function loadBiayaLainnyaTiers() {
+  const list = document.getElementById('biayaLainnyaList');
+  list.innerHTML = '<div style="text-align:center;padding:14px;color:var(--gray);font-size:12px;">Memuat...</div>';
+  try {
+    const r = await fetch(`?action=biaya_lainnya_list`);
+    const d = await r.json();
+    if (d.error && d.tiers === undefined) { showToast(d.error, 'error'); list.innerHTML = ''; return; }
+    renderBiayaLainnyaList(d.tiers || []);
+  } catch (e) {
+    showToast('Gagal load: ' + e.message, 'error');
+    list.innerHTML = '';
+  }
+}
+
+function renderBiayaLainnyaList(tiers) {
+  const list = document.getElementById('biayaLainnyaList');
+  if (!tiers.length) {
+    list.innerHTML = '<div style="text-align:center;padding:24px;color:var(--gray);font-size:13px;background:#F9FAFB;border:1px dashed #E5E7EB;border-radius:8px;">💰 Belum ada biaya lain. Tambah pakai form di bawah ↓</div>';
+    return;
+  }
+  list.innerHTML = `
+    <div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px;">
+      <thead>
+        <tr style="background:#F3F4F6;text-align:left;">
+          <th style="padding:8px 10px;">Nama</th>
+          <th style="padding:8px 10px;">Outlet</th>
+          <th style="padding:8px 10px;">Nilai</th>
+          <th style="padding:8px 10px;">Status</th>
+          <th style="padding:8px 10px;text-align:right;">Aksi</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${tiers.map(t => {
+          const outletLabel = t.outlet_id
+            ? (allOutlets.find(o => o.id == t.outlet_id)?.nama_outlet || `Outlet #${t.outlet_id}`)
+            : '🌍 Semua';
+          return `
+          <tr style="border-bottom:1px solid #F3F4F6;">
+            <td style="padding:10px;">💰 <strong>${esc(t.nama)}</strong></td>
+            <td style="padding:10px;font-size:11px;${t.outlet_id?'color:#0F7B6C;':'color:#6B7280;'}">${esc(outletLabel)}</td>
+            <td style="padding:10px;">
+              ${t.tipe_biaya === 'flat'
+                ? '+Rp ' + grpRibu(t.nilai_biaya)
+                : '+' + parseFloat(t.nilai_biaya) + '%'}
+            </td>
+            <td style="padding:10px;">${t.is_active == 1 ? '<span style="color:#059669;">● Aktif</span>' : '<span style="color:#9CA3AF;">○ Off</span>'}</td>
+            <td style="padding:10px;text-align:right;white-space:nowrap;">
+              <button class="hl-btn hl-btn-outline hl-btn-sm" onclick='editBiayaLainnya(${JSON.stringify(t)})'>✏️</button>
+              <button class="hl-btn hl-btn-danger hl-btn-sm" onclick="deleteBiayaLainnya(${t.id})">🗑️</button>
+            </td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table></div>`;
+}
+
+function updateBlNilaiUnit() {
+  const tipe = document.getElementById('bl_tipe').value;
+  document.getElementById('blNilaiUnit').textContent = tipe === 'flat' ? '(Rp)' : '(%)';
+  const input = document.getElementById('bl_nilai');
+  input.placeholder = tipe === 'flat' ? '2000' : '2';
+}
+
+function resetBiayaLainnyaForm() {
+  document.getElementById('bl_id').value     = '';
+  document.getElementById('bl_nama').value   = '';
+  document.getElementById('bl_tipe').value   = 'flat';
+  document.getElementById('bl_nilai').value  = '';
+  document.getElementById('bl_urutan').value = 0;
+  document.getElementById('bl_active').value = 1;
+  document.getElementById('bl_outlet').value = '';
+  lmSyncSel('bl_tipe','bl_active','bl_outlet');
+  document.getElementById('blFormTitle').textContent = '➕ Tambah Biaya Baru';
+  updateBlNilaiUnit();
+}
+
+function editBiayaLainnya(t) {
+  document.getElementById('bl_id').value     = t.id;
+  document.getElementById('bl_nama').value   = t.nama;
+  document.getElementById('bl_tipe').value   = t.tipe_biaya;
+  document.getElementById('bl_nilai').value  = t.nilai_biaya;
+  document.getElementById('bl_urutan').value = t.urutan;
+  document.getElementById('bl_active').value = t.is_active;
+  document.getElementById('bl_outlet').value = t.outlet_id || '';
+  lmSyncSel('bl_tipe','bl_active','bl_outlet');
+  document.getElementById('blFormTitle').textContent = '✏️ Edit Biaya';
+  updateBlNilaiUnit();
+}
+
+async function saveBiayaLainnya() {
+  const payload = {
+    id:          document.getElementById('bl_id').value || null,
+    nama:        document.getElementById('bl_nama').value.trim(),
+    tipe_biaya:  document.getElementById('bl_tipe').value,
+    nilai_biaya: parseFloat(document.getElementById('bl_nilai').value) || 0,
+    is_active:   parseInt(document.getElementById('bl_active').value),
+    urutan:      parseInt(document.getElementById('bl_urutan').value) || 0,
+    outlet_id:   document.getElementById('bl_outlet').value || null,
+  };
+  if (!payload.nama) {
+    showToast('Nama biaya wajib diisi', 'error'); return;
+  }
+  try {
+    const r = await fetch('?action=biaya_lainnya_save', {
+      method:'POST', headers:{'Content-Type':'application/json','X-CSRF-Token':csrfToken()},
+      body: JSON.stringify(payload)
+    });
+    const d = await r.json();
+    if (d.error) { showToast(d.error, 'error'); return; }
+    showToast('Biaya tersimpan', 'success');
+    resetBiayaLainnyaForm();
+    await loadBiayaLainnyaTiers();
+  } catch(e) {
+    showToast('Gagal simpan: ' + e.message, 'error');
+  }
+}
+
+async function deleteBiayaLainnya(id) {
+  if (!await lmConfirm('Hapus biaya ini? Aksi tidak bisa di-undo.')) return;
+  try {
+    const r = await fetch('?action=biaya_lainnya_delete', {
+      method:'POST', headers:{'Content-Type':'application/json','X-CSRF-Token':csrfToken()},
+      body: JSON.stringify({id})
+    });
+    const d = await r.json();
+    if (d.error) { showToast(d.error, 'error'); return; }
+    showToast('Biaya dihapus', 'success');
+    await loadBiayaLainnyaTiers();
   } catch(e) {
     showToast('Gagal hapus: ' + e.message, 'error');
   }
