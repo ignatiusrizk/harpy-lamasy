@@ -159,6 +159,7 @@ if ($action) {
         if (!$t) { echo json_encode(['error'=>'Not found']); exit; }
         $t['items'] = TenantQuery::raw("SELECT * FROM hl_transaksi_item WHERE tenant_id=? AND outlet_id=? AND transaksi_id=? ORDER BY id", [$tid, $oid, $id]);
         $t['logs']  = TenantQuery::raw("SELECT * FROM hl_proses_log WHERE transaksi_id=? ORDER BY created_at DESC LIMIT 10", [$id]);
+        $t['biaya_lainnya_breakdown'] = TenantQuery::raw("SELECT nama, nominal FROM hl_transaksi_biaya_lainnya WHERE tenant_id=? AND outlet_id=? AND transaksi_id=? ORDER BY id", [$tid, $oid, $id]);
         require_once ROOT . '/core/DeleteRequest.php';
         $t['pending_delete'] = DeleteRequest::isPending('transaksi', $id, $tid);
         echo json_encode($t); exit;
@@ -228,7 +229,7 @@ if ($action) {
             // Verify ownership
             $oldRow = $db->prepare("SELECT status_proses,status_bayar,catatan,dp,total,diskon,
                                            pelanggan_id,telepon,no_order,nama_pelanggan,
-                                           biaya_tambahan,biaya_lainnya,biaya_lainnya_label
+                                           biaya_tambahan,biaya_lainnya
                                       FROM hl_transaksi
                                      WHERE tenant_id=? AND outlet_id=? AND id=? FOR UPDATE");
             $oldRow->execute([$tid, $oid, $id]);
@@ -248,18 +249,7 @@ if ($action) {
 
             $diskonBerubah = abs((float)($data['diskon'] ?? 0) - (float)$oldRow['diskon']) > 0.001;
 
-            // biaya_lainnya — manual bebas, kalau request ini TIDAK mengirim field-nya
-            // (mis. request yang cuma ubah status_proses) pertahankan nilai lama,
-            // JANGAN reset ke 0 diam-diam.
-            $biayaLainnya = array_key_exists('biaya_lainnya', $data)
-                ? max(0, floatval($data['biaya_lainnya']))
-                : (float)($oldRow['biaya_lainnya'] ?? 0);
-            $biayaLainnyaLabel = array_key_exists('biaya_lainnya_label', $data)
-                ? substr(trim(strip_tags($data['biaya_lainnya_label'] ?? '')), 0, 100)
-                : (string)($oldRow['biaya_lainnya_label'] ?? '');
-            $biayaLainnyaBerubah = abs($biayaLainnya - (float)($oldRow['biaya_lainnya'] ?? 0)) > 0.001;
-
-            if (($itemsChanged || $diskonBerubah || $biayaLainnyaBerubah) && !hasPermission('orders.edit')) {
+            if (($itemsChanged || $diskonBerubah) && !hasPermission('orders.edit')) {
                 $db->rollBack();
                 echo json_encode(['error' => 'Butuh izin edit order untuk mengubah layanan/diskon']); exit;
             }
@@ -272,15 +262,18 @@ if ($action) {
                 }
             }
 
-            // biaya_tambahan = snapshot dari saat order dibuat, TIDAK di-recompute
-            // di sini (edit order tidak mengelola ulang express tier). BUGFIX: dulu
-            // rumus di bawah cuma "subtotal - diskon", biaya_tambahan ikut hilang
-            // dari total setiap kali item order diedit.
+            // biaya_tambahan & biaya_lainnya = snapshot dari saat order dibuat,
+            // TIDAK di-recompute di sini (Orders tidak mengelola ulang tier —
+            // baik Express maupun Biaya Lainnya, keduanya murni auto-generate
+            // saat order dibuat). BUGFIX lama: dulu rumus di bawah cuma
+            // "subtotal - diskon", biaya_tambahan ikut hilang dari total
+            // setiap kali item order diedit — sudah dibetulkan & TETAP begini.
             $biayaTambahanLama = (float)($oldRow['biaya_tambahan'] ?? 0);
+            $biayaLainnyaLama  = (float)($oldRow['biaya_lainnya'] ?? 0);
 
             $diskon = floatval($data['diskon'] ?? 0);
             $total  = $subtotal > 0
-                ? max(0, $subtotal - $diskon + $biayaTambahanLama + $biayaLainnya)
+                ? max(0, $subtotal - $diskon + $biayaTambahanLama + $biayaLainnyaLama)
                 : max(0, floatval($data['total'] ?? 0));
             $dp     = floatval($data['dp'] ?? 0);
             $sisa   = $total - $dp;
@@ -292,7 +285,7 @@ if ($action) {
                 'total_lama'      => (float)$oldRow['total'],
                 'dp_lama'         => (float)$oldRow['dp'],
                 'total_baru'      => (float)$total,
-                'berubah'         => $itemsChanged || $diskonBerubah || $biayaLainnyaBerubah,
+                'berubah'         => $itemsChanged || $diskonBerubah,
                 'resolusi'        => $data['confirm_resolution'] ?? null,
                 'punya_pelanggan' => !empty($oldRow['pelanggan_id']),
             ]);
@@ -332,7 +325,7 @@ if ($action) {
             $setParts = [
                 'status_proses=?', 'status_bayar=?', 'catatan=?', 'catatan_internal=?',
                 'metode_bayar=?', 'dp=?', 'sisa_bayar=?', 'diskon=?', 'total=?',
-                'subtotal=?', 'estimasi_selesai=?', 'biaya_lainnya=?', 'biaya_lainnya_label=?',
+                'subtotal=?', 'estimasi_selesai=?',
             ];
             $params = [
                 $sp, $sbayar,
@@ -340,7 +333,6 @@ if ($action) {
                 $data['metode_bayar'] ?? 'cash',
                 $dp, $sisa, $diskon, $total, $subtotal > 0 ? $subtotal : null,
                 $data['estimasi'] ?: null,
-                $biayaLainnya, $biayaLainnyaLabel !== '' ? $biayaLainnyaLabel : null,
             ];
             // Foto pickup — disimpan saat status 'diambil' & ada foto dari upload
             $fotoPickup = trim((string)($data['foto_pickup'] ?? ''));
@@ -1607,6 +1599,7 @@ $_outletTelp  = $_outletInfo['telepon'] ?? '';
 let searchTimer = null;
 let currentEditId = null;
 let currentOrderBiayaTambahan = 0;
+let currentOrderBiayaLainnya = 0;
 let currentOrderData = null;
 let editItems = [];
 let editSnapshot = null;   // snapshot state form saat modal dibuka → deteksi "tidak ada perubahan"
@@ -1617,7 +1610,6 @@ function editStateJSON() {
   return JSON.stringify({
     s:  g('edit_status_proses'), c: g('edit_catatan'), ci: g('edit_catatan_internal'),
     m:  g('edit_metode'), d: g('edit_diskon'), dp: g('edit_dp'), e: g('edit_estimasi'),
-    bl: g('edit_biaya_lainnya'), bll: g('edit_biaya_lainnya_label'),
     fp: (document.getElementById('edit_foto_pickup_path')?.value || ''),
     items: (editItems || []).map(it => ({ l: it.nama_layanan, s: it.satuan, j: it.jumlah, h: it.harga_satuan, k: it.catatan_item || '' }))
   });
@@ -1937,6 +1929,13 @@ function resetFilter() {
 }
 
 // ── DETAIL / EDIT MODAL ───────────────────────────────
+function renderBiayaLainnyaBreakdown(rows) {
+  const el = document.getElementById('viewBiayaLainnya');
+  if (!el) return;
+  if (!rows.length) { el.textContent = '-'; return; }
+  el.innerHTML = rows.map(r => `${esc(r.nama)}: Rp ${grpRibu(r.nominal)}`).join('<br>');
+}
+
 async function openDetail(id) {
   currentEditId = id;
   document.getElementById('modalBody').innerHTML = '<div class="loading">⏳ Memuat...</div>';
@@ -1947,6 +1946,7 @@ async function openDetail(id) {
   if (d.error) { document.getElementById('modalBody').innerHTML = '<div class="empty">❌ ' + d.error + '</div>'; return; }
 
   currentOrderBiayaTambahan = parseFloat(d.biaya_tambahan) || 0;
+  currentOrderBiayaLainnya  = parseFloat(d.biaya_lainnya) || 0;
   editItems = d.items || [];
   currentOrderData = d;
   document.getElementById('modalTitle').textContent = '📋 ' + d.no_order;
@@ -1993,7 +1993,7 @@ async function openDetail(id) {
     <div class="total-box" id="editTotalBox">
       <div class="tb-row"><span class="tb-label">Subtotal</span><span class="tb-value" id="etSubtotal">-</span></div>
       <div class="tb-row"><span class="tb-label">Diskon</span><span class="tb-value">- Rp ${CAN_EDIT_ORDER ? `<input type="number" id="edit_diskon" value="${Math.round(d.diskon||0)}" min="0" step="500" oninput="recalcEdit()" style="width:80px;background:transparent;border:none;border-bottom:1px solid rgba(255,255,255,.3);color:white;font-family:var(--mono);font-size:13px;padding:0;outline:none"/>` : `<span id="edit_diskon" style="font-family:var(--mono);color:white">${grpRibu(d.diskon||0)}</span>`}</span></div>
-      <div class="tb-row"><span class="tb-label">Biaya Lainnya</span><span class="tb-value">${CAN_EDIT_ORDER ? `<input type="text" id="edit_biaya_lainnya_label" value="${(d.biaya_lainnya_label||'').replace(/"/g,'&quot;')}" placeholder="label" maxlength="100" oninput="recalcEdit()" style="width:90px;background:transparent;border:none;border-bottom:1px solid rgba(255,255,255,.3);color:white;font-size:12px;padding:0;outline:none;margin-right:4px"/><input type="number" id="edit_biaya_lainnya" value="${Math.round(d.biaya_lainnya||0)}" min="0" step="500" oninput="recalcEdit()" style="width:70px;background:transparent;border:none;border-bottom:1px solid rgba(255,255,255,.3);color:white;font-family:var(--mono);font-size:13px;padding:0;outline:none"/>` : (d.biaya_lainnya > 0 ? `<span style="font-family:var(--mono);color:white">${esc(d.biaya_lainnya_label||'Biaya Lainnya')}: Rp ${grpRibu(d.biaya_lainnya)}</span>` : '<span style="color:rgba(255,255,255,.5)">-</span>')}</span></div>
+      <div class="tb-row"><span class="tb-label">Biaya Lainnya</span><span class="tb-value" id="viewBiayaLainnya">${d.biaya_lainnya > 0 ? 'Rp ' + grpRibu(d.biaya_lainnya) : '-'}</span></div>
       <div class="tb-row tb-total"><span style="color:white;font-weight:700">TOTAL</span><span class="tb-value tb-big" id="etTotal">-</span></div>
       <div class="tb-row"><span class="tb-label">DP/Bayar</span><span class="tb-value">Rp ${CAN_EDIT_ORDER ? `<input class="lm-rp" type="number" id="edit_dp" value="${Math.round(d.dp||0)}" min="0" step="1000" oninput="recalcEdit()" style="width:90px;background:transparent;border:none;border-bottom:1px solid rgba(255,255,255,.3);color:white;font-family:var(--mono);font-size:13px;padding:0;outline:none"/>` : `<span id="edit_dp" style="font-family:var(--mono);color:white">${grpRibu(d.dp||0)}</span>`}</span></div>
       <div class="tb-row"><span class="tb-label">Sisa Bayar</span><span class="tb-value tb-sisa" id="etSisa">-</span></div>
@@ -2061,6 +2061,7 @@ async function openDetail(id) {
       }).join('') : '<div style="color:var(--gray);font-size:13px;padding:8px 0">Belum ada riwayat perubahan</div>'}
     </div>`;
 
+  renderBiayaLainnyaBreakdown(d.biaya_lainnya_breakdown || []);
   renderEditItems();
   renderEditLayananGrid(layananAll);
   recalcEdit();
@@ -2332,8 +2333,7 @@ async function saveLayananQuick() {
 function recalcEdit() {
   const sub  = editItems.reduce((s,i) => s + i.jumlah * i.harga_satuan, 0);
   const dis  = parseFloat(document.getElementById('edit_diskon')?.value) || 0;
-  const biayaLainnya = parseFloat(document.getElementById('edit_biaya_lainnya')?.value) || 0;
-  const tot  = Math.max(sub - dis + (currentOrderBiayaTambahan || 0) + biayaLainnya, 0);
+  const tot  = Math.max(sub - dis + (currentOrderBiayaTambahan || 0) + (currentOrderBiayaLainnya || 0), 0);
   const dp   = parseFloat(document.getElementById('edit_dp')?.value) || 0;
   const sisa = tot - dp;
   const subEl = document.getElementById('etSubtotal');
@@ -2368,8 +2368,6 @@ async function saveEdit() {
     dp:               document.getElementById('edit_dp').value,
     estimasi:         document.getElementById('edit_estimasi').value,
     foto_pickup:      document.getElementById('edit_foto_pickup_path')?.value || '',
-    biaya_lainnya:       document.getElementById('edit_biaya_lainnya')?.value ?? '0',
-    biaya_lainnya_label: document.getElementById('edit_biaya_lainnya_label')?.value ?? '',
     items:            editItems,
     confirm_resolution: window.__editResolution || null,
   };
