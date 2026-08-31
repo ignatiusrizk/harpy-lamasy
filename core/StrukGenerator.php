@@ -208,6 +208,15 @@ class StrukGenerator
         $itemSt->execute([$transaksiId, $tid]);
         $items = $itemSt->fetchAll(PDO::FETCH_ASSOC);
 
+        // ── Load breakdown Biaya Lainnya (bisa >1 baris) ──
+        $blSt = $db->prepare(
+            "SELECT nama, nominal FROM hl_transaksi_biaya_lainnya
+              WHERE transaksi_id = ? AND tenant_id = ?
+              ORDER BY id ASC"
+        );
+        $blSt->execute([$transaksiId, $tid]);
+        $trx['_biaya_lainnya_rows'] = $blSt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
         // ── Load pelanggan (nullable) ─────────────────
         $pelanggan = null;
         if (!empty($trx['pelanggan_id'])) {
@@ -670,10 +679,10 @@ body {
                   };
             $h .= self::tRow($tipeLabel, 'Rp ' . self::rpNum($biayaTbh), $maxChar);
         }
-        $biayaLainnya = (float)($trx['biaya_lainnya'] ?? 0);
-        if ($biayaLainnya > 0) {
-            $lainnyaLabel = trim((string)($trx['biaya_lainnya_label'] ?? '')) ?: 'Biaya Lainnya';
-            $h .= self::tRow($lainnyaLabel, 'Rp ' . self::rpNum($biayaLainnya), $maxChar);
+        foreach (($trx['_biaya_lainnya_rows'] ?? []) as $blRow) {
+            $blNominal = (float)($blRow['nominal'] ?? 0);
+            if ($blNominal <= 0) continue;
+            $h .= self::tRow($blRow['nama'], 'Rp ' . self::rpNum($blNominal), $maxChar);
         }
         if (!empty($tmpl['show_total'])) {
             $h .= "<div class='row b'>"
@@ -1022,10 +1031,10 @@ tbody tr:nth-child(even) td { background: #f8faff; }
                   };
             $h .= "  <tr><td>" . htmlspecialchars($tipeLabel) . "</td><td class='r'>+Rp " . self::rpNum($biayaTbhPdf) . "</td></tr>\n";
         }
-        $biayaLainnyaPdf = (float)($trx['biaya_lainnya'] ?? 0);
-        if ($biayaLainnyaPdf > 0) {
-            $lainnyaLabelPdf = trim((string)($trx['biaya_lainnya_label'] ?? '')) ?: 'Biaya Lainnya';
-            $h .= "  <tr><td>" . htmlspecialchars($lainnyaLabelPdf) . "</td><td class='r'>+Rp " . self::rpNum($biayaLainnyaPdf) . "</td></tr>\n";
+        foreach (($trx['_biaya_lainnya_rows'] ?? []) as $blRowPdf) {
+            $blNominalPdf = (float)($blRowPdf['nominal'] ?? 0);
+            if ($blNominalPdf <= 0) continue;
+            $h .= "  <tr><td>" . htmlspecialchars($blRowPdf['nama']) . "</td><td class='r'>+Rp " . self::rpNum($blNominalPdf) . "</td></tr>\n";
         }
 
         // ── PPN (B2B invoice, hanya kalau pajak_persen > 0) ──

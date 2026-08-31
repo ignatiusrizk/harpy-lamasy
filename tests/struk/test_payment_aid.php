@@ -97,32 +97,31 @@ $trxLunas = array_merge($trxQris, ['status_bayar' => 'lunas', 'sisa_bayar' => 0]
 $html3 = StrukGenerator::renderThermal($trxLunas, [], $tmpl, null, null, $outlet, 58);
 ok(!str_contains($html3, '/assets/outlet-qris/foo.png'), 'renderThermal TIDAK render QRIS kalau sudah lunas');
 
-// ── Biaya Lainnya muncul di struk (renderThermal & renderPdf) ──
+// ── Biaya Lainnya multi-baris muncul di struk (renderThermal & renderPdf) ──
 $trxBiayaLainnya = array_merge($trxQris, [
     'metode_bayar' => 'cash',
-    'biaya_lainnya' => 7000,
-    'biaya_lainnya_label' => 'Biaya Packing Kardus',
+    'biaya_lainnya' => 2600, // rollup, dipakai $hasBreakdown check
+    '_biaya_lainnya_rows' => [
+        ['nama' => 'Biaya Admin', 'nominal' => 2000],
+        ['nama' => 'PPN 2%', 'nominal' => 600],
+    ],
 ]);
 $htmlBl = StrukGenerator::renderThermal($trxBiayaLainnya, [], $tmpl, null, null, $outlet, 58);
-ok(str_contains($htmlBl, 'Biaya Packing Kardus'), 'renderThermal tampilkan label biaya_lainnya custom');
-ok(str_contains($htmlBl, 'Rp 7.000') || str_contains($htmlBl, 'Rp 7,000'), 'renderThermal tampilkan nominal biaya_lainnya');
+ok(str_contains($htmlBl, 'Biaya Admin'), 'renderThermal tampilkan baris pertama breakdown');
+ok(str_contains($htmlBl, 'PPN 2%'), 'renderThermal tampilkan baris kedua breakdown (multi-baris)');
+ok(str_contains($htmlBl, 'Rp 2.000') || str_contains($htmlBl, 'Rp 2,000'), 'renderThermal tampilkan nominal baris pertama');
+ok(str_contains($htmlBl, 'Rp 600'), 'renderThermal tampilkan nominal baris kedua');
 
-$trxBiayaLainnyaNoLabel = array_merge($trxBiayaLainnya, ['biaya_lainnya_label' => '']);
-$htmlBl2 = StrukGenerator::renderThermal($trxBiayaLainnyaNoLabel, [], $tmpl, null, null, $outlet, 58);
-ok(str_contains($htmlBl2, 'Biaya Lainnya'), 'renderThermal fallback label generik "Biaya Lainnya" kalau kosong');
-
-$trxNoBiayaLainnya = array_merge($trxQris, ['metode_bayar' => 'cash', 'biaya_lainnya' => 0]);
+$trxNoBiayaLainnya = array_merge($trxQris, ['metode_bayar' => 'cash', 'biaya_lainnya' => 0, '_biaya_lainnya_rows' => []]);
 $htmlBl3 = StrukGenerator::renderThermal($trxNoBiayaLainnya, [], $tmpl, null, null, $outlet, 58);
-ok(!str_contains($htmlBl3, 'Biaya Lainnya') && !str_contains($htmlBl3, 'Biaya Packing'), 'renderThermal TIDAK render baris biaya_lainnya kalau 0');
+ok(!str_contains($htmlBl3, 'Biaya Admin') && !str_contains($htmlBl3, 'PPN'), 'renderThermal TIDAK render apa pun kalau breakdown kosong');
 
-// ── renderPdf() coverage untuk Biaya Lainnya ──────────────
-// Reuse: $trxBiayaLainnya (biaya_lainnya=7000, label='Biaya Packing Kardus')
+// ── renderPdf() coverage — sama persis, multi-baris ──────────
 $pdfBl = StrukGenerator::renderPdf($trxBiayaLainnya, [], $tmpl, null, null, $outlet, 'a4');
-ok(str_contains($pdfBl, 'Biaya Packing Kardus'), 'renderPdf tampilkan label biaya_lainnya custom');
-ok(str_contains($pdfBl, 'Rp 7.000') || str_contains($pdfBl, 'Rp 7,000'), 'renderPdf tampilkan nominal biaya_lainnya');
+ok(str_contains($pdfBl, 'Biaya Admin'), 'renderPdf tampilkan baris pertama breakdown');
+ok(str_contains($pdfBl, 'PPN 2%'), 'renderPdf tampilkan baris kedua breakdown');
 
-// Reuse: $trxNoBiayaLainnya (biaya_lainnya=0)
 $pdfBl4 = StrukGenerator::renderPdf($trxNoBiayaLainnya, [], $tmpl, null, null, $outlet, 'a4');
-ok(!str_contains($pdfBl4, 'Biaya Lainnya') && !str_contains($pdfBl4, 'Biaya Packing'), 'renderPdf TIDAK render baris biaya_lainnya kalau 0');
+ok(!str_contains($pdfBl4, 'Biaya Admin') && !str_contains($pdfBl4, 'PPN'), 'renderPdf TIDAK render apa pun kalau breakdown kosong');
 
 echo "\nAll tests passed.\n";
