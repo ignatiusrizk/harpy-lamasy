@@ -43,16 +43,32 @@ class NotaFormatter
         // Resolve semua token kecuali {COUNTER} dulu
         $rendered = self::renderTokens($format, $prefix, $tanggal, $cfg['outlet_kode']);
 
-        // Hitung counter berikutnya berdasarkan POLA TANPA {COUNTER}
-        // (LIKE pattern dgn % di tempat counter)
+        // Hitung counter berikutnya dari NOMOR TERBESAR yang sudah pernah
+        // dipakai (bukan COUNT(*) — COUNT rusak begitu ada baris di tengah
+        // yang dihapus [order dibatalkan/data test dibersihkan], karena
+        // hitungan jadi lebih kecil dari nomor tertinggi yg sudah terpakai
+        // → generate nomor yg BENTROK lagi dgn yg sudah ada (23000 duplicate
+        // key), gagal terus tanpa pernah "sembuh" sendiri krn percobaan yg
+        // gagal tidak mengubah COUNT. Insiden nyata: 2026-08-31.
         $likePattern = self::renderTokens($format, $prefix, $tanggal, $cfg['outlet_kode'], true);
         $db = Database::get();
-        $cnt = $db->prepare(
-            "SELECT COUNT(*) FROM hl_transaksi
+        $rowsSt = $db->prepare(
+            "SELECT no_order FROM hl_transaksi
               WHERE tenant_id=? AND outlet_id=? AND no_order LIKE ?"
         );
-        $cnt->execute([$tenantId, $outletId, $likePattern]);
-        $next = (int)$cnt->fetchColumn() + 1;
+        $rowsSt->execute([$tenantId, $outletId, $likePattern]);
+
+        [$before, $after] = array_pad(explode('%', $likePattern, 2), 2, '');
+        $maxNum = 0;
+        foreach ($rowsSt->fetchAll(PDO::FETCH_COLUMN) as $existingNoOrder) {
+            $len = strlen($existingNoOrder) - strlen($before) - strlen($after);
+            if ($len <= 0) continue;
+            $middle = substr($existingNoOrder, strlen($before), $len);
+            if (ctype_digit($middle)) {
+                $maxNum = max($maxNum, (int)$middle);
+            }
+        }
+        $next = $maxNum + 1;
 
         // Replace counter token di rendered (placeholder ###COUNTER:N###)
         return preg_replace_callback(
