@@ -633,15 +633,24 @@ if ($action) {
                 $kasKet      = ($isPaid ? 'Pembayaran LUNAS' : 'DP/Uang Muka') .
                                ' order ' . $no . ' - ' . $nama_pel . ' via ' . $metodeLabel;
 
-                TenantQuery::insert('hl_kas', [
-                    'tanggal'    => $tanggal,
-                    'tipe'       => 'masuk',
-                    'kategori'   => 'Penjualan Laundry',
-                    'keterangan' => $kasKet,
-                    'jumlah'     => $dp,
-                    'ref_order'  => $no,
-                    'created_by' => $user['id'],
-                ]);
+                // Kas cuma catat pendapatan yg BENERAN masuk — kalau kasir terima cash
+                // lebih dari yg dibutuhkan (customer bayar pas-pasan lembar besar), sisanya
+                // adalah KEMBALIAN ke customer, bukan pendapatan. $depositPay sudah tercatat
+                // ledger deposit sendiri (saat top-up), jadi porsi yg jadi "jatah" $dp di sini
+                // cuma sisa kebutuhan SETELAH dikurangi deposit yg kepakai.
+                $kasJumlah = min($dp, max(0, $total - $depositPay));
+
+                if ($kasJumlah > 0) {
+                    TenantQuery::insert('hl_kas', [
+                        'tanggal'    => $tanggal,
+                        'tipe'       => 'masuk',
+                        'kategori'   => 'Penjualan Laundry',
+                        'keterangan' => $kasKet,
+                        'jumlah'     => $kasJumlah,
+                        'ref_order'  => $no,
+                        'created_by' => $user['id'],
+                    ]);
+                }
             }
 
             // Auto-INSERT antar row kalau cb_antar dicentang (bypass perm antar.manage — kasir authorized via pos.create)

@@ -541,13 +541,20 @@ if ($action) {
         $row = TenantQuery::rawOne("SELECT total, dp, sisa_bayar FROM hl_transaksi WHERE tenant_id=? AND outlet_id=? AND id=?", [$tid, $oid, $id]);
         if (!$row) { echo json_encode(['error'=>'Order tidak ditemukan']); exit; }
 
-        $new_dp   = floatval($row['dp']) + $jumlah;
-        $new_sisa = floatval($row['total']) - $new_dp;
+        $old_dp = floatval($row['dp']);
+        // Clamp new_dp ke total order — kalau kasir terima cash lebih dari yg
+        // dibutuhkan (mis. lunasin sisa Rp20rb tapi customer kasih Rp50rb), sisanya
+        // KEMBALIAN, bukan bagian dari dp/pendapatan order ini.
+        $new_dp   = min(floatval($row['total']), $old_dp + $jumlah);
         if ($tipe === 'lunas') {
-            $new_dp   = floatval($row['total']);
-            $new_sisa = 0;
+            $new_dp = floatval($row['total']);
         }
+        $new_sisa = max(0, floatval($row['total']) - $new_dp);
         $new_status = $new_sisa <= 0 ? 'lunas' : ($new_dp > 0 ? 'dp' : 'belum_bayar');
+        // Jumlah yg BENERAN nambah ke dp order (dipakai sbg nominal kas, bukan $jumlah
+        // mentah) — supaya kelebihan cash yg jadi kembalian tidak ikut tercatat sbg
+        // pendapatan di Kas.
+        $kasJumlahBayar = max(0, $new_dp - $old_dp);
 
         // Upload bukti bayar — validasi MIME type (bukan hanya ekstensi)
         $bukti_path = null;
@@ -607,16 +614,19 @@ if ($action) {
                       ' - ' . ($trx['nama_pelanggan'] ?? '') .
                       ' via ' . $metodeLabel;
 
-            // AUTO INSERT KAS MASUK
-            TenantQuery::insert('hl_kas', [
-                'tanggal'    => date('Y-m-d'),
-                'tipe'       => 'masuk',
-                'kategori'   => 'Pelunasan Order',
-                'keterangan' => $kasKet,
-                'jumlah'     => $jumlah,
-                'ref_order'  => $trx['no_order'] ?? null,
-                'created_by' => $user['id'],
-            ]);
+            // AUTO INSERT KAS MASUK — hanya kalau ada nominal yg beneran nambah dp
+            // (lihat $kasJumlahBayar: dicap ke total, kelebihan cash = kembalian)
+            if ($kasJumlahBayar > 0) {
+                TenantQuery::insert('hl_kas', [
+                    'tanggal'    => date('Y-m-d'),
+                    'tipe'       => 'masuk',
+                    'kategori'   => 'Pelunasan Order',
+                    'keterangan' => $kasKet,
+                    'jumlah'     => $kasJumlahBayar,
+                    'ref_order'  => $trx['no_order'] ?? null,
+                    'created_by' => $user['id'],
+                ]);
+            }
 
             logAudit('payment', 'orders', 'Pembayaran order: ' . ($trx['no_order'] ?? '') . ', Rp ' . number_format($jumlah, 0, ',', '.'));
             $db->commit();
