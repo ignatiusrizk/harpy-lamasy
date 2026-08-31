@@ -123,7 +123,7 @@ if (($_GET['action'] ?? '') === 'generate' && $_SERVER['REQUEST_METHOD'] === 'PO
     // ── Orders + Items ─────
     if (in_array('orders', $tables, true)) {
         $sql = "SELECT id, no_order, tanggal, outlet_id, pelanggan_id, nama_pelanggan, telepon,
-                       subtotal, diskon, biaya_tambahan, biaya_lainnya, biaya_lainnya_label, total,
+                       subtotal, diskon, biaya_tambahan, biaya_lainnya, total,
                        dp, sisa_bayar, metode_bayar,
                        tipe_order, status_bayar, status_proses, estimasi_selesai, catatan,
                        parfum, created_by, created_at, updated_at
