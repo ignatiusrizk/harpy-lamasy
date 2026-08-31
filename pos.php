@@ -3,6 +3,7 @@ $activePage = 'pos';
 define('ROOT', __DIR__);
 require_once ROOT . '/middleware/tenant_guard.php';
 require_once ROOT . '/core/Loyalty.php';
+require_once ROOT . '/core/BiayaLainnyaTier.php';
 require_once ROOT . '/core/ExpressTier.php';
 require_once ROOT . '/core/MemberTier.php';
 require_once ROOT . '/core/NotaFormatter.php';
@@ -37,6 +38,10 @@ if ($action) {
     // Filter outlet: tier global (NULL) + tier khusus outlet ini.
     if ($action === 'express_tiers') {
         echo json_encode(['tiers' => ExpressTier::forTenant($tid, $oid)]); exit;
+    }
+
+    if ($action === 'biaya_lainnya_tiers') {
+        echo json_encode(['tiers' => BiayaLainnyaTier::activeForTenant($tid, $oid)]); exit;
     }
 
     // Load parfum list utk outlet ini (global + outlet-specific)
@@ -450,10 +455,10 @@ if ($action) {
                 }
             }
 
-            // Biaya Lainnya — manual bebas, TIDAK di-recompute server (beda dgn
-            // biaya_tambahan yg wajib re-derive dari tier demi anti-tamper).
-            $biayaLainnya      = max(0, floatval($data['biaya_lainnya'] ?? 0));
-            $biayaLainnyaLabel = substr(trim(strip_tags($data['biaya_lainnya_label'] ?? '')), 0, 100);
+            // Biaya Lainnya — dihitung server dari tier aktif (anti-tamper,
+            // sama seperti biaya_tambahan), TIDAK dipercaya dari klien sama sekali.
+            $biayaLainnyaRows  = BiayaLainnyaTier::calcAppliedFees($tid, $oid, $subtotal);
+            $biayaLainnya      = array_sum(array_column($biayaLainnyaRows, 'nominal'));
 
             // Total final (subtotal − diskon − member_diskon + biaya tambahan + biaya lainnya)
             $diskonTotal = $diskon + $redeemValue + $memberDiskon;
@@ -487,7 +492,7 @@ if ($action) {
             try { $db->query("SELECT parfum FROM hl_transaksi LIMIT 1"); }
             catch (Throwable) { $hasParfum = false; }
             $hasBiayaLainnya = true;
-            try { $db->query("SELECT biaya_lainnya, biaya_lainnya_label FROM hl_transaksi LIMIT 1"); }
+            try { $db->query("SELECT biaya_lainnya FROM hl_transaksi LIMIT 1"); }
             catch (Throwable) { $hasBiayaLainnya = false; }
 
             // Foto masuk (optional, dari upload_foto endpoint)
@@ -542,8 +547,7 @@ if ($action) {
             if ($hasBiayaTipe) { $cols[] = 'biaya_tambahan'; $vals[] = $biayaTbh;
                                  $cols[] = 'tipe_order';     $vals[] = $tipeOrder; }
             if ($hasBiayaLainnya && $biayaLainnya > 0) {
-                $cols[] = 'biaya_lainnya';       $vals[] = $biayaLainnya;
-                $cols[] = 'biaya_lainnya_label'; $vals[] = $biayaLainnyaLabel ?: null;
+                $cols[] = 'biaya_lainnya'; $vals[] = $biayaLainnya;
             }
             if ($hasTierNama)  { $cols[] = 'express_tier_nama'; $vals[] = $expressTierNama; }
             if ($hasParfum && $parfum !== '') { $cols[] = 'parfum'; $vals[] = $parfum; }
@@ -558,6 +562,16 @@ if ($action) {
             $stmt = $db->prepare("INSERT INTO hl_transaksi (".implode(',', $cols).") VALUES ($placeholders)");
             $stmt->execute($vals);
             $trx_id = $db->lastInsertId();
+
+            // Simpan breakdown Biaya Lainnya (snapshot per baris)
+            if (!empty($biayaLainnyaRows)) {
+                $blStmt = $db->prepare(
+                    "INSERT INTO hl_transaksi_biaya_lainnya (tenant_id, outlet_id, transaksi_id, nama, nominal) VALUES (?,?,?,?,?)"
+                );
+                foreach ($biayaLainnyaRows as $row) {
+                    $blStmt->execute([$tid, $oid, $trx_id, $row['nama'], $row['nominal']]);
+                }
+            }
 
             // Simpan foto_masuk kalau kolom & data ada
             if ($hasFotoMasuk && $fotoMasuk !== '') {
@@ -1542,20 +1556,10 @@ function posSelectPrinter(p) {
               <input type="hidden" id="f_tipe_order" value="reguler"/>
             </div>
 
-            <!-- Biaya Lainnya — manual, bebas apa saja, owner yang isi -->
-            <div class="form-row cols3">
-              <div class="form-group" style="flex:2">
-                <label>Biaya Lainnya (opsional)</label>
-                <input type="text" id="f_biaya_lainnya_label" maxlength="100"
-                  placeholder="cth: Biaya Packing Kardus" oninput="recalc()"/>
-              </div>
-              <div class="form-group">
-                <label>Nominal (Rp)</label>
-                <input type="number" id="f_biaya_lainnya" value="0" min="0"
-                  onfocus="this.value=''"
-                  onblur="if(this.value===''){ this.value='0'; recalc(); }"
-                  oninput="lmCleanNum(this,false);recalc()"/>
-              </div>
+            <!-- Biaya Lainnya — OTOMATIS dari tier aktif, read-only, tidak ada input -->
+            <div class="form-group" id="biayaLainnyaBox" style="display:none;background:#E0F2FE;border:1px solid #BAE6FD;border-radius:8px;padding:10px 14px;margin-bottom:8px;font-size:12.5px;color:#0C4A6E;">
+              💰 <strong>Biaya Lainnya (otomatis):</strong>
+              <div id="biayaLainnyaBreakdown" style="margin-top:4px"></div>
             </div>
 
             <div class="form-row cols3">
@@ -1794,6 +1798,7 @@ document.addEventListener('DOMContentLoaded', () => {
   loadLayanan();
   loadEstimasiHint();
   loadGlobalTiers();
+  loadBiayaLainnyaTiers();
   loadParfumList();
 
   // ── KEYBOARD SHORTCUTS ──
@@ -2035,6 +2040,7 @@ function renderItems() {
 // Express Tier — GLOBAL list, dipilih PER ITEM
 // ────────────────────────────────────────────────────
 let availableTiers = [];  // {nama_tier, estimasi_jam, tipe_biaya, nilai_biaya}
+let availableBiayaLainnyaTiers = [];  // {nama, tipe_biaya, nilai_biaya} — auto-apply, bukan pilihan
 
 // Load parfum dynamic (per outlet)
 async function loadParfumList() {
@@ -2057,6 +2063,29 @@ async function loadGlobalTiers() {
   } catch(e) {
     availableTiers = [];
   }
+}
+
+async function loadBiayaLainnyaTiers() {
+  try {
+    const r = await fetch('pos.php?action=biaya_lainnya_tiers');
+    const d = await r.json();
+    availableBiayaLainnyaTiers = d.tiers || [];
+  } catch(e) {
+    availableBiayaLainnyaTiers = [];
+  }
+  recalc(); // breakdown baru siap, langsung refresh tampilan
+}
+
+// Hitung breakdown biaya lainnya dari tier aktif thd subtotal — CUMA
+// utk PREVIEW tampilan, nilai final tetap dihitung ulang di server
+// (anti-tamper, lihat action=save).
+function calcBiayaLainnyaBreakdown(subtotal) {
+  return availableBiayaLainnyaTiers
+    .map(t => ({
+      nama: t.nama,
+      nominal: t.tipe_biaya === 'flat' ? parseFloat(t.nilai_biaya) : Math.round(subtotal * (parseFloat(t.nilai_biaya) / 100)),
+    }))
+    .filter(x => x.nominal > 0);
 }
 
 // Pas user pilih/ubah tier di satu baris item → recompute fee item + total
@@ -2170,8 +2199,23 @@ function recalc() {
   }
 
   // Total = subtotal − diskon − redeem + biaya tambahan + biaya lainnya
-  const biayaLainnya = parseFloat(document.getElementById('f_biaya_lainnya')?.value) || 0;
+  const biayaLainnyaRows = calcBiayaLainnyaBreakdown(subtotal);
+  const biayaLainnya = biayaLainnyaRows.reduce((s, r) => s + r.nominal, 0);
   const total    = Math.max(subtotal - diskon - redeemValue + biayaTbh + biayaLainnya, 0);
+
+  // Render box breakdown (read-only, cuma display)
+  const blBox = document.getElementById('biayaLainnyaBox');
+  const blBreakdownEl = document.getElementById('biayaLainnyaBreakdown');
+  if (blBox && blBreakdownEl) {
+    if (biayaLainnyaRows.length > 0) {
+      blBox.style.display = 'block';
+      blBreakdownEl.innerHTML = biayaLainnyaRows.map(r =>
+        `<div>${r.nama}: Rp ${r.nominal.toLocaleString('id-ID')}</div>`
+      ).join('');
+    } else {
+      blBox.style.display = 'none';
+    }
+  }
   const dp       = parseFloat(document.getElementById('f_dp').value)||0;
   // Bayar pakai saldo deposit (clamped by balance & total-dp)
   let depositPay = 0;
@@ -2671,8 +2715,6 @@ async function doSaveTransaksi() {
     diskon:         document.getElementById('f_diskon').value,
     biaya_tambahan: document.getElementById('f_biaya_tambahan').value,
     tipe_order:     document.getElementById('f_tipe_order').value,
-    biaya_lainnya:       document.getElementById('f_biaya_lainnya').value,
-    biaya_lainnya_label: document.getElementById('f_biaya_lainnya_label').value,
     parfum:         document.getElementById('f_parfum')?.value || '',
     redeem_poin:    (LOYALTY.enabled && currentPelangganId) ? (parseInt(document.getElementById('f_redeem_poin')?.value||0)||0) : 0,
     reward_id:      parseInt(document.getElementById('f_reward_id')?.value||0)||0,
