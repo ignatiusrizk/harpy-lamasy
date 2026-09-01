@@ -194,11 +194,10 @@ if ($action) {
             }
             echo json_encode(['success'=>true]);
         } catch (Throwable $e) {
-            $msg = $e->getMessage();
-            if (str_contains($msg, 'Duplicate')) {
+            if (str_contains($e->getMessage(), 'Duplicate')) {
                 echo json_encode(['error'=>'Nama "'.$nama.'" sudah dipakai (kategori tipe lain)']);
             } else {
-                echo json_encode(['error'=>'Gagal simpan: '.$msg]);
+                apiErr($e);
             }
         }
         exit;
