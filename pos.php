@@ -964,6 +964,12 @@ textarea{resize:vertical;min-height:64px}
 /* LAYANAN GRID (quick pick) */
 .layanan-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:12px;max-height:220px;overflow-y:auto}
 .layanan-btn{padding:8px 6px;background:var(--off);border:1.5px solid rgba(27,45,90,.1);border-radius:8px;cursor:pointer;text-align:left;transition:all .2s;font-family:var(--font)}
+.addon-row td{padding:4px 8px 10px !important;background:transparent}
+.addon-btn{display:inline-block;margin:2px 6px 2px 0;padding:5px 10px;font-size:11.5px;font-weight:600;
+  border:1.5px dashed var(--teal-d);border-radius:100px;background:rgba(53,232,213,.08);color:var(--teal-d);
+  cursor:pointer;font-family:var(--font)}
+.addon-btn:disabled{opacity:.4;cursor:default;text-decoration:line-through}
+.req.opt{color:var(--gray);font-weight:400;font-size:11px}
 .layanan-btn:hover{border-color:var(--teal);background:var(--teal-bg)}
 .layanan-btn .l-nama{font-size:12px;font-weight:600;color:var(--navy);line-height:1.3}
 .layanan-btn .l-harga{font-size:11px;color:var(--teal-d);font-family:var(--mono);margin-top:2px}
@@ -1318,7 +1324,7 @@ function posSelectPrinter(p) {
           </div>
           <div class="form-row">
             <div class="form-group">
-              <label>No. Telepon <span class="req">*</span></label>
+              <label>No. Telepon <span class="req" id="f_telepon_req">*</span></label>
               <input type="tel" id="f_telepon" placeholder="08xxxxxxxxxx"/>
             </div>
             <div class="form-group">
@@ -2031,6 +2037,7 @@ function renderItems() {
     tbody.innerHTML = '';
     empty.style.display = 'block';
     document.getElementById('btnSave').disabled = true;
+    updateTeleponOptionalUI();
     return;
   }
   empty.style.display = 'none';
@@ -2064,7 +2071,27 @@ function renderItems() {
       <td data-lbl="Catatan"><input class="item-input" value="${esc(item.catatan_item)}" placeholder="..."
         style="width:72px" oninput="items[${i}].catatan_item=this.value"/></td>
       <td><button class="btn-remove" onclick="removeItem(${i})">✕ Hapus</button></td>
-    </tr>`).join('');
+    </tr>${isSelfServiceKat(item.kategori) ? renderAddonRow(i) : ''}`).join('');
+  updateTeleponOptionalUI();
+}
+
+function renderAddonRow(i) {
+  const addons = (layananAll || []).filter(l => isAddonKat(l.kategori));
+  if (!addons.length) return '';
+  const btns = addons.map(a => {
+    const already = items.some(it => it.layanan_id == a.id);
+    return `<button type="button" class="addon-btn" ${already ? 'disabled' : ''}
+      onclick="addLayananItem(${a.id},'${esc(a.nama)}','${a.satuan}',${a.harga})">
+      + ${esc(a.nama)} Rp${Math.round(a.harga).toLocaleString('id-ID')}</button>`;
+  }).join('');
+  return `<tr class="addon-row"><td colspan="8">${btns}</td></tr>`;
+}
+
+function updateTeleponOptionalUI(){
+  const req = document.getElementById('f_telepon_req');
+  if (!req) return;
+  if (cartHasSelfService()) { req.textContent = '(opsional)'; req.classList.add('opt'); }
+  else { req.textContent = '*'; req.classList.remove('opt'); }
 }
 
 // ────────────────────────────────────────────────────
