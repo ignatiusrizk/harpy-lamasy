@@ -342,6 +342,7 @@ tfoot td.td-jumlah{font-family:var(--mono)}
           <div class="hl-card-title" id="formTitle">➕ Input Kas</div>
           <button type="button" class="hl-btn hl-btn-outline hl-btn-sm" onclick="document.getElementById('strukFile').click()">📸 Scan Struk</button>
           <input type="file" id="strukFile" accept="image/*" capture="environment" style="display:none" onchange="kasStrukUpload(this)">
+          <button type="button" class="hl-btn hl-btn-outline hl-btn-sm" onclick="openKasKategoriModal()">⚙️ Kelola Kategori</button>
         </div>
         <div style="padding:18px">
           <div class="tipe-toggle">
@@ -368,22 +369,6 @@ tfoot td.td-jumlah{font-family:var(--mono)}
             <!-- Native select disembunyikan: tetap sumber nilai (server & kode existing baca .value/.options) -->
             <select id="f_kategori" style="display:none">
               <option value="">— Pilih Kategori —</option>
-              <optgroup label="💚 Kas Masuk" id="optMasuk">
-                <option value="Penjualan Laundry">💰 Penjualan Laundry</option>
-                <option value="Pelunasan Order">🧾 Pelunasan Order</option>
-                <option value="Pendapatan Lain">➕ Pendapatan Lain</option>
-                <option value="Modal">🏦 Modal</option>
-              </optgroup>
-              <optgroup label="❤️ Kas Keluar" id="optKeluar">
-                <option value="Gaji Karyawan">👥 Gaji Karyawan</option>
-                <option value="Bahan & Deterjen">🧴 Bahan &amp; Deterjen</option>
-                <option value="Listrik & Air">⚡ Listrik &amp; Air</option>
-                <option value="Sewa Tempat">🏠 Sewa Tempat</option>
-                <option value="Peralatan">🔧 Peralatan</option>
-                <option value="Transportasi">🛵 Transportasi</option>
-                <option value="Operasional">⚙️ Operasional</option>
-                <option value="Lain-lain">📌 Lain-lain</option>
-              </optgroup>
             </select>
             <!-- Dropdown kustom (panel bisa distyle penuh, bukan native OS) -->
             <div class="kat-dd" id="katDD">
@@ -486,6 +471,58 @@ tfoot td.td-jumlah{font-family:var(--mono)}
   </div>
 </div>
 
+<!-- MODAL KELOLA KATEGORI KAS -->
+<div id="kasKategoriModal" class="hl-modal" style="display:none">
+  <div class="hl-modal-box" style="max-width:520px">
+    <h3 style="margin:0 0 6px">⚙️ Kelola Kategori Kas</h3>
+    <p style="margin:0 0 14px;font-size:12px;color:#6b7280">
+      Berlaku sama untuk semua outlet. Mengedit/menghapus kategori TIDAK
+      mengubah transaksi lama yang sudah pakai nama kategori itu.
+    </p>
+
+    <div id="kasKategoriList" style="margin-bottom:16px;max-height:280px;overflow-y:auto"></div>
+
+    <div style="background:#F9FAFB;border:1px solid #E5E7EB;border-radius:10px;padding:14px;">
+      <div style="font-weight:600;font-size:13px;color:#374151;margin-bottom:10px" id="kkFormTitle">➕ Tambah Kategori Baru</div>
+      <input type="hidden" id="kk_id" value=""/>
+      <div class="hl-form-row">
+        <div class="hl-form-group" style="flex:2">
+          <label class="hl-label">Nama Kategori <span class="req">*</span></label>
+          <input type="text" id="kk_nama" class="hl-input" placeholder="Sewa Tempat" maxlength="50"/>
+        </div>
+        <div class="hl-form-group">
+          <label class="hl-label">Emoji</label>
+          <input type="text" id="kk_emoji" class="hl-input" placeholder="🏠" maxlength="10"/>
+        </div>
+      </div>
+      <div class="hl-form-row">
+        <div class="hl-form-group">
+          <label class="hl-label">Tipe</label>
+          <select id="kk_tipe" class="hl-input">
+            <option value="masuk">💚 Kas Masuk</option>
+            <option value="keluar">❤️ Kas Keluar</option>
+          </select>
+        </div>
+        <div class="hl-form-group">
+          <label class="hl-label">Status</label>
+          <select id="kk_active" class="hl-input">
+            <option value="1">✅ Aktif</option>
+            <option value="0">⏸️ Nonaktif</option>
+          </select>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:10px">
+        <button class="hl-btn hl-btn-outline hl-btn-sm" onclick="resetKasKategoriForm()">↺ Reset</button>
+        <button class="hl-btn hl-btn-primary hl-btn-sm" onclick="saveKasKategori()">💾 Simpan</button>
+      </div>
+    </div>
+
+    <div style="display:flex;justify-content:flex-end;margin-top:14px">
+      <button class="hl-btn hl-btn-outline" onclick="closeKasKategoriModal()">Tutup</button>
+    </div>
+  </div>
+</div>
+
 <script>
 const CAN_CREATE_KAS = <?= hasPermission('kas.create') ? 'true' : 'false' ?>;
 const CAN_DEL_KAS    = <?= hasPermission('kas.delete') ? 'true' : 'false' ?>;
@@ -499,20 +536,143 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('f_tanggal').value = localDateStr();
   setRange('bulan');
   loadSaldoHarian();
+  loadKasKategori();
 });
 
-// ── Dropdown kategori kustom ──
-const KAT = {
-  masuk: [
-    {v:'Penjualan Laundry', e:'💰'}, {v:'Pelunasan Order', e:'🧾'},
-    {v:'Pendapatan Lain', e:'➕'},  {v:'Modal', e:'🏦'},
-  ],
-  keluar: [
-    {v:'Gaji Karyawan', e:'👥'}, {v:'Bahan & Deterjen', e:'🧴'}, {v:'Listrik & Air', e:'⚡'},
-    {v:'Sewa Tempat', e:'🏠'},   {v:'Peralatan', e:'🔧'},        {v:'Transportasi', e:'🛵'},
-    {v:'Operasional', e:'⚙️'},   {v:'Lain-lain', e:'📌'},
-  ],
-};
+// ── Dropdown kategori — diisi dari server (hl_kas_kategori), bukan
+// hardcode lagi. loadKasKategori() dipanggil sekali saat halaman ready.
+let KAT = { masuk: [], keluar: [] };
+let currentKasKategoriRows = []; // dipakai modal Kelola Kategori
+
+async function loadKasKategori() {
+  try {
+    const r = await fetch('kas.php?action=kas_kategori_list');
+    const d = await r.json();
+    currentKasKategoriRows = (d.kategori || []).filter(k => k.is_active == 1);
+    KAT = { masuk: [], keluar: [] };
+    currentKasKategoriRows.forEach(k => {
+      KAT[k.tipe].push({ v: k.nama, e: k.emoji || '🏷️' });
+    });
+  } catch (e) {
+    KAT = { masuk: [], keluar: [] };
+  }
+  buildKategoriSelect();
+  katSync();
+}
+
+// Isi ulang <select id="f_kategori"> dari KAT (dipanggil tiap loadKasKategori selesai)
+function buildKategoriSelect() {
+  const sel = document.getElementById('f_kategori');
+  const cur = sel.value;
+  let html = '<option value="">— Pilih Kategori —</option>';
+  html += '<optgroup label="💚 Kas Masuk" id="optMasuk">';
+  KAT.masuk.forEach(o => { html += `<option value="${katEsc(o.v)}">${o.e} ${katEsc(o.v)}</option>`; });
+  html += '</optgroup><optgroup label="❤️ Kas Keluar" id="optKeluar">';
+  KAT.keluar.forEach(o => { html += `<option value="${katEsc(o.v)}">${o.e} ${katEsc(o.v)}</option>`; });
+  html += '</optgroup>';
+  sel.innerHTML = html;
+  sel.value = cur; // pertahankan pilihan kalau masih ada di daftar baru
+}
+
+// ── Modal Kelola Kategori Kas ──
+function openKasKategoriModal() {
+  resetKasKategoriForm();
+  document.getElementById('kasKategoriModal').style.display = 'flex';
+  renderKasKategoriList();
+}
+function closeKasKategoriModal() {
+  document.getElementById('kasKategoriModal').style.display = 'none';
+}
+
+function renderKasKategoriList() {
+  const list = document.getElementById('kasKategoriList');
+  if (!currentKasKategoriRows.length) {
+    list.innerHTML = '<div style="text-align:center;padding:20px;color:var(--gray);font-size:13px">Belum ada kategori.</div>';
+    return;
+  }
+  list.innerHTML = `
+    <table style="width:100%;border-collapse:collapse;font-size:13px">
+      <thead><tr style="background:#F3F4F6;text-align:left">
+        <th style="padding:8px">Nama</th><th style="padding:8px">Tipe</th>
+        <th style="padding:8px">Status</th><th style="padding:8px;text-align:right">Aksi</th>
+      </tr></thead>
+      <tbody>
+        ${currentKasKategoriRows.map(k => `
+          <tr style="border-bottom:1px solid #F3F4F6">
+            <td style="padding:8px">${k.emoji || '🏷️'} <strong>${katEsc(k.nama)}</strong></td>
+            <td style="padding:8px">${k.tipe === 'masuk' ? '💚 Masuk' : '❤️ Keluar'}</td>
+            <td style="padding:8px">${k.is_active == 1 ? '<span style="color:#059669">● Aktif</span>' : '<span style="color:#9CA3AF">○ Off</span>'}</td>
+            <td style="padding:8px;text-align:right;white-space:nowrap">
+              <button class="hl-btn hl-btn-outline hl-btn-sm" onclick="editKasKategori(${k.id})">✏️</button>
+              <button class="hl-btn hl-btn-danger hl-btn-sm" onclick="deleteKasKategori(${k.id})">🗑️</button>
+            </td>
+          </tr>`).join('')}
+      </tbody>
+    </table>`;
+}
+
+function resetKasKategoriForm() {
+  document.getElementById('kk_id').value = '';
+  document.getElementById('kk_nama').value = '';
+  document.getElementById('kk_emoji').value = '';
+  document.getElementById('kk_tipe').value = 'masuk';
+  document.getElementById('kk_active').value = '1';
+  document.getElementById('kkFormTitle').textContent = '➕ Tambah Kategori Baru';
+}
+
+function editKasKategori(id) {
+  const k = currentKasKategoriRows.find(x => x.id == id);
+  if (!k) return;
+  document.getElementById('kk_id').value = k.id;
+  document.getElementById('kk_nama').value = k.nama;
+  document.getElementById('kk_emoji').value = k.emoji || '';
+  document.getElementById('kk_tipe').value = k.tipe;
+  document.getElementById('kk_active').value = String(k.is_active);
+  document.getElementById('kkFormTitle').textContent = '✏️ Edit Kategori';
+}
+
+async function saveKasKategori() {
+  const payload = {
+    id:        document.getElementById('kk_id').value || null,
+    nama:      document.getElementById('kk_nama').value.trim(),
+    tipe:      document.getElementById('kk_tipe').value,
+    emoji:     document.getElementById('kk_emoji').value.trim(),
+    is_active: parseInt(document.getElementById('kk_active').value),
+  };
+  if (!payload.nama) { showToast('Nama kategori wajib diisi', 'error'); return; }
+  try {
+    const r = await fetch('kas.php?action=kas_kategori_save', {
+      method: 'POST', headers: {'Content-Type':'application/json','X-CSRF-Token':csrfToken()},
+      body: JSON.stringify(payload)
+    });
+    const d = await r.json();
+    if (d.error) { showToast(d.error, 'error'); return; }
+    showToast('Kategori tersimpan', 'success');
+    resetKasKategoriForm();
+    await loadKasKategori();
+    renderKasKategoriList();
+  } catch (e) {
+    showToast('Gagal simpan: ' + e.message, 'error');
+  }
+}
+
+async function deleteKasKategori(id) {
+  if (!await lmConfirm('Hapus kategori ini? Transaksi lama yang sudah pakai kategori ini TIDAK ikut terhapus/berubah.')) return;
+  try {
+    const r = await fetch('kas.php?action=kas_kategori_delete', {
+      method: 'POST', headers: {'Content-Type':'application/json','X-CSRF-Token':csrfToken()},
+      body: JSON.stringify({id})
+    });
+    const d = await r.json();
+    if (d.error) { showToast(d.error, 'error'); return; }
+    showToast('Kategori dihapus', 'success');
+    await loadKasKategori();
+    renderKasKategoriList();
+  } catch (e) {
+    showToast('Gagal hapus: ' + e.message, 'error');
+  }
+}
+
 function katEsc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;'); }
 function katMeta(v){ for (const t of ['masuk','keluar']) { const o = KAT[t].find(x=>x.v===v); if (o) return o; } return null; }
 // Sinkron label trigger dari nilai hidden select (sumber kebenaran)
