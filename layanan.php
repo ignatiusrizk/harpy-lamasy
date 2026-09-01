@@ -809,7 +809,7 @@ async function savePresets() {
 }
 
 // Rekomendasi kategori umum laundry — digabung dengan kategori yang sudah dipakai
-const KAT_REKOMENDASI = ['Kiloan','Satuan','Express','Setrika','Cuci Kering','Dry Clean','Khusus','Sepatu','Bedcover & Selimut','Karpet & Gorden','B2B / Korporat'];
+const KAT_REKOMENDASI = ['Kiloan','Satuan','Express','Setrika','Cuci Kering','Dry Clean','Khusus','Sepatu','Bedcover & Selimut','Karpet & Gorden','B2B / Korporat','Self-Service','Tambahan Self-Service'];
 
 async function loadLayanan() {
   const r = await fetch('layanan.php?action=list');
