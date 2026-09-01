@@ -128,6 +128,7 @@ class TenantProvisioner
             $roleIds = self::seedRoles($db, $tenantId);
             self::seedPermissions($db, $tenantId, $roleIds);
             FinancialCalculator::seedCoa($db, $tenantId);
+            self::seedKasKategori($db, $tenantId);
             return $roleIds['owner'] ?? null;
         } catch (Throwable $e) {
             error_log('[seedDefaultsForTenant] ' . $e->getMessage());
@@ -307,6 +308,42 @@ class TenantProvisioner
         );
         foreach ($layanan as [$nama, $kat, $sat, $harga, $urut]) {
             $stmt->execute([$tenantId, $outletId, $nama, $kat, $sat, $harga, $urut]);
+        }
+    }
+
+    // ── Internal: seed kategori kas default ───────────
+    // hl_kas_kategori TIDAK punya outlet_id (tenant-wide), jadi cukup butuh
+    // tenantId doang, mirip seedRoles/seedPermissions. 12 baris ini PERSIS
+    // sama dgn seed migration Task 1 (migrations/2026-08-31-kas-kategori.sql)
+    // supaya dropdown Kas tenant baru identik dgn tenant lama.
+    public static function seedKasKategori(PDO $db, int $tenantId): void
+    {
+        // Guard idempotency: skip kalau tenant ini sudah punya kategori kas.
+        $check = $db->prepare("SELECT COUNT(*) FROM hl_kas_kategori WHERE tenant_id=?");
+        $check->execute([$tenantId]);
+        if ((int)$check->fetchColumn() > 0) return;
+
+        $kategori = [
+            // [nama, tipe, emoji, urutan]
+            ['Penjualan Laundry', 'masuk',  '💰', 1],
+            ['Pelunasan Order',   'masuk',  '🧾', 2],
+            ['Pendapatan Lain',   'masuk',  '➕', 3],
+            ['Modal',             'masuk',  '🏦', 4],
+            ['Gaji Karyawan',     'keluar', '👥', 5],
+            ['Bahan & Deterjen',  'keluar', '🧴', 6],
+            ['Listrik & Air',     'keluar', '⚡', 7],
+            ['Sewa Tempat',       'keluar', '🏠', 8],
+            ['Peralatan',         'keluar', '🔧', 9],
+            ['Transportasi',      'keluar', '🛵', 10],
+            ['Operasional',       'keluar', '⚙️', 11],
+            ['Lain-lain',         'keluar', '📌', 12],
+        ];
+
+        $stmt = $db->prepare(
+            "INSERT INTO hl_kas_kategori (tenant_id, nama, tipe, emoji, urutan) VALUES (?,?,?,?,?)"
+        );
+        foreach ($kategori as [$nama, $tipe, $emoji, $urut]) {
+            $stmt->execute([$tenantId, $nama, $tipe, $emoji, $urut]);
         }
     }
 
