@@ -158,20 +158,50 @@ if ($action) {
         $d      = json_decode(file_get_contents('php://input'), true);
         $nama   = substr(trim(strip_tags((string)($d['nama'] ?? ''))), 0, 50);
         $tipe   = in_array($d['tipe'] ?? '', ['masuk','keluar'], true) ? $d['tipe'] : 'masuk';
-        $emoji  = substr(trim((string)($d['emoji'] ?? '')), 0, 10) ?: null;
+        $emoji  = substr(trim(strip_tags((string)($d['emoji'] ?? ''))), 0, 10) ?: null;
         $aktif  = (int)($d['is_active'] ?? 1) ? 1 : 0;
         $urut   = (int)($d['urutan'] ?? 0);
+        $katId  = !empty($d['id']) ? (int)$d['id'] : null;
         if ($nama === '') {
             echo json_encode(['error'=>'Nama kategori wajib diisi']); exit;
         }
 
-        $data = ['nama'=>$nama, 'tipe'=>$tipe, 'emoji'=>$emoji, 'is_active'=>$aktif, 'urutan'=>$urut];
-        if (!empty($d['id'])) {
-            TenantQuery::update('hl_kas_kategori', $data, 'id = ?', [(int)$d['id']]);
-        } else {
-            TenantQuery::insert('hl_kas_kategori', $data);
+        // Cek manual nama duplikat lintas-tipe — nama yg sama tidak boleh
+        // dipakai di tipe manapun kalau sudah ada di tipe lain (kalau tidak,
+        // nama itu jadi TIDAK BISA DIPAKAI di kedua tipe krn validasi ini
+        // akan selalu nemu row dgn nama sama di tipe lawan). UNIQUE index DB
+        // (tenant_id, nama, tipe) sendirian tidak cukup krn tipe ikut jadi
+        // bagian key-nya — cuma cegah duplikat EXACT nama+tipe yg sama.
+        $dupSql    = "SELECT id, tipe FROM hl_kas_kategori WHERE tenant_id = ? AND nama = ?";
+        $dupParams = [$tid, $nama];
+        if ($katId !== null) {
+            $dupSql      .= " AND id != ?";
+            $dupParams[]  = $katId;
         }
-        echo json_encode(['success'=>true]); exit;
+        $dup = TenantQuery::rawOne($dupSql, $dupParams);
+        if ($dup) {
+            $tipeExisting = $dup['tipe'] === 'masuk' ? 'Kas Masuk' : 'Kas Keluar';
+            echo json_encode(['error'=>'Nama "'.$nama.'" sudah dipakai (kategori '.$tipeExisting.')']);
+            exit;
+        }
+
+        $data = ['nama'=>$nama, 'tipe'=>$tipe, 'emoji'=>$emoji, 'is_active'=>$aktif, 'urutan'=>$urut];
+        try {
+            if ($katId !== null) {
+                TenantQuery::update('hl_kas_kategori', $data, 'id = ?', [$katId]);
+            } else {
+                TenantQuery::insert('hl_kas_kategori', $data);
+            }
+            echo json_encode(['success'=>true]);
+        } catch (Throwable $e) {
+            $msg = $e->getMessage();
+            if (str_contains($msg, 'Duplicate')) {
+                echo json_encode(['error'=>'Nama "'.$nama.'" sudah dipakai (kategori tipe lain)']);
+            } else {
+                echo json_encode(['error'=>'Gagal simpan: '.$msg]);
+            }
+        }
+        exit;
     }
 
     if ($action === 'kas_kategori_delete' && $_SERVER['REQUEST_METHOD']==='POST') {
@@ -510,6 +540,10 @@ tfoot td.td-jumlah{font-family:var(--mono)}
             <option value="0">⏸️ Nonaktif</option>
           </select>
         </div>
+        <div class="hl-form-group">
+          <label class="hl-label">Urutan</label>
+          <input type="number" id="kk_urutan" class="hl-input" placeholder="0" min="0" step="1"/>
+        </div>
       </div>
       <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:10px">
         <button class="hl-btn hl-btn-outline hl-btn-sm" onclick="resetKasKategoriForm()">↺ Reset</button>
@@ -568,9 +602,9 @@ function buildKategoriSelect() {
   const cur = sel.value;
   let html = '<option value="">— Pilih Kategori —</option>';
   html += '<optgroup label="💚 Kas Masuk" id="optMasuk">';
-  KAT.masuk.forEach(o => { html += `<option value="${katEsc(o.v)}">${o.e} ${katEsc(o.v)}</option>`; });
+  KAT.masuk.forEach(o => { html += `<option value="${katEsc(o.v)}">${katEsc(o.e)} ${katEsc(o.v)}</option>`; });
   html += '</optgroup><optgroup label="❤️ Kas Keluar" id="optKeluar">';
-  KAT.keluar.forEach(o => { html += `<option value="${katEsc(o.v)}">${o.e} ${katEsc(o.v)}</option>`; });
+  KAT.keluar.forEach(o => { html += `<option value="${katEsc(o.v)}">${katEsc(o.e)} ${katEsc(o.v)}</option>`; });
   html += '</optgroup>';
   sel.innerHTML = html;
   sel.value = cur; // pertahankan pilihan kalau masih ada di daftar baru
@@ -601,7 +635,7 @@ function renderKasKategoriList() {
       <tbody>
         ${currentKasKategoriRows.map(k => `
           <tr style="border-bottom:1px solid #F3F4F6">
-            <td style="padding:8px">${k.emoji || '🏷️'} <strong>${katEsc(k.nama)}</strong></td>
+            <td style="padding:8px">${katEsc(k.emoji || '🏷️')} <strong>${katEsc(k.nama)}</strong></td>
             <td style="padding:8px">${k.tipe === 'masuk' ? '💚 Masuk' : '❤️ Keluar'}</td>
             <td style="padding:8px">${k.is_active == 1 ? '<span style="color:#059669">● Aktif</span>' : '<span style="color:#9CA3AF">○ Off</span>'}</td>
             <td style="padding:8px;text-align:right;white-space:nowrap">
@@ -619,6 +653,7 @@ function resetKasKategoriForm() {
   document.getElementById('kk_emoji').value = '';
   document.getElementById('kk_tipe').value = 'masuk';
   document.getElementById('kk_active').value = '1';
+  document.getElementById('kk_urutan').value = '0';
   document.getElementById('kkFormTitle').textContent = '➕ Tambah Kategori Baru';
 }
 
@@ -630,6 +665,7 @@ function editKasKategori(id) {
   document.getElementById('kk_emoji').value = k.emoji || '';
   document.getElementById('kk_tipe').value = k.tipe;
   document.getElementById('kk_active').value = String(k.is_active);
+  document.getElementById('kk_urutan').value = k.urutan ?? 0;
   document.getElementById('kkFormTitle').textContent = '✏️ Edit Kategori';
 }
 
@@ -640,6 +676,7 @@ async function saveKasKategori() {
     tipe:      document.getElementById('kk_tipe').value,
     emoji:     document.getElementById('kk_emoji').value.trim(),
     is_active: parseInt(document.getElementById('kk_active').value),
+    urutan:    parseInt(document.getElementById('kk_urutan').value) || 0,
   };
   if (!payload.nama) { showToast('Nama kategori wajib diisi', 'error'); return; }
   try {
@@ -692,7 +729,7 @@ function katRender(tipe){
   KAT[tipe].forEach(o => {
     const act = o.v === cur ? ' is-active' : '';
     html += '<button type="button" class="kat-opt' + act + '" data-v="' + katEsc(o.v) + '">'
-          + '<span class="kat-e">' + o.e + '</span><span class="kat-l">' + katEsc(o.v) + '</span>'
+          + '<span class="kat-e">' + katEsc(o.e) + '</span><span class="kat-l">' + katEsc(o.v) + '</span>'
           + (act ? '<span class="kat-ck">✓</span>' : '') + '</button>';
   });
   document.getElementById('katPanel').innerHTML = html;
