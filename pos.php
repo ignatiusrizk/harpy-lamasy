@@ -26,6 +26,28 @@ if ($action) {
     // GET layanan list
     $oid = TenantResolver::outletId();
 
+    // Normalisasi kategori layanan (lowercase, strip non-alfanumerik) — dipakai
+    // buat cocokkan kategori "Self-Service"/"self service"/dst secara toleran.
+    // Salinan JS-nya: fungsi lmNormKat() di inline <script> bawah halaman.
+    function lmNormKat(string $s): string {
+        return preg_replace('/[^a-z0-9]/', '', strtolower($s));
+    }
+
+    // Order dianggap self-service kalau MINIMAL 1 item di keranjang layanan_id-nya
+    // merujuk ke hl_layanan berkategori "Self-Service" (normalized match).
+    function lmIsSelfServiceOrder(array $items, int $tid): bool {
+        $db = Database::get();
+        $stmt = $db->prepare("SELECT kategori FROM hl_layanan WHERE id=? AND tenant_id=? LIMIT 1");
+        foreach ($items as $item) {
+            $lid = (int)($item['layanan_id'] ?? 0);
+            if ($lid <= 0) continue;
+            $stmt->execute([$lid, $tid]);
+            $kat = $stmt->fetchColumn();
+            if ($kat && lmNormKat($kat) === 'selfservice') return true;
+        }
+        return false;
+    }
+
     if ($action === 'get_layanan') {
         $rows = TenantQuery::raw(
             "SELECT * FROM hl_layanan WHERE tenant_id=? AND outlet_id=? AND is_active=1 ORDER BY kategori,urutan",
@@ -257,7 +279,9 @@ if ($action) {
         }
 
         if (!$nama_pel) { echo json_encode(['error'=>'Nama pelanggan wajib diisi']); exit; }
-        if (!$telepon)  { echo json_encode(['error'=>'Nomor telepon wajib diisi']); exit; }
+        if (!$telepon && !lmIsSelfServiceOrder($items, $tid)) {
+            echo json_encode(['error'=>'Nomor telepon wajib diisi']); exit;
+        }
 
         // Validasi items
         foreach ($items as $item) {
