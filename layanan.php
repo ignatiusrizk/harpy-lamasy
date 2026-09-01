@@ -541,7 +541,7 @@ input:checked + .toggle-slider::before{transform:translateX(18px)}
       </div>
       <div class="hl-form-row">
         <div class="hl-form-group">
-          <label class="hl-label">Urutan Tampil <span style="color:var(--gray);font-weight:400;font-size:11px;">— khusus antar layanan yang di-pin</span></label>
+          <label class="hl-label">Urutan Tampil <span style="color:var(--gray);font-weight:400;font-size:11px;">— urutan di halaman ini &amp; antar layanan yang di-pin di POS</span></label>
           <input type="number" id="f_urutan" class="hl-input" value="0" min="0"/>
         </div>
         <div class="hl-form-group" style="display:flex;align-items:flex-end;padding-bottom:8px">
