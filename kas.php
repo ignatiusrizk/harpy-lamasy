@@ -66,12 +66,16 @@ if ($action) {
         ];
 
         // Kategori tak boleh milik tipe lawan (mis. 'Penjualan Laundry' pada kas keluar)
-        // — nilai custom/legacy di luar dua daftar ini tetap diterima.
-        $_katMasuk  = ['Penjualan Laundry','Pelunasan Order','Pendapatan Lain','Modal'];
-        $_katKeluar = ['Gaji Karyawan','Bahan & Deterjen','Listrik & Air','Sewa Tempat','Peralatan','Transportasi','Operasional','Lain-lain'];
-        if (($data['tipe'] === 'masuk'  && in_array($data['kategori'], $_katKeluar, true)) ||
-            ($data['tipe'] === 'keluar' && in_array($data['kategori'], $_katMasuk,  true))) {
-            echo json_encode(['error' => 'Kategori tidak sesuai tipe kas (masuk/keluar)']); exit;
+        // — nilai custom/legacy yang TIDAK terdaftar di hl_kas_kategori tetap diterima.
+        if ($data['kategori'] !== '') {
+            $tipeLawan = $data['tipe'] === 'masuk' ? 'keluar' : 'masuk';
+            $konflik = TenantQuery::rawOne(
+                "SELECT id FROM hl_kas_kategori WHERE tenant_id=? AND nama=? AND tipe=?",
+                [$tid, $data['kategori'], $tipeLawan]
+            );
+            if ($konflik) {
+                echo json_encode(['error' => 'Kategori tidak sesuai tipe kas (masuk/keluar)']); exit;
+            }
         }
 
         if (!empty($d['id'])) {
@@ -134,6 +138,48 @@ if ($action) {
     if ($action === 'kategori') {
         $rows = TenantQuery::raw("SELECT DISTINCT kategori FROM hl_kas WHERE tenant_id=? AND outlet_id=? ORDER BY kategori", [$tid, $oid]);
         echo json_encode(array_column($rows, 'kategori')); exit;
+    }
+
+    // ── Kelola Kategori Kas (tenant-wide, TANPA outlet_id) ──
+    if ($action === 'kas_kategori_list') {
+        $rows = TenantQuery::raw(
+            "SELECT id, nama, tipe, emoji, is_active, urutan
+               FROM hl_kas_kategori
+              WHERE tenant_id=?
+              ORDER BY tipe ASC, urutan ASC, id ASC",
+            [$tid]
+        );
+        echo json_encode(['kategori' => $rows]); exit;
+    }
+
+    if ($action === 'kas_kategori_save' && $_SERVER['REQUEST_METHOD']==='POST') {
+        if (!hasPermission('kas.create')) { echo json_encode(['error'=>'Akses ditolak']); exit; }
+        verifyCsrf();
+        $d      = json_decode(file_get_contents('php://input'), true);
+        $nama   = substr(trim(strip_tags((string)($d['nama'] ?? ''))), 0, 50);
+        $tipe   = in_array($d['tipe'] ?? '', ['masuk','keluar'], true) ? $d['tipe'] : 'masuk';
+        $emoji  = substr(trim((string)($d['emoji'] ?? '')), 0, 10) ?: null;
+        $aktif  = (int)($d['is_active'] ?? 1) ? 1 : 0;
+        $urut   = (int)($d['urutan'] ?? 0);
+        if ($nama === '') {
+            echo json_encode(['error'=>'Nama kategori wajib diisi']); exit;
+        }
+
+        $data = ['nama'=>$nama, 'tipe'=>$tipe, 'emoji'=>$emoji, 'is_active'=>$aktif, 'urutan'=>$urut];
+        if (!empty($d['id'])) {
+            TenantQuery::update('hl_kas_kategori', $data, 'id = ?', [(int)$d['id']]);
+        } else {
+            TenantQuery::insert('hl_kas_kategori', $data);
+        }
+        echo json_encode(['success'=>true]); exit;
+    }
+
+    if ($action === 'kas_kategori_delete' && $_SERVER['REQUEST_METHOD']==='POST') {
+        if (!hasPermission('kas.delete')) { echo json_encode(['error'=>'Akses ditolak']); exit; }
+        verifyCsrf();
+        $d = json_decode(file_get_contents('php://input'), true);
+        TenantQuery::delete('hl_kas_kategori', 'id = ?', [(int)($d['id'] ?? 0)]);
+        echo json_encode(['success'=>true]); exit;
     }
 
     echo json_encode(['error'=>'Unknown']); exit;
