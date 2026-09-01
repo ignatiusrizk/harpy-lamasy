@@ -548,10 +548,12 @@ async function loadKasKategori() {
   try {
     const r = await fetch('kas.php?action=kas_kategori_list');
     const d = await r.json();
-    currentKasKategoriRows = (d.kategori || []).filter(k => k.is_active == 1);
+    currentKasKategoriRows = d.kategori || [];
     KAT = { masuk: [], keluar: [] };
     currentKasKategoriRows.forEach(k => {
-      KAT[k.tipe].push({ v: k.nama, e: k.emoji || '🏷️' });
+      if (k.is_active == 1) {
+        KAT[k.tipe].push({ v: k.nama, e: k.emoji || '🏷️' });
+      }
     });
   } catch (e) {
     KAT = { masuk: [], keluar: [] };
