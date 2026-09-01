@@ -35,13 +35,13 @@ if ($action) {
 
     // Order dianggap self-service kalau MINIMAL 1 item di keranjang layanan_id-nya
     // merujuk ke hl_layanan berkategori "Self-Service" (normalized match).
-    function lmIsSelfServiceOrder(array $items, int $tid): bool {
+    function lmIsSelfServiceOrder(array $items, int $tid, int $oid): bool {
         $db = Database::get();
-        $stmt = $db->prepare("SELECT kategori FROM hl_layanan WHERE id=? AND tenant_id=? LIMIT 1");
+        $stmt = $db->prepare("SELECT kategori FROM hl_layanan WHERE id=? AND tenant_id=? AND outlet_id=? LIMIT 1");
         foreach ($items as $item) {
             $lid = (int)($item['layanan_id'] ?? 0);
             if ($lid <= 0) continue;
-            $stmt->execute([$lid, $tid]);
+            $stmt->execute([$lid, $tid, $oid]);
             $kat = $stmt->fetchColumn();
             if ($kat && lmNormKat($kat) === 'selfservice') return true;
         }
@@ -279,7 +279,7 @@ if ($action) {
         }
 
         if (!$nama_pel) { echo json_encode(['error'=>'Nama pelanggan wajib diisi']); exit; }
-        if (!$telepon && !lmIsSelfServiceOrder($items, $tid)) {
+        if (!$telepon && !lmIsSelfServiceOrder($items, $tid, $oid)) {
             echo json_encode(['error'=>'Nomor telepon wajib diisi']); exit;
         }
 
@@ -328,7 +328,7 @@ if ($action) {
             // Lookup by tenant_id + telepon (HP unique per tenant)
             $pel_id        = null;
             $isNewPelanggan = false;
-            if ($nama_pel) {
+            if ($nama_pel && $telepon !== '') {
                 $pelRow = TenantQuery::rawOne(
                     "SELECT id FROM hl_pelanggan WHERE tenant_id=? AND telepon=? LIMIT 1",
                     [$tid, $telepon]
@@ -2042,6 +2042,10 @@ function renderItems() {
   }
   empty.style.display = 'none';
   document.getElementById('btnSave').disabled = false;
+  // Strip tombol addon cuma dirender SEKALI, setelah item Self-Service TERAKHIR di keranjang
+  // (bukan setelah tiap item Self-Service) — hindari duplikat kalau cart punya 2+ item Self-Service.
+  let lastSelfServiceIdx = -1;
+  items.forEach((it, idx) => { if (isSelfServiceKat(it.kategori)) lastSelfServiceIdx = idx; });
   tbody.innerHTML = items.map((item, i) => `
     <tr>
       <td data-lbl="Layanan"><input class="item-input" style="width:100%;min-width:120px" value="${esc(item.nama_layanan)}"
@@ -2071,11 +2075,11 @@ function renderItems() {
       <td data-lbl="Catatan"><input class="item-input" value="${esc(item.catatan_item)}" placeholder="..."
         style="width:72px" oninput="items[${i}].catatan_item=this.value"/></td>
       <td><button class="btn-remove" onclick="removeItem(${i})">✕ Hapus</button></td>
-    </tr>${isSelfServiceKat(item.kategori) ? renderAddonRow(i) : ''}`).join('');
+    </tr>${i === lastSelfServiceIdx ? renderAddonRow() : ''}`).join('');
   updateTeleponOptionalUI();
 }
 
-function renderAddonRow(i) {
+function renderAddonRow() {
   const addons = (layananAll || []).filter(l => isAddonKat(l.kategori));
   if (!addons.length) return '';
   const btns = addons.map(a => {
