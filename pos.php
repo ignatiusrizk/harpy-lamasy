@@ -1932,12 +1932,12 @@ function addLayananItem(id, nama, satuan, harga) {
   if (existWithNote >= 0) {
     lmConfirm(nama + ' sudah ada di daftar (dengan catatan). Tambahkan sebagai baris baru?', {icon:'📋', okText:'Tambah baris', cancelText:'Tidak jadi'}).then(function(ok){
       if (!ok) return;
-      items.push({layanan_id:id,nama_layanan:nama,satuan,jumlah:defaultJml,harga_satuan:harga,catatan_item:'',express_tier_nama:null,biaya_express:0,qty_minimum:qMin,estimasi_jam:estJam});
+      items.push({layanan_id:id,nama_layanan:nama,satuan,jumlah:defaultJml,harga_satuan:harga,catatan_item:'',express_tier_nama:null,biaya_express:0,qty_minimum:qMin,estimasi_jam:estJam,kategori:lyn.kategori||''});
       renderItems(); recalc(); applyMaxEstimasi();
     });
     return;
   }
-  items.push({layanan_id:id,nama_layanan:nama,satuan,jumlah:defaultJml,harga_satuan:harga,catatan_item:'',express_tier_nama:null,biaya_express:0,qty_minimum:qMin,estimasi_jam:estJam});
+  items.push({layanan_id:id,nama_layanan:nama,satuan,jumlah:defaultJml,harga_satuan:harga,catatan_item:'',express_tier_nama:null,biaya_express:0,qty_minimum:qMin,estimasi_jam:estJam,kategori:lyn.kategori||''});
   renderItems(); recalc(); applyMaxEstimasi();
   if (qMin > 0) showToast(`Min. order ${nama}: ${qMin} ${satuan}`, 'info');
 }
@@ -2016,6 +2016,13 @@ function lmCleanNum(el, decimal){
   if (cleaned !== v) el.value = cleaned;
   return cleaned;
 }
+
+// Deteksi kategori Self-Service / Tambahan Self-Service — normalize toleran
+// (samakan persis dgn lmNormKat() versi PHP di action=save).
+function lmNormKat(s){ return String(s||'').toLowerCase().replace(/[^a-z0-9]/g,''); }
+function isSelfServiceKat(kat){ return lmNormKat(kat) === 'selfservice'; }
+function isAddonKat(kat){ return lmNormKat(kat) === 'tambahanselfservice'; }
+function cartHasSelfService(){ return items.some(i => isSelfServiceKat(i.kategori)); }
 
 function renderItems() {
   const tbody = document.getElementById('itemsBody');
@@ -2602,7 +2609,7 @@ function saveTransaksi() {
   const nama = document.getElementById('f_nama').value.trim();
   const telp = document.getElementById('f_telepon').value.trim();
   if (!nama) { showToast('⚠️ Nama pelanggan wajib diisi', 'error'); return; }
-  if (!telp) { showToast('⚠️ Nomor HP wajib diisi', 'error'); return; }
+  if (!telp && !cartHasSelfService()) { showToast('⚠️ Nomor HP wajib diisi', 'error'); return; }
   if (!items.length) { showToast('⚠️ Minimal 1 item layanan', 'error'); return; }
 
   // Tampilkan konfirmasi modal dulu
@@ -2637,7 +2644,7 @@ async function doSaveTransaksi() {
   closeCfm();
   const nama = document.getElementById('f_nama').value.trim();
   const telp = document.getElementById('f_telepon').value.trim();
-  if (!nama || !telp || !items.length) return;
+  if (!nama || (!telp && !cartHasSelfService()) || !items.length) return;
 
   const btn = document.getElementById('btnSave');
   btn.disabled=true; btn.textContent='⏳ Menyimpan...';
