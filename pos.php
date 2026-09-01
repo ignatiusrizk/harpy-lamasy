@@ -50,8 +50,22 @@ if ($action) {
 
     if ($action === 'get_layanan') {
         $rows = TenantQuery::raw(
-            "SELECT * FROM hl_layanan WHERE tenant_id=? AND outlet_id=? AND is_active=1 ORDER BY kategori,urutan",
-            [$tid, $oid]
+            "SELECT l.*,
+                    COALESCE(freq.cnt, 0) AS freq_30d
+             FROM hl_layanan l
+             LEFT JOIN (
+                 SELECT ti.layanan_id, COUNT(*) AS cnt
+                   FROM hl_transaksi_item ti
+                   JOIN hl_transaksi t ON t.id = ti.transaksi_id AND t.tenant_id = ti.tenant_id
+                  WHERE ti.tenant_id = ? AND t.outlet_id = ? AND ti.layanan_id IS NOT NULL
+                    AND t.tanggal >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+                  GROUP BY ti.layanan_id
+             ) freq ON freq.layanan_id = l.id
+             WHERE l.tenant_id=? AND l.outlet_id=? AND l.is_active=1
+             ORDER BY l.is_pinned DESC,
+                      (CASE WHEN l.is_pinned=1 THEN l.urutan ELSE 0 END) ASC,
+                      freq_30d DESC, l.nama ASC",
+            [$tid, $oid, $tid, $oid]
         );
         echo json_encode($rows); exit;
     }
