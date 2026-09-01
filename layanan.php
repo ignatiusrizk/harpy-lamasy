@@ -85,6 +85,7 @@ if ($action) {
                 'estimasi_jam'=> $estimasiJam,
                 'is_active'=> intval($d['is_active'] ?? 1),
                 'urutan'   => intval($d['urutan'] ?? 0),
+                'is_pinned'=> intval($d['is_pinned'] ?? 0) ? 1 : 0,
             ], 'id = ?', [intval($d['id'])]);
         } else {
             $newId = TenantQuery::insert('hl_layanan', [
@@ -95,6 +96,7 @@ if ($action) {
                 'qty_minimum' => max(0, floatval($d['qty_minimum'] ?? 0)),
                 'estimasi_jam'=> $estimasiJam,
                 'urutan'   => intval($d['urutan'] ?? 0),
+                'is_pinned'=> intval($d['is_pinned'] ?? 0) ? 1 : 0,
                 'is_active'=> 1,
             ]);
         }
@@ -539,8 +541,14 @@ input:checked + .toggle-slider::before{transform:translateX(18px)}
       </div>
       <div class="hl-form-row">
         <div class="hl-form-group">
-          <label class="hl-label">Urutan Tampil</label>
+          <label class="hl-label">Urutan Tampil <span style="color:var(--gray);font-weight:400;font-size:11px;">— khusus antar layanan yang di-pin</span></label>
           <input type="number" id="f_urutan" class="hl-input" value="0" min="0"/>
+        </div>
+        <div class="hl-form-group" style="display:flex;align-items:flex-end;padding-bottom:8px">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:14px">
+            <input type="checkbox" id="f_pinned" style="width:18px;height:18px"/>
+            📌 Pin ke atas di POS
+          </label>
         </div>
       </div>
       <div class="hl-form-group">
@@ -868,9 +876,10 @@ function renderLayanan() {
       if (!actions)   actions  = `<span style="font-size:11px;color:var(--gray)">view only</span>`;
     }
 
+    const pinBadge = l.is_pinned==1 ? `<span class="lyn-badge" title="Pin ke atas di POS">📌</span>` : '';
     return `
     <div class="layanan-card ${l.is_active==1?'':'inactive'}">
-      <div class="layanan-kat">${esc(l.kategori||'Umum')} ${badge} ${ovTag}</div>
+      <div class="layanan-kat">${esc(l.kategori||'Umum')} ${badge} ${ovTag} ${pinBadge}</div>
       <div class="layanan-nama">${esc(l.nama)}</div>
       <div class="layanan-harga">Rp ${grpRibu(l.harga)} <span style="font-size:13px;font-weight:400;color:var(--gray)">/ ${l.satuan}</span></div>
       ${canAdjust ? `<div style="font-size:11px;color:var(--gray);margin-top:2px">Default HQ: Rp ${grpRibu(l.harga_default)}</div>` : ''}
@@ -893,6 +902,7 @@ function openModal(data=null) {
   document.getElementById('f_harga').value  = data?.harga ? grpRibu(data.harga) : '';
   document.getElementById('f_qty_min').value = parseFloat(data?.qty_minimum) || 0;
   document.getElementById('f_urutan').value = data?.urutan || 0;
+  document.getElementById('f_pinned').checked = !!(data?.is_pinned == 1);
   document.getElementById('f_active').value = data?.is_active ?? 1;
   lmSyncSel('f_satuan','f_active');
   document.getElementById('modalTitle').textContent = data ? '✏️ Edit Layanan' : '➕ Tambah Layanan';
@@ -1256,6 +1266,7 @@ async function saveLayanan() {
       satuan:      document.getElementById('f_satuan').value,
       qty_minimum: document.getElementById('f_qty_min').value,
       urutan:      document.getElementById('f_urutan').value,
+      is_pinned:   document.getElementById('f_pinned').checked ? 1 : 0,
       is_active:   document.getElementById('f_active').value,
     })
   });
