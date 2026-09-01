@@ -252,6 +252,24 @@ select.hl-input{
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%231CC4B2' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
   background-repeat:no-repeat;background-position:right 13px center;
 }
+/* #kasStrukModal & #kasKategoriModal pakai class .hl-modal LANGSUNG sbg
+   root (bukan di-nest dalam .hl-modal-overlay seperti modal lain), jadi
+   .hl-modal globalnya (cuma styling kartu, position:static) gak pernah
+   bikin dia fixed-overlay — mengubah style.display='flex' jadi flex
+   biasa yg nempel di alur dokumen (jauh di bawah viewport), BUKAN modal
+   yg muncul di tengah. Root-nya di sini dijadikan overlay fixed sendiri,
+   .hl-modal-box di dalamnya jadi kartu putihnya. */
+#kasStrukModal, #kasKategoriModal{
+  position:fixed; inset:0; z-index:200;
+  background:rgba(15,28,58,.6); backdrop-filter:blur(4px);
+  align-items:center; justify-content:center; padding:20px;
+  width:auto; max-height:none; overflow:visible; box-shadow:none; border-radius:0;
+}
+#kasStrukModal .hl-modal-box, #kasKategoriModal .hl-modal-box{
+  background:var(--white); border-radius:var(--r-lg); box-shadow:var(--shadow-lg);
+  width:100%; max-height:90vh; overflow-y:auto; padding:20px;
+}
+
 /* ── Dropdown kategori KUSTOM (panel sendiri, bukan native OS) ── */
 .kat-dd{position:relative}
 .kat-trigger{
