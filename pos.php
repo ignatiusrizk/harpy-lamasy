@@ -968,7 +968,6 @@ textarea{resize:vertical;min-height:64px}
 .addon-btn{display:inline-block;margin:2px 6px 2px 0;padding:5px 10px;font-size:11.5px;font-weight:600;
   border:1.5px dashed var(--teal-d);border-radius:100px;background:rgba(53,232,213,.08);color:var(--teal-d);
   cursor:pointer;font-family:var(--font)}
-.addon-btn:disabled{opacity:.4;cursor:default;text-decoration:line-through}
 .req.opt{color:var(--gray);font-weight:400;font-size:11px}
 .layanan-btn:hover{border-color:var(--teal);background:var(--teal-bg)}
 .layanan-btn .l-nama{font-size:12px;font-weight:600;color:var(--navy);line-height:1.3}
@@ -2083,10 +2082,11 @@ function renderAddonRow() {
   const addons = (layananAll || []).filter(l => isAddonKat(l.kategori));
   if (!addons.length) return '';
   const btns = addons.map(a => {
-    const already = items.some(it => it.layanan_id == a.id);
-    return `<button type="button" class="addon-btn" ${already ? 'disabled' : ''}
+    const inCart = items.find(it => it.layanan_id == a.id);
+    const qtyBadge = inCart ? ` (${inCart.jumlah}×)` : '';
+    return `<button type="button" class="addon-btn"
       onclick="addLayananItem(${a.id},'${esc(a.nama)}','${a.satuan}',${a.harga})">
-      + ${esc(a.nama)} Rp${Math.round(a.harga).toLocaleString('id-ID')}</button>`;
+      + ${esc(a.nama)} Rp${Math.round(a.harga).toLocaleString('id-ID')}${qtyBadge}</button>`;
   }).join('');
   return `<tr class="addon-row"><td colspan="8">${btns}</td></tr>`;
 }
