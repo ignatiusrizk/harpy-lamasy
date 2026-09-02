@@ -25,7 +25,7 @@ if ($action) {
         catch (Throwable) { $hasNotaCols = false; }
 
         $cols = "id, tenant_id, nama_outlet, slug, kota, telepon, status, is_main";
-        if ($hasNotaCols) $cols .= ", nota_prefix, nota_format, label_size, antar_mode, absensi_selfie_wajib, absensi_geofence_aktif, absensi_lat, absensi_lng, absensi_radius_m, pickup_reminder_days";
+        if ($hasNotaCols) $cols .= ", nota_prefix, nota_format, telepon_wajib, label_size, antar_mode, absensi_selfie_wajib, absensi_geofence_aktif, absensi_lat, absensi_lng, absensi_radius_m, pickup_reminder_days";
         // Scope: di mode OUTLET tampilkan HANYA outlet aktif (jangan bocorkan config
         // outlet lain). Fallback semua outlet hanya kalau tak ada konteks outlet (HQ).
         $oid = TenantResolver::outletId();
@@ -58,6 +58,7 @@ if ($action) {
         $format = substr(trim((string)($d['nota_format'] ?? '')), 0, 60) ?: '{PREFIX}{YYMMDD}-{COUNTER:3}';
         $labelSize = in_array(($d['label_size'] ?? '80'), ['58','80'], true) ? $d['label_size'] : '80';
         $antarMode = in_array(($d['antar_mode'] ?? 'free'), ['free','zona'], true) ? $d['antar_mode'] : 'free';
+        $teleponWajib = !empty($d['telepon_wajib']) ? 1 : 0;
 
         // Validasi: format harus punya minimal {COUNTER} (kalau gak ada,
         // nota_no duplicate setiap hari)
@@ -67,8 +68,8 @@ if ($action) {
         }
 
         try {
-            $st = $db->prepare("UPDATE outlets SET nota_prefix=?, nota_format=?, label_size=?, antar_mode=? WHERE id=? AND tenant_id=?");
-            $st->execute([$prefix, $format, $labelSize, $antarMode, $id, $tid]);
+            $st = $db->prepare("UPDATE outlets SET nota_prefix=?, nota_format=?, label_size=?, antar_mode=?, telepon_wajib=? WHERE id=? AND tenant_id=?");
+            $st->execute([$prefix, $format, $labelSize, $antarMode, $teleponWajib, $id, $tid]);
             logAudit('update', 'outlet', "Update outlet #$id: prefix=$prefix, format=$format, label=$labelSize");
             echo json_encode(['success'=>true]);
         } catch (Throwable $e) {
@@ -357,6 +358,16 @@ if ($action) {
         Preview nota baru: <strong style="font-family:var(--mono,monospace);font-size:16px;color:#0F7B6C" id="livePreview">HL-260607-001</strong>
       </div>
 
+      <!-- No. HP Pelanggan wajib/opsional -->
+      <div style="margin:8px 0 14px;padding:12px 14px;background:#F9FAFB;border:1px solid #E5E7EB;border-radius:8px">
+        <label style="display:flex;gap:8px;align-items:center">
+          <input type="checkbox" id="ed_telepon_wajib"> 📞 Wajib isi No. HP pelanggan sebelum order bisa disimpan di POS
+        </label>
+        <div style="font-size:11px;color:var(--gray);margin-top:6px;margin-left:24px">
+          Default OPSIONAL — pelanggan yg gak bawa/gak punya HP tetap bisa dilayani. Nyalakan ini kalau mau staff selalu kumpulin No. HP tiap order.
+        </div>
+      </div>
+
       <!-- Label printer size -->
       <div style="margin:8px 0 14px;padding:12px 14px;background:#F9FAFB;border:1px solid #E5E7EB;border-radius:8px">
         <label class="hl-label" style="margin-bottom:8px">🏷 Ukuran Printer Label (stiker produksi)</label>
@@ -507,6 +518,7 @@ function openEdit(r) {
   document.getElementById('edOutletNama').textContent = r.nama_outlet;
   document.getElementById('ed_prefix').value = r.nota_prefix || 'HL-';
   document.getElementById('ed_format').value = r.nota_format || '{PREFIX}{YYMMDD}-{COUNTER:3}';
+  document.getElementById('ed_telepon_wajib').checked = !!r.telepon_wajib;
   const lsz = (r.label_size === '58') ? '58' : '80';
   document.querySelectorAll('input[name=ed_label_size]').forEach(el => el.checked = (el.value === lsz));
   const am = (r.antar_mode === 'zona') ? 'zona' : 'free';
@@ -562,9 +574,10 @@ async function saveFormat() {
   const prefix = document.getElementById('ed_prefix').value;
   const format = document.getElementById('ed_format').value;
   const labelSize = document.querySelector('input[name=ed_label_size]:checked')?.value || '80';
+  const teleponWajib = document.getElementById('ed_telepon_wajib').checked;
   const r = await fetch('?action=save', {
     method:'POST', headers:{'Content-Type':'application/json','X-CSRF-Token':csrfToken()},
-    body: JSON.stringify({id, nota_prefix: prefix, nota_format: format, label_size: labelSize, antar_mode: document.querySelector('input[name=ed_antar_mode]:checked')?.value || 'free'})
+    body: JSON.stringify({id, nota_prefix: prefix, nota_format: format, label_size: labelSize, telepon_wajib: teleponWajib, antar_mode: document.querySelector('input[name=ed_antar_mode]:checked')?.value || 'free'})
   });
   const d = await r.json();
   if (d.error) { showToast(d.error, 'error'); return; }

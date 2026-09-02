@@ -271,8 +271,16 @@ if ($action) {
         }
 
         if (!$nama_pel) { echo json_encode(['error'=>'Nama pelanggan wajib diisi']); exit; }
-        // Nomor HP opsional (pelanggan tanpa HP tetap bisa dilayani) — kalau kosong,
-        // order tetap tersimpan, cuma skip link/create hl_pelanggan (lihat blok upsert di bawah).
+        // Nomor HP wajib/opsional diatur per-outlet (Outlet & Nota Settings,
+        // kolom outlets.telepon_wajib, default 0/opsional). Kalau opsional &
+        // kosong, order tetap tersimpan, cuma skip link/create hl_pelanggan
+        // (lihat blok upsert di bawah).
+        if (!$telepon) {
+            $wajibRow = TenantQuery::rawOne("SELECT telepon_wajib FROM outlets WHERE id=? AND tenant_id=?", [$oid, $tid]);
+            if (!empty($wajibRow['telepon_wajib'])) {
+                echo json_encode(['error'=>'Nomor HP pelanggan wajib diisi (diaktifkan di Outlet & Nota Settings)']); exit;
+            }
+        }
 
         // Validasi items
         foreach ($items as $item) {
@@ -856,9 +864,9 @@ if ($action) {
 // Load QRIS data untuk modal display di payment method
 $_pageOid = TenantResolver::outletId();
 $_pageTid = TenantResolver::id();
-$outletQrisStmt = Database::get()->prepare("SELECT qris_image, qris_label, label_size FROM outlets WHERE id=? AND tenant_id=?");
+$outletQrisStmt = Database::get()->prepare("SELECT qris_image, qris_label, label_size, telepon_wajib FROM outlets WHERE id=? AND tenant_id=?");
 $outletQrisStmt->execute([$_pageOid, $_pageTid]);
-$outletQrisData = $outletQrisStmt->fetch(PDO::FETCH_ASSOC) ?: ['qris_image'=>null, 'qris_label'=>null];
+$outletQrisData = $outletQrisStmt->fetch(PDO::FETCH_ASSOC) ?: ['qris_image'=>null, 'qris_label'=>null, 'telepon_wajib'=>0];
 
 // Load active payment methods untuk dropdown render
 $methodsStmt = Database::get()->prepare("
@@ -1314,7 +1322,7 @@ function posSelectPrinter(p) {
           </div>
           <div class="form-row">
             <div class="form-group">
-              <label>No. Telepon <span class="req opt" id="f_telepon_req">(opsional)</span></label>
+              <label>No. Telepon <span class="req<?= empty($outletQrisData['telepon_wajib']) ? ' opt' : '' ?>" id="f_telepon_req"><?= empty($outletQrisData['telepon_wajib']) ? '(opsional)' : '*' ?></span></label>
               <input type="tel" id="f_telepon" placeholder="08xxxxxxxxxx"/>
             </div>
             <div class="form-group">
@@ -1634,6 +1642,7 @@ window.outletQris = <?= json_encode([
     'image' => $outletQrisData['qris_image'],
     'label' => $outletQrisData['qris_label'],
 ]) ?>;
+const TELEPON_WAJIB = <?= !empty($outletQrisData['telepon_wajib']) ? 'true' : 'false' ?>;
 </script>
 
             <!-- Bayar pakai Saldo Deposit (Phase 4.1) — muncul kalau pelanggan punya saldo > 0 -->
@@ -2621,6 +2630,7 @@ function saveTransaksi() {
   const nama = document.getElementById('f_nama').value.trim();
   const telp = document.getElementById('f_telepon').value.trim();
   if (!nama) { showToast('⚠️ Nama pelanggan wajib diisi', 'error'); return; }
+  if (!telp && TELEPON_WAJIB) { showToast('⚠️ Nomor HP wajib diisi', 'error'); return; }
   if (!items.length) { showToast('⚠️ Minimal 1 item layanan', 'error'); return; }
 
   // Tampilkan konfirmasi modal dulu
@@ -2655,7 +2665,7 @@ async function doSaveTransaksi() {
   closeCfm();
   const nama = document.getElementById('f_nama').value.trim();
   const telp = document.getElementById('f_telepon').value.trim();
-  if (!nama || !items.length) return;
+  if (!nama || (!telp && TELEPON_WAJIB) || !items.length) return;
 
   const btn = document.getElementById('btnSave');
   btn.disabled=true; btn.textContent='⏳ Menyimpan...';
