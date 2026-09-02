@@ -26,28 +26,6 @@ if ($action) {
     // GET layanan list
     $oid = TenantResolver::outletId();
 
-    // Normalisasi kategori layanan (lowercase, strip non-alfanumerik) — dipakai
-    // buat cocokkan kategori "Self-Service"/"self service"/dst secara toleran.
-    // Salinan JS-nya: fungsi lmNormKat() di inline <script> bawah halaman.
-    function lmNormKat(string $s): string {
-        return preg_replace('/[^a-z0-9]/', '', strtolower($s));
-    }
-
-    // Order dianggap self-service kalau MINIMAL 1 item di keranjang layanan_id-nya
-    // merujuk ke hl_layanan berkategori "Self-Service" (normalized match).
-    function lmIsSelfServiceOrder(array $items, int $tid, int $oid): bool {
-        $db = Database::get();
-        $stmt = $db->prepare("SELECT kategori FROM hl_layanan WHERE id=? AND tenant_id=? AND outlet_id=? LIMIT 1");
-        foreach ($items as $item) {
-            $lid = (int)($item['layanan_id'] ?? 0);
-            if ($lid <= 0) continue;
-            $stmt->execute([$lid, $tid, $oid]);
-            $kat = $stmt->fetchColumn();
-            if ($kat && lmNormKat($kat) === 'selfservice') return true;
-        }
-        return false;
-    }
-
     if ($action === 'get_layanan') {
         $rows = TenantQuery::raw(
             "SELECT l.*,
@@ -293,9 +271,8 @@ if ($action) {
         }
 
         if (!$nama_pel) { echo json_encode(['error'=>'Nama pelanggan wajib diisi']); exit; }
-        if (!$telepon && !lmIsSelfServiceOrder($items, $tid, $oid)) {
-            echo json_encode(['error'=>'Nomor telepon wajib diisi']); exit;
-        }
+        // Nomor HP opsional (pelanggan tanpa HP tetap bisa dilayani) — kalau kosong,
+        // order tetap tersimpan, cuma skip link/create hl_pelanggan (lihat blok upsert di bawah).
 
         // Validasi items
         foreach ($items as $item) {
@@ -1337,7 +1314,7 @@ function posSelectPrinter(p) {
           </div>
           <div class="form-row">
             <div class="form-group">
-              <label>No. Telepon <span class="req" id="f_telepon_req">*</span></label>
+              <label>No. Telepon <span class="req opt" id="f_telepon_req">(opsional)</span></label>
               <input type="tel" id="f_telepon" placeholder="08xxxxxxxxxx"/>
             </div>
             <div class="form-group">
@@ -2037,11 +2014,10 @@ function lmCleanNum(el, decimal){
 }
 
 // Deteksi kategori Self-Service / Tambahan Self-Service — normalize toleran
-// (samakan persis dgn lmNormKat() versi PHP di action=save).
+// (dipakai buat render tombol addon, lihat renderAddonRow()).
 function lmNormKat(s){ return String(s||'').toLowerCase().replace(/[^a-z0-9]/g,''); }
 function isSelfServiceKat(kat){ return lmNormKat(kat) === 'selfservice'; }
 function isAddonKat(kat){ return lmNormKat(kat) === 'tambahanselfservice'; }
-function cartHasSelfService(){ return items.some(i => isSelfServiceKat(i.kategori)); }
 
 function renderItems() {
   const tbody = document.getElementById('itemsBody');
@@ -2050,7 +2026,6 @@ function renderItems() {
     tbody.innerHTML = '';
     empty.style.display = 'block';
     document.getElementById('btnSave').disabled = true;
-    updateTeleponOptionalUI();
     return;
   }
   empty.style.display = 'none';
@@ -2089,7 +2064,6 @@ function renderItems() {
         style="width:72px" oninput="items[${i}].catatan_item=this.value"/></td>
       <td><button class="btn-remove" onclick="removeItem(${i})">✕ Hapus</button></td>
     </tr>${i === lastSelfServiceIdx ? renderAddonRow() : ''}`).join('');
-  updateTeleponOptionalUI();
 }
 
 function renderAddonRow() {
@@ -2103,13 +2077,6 @@ function renderAddonRow() {
       + ${esc(a.nama)} Rp${Math.round(a.harga).toLocaleString('id-ID')}${qtyBadge}</button>`;
   }).join('');
   return `<tr class="addon-row"><td colspan="8">${btns}</td></tr>`;
-}
-
-function updateTeleponOptionalUI(){
-  const req = document.getElementById('f_telepon_req');
-  if (!req) return;
-  if (cartHasSelfService()) { req.textContent = '(opsional)'; req.classList.add('opt'); }
-  else { req.textContent = '*'; req.classList.remove('opt'); }
 }
 
 // ────────────────────────────────────────────────────
@@ -2654,7 +2621,6 @@ function saveTransaksi() {
   const nama = document.getElementById('f_nama').value.trim();
   const telp = document.getElementById('f_telepon').value.trim();
   if (!nama) { showToast('⚠️ Nama pelanggan wajib diisi', 'error'); return; }
-  if (!telp && !cartHasSelfService()) { showToast('⚠️ Nomor HP wajib diisi', 'error'); return; }
   if (!items.length) { showToast('⚠️ Minimal 1 item layanan', 'error'); return; }
 
   // Tampilkan konfirmasi modal dulu
@@ -2689,7 +2655,7 @@ async function doSaveTransaksi() {
   closeCfm();
   const nama = document.getElementById('f_nama').value.trim();
   const telp = document.getElementById('f_telepon').value.trim();
-  if (!nama || (!telp && !cartHasSelfService()) || !items.length) return;
+  if (!nama || !items.length) return;
 
   const btn = document.getElementById('btnSave');
   btn.disabled=true; btn.textContent='⏳ Menyimpan...';
