@@ -896,10 +896,14 @@ function lmMonthRender(cal, id, y){
 function lmMonthNav(btn, id, y, delta){ lmMonthRender(btn.closest('.lm-cal'), id, y+delta); }
 function lmMonthPick(id, v){ lmMonthSet(id, v); const cb=_lmMonthCb; lmCalClose(); if(cb) cb(); }
 
+// Capture phase (bukan bubble) — WAJIB: klik tombol nav (‹/›) mengganti innerHTML .lm-cal
+// (lmMonthNav→lmMonthRender) sebelum listener bubble-phase sempat jalan, jadi e.target
+// ke-detach dari DOM dan closest() gagal nemu ancestor → salah dianggap "klik di luar" →
+// kalender nutup sendiri pas mau ganti bulan. Capture jalan LEBIH DULU, saat tombol masih ada.
 document.addEventListener('click', function(e){
   if(!e.target.closest('#repDD')){ const d=document.getElementById('repDD'); if(d) d.classList.remove('open'); }
   if(!e.target.closest('.lm-date') && !e.target.closest('.lm-cal')) lmCalClose();
-});
+}, true);
 
 let chartOmsetInstance = null;
 let harianData  = null;

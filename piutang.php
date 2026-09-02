@@ -840,9 +840,13 @@ function lmCalRender(cal, id, y, m){
 }
 function lmCalNav(btn, id, y, m, delta){ m+=delta; if(m<1){m=12;y--;} if(m>12){m=1;y++;} lmCalRender(btn.closest('.lm-cal'), id, y, m); }
 function lmCalPick(id, v){ lmDateSet(id, v); lmCalClose(); }
+// Capture phase (bukan bubble) — WAJIB: klik tombol nav (‹/›) mengganti innerHTML .lm-cal
+// (lmCalNav→lmCalRender) sebelum listener bubble-phase sempat jalan, jadi e.target ke-detach
+// dari DOM dan closest() gagal nemu ancestor → salah dianggap "klik di luar" → kalender nutup
+// sendiri pas mau ganti bulan. Capture jalan LEBIH DULU, saat tombol masih ada di DOM.
 document.addEventListener('click', function(e){
   if(!e.target.closest('.lm-date') && !e.target.closest('.lm-cal')) lmCalClose();
-});
+}, true);
 // Init label tanggal dari nilai default hidden input (PHP)
 document.querySelectorAll('.lm-date input[type=hidden]').forEach(h=>lmDateSet(h.id, h.value));
 
