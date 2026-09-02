@@ -73,7 +73,11 @@ if ($action) {
         $telepon = substr(trim(strip_tags(preg_replace('/[^0-9+\-\s]/', '', $d['telepon'] ?? ''))), 0, 20);
         $alamat  = substr(trim(strip_tags($d['alamat'] ?? '')), 0, 300);
         $catatan = substr(trim(strip_tags($d['catatan'] ?? '')), 0, 300);
-        $tipe    = in_array($d['tipe'] ?? '', ['retail','b2b']) ? $d['tipe'] : 'retail';
+        // Kolom hl_pelanggan.tipe cuma terima enum('retail','korporat','bulanan') —
+        // 'b2b' BUKAN nilai valid, kalau lolos ke query MySQL diam-diam nyimpen '' (data korup
+        // tanpa error). Terima 'b2b' dari form lama/cache tapi map ke 'korporat' yang beneran ada.
+        $tipeIn  = $d['tipe'] ?? '';
+        $tipe    = $tipeIn === 'b2b' ? 'korporat' : (in_array($tipeIn, ['retail','korporat'], true) ? $tipeIn : 'retail');
 
         if (!$nama) { echo json_encode(['error'=>'Nama wajib diisi']); exit; }
 
@@ -129,7 +133,7 @@ if ($action) {
 
     if ($action === 'stats') {
         $total = TenantQuery::count('hl_pelanggan', 'is_active=1');
-        $b2b   = TenantQuery::count('hl_pelanggan', "tipe='b2b' AND is_active=1");
+        $b2b   = TenantQuery::count('hl_pelanggan', "tipe='korporat' AND is_active=1");
         $baru  = TenantQuery::count('hl_pelanggan', 'MONTH(created_at)=MONTH(CURDATE()) AND YEAR(created_at)=YEAR(CURDATE())');
         echo json_encode(['total'=>$total,'b2b'=>$b2b,'baru'=>$baru]); exit;
     }
@@ -287,7 +291,7 @@ if ($action) {
       <select id="fTipe" class="hl-input" style="width:auto" onchange="loadCustomer(1)">
         <option value="">Semua Tipe</option>
         <option value="retail">Retail</option>
-        <option value="b2b">B2B / Korporat</option>
+        <option value="korporat">B2B / Korporat</option>
       </select>
       <select id="fSegmen" class="hl-input" style="width:auto" onchange="loadCustomer(1)">
         <option value="">Semua Segmen</option>
@@ -340,7 +344,7 @@ if ($action) {
           <label class="hl-label">Tipe</label>
           <select id="f_tipe" class="hl-input">
             <option value="retail">Retail</option>
-            <option value="b2b">B2B / Korporat</option>
+            <option value="korporat">B2B / Korporat</option>
           </select>
         </div>
       </div>
@@ -535,7 +539,7 @@ function renderCustomer() {
         <div class="cust-list-info">
           <div class="cust-list-nama">${esc(c.nama)} ${tierBadge(c.tier)} ${segmenBadge(c.segmen)}</div>
           <div class="cust-list-telp">${c.telepon||'No telepon'} ·
-            <span class="hl-badge ${c.tipe==='b2b'?'hl-badge-navy':'hl-badge-teal'}" style="font-size:10px">${c.tipe==='b2b'?'B2B':'Retail'}</span>
+            <span class="hl-badge ${c.tipe==='korporat'?'hl-badge-navy':'hl-badge-teal'}" style="font-size:10px">${c.tipe==='korporat'?'B2B':'Retail'}</span>
             ${c.metode_bayar==='bulanan'?'<span class="hl-badge" style="background:#FEF3C7;color:#92400E;font-size:10px;margin-left:4px">Bulanan</span>':''}
             ${parseInt(c.poin_balance||0) > 0 ? '<span class="hl-badge" style="background:#F0FDFB;color:#0F766E;font-size:10px;margin-left:4px">⭐ '+parseInt(c.poin_balance)+' poin</span>' : ''}
           </div>
@@ -560,7 +564,7 @@ function renderCustomer() {
             </div>
           </div>
           <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
-            <span class="hl-badge ${c.tipe==='b2b'?'hl-badge-navy':'hl-badge-teal'}" style="font-size:10px">${c.tipe==='b2b'?'B2B':'Retail'}</span>
+            <span class="hl-badge ${c.tipe==='korporat'?'hl-badge-navy':'hl-badge-teal'}" style="font-size:10px">${c.tipe==='korporat'?'B2B':'Retail'}</span>
             ${c.metode_bayar==='bulanan'?'<span class="hl-badge" style="background:#FEF3C7;color:#92400E;font-size:10px">Bulanan</span>':''}
           </div>
         </div>
@@ -668,7 +672,7 @@ async function openDetail(id) {
     </div>
 
     <div style="background:var(--off);border-radius:var(--r);padding:14px 16px;margin-bottom:16px;display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:14px">
-      <div><span style="color:var(--gray)">Tipe: </span><strong>${c.tipe==='b2b'?'B2B / Korporat':'Retail'}</strong></div>
+      <div><span style="color:var(--gray)">Tipe: </span><strong>${c.tipe==='korporat'?'B2B / Korporat':'Retail'}</strong></div>
       <div><span style="color:var(--gray)">Last Transaksi: </span><strong>${c.last_transaksi?fmtDate(c.last_transaksi):'-'}</strong></div>
       ${c.alamat?`<div style="grid-column:1/-1"><span style="color:var(--gray)">Alamat: </span>${esc(c.alamat)}</div>`:''}
       ${c.catatan?`<div style="grid-column:1/-1"><span style="color:var(--gray)">Catatan: </span>${esc(c.catatan)}</div>`:''}
