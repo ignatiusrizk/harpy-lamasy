@@ -279,6 +279,12 @@ class StrukGenerator
     {
         $format = $tmpl['format'] ?? ($tipe === 'b2b' ? 'a4' : 'thermal_80');
 
+        // Metode bayar dummy dipilih ngikutin toggle yang lagi aktif di form settings,
+        // biar preview beneran nunjukin blok QRIS/Rekening kalau di-centang — sebelumnya
+        // selalu hardcode 'Cash' jadi toggle "Tampilkan QRIS" gak pernah kelihatan efeknya.
+        $metodeDummy = !empty($tmpl['show_qris']) ? 'qris'
+            : (!empty($tmpl['show_rekening']) ? 'transfer' : 'Cash');
+
         $trx = [
             'no_order'          => 'HL-2025-001',
             'tanggal'           => date('Y-m-d'),
@@ -290,7 +296,7 @@ class StrukGenerator
             'total'             => 40000,
             'dp'                => 20000,
             'sisa_bayar'        => 20000,
-            'metode_bayar'      => 'Cash',
+            'metode_bayar'      => $metodeDummy,
             'status_bayar'      => 'dp',
             'estimasi_selesai'  => date('Y-m-d', strtotime('+2 days')),
             'catatan'           => 'Pisahkan baju putih',
