@@ -2311,19 +2311,17 @@ function recalc() {
     info.textContent='⏳ Belum Bayar';info.style.background='#FEE2E2';info.style.color='#991B1B';
   }
 
-  // Metode bayar hanya relevan kalau ada pembayaran tunai/transfer/qris (DP/Bayar > 0).
-  // Belum bayar → kosong & disabled (biar tak tercatat "cash" palsu).
+  // Metode bayar tetap bisa dipilih walau DP/Bayar = 0 — order belum lunas boleh
+  // punya metode "yang akan dipakai nanti" (mis. QRIS/transfer), dipakai StrukGenerator
+  // buat nampilin kode QRIS/rekening di struk (lihat paymentAidFor). Dulu di-disable+
+  // dikosongkan paksa saat dp=0, jadi metode qris/transfer gak pernah kesimpen buat
+  // order belum bayar — itu yang bikin QRIS gak pernah muncul di print.
   const metodeEl = document.getElementById('f_metode');
   if (metodeEl) {
-    if (dp > 0) {
-      metodeEl.disabled = false;
-      if (!metodeEl.value) {
-        const opt = Array.from(metodeEl.options).find(o => o.value && !o.disabled);
-        if (opt) metodeEl.value = opt.value;   // default metode aktif pertama (Tunai)
-      }
-    } else {
-      metodeEl.value = '';
-      metodeEl.disabled = true;
+    metodeEl.disabled = false;
+    if (dp > 0 && !metodeEl.value) {
+      const opt = Array.from(metodeEl.options).find(o => o.value && !o.disabled);
+      if (opt) metodeEl.value = opt.value;   // default metode aktif pertama (Tunai)
     }
   }
 }
