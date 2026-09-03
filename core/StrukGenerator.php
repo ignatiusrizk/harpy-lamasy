@@ -123,15 +123,8 @@ class StrukGenerator
 
         $metode = $trx['metode_bayar'] ?? '';
 
-        if ($metode === 'qris' && !empty($tmpl['show_qris']) && !empty($outlet['qris_image'])) {
-            return [
-                'type'       => 'qris',
-                'image'      => $outlet['qris_image'],
-                'label'      => $outlet['qris_label'] ?? null,
-                'sisa_bayar' => $sisaBayar,
-            ];
-        }
-
+        // Transfer spesifik — cuma muncul kalau metode order-nya memang Transfer
+        // (nomor rekening gak relevan buat customer yg niatnya bayar cash/QRIS).
         if ($metode === 'transfer' && !empty($tmpl['show_rekening'])
             && !empty($tmpl['rekening_bank']) && !empty($tmpl['rekening_nomor'])) {
             return [
@@ -139,6 +132,18 @@ class StrukGenerator
                 'bank'       => $tmpl['rekening_bank'],
                 'nomor'      => $tmpl['rekening_nomor'],
                 'atas_nama'  => $tmpl['rekening_atas_nama'] ?? null,
+                'sisa_bayar' => $sisaBayar,
+            ];
+        }
+
+        // QRIS — fallback default utk SEMUA order belum lunas selain Transfer (Cash,
+        // metode kosong, atau memang QRIS) — gak wajib metode_bayar='qris' lagi,
+        // krn kebanyakan order emang belum ditentukan metodenya saat masih belum bayar.
+        if (!empty($tmpl['show_qris']) && !empty($outlet['qris_image'])) {
+            return [
+                'type'       => 'qris',
+                'image'      => $outlet['qris_image'],
+                'label'      => $outlet['qris_label'] ?? null,
                 'sisa_bayar' => $sisaBayar,
             ];
         }
