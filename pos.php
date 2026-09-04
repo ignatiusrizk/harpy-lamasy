@@ -1085,6 +1085,13 @@ textarea{resize:vertical;min-height:64px}
     justify-content:flex-end; padding-top:8px;
     border-top:1px dashed rgba(27,45,90,.08); margin-top:6px;
   }
+  /* Baris addon (tombol saran self-service, td colspan) BUKAN pasangan
+     label/value spt kolom item lain — jangan ikut kena display:flex
+     tanpa wrap di atas (bikin tombol kepotong horizontal di HP).
+     Reset ke block biasa supaya .addon-btn (inline-block) bisa wrap. */
+  .items-table tbody tr.addon-row { border:none; margin:0; padding:0; background:transparent; }
+  .items-table tbody tr.addon-row td { display:block !important; }
+  .items-table tbody tr.addon-row td::before { content:none; }
 
   .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
   .btn-actions{flex-direction:column;gap:8px}
