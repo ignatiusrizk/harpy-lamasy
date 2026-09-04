@@ -385,10 +385,10 @@ if ($action) {
             if ($gateAksi === 'refund_tunai') {
                 $db->prepare("INSERT INTO hl_kas
                     (tenant_id, outlet_id, tanggal, tipe, kategori, keterangan, jumlah, ref_order, created_by, created_at)
-                    VALUES (?,?,CURDATE(),'keluar','Refund Order',?,?,?,?,NOW())")
-                   ->execute([$tid, $oid,
+                    VALUES (?,?,?,'keluar','Refund Order',?,?,?,?,?)")
+                   ->execute([$tid, $oid, date('Y-m-d'),
                        'Refund koreksi order ' . $oldRow['no_order'] . ' — ' . $oldRow['nama_pelanggan'],
-                       $gateSelisih, $oldRow['no_order'], (int)$user['id']]);
+                       $gateSelisih, $oldRow['no_order'], (int)$user['id'], date('Y-m-d H:i:s')]);
             } elseif ($gateAksi === 'ke_deposit') {
                 // applyBonus=false + numpang transaksi ini; exception → rollback utuh di catch existing
                 [, $depErr] = DepositManager::topup(
@@ -760,7 +760,7 @@ if ($action) {
             // Insert kas masuk per order untuk sisa_bayar yang baru dibayar
             $kas = $db->prepare(
                 "INSERT INTO hl_kas (tenant_id, outlet_id, tanggal, tipe, kategori, keterangan, jumlah, ref_order, created_by, created_at)
-                 VALUES (?, ?, CURDATE(), 'masuk', 'pelunasan', ?, ?, ?, ?, NOW())"
+                 VALUES (?, ?, ?, 'masuk', 'pelunasan', ?, ?, ?, ?, ?)"
             );
 
             $count = 0; $totalIn = 0;
@@ -768,7 +768,7 @@ if ($action) {
                 $upd->execute([$metode, $tid, $oid, (int)$r['id']]);
                 $remain = max(0, (float)$r['sisa_bayar']);
                 if ($remain > 0) {
-                    $kas->execute([$tid, $oid, 'Pelunasan order #'.$r['no_order'].' ('.$metode.')', $remain, $r['no_order'], $user['id']]);
+                    $kas->execute([$tid, $oid, date('Y-m-d'), 'Pelunasan order #'.$r['no_order'].' ('.$metode.')', $remain, $r['no_order'], $user['id'], date('Y-m-d H:i:s')]);
                     $totalIn += $remain;
                 }
                 $count++;

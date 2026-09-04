@@ -186,10 +186,10 @@ class Loyalty
             $expDate = date('Y-m-d', strtotime("+{$months} months"));
 
             $db->prepare("INSERT INTO hl_loyalty_log
-                            (tenant_id, outlet_id, pelanggan_id, transaksi_id, type, poin, balance_after, keterangan, expired_at)
-                          VALUES (?,?,?,?,'earn',?,?,?,?)")
+                            (tenant_id, outlet_id, pelanggan_id, transaksi_id, type, poin, balance_after, keterangan, expired_at, created_at)
+                          VALUES (?,?,?,?,'earn',?,?,?,?,?)")
                ->execute([$tenantId, $outletId, $pelangganId, $transaksiId, $poin, $newBal,
-                          'Earn dari transaksi #'.$transaksiId, $expDate]);
+                          'Earn dari transaksi #'.$transaksiId, $expDate, date('Y-m-d H:i:s')]);
             $db->commit();
 
             // Update tier (di luar transaction — non-critical)
@@ -225,10 +225,10 @@ class Loyalty
             $db->prepare("UPDATE hl_pelanggan SET poin_balance=? WHERE id=? AND tenant_id=?")
                ->execute([$newBal, $pelangganId, $tenantId]);
             $db->prepare("INSERT INTO hl_loyalty_log
-                            (tenant_id, outlet_id, pelanggan_id, transaksi_id, type, poin, balance_after, keterangan, created_by)
-                          VALUES (?,?,?,?,'redeem',?,?,?,?)")
+                            (tenant_id, outlet_id, pelanggan_id, transaksi_id, type, poin, balance_after, keterangan, created_by, created_at)
+                          VALUES (?,?,?,?,'redeem',?,?,?,?,?)")
                ->execute([$tenantId, $outletId, $pelangganId, $transaksiId, -$poin, $newBal,
-                          'Redeem '.$poin.' poin', $userId]);
+                          'Redeem '.$poin.' poin', $userId, date('Y-m-d H:i:s')]);
             $db->commit();
             return $poin * $cfg['poin_value'];
         } catch (Throwable $e) {
@@ -258,9 +258,9 @@ class Loyalty
         $db->prepare("UPDATE hl_pelanggan SET poin_balance=? WHERE id=? AND tenant_id=?")
            ->execute([$newBal, $pelangganId, $tenantId]);
         $db->prepare("INSERT INTO hl_loyalty_log
-                        (tenant_id, outlet_id, pelanggan_id, transaksi_id, reward_id, type, poin, balance_after, keterangan, created_by)
-                      VALUES (?,?,?,?,?,'redeem',?,?,?,?)")
-           ->execute([$tenantId, $outletId, $pelangganId, $transaksiId, $rewardId ?: null, -$poin, $newBal, $ket, $userId]);
+                        (tenant_id, outlet_id, pelanggan_id, transaksi_id, reward_id, type, poin, balance_after, keterangan, created_by, created_at)
+                      VALUES (?,?,?,?,?,'redeem',?,?,?,?,?)")
+           ->execute([$tenantId, $outletId, $pelangganId, $transaksiId, $rewardId ?: null, -$poin, $newBal, $ket, $userId, date('Y-m-d H:i:s')]);
         return $poin * $cfg['poin_value'];
     }
 
@@ -329,12 +329,12 @@ class Loyalty
             $db->prepare(
                 "INSERT INTO hl_loyalty_log
                   (tenant_id, outlet_id, pelanggan_id, transaksi_id, reward_id, type, poin,
-                   balance_after, keterangan, created_by)
-                 VALUES (?,?,?, NULL, ?, 'redeem', ?, ?, ?, ?)"
+                   balance_after, keterangan, created_by, created_at)
+                 VALUES (?,?,?, NULL, ?, 'redeem', ?, ?, ?, ?, ?)"
             )->execute([
                 $tenantId, $outletId, $pelangganId, $rewardId, -$poinDibutuhkan, $newBal,
                 'Generate kupon ' . $kode . ' (reward: ' . $reward['nama_reward'] . ')',
-                $userId,
+                $userId, date('Y-m-d H:i:s'),
             ]);
 
             $db->commit();
@@ -425,9 +425,9 @@ class Loyalty
             $db->prepare("UPDATE hl_pelanggan SET poin_balance=? WHERE id=? AND tenant_id=?")
                ->execute([$newBal, $pelangganId, $tenantId]);
             $db->prepare("INSERT INTO hl_loyalty_log
-                            (tenant_id, pelanggan_id, type, poin, balance_after, keterangan, created_by)
-                          VALUES (?,?,'adjust',?,?,?,?)")
-               ->execute([$tenantId, $pelangganId, $poinDelta, $newBal, $note ?: 'Penyesuaian manual', $userId]);
+                            (tenant_id, pelanggan_id, type, poin, balance_after, keterangan, created_by, created_at)
+                          VALUES (?,?,'adjust',?,?,?,?,?)")
+               ->execute([$tenantId, $pelangganId, $poinDelta, $newBal, $note ?: 'Penyesuaian manual', $userId, date('Y-m-d H:i:s')]);
             $db->commit();
             return $newBal;
         } catch (Throwable $e) {

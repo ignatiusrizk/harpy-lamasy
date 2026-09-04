@@ -90,13 +90,14 @@ class BagiHasilCalculator
         $db->beginTransaction();
         try {
             // 1. UPSERT hl_bagi_hasil (snapshot)
+            $dibayarAt = date('Y-m-d H:i:s');
             $db->prepare("INSERT INTO hl_bagi_hasil
                 (tenant_id, investor_id, periode, laba_basis, persentase, jumlah, status, dibayar_at)
-                VALUES (?,?,?,?,?,?, 'dibayar', NOW())
+                VALUES (?,?,?,?,?,?, 'dibayar', ?)
                 ON DUPLICATE KEY UPDATE
                   laba_basis=VALUES(laba_basis), persentase=VALUES(persentase),
-                  jumlah=VALUES(jumlah), status='dibayar', dibayar_at=NOW()")
-               ->execute([$tenantId, $investorId, $periode, $laba, $persen, $jumlah]);
+                  jumlah=VALUES(jumlah), status='dibayar', dibayar_at=VALUES(dibayar_at)")
+               ->execute([$tenantId, $investorId, $periode, $laba, $persen, $jumlah, $dibayarAt]);
             $bagiHasilId = (int)$db->lastInsertId();
             if (!$bagiHasilId) {
                 $g = $db->prepare("SELECT id FROM hl_bagi_hasil WHERE tenant_id=? AND investor_id=? AND periode=?");
@@ -108,8 +109,8 @@ class BagiHasilCalculator
             $ket = "Bagi hasil investor: {$inv['nama']} periode {$periode}";
             $db->prepare("INSERT INTO hl_kas
                 (tenant_id, outlet_id, tanggal, tipe, kategori, keterangan, jumlah, created_by, created_at)
-                VALUES (?,?,?, 'keluar', 'bagi_hasil', ?, ?, ?, NOW())")
-               ->execute([$tenantId, $kasOutlet, $tgl, $ket, $jumlah, $userId]);
+                VALUES (?,?,?, 'keluar', 'bagi_hasil', ?, ?, ?, ?)")
+               ->execute([$tenantId, $kasOutlet, $tgl, $ket, $jumlah, $userId, date('Y-m-d H:i:s')]);
             $kasId = (int)$db->lastInsertId();
 
             // 3. INSERT jurnal prive

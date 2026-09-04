@@ -315,8 +315,8 @@ if ($action) {
                 // Insert kas keluar
                 $kasIns = $db->prepare("INSERT INTO hl_kas
                     (tenant_id, outlet_id, tanggal, tipe, kategori, keterangan, jumlah, created_by, created_at)
-                    VALUES (?,?,?, 'keluar', 'Komisi Mitra', ?, ?, ?, NOW())");
-                $kasIns->execute([$tid,$oid,date('Y-m-d'),$ket,$komisi,$user['id']]);
+                    VALUES (?,?,?, 'keluar', 'Komisi Mitra', ?, ?, ?, ?)");
+                $kasIns->execute([$tid,$oid,date('Y-m-d'),$ket,$komisi,$user['id'],date('Y-m-d H:i:s')]);
                 $kasId = (int)$db->lastInsertId();
 
                 // Update rekap status

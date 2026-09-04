@@ -129,12 +129,12 @@ class OrderCreator
                 $insKas = $db->prepare(
                     "INSERT INTO hl_kas
                      (tenant_id, outlet_id, tanggal, tipe, kategori, keterangan, jumlah, ref_order, created_by, created_at)
-                     VALUES (?,?,?,'masuk','penjualan',?,?,?,?,NOW())"
+                     VALUES (?,?,?,'masuk','penjualan',?,?,?,?,?)"
                 );
                 $insKas->execute([
                     $tid, $oid, $tanggal,
                     "DP/Bayar order $no (offline)",
-                    $dp, $no, (int)$user['id']
+                    $dp, $no, (int)$user['id'], date('Y-m-d H:i:s')
                 ]);
             }
 
