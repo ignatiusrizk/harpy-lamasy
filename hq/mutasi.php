@@ -125,7 +125,7 @@ require __DIR__ . '/_layout_open.php';
     .stat{padding:10px 9px}
     .stat-num{font-size:clamp(0.6rem,2.6vw,1.15rem)}
     .stat-lbl{font-size:10px;letter-spacing:.02em}
-    .row{grid-template-columns:1fr;gap:6px}
+    .row{grid-template-columns:minmax(0,1fr);gap:6px}
     .row-date,.row-by{text-align:left}
   }
 </style>

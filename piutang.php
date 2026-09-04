@@ -386,7 +386,9 @@ require_once ROOT . '/core/CoinLedger.php';
 <style>
 .summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:18px}
 @media(max-width:680px){
-  .summary{grid-template-columns:1fr;gap:8px;margin-bottom:14px}
+  /* minmax(0,1fr) bukan 1fr polos — cegah grid blowout kalau ada konten
+     yg gak bisa mengecil (lihat fix pos.php 2026-09-04). */
+  .summary{grid-template-columns:minmax(0,1fr);gap:8px;margin-bottom:14px}
   .sum-card{flex-direction:row;justify-content:space-between;text-align:left;min-height:0;padding:12px 14px}
   .sum-card .l{font-size:12px;order:1}
   .sum-card .v{font-size:1.2rem;order:2;text-align:right}

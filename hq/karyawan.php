@@ -611,7 +611,8 @@ require __DIR__ . '/_layout_open.php';
   .perf-card strong{display:block;font-size:1.05rem;color:#0F1C3A;font-family:var(--mono);font-weight:800}
   .perf-card small{color:#6B7280}
 
-  .karyawan-grid{display:grid;grid-template-columns:1fr;gap:10px}
+  /* minmax(0,1fr) bukan 1fr polos — cegah grid blowout (lihat fix pos.php 2026-09-04). */
+  .karyawan-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:10px}
   .kr-card{background:#fff;border-radius:12px;padding:16px 18px;display:grid;
            grid-template-columns:1fr 2fr auto;gap:16px;align-items:center;
            box-shadow:0 1px 6px rgba(0,0,0,.05);transition:box-shadow .2s}
@@ -689,7 +690,7 @@ require __DIR__ . '/_layout_open.php';
     .toolbar{flex-direction:column;align-items:stretch;gap:8px;padding:12px 14px}
     .toolbar input,.toolbar select{width:100%;min-width:0;flex:none}
     #totalCount{align-self:flex-end;margin-top:2px}
-    .kr-card{grid-template-columns:1fr;gap:8px}
+    .kr-card{grid-template-columns:minmax(0,1fr);gap:8px}
     .kr-card > div{min-width:0}
     .kr-name,.kr-name small{overflow-wrap:anywhere}
     .kr-actions{flex-wrap:wrap;gap:8px}
@@ -704,7 +705,7 @@ require __DIR__ . '/_layout_open.php';
     .assignment-item .btn-danger{width:100%;justify-content:center}
     .history-item{flex-direction:column;align-items:flex-start;gap:2px}
     #detailContent .section:last-child .btn{width:100%;justify-content:center}
-    .form-grid{grid-template-columns:1fr}
+    .form-grid{grid-template-columns:minmax(0,1fr)}
   }
 </style>
 

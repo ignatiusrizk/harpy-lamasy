@@ -225,7 +225,7 @@ require __DIR__ . '/_layout_open.php';
   .alert{padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:14px}
   .alert.warn{background:#FEF3C7;color:#92400E;border:1px solid #FDE68A}
 
-  .outlet-list{display:grid;grid-template-columns:1fr;gap:12px}
+  .outlet-list{display:grid;grid-template-columns:minmax(0,1fr);gap:12px}
   .ocard{background:#fff;border-radius:14px;padding:20px 24px;box-shadow:0 1px 6px rgba(0,0,0,.05);
          display:grid;grid-template-columns:1.5fr 1fr 1fr auto;gap:18px;align-items:center;
          transition:box-shadow .2s;border-left:4px solid #E5E7EB}
@@ -282,7 +282,7 @@ require __DIR__ . '/_layout_open.php';
   .alert.success{background:#D1FAE5;color:#065F46;border:1px solid #6EE7B7}
 
   @media(max-width:900px){
-    .ocard{grid-template-columns:1fr;gap:10px}
+    .ocard{grid-template-columns:minmax(0,1fr);gap:10px}
     .ocard > div{min-width:0;overflow-wrap:anywhere}
     .ocard-actions{flex-direction:row;justify-content:flex-start}
   }

@@ -341,7 +341,7 @@ require __DIR__ . '/_layout_open.php';
   .toolbar input{flex:1;min-width:200px;padding:9px 14px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:14px;outline:none}
   .toolbar input:focus{border-color:#35E8D5}
 
-  .pm-grid{display:grid;grid-template-columns:1fr;gap:10px}
+  .pm-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:10px}
   .pm-card{background:#fff;border-radius:12px;padding:16px 18px;display:grid;
            grid-template-columns:1fr 2fr 1fr auto;gap:16px;align-items:center;
            box-shadow:0 1px 6px rgba(0,0,0,.05);transition:box-shadow .2s}
@@ -405,7 +405,7 @@ require __DIR__ . '/_layout_open.php';
   .alert.warn{background:#FEF3C7;color:#92400E;border:1px solid #FDE68A}
 
   @media(max-width:780px){
-    .pm-card{grid-template-columns:1fr;gap:6px}
+    .pm-card{grid-template-columns:minmax(0,1fr);gap:6px}
     .pm-card > *{min-width:0;overflow-wrap:anywhere}
   }
 </style>

@@ -309,7 +309,7 @@ require __DIR__ . '/_layout_open.php';
   .pl-new{background:#D1FAE5;color:#065F46;font-size:9px;font-weight:700;padding:2px 7px;
           border-radius:4px;margin-left:5px}
 
-  .pl-grid{display:grid;grid-template-columns:1fr;gap:8px}
+  .pl-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:8px}
   .pl-card{background:#fff;border-radius:10px;padding:13px 16px;display:grid;
            grid-template-columns:2fr 1.5fr 1fr 1fr auto;gap:14px;align-items:center;
            box-shadow:0 1px 4px rgba(0,0,0,.04);transition:box-shadow .2s;cursor:pointer}
@@ -374,7 +374,7 @@ require __DIR__ . '/_layout_open.php';
   .alert.success{background:#D1FAE5;color:#065F46;border:1px solid #6EE7B7}
 
   @media(max-width:780px){
-    .pl-card{grid-template-columns:1fr;gap:6px}
+    .pl-card{grid-template-columns:minmax(0,1fr);gap:6px}
     /* Cegah teks panjang (nama/HP/outlet) memaksa kartu melebar → scrollbar mendatar */
     .pl-card > div{min-width:0}
     .pl-name,.pl-name small,.pl-outlet,.pl-outlet strong{overflow-wrap:anywhere}

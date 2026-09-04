@@ -422,9 +422,9 @@ require __DIR__ . '/_layout_open.php';
   .danger-zone{border-left:3px solid #EF4444;padding:12px 16px;background:#FEF2F2;border-radius:0 8px 8px 0;font-size:12px;color:#991B1B}
 
   @media(max-width:640px){
-    .grid-2{grid-template-columns:1fr}
-    .info-grid{grid-template-columns:1fr}
-    .outlet-coin-row{grid-template-columns:1fr;gap:6px}
+    .grid-2{grid-template-columns:minmax(0,1fr)}
+    .info-grid{grid-template-columns:minmax(0,1fr)}
+    .outlet-coin-row{grid-template-columns:minmax(0,1fr);gap:6px}
     .outlet-coin-row > *{min-width:0;overflow-wrap:anywhere}
   }
 </style>

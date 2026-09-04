@@ -216,7 +216,7 @@ require __DIR__ . '/_layout_open.php';
     .stat-pill{flex-direction:column;align-items:center;gap:2px;padding:9px 9px}
     .stat-pill .num{font-size:1.1rem}
     .stat-pill .lbl{font-size:9.5px;letter-spacing:.02em}
-    .log-row{grid-template-columns:1fr;gap:6px}
+    .log-row{grid-template-columns:minmax(0,1fr);gap:6px}
     .log-time,.log-user{font-size:10px}
   }
 </style>
