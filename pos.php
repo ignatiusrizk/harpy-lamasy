@@ -1030,7 +1030,13 @@ textarea{resize:vertical;min-height:64px}
 
 @media(max-width:800px){
   .main{padding:16px 14px}
-  .grid-2{grid-template-columns:1fr;gap:14px}
+  /* minmax(0,1fr) BUKAN cuma 1fr — grid item defaultnya min-width:auto,
+     jadi track 1fr polos bisa "blowout" (melebar lebih dari kontainer)
+     kalau ada konten yg gak bisa mengecil di bawah lebar tertentu (long
+     text/word). minmax(0,..) matikan minimum otomatis itu, track jadi
+     benar2 nurut ke lebar kontainer & konten yg overflow di-handle oleh
+     overflow-x:hidden biasa, bukan malah mendorong grid track melebar. */
+  .grid-2{grid-template-columns:minmax(0,1fr);gap:14px}
   .grid-2 > div[style*="sticky"]{position:static!important}  /* lepas sticky di HP */
   .layanan-grid{grid-template-columns:repeat(2,1fr)}
   .form-row{grid-template-columns:1fr}
