@@ -85,11 +85,11 @@ if ($action === 'submit' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         $ins = $db->prepare("INSERT INTO hl_transaksi
             (tenant_id, outlet_id, drop_point_id, no_order, tanggal, pelanggan_id,
              nama_pelanggan, telepon, subtotal, diskon, total, dp, sisa_bayar,
-             metode_bayar, status_bayar, status_proses, catatan, catatan_internal, created_by)
-            VALUES (?,?,?,?,?,?,?,?,?,0,?,0,?,'cash','belum_bayar','masuk',?,?,?)");
+             metode_bayar, status_bayar, status_proses, catatan, catatan_internal, created_by, created_at)
+            VALUES (?,?,?,?,?,?,?,?,?,0,?,0,?,'cash','belum_bayar','masuk',?,?,?,?)");
         $ins->execute([
             $tid, $oid, $dp, $no, date('Y-m-d'), $pelId, $nama, $telepon,
-            $subtotal, $total, $total, $catatan ?: $catNote, $catInternal, $mitra['user_id']
+            $subtotal, $total, $total, $catatan ?: $catNote, $catInternal, $mitra['user_id'], date('Y-m-d H:i:s')
         ]);
         $trxId = (int)$db->lastInsertId();
 

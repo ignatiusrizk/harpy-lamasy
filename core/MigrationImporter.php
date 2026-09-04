@@ -885,8 +885,8 @@ class MigrationImporter
                    subtotal, diskon, biaya_tambahan, total, dp, sisa_bayar,
                    metode_bayar, tipe_order, status_bayar, status_proses,
                    estimasi_selesai, tgl_selesai,
-                   catatan, is_imported, migration_job_id, created_by)
-                VALUES (?,?,?,?, ?,?,?, ?,?,?,?,?,?, ?,?,?,?, ?,?, ?,1,?,0)
+                   catatan, is_imported, migration_job_id, created_by, created_at)
+                VALUES (?,?,?,?, ?,?,?, ?,?,?,?,?,?, ?,?,?,?, ?,?, ?,1,?,0,?)
             ")->execute([
                 $tid, $oid, $noOrder, $tanggal,
                 $pelId, $namaPel, $telepon ?: null,
@@ -894,7 +894,7 @@ class MigrationImporter
                 $metodeBayar, $tipeOrder, $statusBayar, $statusProses,
                 $estSelesai ?: null, $tglSelesai ?: null,
                 substr($d['catatan'] ?? '', 0, 255) ?: null,
-                $jobId,
+                $jobId, date('Y-m-d H:i:s'),
             ]);
             $trxId = (int)$db->lastInsertId();
         } else {

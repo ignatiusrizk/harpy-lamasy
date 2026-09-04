@@ -561,11 +561,11 @@ if ($action) {
             // $dp di DB = $totalPaid (semua sumber payment: cash + deposit)
             $cols   = ['tenant_id','outlet_id','no_order','tanggal','pelanggan_id','nama_pelanggan','telepon',
                        'subtotal','diskon','total','dp','sisa_bayar','metode_bayar','status_bayar',
-                       'status_proses','estimasi_selesai','catatan','created_by'];
+                       'status_proses','estimasi_selesai','catatan','created_by','created_at'];
             $vals   = [$tid,$oid,$no,$tanggal,$pel_id,$nama_pel,$telepon,
                        $subtotal,$diskonTotal,$total,$totalPaid,$sisa,
                        $_metodeStore, $status_b,
-                       'masuk',$estimasi,$catatan,$user['id']];
+                       'masuk',$estimasi,$catatan,$user['id'],date('Y-m-d H:i:s')];
             if ($hasEstJam)    { $cols[] = 'estimasi_jam';   $vals[] = $estimasiJam; }
             if ($hasBiayaTipe) { $cols[] = 'biaya_tambahan'; $vals[] = $biayaTbh;
                                  $cols[] = 'tipe_order';     $vals[] = $tipeOrder; }

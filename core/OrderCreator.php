@@ -91,12 +91,12 @@ class OrderCreator
                   pelanggan_id, nama_pelanggan, telepon, total, dp, sisa_bayar,
                   status_bayar, catatan, created_by, created_at,
                   status_proses, metode_bayar, subtotal)
-                 VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,NOW(),?,?,?)"
+                 VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
             );
             $ins->execute([
                 $tid, $oid, $no, $tempCode, $uuid, $tanggal,
                 $pelId, $nama, $telp, $total, $dp, $sisa,
-                $status, $catatan, (int)$user['id'],
+                $status, $catatan, (int)$user['id'], date('Y-m-d H:i:s'),
                 'masuk', 'cash', $total
             ]);
             $trxId = (int)$db->lastInsertId();
