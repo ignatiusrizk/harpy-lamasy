@@ -1045,8 +1045,20 @@ body { font-family: var(--font); background: var(--off); color: var(--dark); min
   .ol-top-chip span:first-child { max-width: 80px; }
 }
 
-/* Body: prevent horizontal scroll bleed + matikan pull-to-refresh browser (APK/PWA) */
-html, body { overflow-x: clip; overscroll-behavior-y: contain; }
+/* Body: prevent horizontal scroll bleed + matikan pull-to-refresh browser (APK/PWA).
+   overflow-x DI HTML SAJA (bukan body) — "clip" di elemen ini gak konsisten
+   di-enforce sbg root scroll container di browser Android versi lama
+   (Samsung Internet/WebView lawas), jadi overflow horizontal manapun
+   (biasanya cuma beberapa px) malah keliatan bleed ke kanan alih2 ke-clip,
+   bikin card kelihatan "kepotong" (curve kanan ilang krn ketiban konten yg
+   overflow). "hidden" didukung jauh lebih luas drpd "clip".
+   overflow-x TIDAK dipasang di body juga — pernah bikin scroll wheel/trackpad
+   macet di desktop (body jadi scroll-container kedua yg rebutan input wheel
+   dgn html), lihat gotcha landing.php 2026-07-04. Body overflow-x biarkan
+   default (visible) — html sudah cukup meng-clip semuanya.
+   Ketemu 2026-09-04 via report real device Samsung A54. */
+html { overflow-x: hidden; }
+body { overscroll-behavior-y: contain; }
 
 /* ── GLOBAL MOBILE FIXES (semua page) ──────────────── */
 @media (max-width: 680px) {
