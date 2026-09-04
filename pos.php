@@ -659,8 +659,8 @@ if ($action) {
 
             // Log status masuk (hl_proses_log tidak punya outlet_id)
             $db->prepare(
-                "INSERT INTO hl_proses_log (tenant_id,transaksi_id,status_baru,oleh) VALUES (?,?,?,?)"
-            )->execute([$tid, $trx_id, 'masuk', $user['nama']]);
+                "INSERT INTO hl_proses_log (tenant_id,transaksi_id,status_baru,oleh,created_at) VALUES (?,?,?,?,?)"
+            )->execute([$tid, $trx_id, 'masuk', $user['nama'], date('Y-m-d H:i:s')]);
 
             // AUTO INSERT KAS jika ada DP/Lunas
             if ($dp > 0) {

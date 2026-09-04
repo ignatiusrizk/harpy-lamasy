@@ -118,10 +118,10 @@ if ($action) {
 
             // Log status change
             try {
-                $db->prepare("INSERT INTO hl_proses_log (transaksi_id, status_lama, status_baru, tipe, catatan, oleh)
-                              VALUES (?,?,?,'proses', ?, ?)")
+                $db->prepare("INSERT INTO hl_proses_log (transaksi_id, status_lama, status_baru, tipe, catatan, oleh, created_at)
+                              VALUES (?,?,?,'proses', ?, ?, ?)")
                    ->execute([$id, $cur['status_proses'], $next,
-                              "Update via Kanban", $user['nama'] ?? '-']);
+                              "Update via Kanban", $user['nama'] ?? '-', date('Y-m-d H:i:s')]);
             } catch (Throwable) {}
 
             try { logAudit('update_status','orders',"Kanban: {$cur['status_proses']} → {$next}", $cur['no_order']); } catch (Throwable) {}

@@ -183,10 +183,10 @@ if ($action) {
         if (!$err) {
             try {
                 Database::get()->prepare(
-                    "INSERT INTO hl_proses_log (transaksi_id,status_lama,status_baru,tipe,catatan,oleh) VALUES (?,?,?,?,?,?)"
+                    "INSERT INTO hl_proses_log (transaksi_id,status_lama,status_baru,tipe,catatan,oleh,created_at) VALUES (?,?,?,?,?,?,?)"
                 )->execute([$id, null, 'delete_requested', 'delete_request',
                     '🗑️ Minta hapus diajukan' . ($alasan !== '' ? ': ' . $alasan : '') . ' (menunggu persetujuan owner)',
-                    $user['nama'] ?? '-']);
+                    $user['nama'] ?? '-', date('Y-m-d H:i:s')]);
             } catch (Throwable $e) { /* log opsional — jangan gagalkan request */ }
         }
         echo json_encode($err ? ['error'=>$err] : ['success'=>true, 'request_id'=>$reqId]);
@@ -474,7 +474,7 @@ if ($action) {
                 ];
             }
 
-            $lstmt = $db->prepare("INSERT INTO hl_proses_log (transaksi_id,status_lama,status_baru,tipe,catatan,oleh) VALUES (?,?,?,?,?,?)");
+            $lstmt = $db->prepare("INSERT INTO hl_proses_log (transaksi_id,status_lama,status_baru,tipe,catatan,oleh,created_at) VALUES (?,?,?,?,?,?,?)");
             foreach ($logs_to_insert as $log) {
                 $lstmt->execute([
                     $log['transaksi_id'],
@@ -482,7 +482,8 @@ if ($action) {
                     $log['status_baru'],
                     $log['tipe'],
                     $log['catatan'],
-                    $log['oleh']
+                    $log['oleh'],
+                    date('Y-m-d H:i:s')
                 ]);
             }
 
@@ -592,8 +593,8 @@ if ($action) {
                 : "Pembayaran sebagian Rp " . number_format($jumlah, 0, ',', '.') . " · Sisa Rp " . number_format(max($new_sisa, 0), 0, ',', '.');
             if ($bukti_path) $ket .= " · Bukti bayar terlampir";
 
-            $db->prepare("INSERT INTO hl_proses_log (transaksi_id,status_lama,status_baru,tipe,catatan,oleh) VALUES (?,?,?,?,?,?)")
-               ->execute([$id, $row['dp'] > 0 ? 'dp' : 'belum_bayar', $new_status, 'bayar', $ket, $user['nama']]);
+            $db->prepare("INSERT INTO hl_proses_log (transaksi_id,status_lama,status_baru,tipe,catatan,oleh,created_at) VALUES (?,?,?,?,?,?,?)")
+               ->execute([$id, $row['dp'] > 0 ? 'dp' : 'belum_bayar', $new_status, 'bayar', $ket, $user['nama'], date('Y-m-d H:i:s')]);
 
             // Ambil no_order & nama_pelanggan
             $trxData = $db->prepare("SELECT no_order, nama_pelanggan FROM hl_transaksi WHERE tenant_id=? AND outlet_id=? AND id=?");
@@ -704,9 +705,9 @@ if ($action) {
             $affected = $stmt->rowCount();
 
             // Log per id
-            $lg = $db->prepare("INSERT INTO hl_proses_log (tenant_id,transaksi_id,status_baru,oleh,catatan) VALUES (?,?,?,?,?)");
+            $lg = $db->prepare("INSERT INTO hl_proses_log (tenant_id,transaksi_id,status_baru,oleh,catatan,created_at) VALUES (?,?,?,?,?,?)");
             foreach ($ids as $oidord) {
-                $lg->execute([$tid, $oidord, $status, $user['nama'], 'Bulk update']);
+                $lg->execute([$tid, $oidord, $status, $user['nama'], 'Bulk update', date('Y-m-d H:i:s')]);
             }
             $db->commit();
             logAudit('bulk_status', 'orders', count($ids).' order → '.$status);
