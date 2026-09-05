@@ -947,6 +947,11 @@ if ($action) {
         exit;
     }
 
+    if ($action === 'express_tiers') {
+        require_once ROOT . '/core/ExpressTier.php';
+        echo json_encode(ExpressTier::forTenant($tid, $oid)); exit;
+    }
+
     // GET layanan
     if ($action === 'get_layanan') {
         $rows = TenantQuery::raw("SELECT * FROM hl_layanan WHERE tenant_id=? AND outlet_id=? AND is_active=1 ORDER BY kategori,urutan", [$tid, $oid]);
@@ -1653,6 +1658,7 @@ function editStateJSON() {
   });
 }
 let layananAll = [];
+let availableTiersEdit = [];  // {id, nama_tier, estimasi_jam, tipe_biaya, nilai_biaya, urutan, outlet_id}
 const BRAND_NAME   = <?= json_encode($_brandName) ?>;
 const OUTLET_NAMA  = <?= json_encode($_outletNama) ?>;
 const OUTLET_ADDR  = <?= json_encode($_outletAddr) ?>;
@@ -1669,6 +1675,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   loadSummary();
   loadOrders();
   await loadLayanan();
+  await loadExpressTiersEdit();
   // Auto-buka detail bila datang dari Kanban (/orders?open=<id>)
   const openId = new URLSearchParams(location.search).get('open');
   if (openId && /^\d+$/.test(openId)) openDetail(parseInt(openId, 10));
@@ -1690,6 +1697,11 @@ async function loadSummary() {
 async function loadLayanan() {
   const r = await fetch('orders.php?action=get_layanan');
   layananAll = await r.json();
+}
+
+async function loadExpressTiersEdit() {
+  const r = await fetch('orders.php?action=express_tiers');
+  availableTiersEdit = await r.json();
 }
 
 // ── BULK SELECTION ────────────────────────────────────
@@ -2291,13 +2303,31 @@ function renderEditItems() {
       <td data-lbl="Jumlah">${CAN_EDIT_ORDER ? `<input class="item-input" type="number" value="${item.jumlah}" step="0.1" min="0" style="width:52px" oninput="editItems[${i}].jumlah=parseFloat(this.value)||0;recalcEdit()"/>` : `<span style="font-family:var(--mono);font-size:13px">${item.jumlah}</span>`}</td>
       <td data-lbl="Harga">${CAN_EDIT_ORDER ? `<input class="item-input" type="text" inputmode="numeric" value="${grpRibu(item.harga_satuan)}" style="width:80px" oninput="const v=parseInt(this.value.replace(/\\D/g,''))||0;editItems[${i}].harga_satuan=v;this.value=grpRibu(v);recalcEdit()"/>` : `<span style="font-family:var(--mono);font-size:13px">Rp ${grpRibu(item.harga_satuan)}</span>`}</td>
       <td data-lbl="Subtotal" class="item-sub">Rp ${grpRibu(item.jumlah*item.harga_satuan)}</td>
+      <td data-lbl="Express">${CAN_EDIT_ORDER ? `
+        <select class="item-input" style="width:110px;font-size:11px" onchange="onEditItemTierChange(${i}, this.value)">
+          <option value="">⏱️ Reguler</option>
+          ${availableTiersEdit.map(t => `<option value="${esc(t.nama_tier)}" ${item.express_tier_nama===t.nama_tier?'selected':''}>⚡ ${esc(t.nama_tier)}</option>`).join('')}
+        </select>
+        ${item.biaya_express > 0 ? `<div style="font-size:10px;color:#92400E;margin-top:2px;">+Rp ${grpRibu(item.biaya_express)}</div>` : ''}
+      ` : `<span style="font-size:12px;color:var(--gray)">${item.express_tier_nama ? '⚡ ' + esc(item.express_tier_nama) : 'Reguler'}</span>`}</td>
       <td data-lbl="Ket">${CAN_EDIT_ORDER ? `<input class="item-input" value="${esc(item.catatan_item||'')}" placeholder="..." style="width:60px" oninput="editItems[${i}].catatan_item=this.value"/>` : `<span style="font-size:12px;color:var(--gray)">${esc(item.catatan_item||'-')}</span>`}</td>
       <td>${CAN_EDIT_ORDER ? `<button class="btn-remove" onclick="removeEditItem(${i})">✕ Hapus</button>` : ''}</td>
     </tr>`).join('');
 }
 
+function onEditItemTierChange(idx, tierName) {
+  const item = editItems[idx];
+  if (!item) return;
+  item.express_tier_nama = tierName || null;
+  const tier = availableTiersEdit.find(t => t.nama_tier === tierName);
+  const itSub = item.jumlah * item.harga_satuan;
+  item.biaya_express = tier ? (tier.tipe_biaya === 'flat' ? parseFloat(tier.nilai_biaya) : Math.round(itSub * (parseFloat(tier.nilai_biaya)/100))) : 0;
+  renderEditItems();
+  recalcEdit();
+}
+
 function addEditRow() {
-  editItems.push({layanan_id:null,nama_layanan:'',satuan:'kg',jumlah:1,harga_satuan:0,catatan_item:''});
+  editItems.push({layanan_id:null,nama_layanan:'',satuan:'kg',jumlah:1,harga_satuan:0,catatan_item:'',express_tier_nama:null,biaya_express:0});
   renderEditItems(); recalcEdit();
 }
 function removeEditItem(i) { editItems.splice(i,1); renderEditItems(); recalcEdit(); }
@@ -2320,7 +2350,7 @@ function filterEditLayanan(q) {
 }
 
 function addEditLayanan(id, nama, satuan, harga) {
-  editItems.push({layanan_id:id,nama_layanan:nama,satuan,jumlah:1,harga_satuan:harga,catatan_item:''});
+  editItems.push({layanan_id:id,nama_layanan:nama,satuan,jumlah:1,harga_satuan:harga,catatan_item:'',express_tier_nama:null,biaya_express:0});
   renderEditItems(); recalcEdit();
 }
 
@@ -2371,7 +2401,11 @@ async function saveLayananQuick() {
 function recalcEdit() {
   const sub  = editItems.reduce((s,i) => s + i.jumlah * i.harga_satuan, 0);
   const dis  = parseFloat(document.getElementById('edit_diskon')?.value) || 0;
-  const tot  = Math.max(sub - dis + (currentOrderBiayaTambahan || 0) + (currentOrderBiayaLainnya || 0), 0);
+  // Preview Express dari editItems (live, ikut pilihan tier user) — Biaya Lainnya
+  // tetap pakai nilai lama (currentOrderBiayaLainnya) sbg preview, krn recompute
+  // persen-nya butuh subtotal final yg baru pasti di backend saat submit.
+  const biayaExprPreview = editItems.reduce((s,i) => s + (i.biaya_express||0), 0);
+  const tot  = Math.max(sub - dis + biayaExprPreview + (currentOrderBiayaLainnya || 0), 0);
   const dp   = parseFloat(document.getElementById('edit_dp')?.value) || 0;
   const sisa = tot - dp;
   const subEl = document.getElementById('etSubtotal');
