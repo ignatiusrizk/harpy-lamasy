@@ -274,6 +274,12 @@ if ($action) {
             $biayaLainnyaRows = [];
             $dom = ['nama' => null, 'tipe_order' => 'reguler'];
             if ($itemsChanged && !empty($data['items'])) {
+                // Validasi: pastikan setiap item adalah array (avoid fatal error dari payload rusak)
+                foreach ($data['items'] as $item) {
+                    if (!is_array($item)) {
+                        echo json_encode(['error'=>'Format item tidak valid']); exit;
+                    }
+                }
                 $biayaTambahanBaru = 0.0;
                 foreach ($data['items'] as $i => $item) {
                     $namaTier = trim((string)($item['express_tier_nama'] ?? ''));
@@ -1700,8 +1706,12 @@ async function loadLayanan() {
 }
 
 async function loadExpressTiersEdit() {
-  const r = await fetch('orders.php?action=express_tiers');
-  availableTiersEdit = await r.json();
+  try {
+    const r = await fetch('orders.php?action=express_tiers');
+    availableTiersEdit = await r.json();
+  } catch (e) {
+    availableTiersEdit = [];
+  }
 }
 
 // ── BULK SELECTION ────────────────────────────────────
@@ -1995,7 +2005,6 @@ async function openDetail(id) {
   const d = await r.json();
   if (d.error) { document.getElementById('modalBody').innerHTML = '<div class="empty">❌ ' + d.error + '</div>'; return; }
 
-  currentOrderBiayaTambahan = parseFloat(d.biaya_tambahan) || 0;
   currentOrderBiayaLainnya  = parseFloat(d.biaya_lainnya) || 0;
   editItems = d.items || [];
   currentOrderData = d;
@@ -2307,6 +2316,7 @@ function renderEditItems() {
         <div style="flex:1;min-width:0;max-width:170px">
           <select class="item-input" style="width:100%;font-size:11px" onchange="onEditItemTierChange(${i}, this.value)">
             <option value="">⏱️ Reguler</option>
+            ${item.express_tier_nama && !availableTiersEdit.some(t => t.nama_tier === item.express_tier_nama) ? `<option value="${esc(item.express_tier_nama)}" selected>⚠️ ${esc(item.express_tier_nama)} (nonaktif)</option>` : ''}
             ${availableTiersEdit.map(t => `<option value="${esc(t.nama_tier)}" ${item.express_tier_nama===t.nama_tier?'selected':''}>⚡ ${esc(t.nama_tier)}</option>`).join('')}
           </select>
           ${item.biaya_express > 0 ? `<div style="font-size:10px;color:#92400E;margin-top:2px;text-align:right;">+Rp ${grpRibu(item.biaya_express)}</div>` : ''}
@@ -2406,7 +2416,7 @@ function recalcEdit() {
   // Preview Express dari editItems (live, ikut pilihan tier user) — Biaya Lainnya
   // tetap pakai nilai lama (currentOrderBiayaLainnya) sbg preview, krn recompute
   // persen-nya butuh subtotal final yg baru pasti di backend saat submit.
-  const biayaExprPreview = editItems.reduce((s,i) => s + (i.biaya_express||0), 0);
+  const biayaExprPreview = editItems.reduce((s,i) => s + (parseFloat(i.biaya_express)||0), 0);
   const tot  = Math.max(sub - dis + biayaExprPreview + (currentOrderBiayaLainnya || 0), 0);
   const dp   = parseFloat(document.getElementById('edit_dp')?.value) || 0;
   const sisa = tot - dp;
