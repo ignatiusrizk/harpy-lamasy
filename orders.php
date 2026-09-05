@@ -237,7 +237,7 @@ if ($action) {
             if (!$oldRow) { $db->rollBack(); echo json_encode(['error'=>'Order tidak ditemukan']); exit; }
 
             // Deteksi apakah item benar-benar berubah (frontend selalu kirim items walau tak diubah)
-            $oldItemsStmt = $db->prepare("SELECT nama_layanan,satuan,jumlah,harga_satuan,catatan_item FROM hl_transaksi_item WHERE tenant_id=? AND outlet_id=? AND transaksi_id=? ORDER BY id");
+            $oldItemsStmt = $db->prepare("SELECT nama_layanan,satuan,jumlah,harga_satuan,catatan_item,express_tier_nama FROM hl_transaksi_item WHERE tenant_id=? AND outlet_id=? AND transaksi_id=? ORDER BY id");
             $oldItemsStmt->execute([$tid, $oid, $id]);
             $oldItems = $oldItemsStmt->fetchAll(PDO::FETCH_ASSOC);
             $sigItems = function($items){ return array_map(function($it){ return [

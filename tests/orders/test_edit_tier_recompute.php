@@ -143,6 +143,49 @@ check("item A (gak diubah) tetap tier '{$tier['nama_tier']}'", $itemA['express_t
 check("item A (gak diubah) tetap biaya_express $expectedFee", abs((float)$itemA['biaya_express'] - $expectedFee) < 0.01);
 check("item B (qty berubah, tetap tanpa tier) express_tier_nama NULL", $itemB['express_tier_nama'] === null);
 
+// ── Skenario 3: Fix untuk asymmetric comparison — order dengan tier sudah ada, update status saja (tanpa ubah item) ──
+// Ini test kasus BUG yang diperbaiki: sebelumnya $itemsChanged=true karena $oldItemsStmt
+// tidak include express_tier_nama, sekarang seharusnya $itemsChanged=false.
+$pdo->exec("INSERT INTO hl_transaksi (tenant_id, outlet_id, no_order, tanggal, nama_pelanggan, telepon, status_proses, status_bayar, subtotal, diskon, total, dp, sisa_bayar, biaya_tambahan, biaya_lainnya, created_at, updated_at)
+    VALUES ($TID, $OID, 'TESTTIER3-" . time() . "', CURDATE(), 'Test Item Unchanged', '', 'masuk', 'belum_bayar', 50000, 0, 50000, 0, 50000, $expectedFee, 0, NOW(), NOW())");
+$orderId3 = (int)$pdo->lastInsertId();
+// Insert item WITH tier already set
+$pdo->prepare("INSERT INTO hl_transaksi_item (tenant_id, outlet_id, transaksi_id, nama_layanan, satuan, jumlah, harga_satuan, subtotal, catatan_item, express_tier_nama, biaya_express) VALUES (?,?,?,?,?,?,?,?,?,?,?)")
+    ->execute([$TID, $OID, $orderId3, 'Cuci Express', 'kg', 5, 10000, 50000, '', $tier['nama_tier'], $expectedFee]);
+
+// Update dengan items PERSIS SAMA (sama nama, qty, harga, tier, catatan)
+// tapi ubah status_proses dari 'masuk' ke 'cuci'
+$payload3 = json_encode([
+    'id' => $orderId3,
+    'status_proses' => 'cuci',  // berubah dari 'masuk'
+    'diskon' => 0,
+    'dp' => 0,
+    'items' => [[
+        'layanan_id' => null, 'nama_layanan' => 'Cuci Express', 'satuan' => 'kg',
+        'jumlah' => 5, 'harga_satuan' => 10000, 'catatan_item' => '',
+        'express_tier_nama' => $tier['nama_tier'],  // SAMA dengan di DB
+    ]],
+]);
+$ch = curl_init("$BASE/orders.php?action=update");
+curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER => true, CURLOPT_COOKIEFILE => $cookieFile,
+    CURLOPT_POST => true, CURLOPT_POSTFIELDS => $payload3,
+    CURLOPT_HTTPHEADER => ['Content-Type: application/json', "X-CSRF-Token: $csrf"],
+]);
+$resp3 = json_decode(curl_exec($ch), true); curl_close($ch);
+check('skenario 3: status update tanpa ubah item → tidak error', empty($resp3['error']));
+
+// Verify bahwa item di DB TIDAK berubah (tier & biaya_express tetap sama)
+$item3 = $pdo->prepare("SELECT express_tier_nama, biaya_express FROM hl_transaksi_item WHERE transaksi_id=?");
+$item3->execute([$orderId3]); $item3 = $item3->fetch(PDO::FETCH_ASSOC);
+check("skenario 3: item.express_tier_nama tetap '{$tier['nama_tier']}'", $item3['express_tier_nama'] === $tier['nama_tier']);
+check("skenario 3: item.biaya_express tetap $expectedFee", abs((float)$item3['biaya_express'] - $expectedFee) < 0.01);
+
+// Verify header status berubah (bukan tetap 'masuk')
+$order3 = $pdo->prepare("SELECT status_proses FROM hl_transaksi WHERE id=?");
+$order3->execute([$orderId3]); $order3 = $order3->fetch(PDO::FETCH_ASSOC);
+check("skenario 3: status_proses berubah ke 'cuci'", $order3['status_proses'] === 'cuci');
+
 // ── 6. Cleanup ──
 $pdo->prepare("DELETE FROM hl_transaksi_biaya_lainnya WHERE transaksi_id=?")->execute([$orderId]);
 $pdo->prepare("DELETE FROM hl_transaksi_item WHERE transaksi_id=?")->execute([$orderId]);
@@ -151,6 +194,10 @@ $pdo->prepare("DELETE FROM hl_transaksi WHERE id=?")->execute([$orderId]);
 $pdo->prepare("DELETE FROM hl_transaksi_biaya_lainnya WHERE transaksi_id=?")->execute([$orderId2]);
 $pdo->prepare("DELETE FROM hl_transaksi_item WHERE transaksi_id=?")->execute([$orderId2]);
 $pdo->prepare("DELETE FROM hl_transaksi WHERE id=?")->execute([$orderId2]);
+
+$pdo->prepare("DELETE FROM hl_transaksi_biaya_lainnya WHERE transaksi_id=?")->execute([$orderId3]);
+$pdo->prepare("DELETE FROM hl_transaksi_item WHERE transaksi_id=?")->execute([$orderId3]);
+$pdo->prepare("DELETE FROM hl_transaksi WHERE id=?")->execute([$orderId3]);
 unlink($cookieFile);
 
 echo "\n$pass PASS, $fail FAIL\n";
