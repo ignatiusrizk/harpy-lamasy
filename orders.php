@@ -237,13 +237,14 @@ if ($action) {
             if (!$oldRow) { $db->rollBack(); echo json_encode(['error'=>'Order tidak ditemukan']); exit; }
 
             // Deteksi apakah item benar-benar berubah (frontend selalu kirim items walau tak diubah)
-            $oldItemsStmt = $db->prepare("SELECT nama_layanan,satuan,jumlah,harga_satuan,catatan_item FROM hl_transaksi_item WHERE tenant_id=? AND outlet_id=? AND transaksi_id=? ORDER BY id");
+            $oldItemsStmt = $db->prepare("SELECT nama_layanan,satuan,jumlah,harga_satuan,catatan_item,express_tier_nama FROM hl_transaksi_item WHERE tenant_id=? AND outlet_id=? AND transaksi_id=? ORDER BY id");
             $oldItemsStmt->execute([$tid, $oid, $id]);
             $oldItems = $oldItemsStmt->fetchAll(PDO::FETCH_ASSOC);
             $sigItems = function($items){ return array_map(function($it){ return [
                 trim((string)($it['nama_layanan'] ?? '')), trim((string)($it['satuan'] ?? '')),
                 (float)($it['jumlah'] ?? 0), (float)($it['harga_satuan'] ?? 0),
                 trim((string)($it['catatan_item'] ?? '')),
+                trim((string)($it['express_tier_nama'] ?? '')),  // include tier name dalam deteksi perubahan
             ]; }, $items ?? []); };
             $itemsChanged = ($sigItems($oldItems) != $sigItems($data['items'] ?? []));
 
@@ -262,18 +263,48 @@ if ($action) {
                 }
             }
 
-            // biaya_tambahan & biaya_lainnya = snapshot dari saat order dibuat,
-            // TIDAK di-recompute di sini (Orders tidak mengelola ulang tier —
-            // baik Express maupun Biaya Lainnya, keduanya murni auto-generate
-            // saat order dibuat). BUGFIX lama: dulu rumus di bawah cuma
-            // "subtotal - diskon", biaya_tambahan ikut hilang dari total
-            // setiap kali item order diedit — sudah dibetulkan & TETAP begini.
-            $biayaTambahanLama = (float)($oldRow['biaya_tambahan'] ?? 0);
-            $biayaLainnyaLama  = (float)($oldRow['biaya_lainnya'] ?? 0);
+            // biaya_tambahan (Tier Express) & biaya_lainnya (Biaya Lainnya Tier)
+            // DIRECOMPUTE dari kondisi terbaru setiap kali item berubah — server-side,
+            // tidak percaya nilai fee dari klien (sama pola pos.php). Kalau item TIDAK
+            // berubah, tetap dari row lama (persis sebelumnya, tidak disentuh).
+            // Lihat docs/superpowers/specs/2026-09-05-tier-express-edit-order-design.md
+            require_once ROOT . '/core/ExpressTier.php';
+            require_once ROOT . '/core/BiayaLainnyaTier.php';
+            $itemsWithTier    = [];
+            $biayaLainnyaRows = [];
+            $dom = ['nama' => null, 'tipe_order' => 'reguler'];
+            if ($itemsChanged && !empty($data['items'])) {
+                // Validasi: pastikan setiap item adalah array (avoid fatal error dari payload rusak)
+                foreach ($data['items'] as $item) {
+                    if (!is_array($item)) {
+                        echo json_encode(['error'=>'Format item tidak valid']); exit;
+                    }
+                }
+                $biayaTambahanBaru = 0.0;
+                foreach ($data['items'] as $i => $item) {
+                    $namaTier = trim((string)($item['express_tier_nama'] ?? ''));
+                    $tier = $namaTier !== '' ? ExpressTier::findByNama($tid, $namaTier, $oid) : null;
+                    $itSub = floatval($item['jumlah']) * floatval($item['harga_satuan']);
+                    $itFee = ExpressTier::calcItemFee($itSub, $tier);
+                    $itemsWithTier[$i] = [
+                        'express_tier_nama' => $tier ? $tier['nama_tier'] : null,
+                        'biaya_express'     => $itFee,
+                    ];
+                    $biayaTambahanBaru += $itFee;
+                }
+                $dom = ExpressTier::dominantTier(array_map(
+                    fn($it, $x) => array_merge($it, $x), $data['items'], $itemsWithTier
+                ));
+                $biayaLainnyaRows = BiayaLainnyaTier::calcAppliedFees($tid, $oid, $subtotal);
+                $biayaLainnyaBaru = array_sum(array_column($biayaLainnyaRows, 'nominal'));
+            } else {
+                $biayaTambahanBaru = (float)($oldRow['biaya_tambahan'] ?? 0);
+                $biayaLainnyaBaru  = (float)($oldRow['biaya_lainnya'] ?? 0);
+            }
 
             $diskon = floatval($data['diskon'] ?? 0);
             $total  = $subtotal > 0
-                ? max(0, $subtotal - $diskon + $biayaTambahanLama + $biayaLainnyaLama)
+                ? max(0, $subtotal - $diskon + $biayaTambahanBaru + $biayaLainnyaBaru)
                 : max(0, floatval($data['total'] ?? 0));
             $dp     = floatval($data['dp'] ?? 0);
             $sisa   = $total - $dp;
@@ -361,9 +392,9 @@ if ($action) {
             if (!empty($data['items']) && $itemsChanged) {
                 $db->prepare("DELETE FROM hl_transaksi_item WHERE tenant_id=? AND outlet_id=? AND transaksi_id=?")->execute([$tid, $oid, $id]);
                 $istmt = $db->prepare("INSERT INTO hl_transaksi_item
-                    (tenant_id,outlet_id,transaksi_id,layanan_id,nama_layanan,satuan,jumlah,harga_satuan,subtotal,catatan_item)
-                    VALUES (?,?,?,?,?,?,?,?,?,?)");
-                foreach ($data['items'] as $item) {
+                    (tenant_id,outlet_id,transaksi_id,layanan_id,nama_layanan,satuan,jumlah,harga_satuan,subtotal,catatan_item,express_tier_nama,biaya_express)
+                    VALUES (?,?,?,?,?,?,?,?,?,?,?,?)");
+                foreach ($data['items'] as $i => $item) {
                     $sub = floatval($item['jumlah']) * floatval($item['harga_satuan']);
                     $istmt->execute([
                         $tid, $oid, $id,
@@ -373,11 +404,23 @@ if ($action) {
                         $item['jumlah'],
                         $item['harga_satuan'],
                         $sub,
-                        $item['catatan_item'] ?? ''
+                        $item['catatan_item'] ?? '',
+                        $itemsWithTier[$i]['express_tier_nama'] ?? null,
+                        $itemsWithTier[$i]['biaya_express'] ?? 0,
                     ]);
                 }
-                // Update subtotal di header
-                $db->prepare("UPDATE hl_transaksi SET subtotal=? WHERE tenant_id=? AND outlet_id=? AND id=?")->execute([$subtotal, $tid, $oid, $id]);
+                // Update subtotal + biaya_tambahan + biaya_lainnya + ringkasan tier di header
+                $db->prepare("UPDATE hl_transaksi SET subtotal=?, biaya_tambahan=?, biaya_lainnya=?, tipe_order=?, express_tier_nama=? WHERE tenant_id=? AND outlet_id=? AND id=?")
+                   ->execute([$subtotal, $biayaTambahanBaru, $biayaLainnyaBaru, $dom['tipe_order'], $dom['nama'], $tid, $oid, $id]);
+
+                // Refresh breakdown Biaya Lainnya (persis pola insert di pos.php:592)
+                $db->prepare("DELETE FROM hl_transaksi_biaya_lainnya WHERE tenant_id=? AND outlet_id=? AND transaksi_id=?")->execute([$tid, $oid, $id]);
+                if (!empty($biayaLainnyaRows)) {
+                    $blstmt = $db->prepare("INSERT INTO hl_transaksi_biaya_lainnya (tenant_id, outlet_id, transaksi_id, nama, nominal) VALUES (?,?,?,?,?)");
+                    foreach ($biayaLainnyaRows as $r) {
+                        $blstmt->execute([$tid, $oid, $id, $r['nama'], $r['nominal']]);
+                    }
+                }
             }
 
             // ── Eksekusi uang utk resolusi gerbang lunas ──────────────
@@ -908,6 +951,11 @@ if ($action) {
         }
         echo json_encode(['statuses' => $sc]);
         exit;
+    }
+
+    if ($action === 'express_tiers') {
+        require_once ROOT . '/core/ExpressTier.php';
+        echo json_encode(ExpressTier::forTenant($tid, $oid)); exit;
     }
 
     // GET layanan
@@ -1612,10 +1660,11 @@ function editStateJSON() {
     s:  g('edit_status_proses'), c: g('edit_catatan'), ci: g('edit_catatan_internal'),
     m:  g('edit_metode'), d: g('edit_diskon'), dp: g('edit_dp'), e: g('edit_estimasi'),
     fp: (document.getElementById('edit_foto_pickup_path')?.value || ''),
-    items: (editItems || []).map(it => ({ l: it.nama_layanan, s: it.satuan, j: it.jumlah, h: it.harga_satuan, k: it.catatan_item || '' }))
+    items: (editItems || []).map(it => ({ l: it.nama_layanan, s: it.satuan, j: it.jumlah, h: it.harga_satuan, t: it.express_tier_nama || '', k: it.catatan_item || '' }))
   });
 }
 let layananAll = [];
+let availableTiersEdit = [];  // {id, nama_tier, estimasi_jam, tipe_biaya, nilai_biaya, urutan, outlet_id}
 const BRAND_NAME   = <?= json_encode($_brandName) ?>;
 const OUTLET_NAMA  = <?= json_encode($_outletNama) ?>;
 const OUTLET_ADDR  = <?= json_encode($_outletAddr) ?>;
@@ -1632,6 +1681,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   loadSummary();
   loadOrders();
   await loadLayanan();
+  await loadExpressTiersEdit();
   // Auto-buka detail bila datang dari Kanban (/orders?open=<id>)
   const openId = new URLSearchParams(location.search).get('open');
   if (openId && /^\d+$/.test(openId)) openDetail(parseInt(openId, 10));
@@ -1653,6 +1703,15 @@ async function loadSummary() {
 async function loadLayanan() {
   const r = await fetch('orders.php?action=get_layanan');
   layananAll = await r.json();
+}
+
+async function loadExpressTiersEdit() {
+  try {
+    const r = await fetch('orders.php?action=express_tiers');
+    availableTiersEdit = await r.json();
+  } catch (e) {
+    availableTiersEdit = [];
+  }
 }
 
 // ── BULK SELECTION ────────────────────────────────────
@@ -1946,7 +2005,6 @@ async function openDetail(id) {
   const d = await r.json();
   if (d.error) { document.getElementById('modalBody').innerHTML = '<div class="empty">❌ ' + d.error + '</div>'; return; }
 
-  currentOrderBiayaTambahan = parseFloat(d.biaya_tambahan) || 0;
   currentOrderBiayaLainnya  = parseFloat(d.biaya_lainnya) || 0;
   editItems = d.items || [];
   currentOrderData = d;
@@ -1977,7 +2035,7 @@ async function openDetail(id) {
     <div style="overflow-x:auto;margin-bottom:8px">
       <table class="items-table">
         <thead><tr>
-          <th>Layanan</th><th>Sat</th><th>Jml</th><th>Harga</th><th>Subtotal</th><th>Ket</th><th></th>
+          <th>Layanan</th><th>Sat</th><th>Jml</th><th>Harga</th><th>Subtotal</th><th>Express</th><th>Ket</th><th></th>
         </tr></thead>
         <tbody id="editItemsBody"></tbody>
       </table>
@@ -2254,13 +2312,34 @@ function renderEditItems() {
       <td data-lbl="Jumlah">${CAN_EDIT_ORDER ? `<input class="item-input" type="number" value="${item.jumlah}" step="0.1" min="0" style="width:52px" oninput="editItems[${i}].jumlah=parseFloat(this.value)||0;recalcEdit()"/>` : `<span style="font-family:var(--mono);font-size:13px">${item.jumlah}</span>`}</td>
       <td data-lbl="Harga">${CAN_EDIT_ORDER ? `<input class="item-input" type="text" inputmode="numeric" value="${grpRibu(item.harga_satuan)}" style="width:80px" oninput="const v=parseInt(this.value.replace(/\\D/g,''))||0;editItems[${i}].harga_satuan=v;this.value=grpRibu(v);recalcEdit()"/>` : `<span style="font-family:var(--mono);font-size:13px">Rp ${grpRibu(item.harga_satuan)}</span>`}</td>
       <td data-lbl="Subtotal" class="item-sub">Rp ${grpRibu(item.jumlah*item.harga_satuan)}</td>
+      <td data-lbl="Express">${CAN_EDIT_ORDER ? `
+        <div style="flex:1;min-width:0;max-width:170px">
+          <select class="item-input" style="width:100%;font-size:11px" onchange="onEditItemTierChange(${i}, this.value)">
+            <option value="">⏱️ Reguler</option>
+            ${item.express_tier_nama && !availableTiersEdit.some(t => t.nama_tier === item.express_tier_nama) ? `<option value="${esc(item.express_tier_nama)}" selected>⚠️ ${esc(item.express_tier_nama)} (nonaktif)</option>` : ''}
+            ${availableTiersEdit.map(t => `<option value="${esc(t.nama_tier)}" ${item.express_tier_nama===t.nama_tier?'selected':''}>⚡ ${esc(t.nama_tier)}</option>`).join('')}
+          </select>
+          ${item.biaya_express > 0 ? `<div style="font-size:10px;color:#92400E;margin-top:2px;text-align:right;">+Rp ${grpRibu(item.biaya_express)}</div>` : ''}
+        </div>
+      ` : `<span style="font-size:12px;color:var(--gray)">${item.express_tier_nama ? '⚡ ' + esc(item.express_tier_nama) : 'Reguler'}</span>`}</td>
       <td data-lbl="Ket">${CAN_EDIT_ORDER ? `<input class="item-input" value="${esc(item.catatan_item||'')}" placeholder="..." style="width:60px" oninput="editItems[${i}].catatan_item=this.value"/>` : `<span style="font-size:12px;color:var(--gray)">${esc(item.catatan_item||'-')}</span>`}</td>
       <td>${CAN_EDIT_ORDER ? `<button class="btn-remove" onclick="removeEditItem(${i})">✕ Hapus</button>` : ''}</td>
     </tr>`).join('');
 }
 
+function onEditItemTierChange(idx, tierName) {
+  const item = editItems[idx];
+  if (!item) return;
+  item.express_tier_nama = tierName || null;
+  const tier = availableTiersEdit.find(t => t.nama_tier === tierName);
+  const itSub = item.jumlah * item.harga_satuan;
+  item.biaya_express = tier ? (tier.tipe_biaya === 'flat' ? parseFloat(tier.nilai_biaya) : Math.round(itSub * (parseFloat(tier.nilai_biaya)/100))) : 0;
+  renderEditItems();
+  recalcEdit();
+}
+
 function addEditRow() {
-  editItems.push({layanan_id:null,nama_layanan:'',satuan:'kg',jumlah:1,harga_satuan:0,catatan_item:''});
+  editItems.push({layanan_id:null,nama_layanan:'',satuan:'kg',jumlah:1,harga_satuan:0,catatan_item:'',express_tier_nama:null,biaya_express:0});
   renderEditItems(); recalcEdit();
 }
 function removeEditItem(i) { editItems.splice(i,1); renderEditItems(); recalcEdit(); }
@@ -2283,7 +2362,7 @@ function filterEditLayanan(q) {
 }
 
 function addEditLayanan(id, nama, satuan, harga) {
-  editItems.push({layanan_id:id,nama_layanan:nama,satuan,jumlah:1,harga_satuan:harga,catatan_item:''});
+  editItems.push({layanan_id:id,nama_layanan:nama,satuan,jumlah:1,harga_satuan:harga,catatan_item:'',express_tier_nama:null,biaya_express:0});
   renderEditItems(); recalcEdit();
 }
 
@@ -2334,7 +2413,11 @@ async function saveLayananQuick() {
 function recalcEdit() {
   const sub  = editItems.reduce((s,i) => s + i.jumlah * i.harga_satuan, 0);
   const dis  = parseFloat(document.getElementById('edit_diskon')?.value) || 0;
-  const tot  = Math.max(sub - dis + (currentOrderBiayaTambahan || 0) + (currentOrderBiayaLainnya || 0), 0);
+  // Preview Express dari editItems (live, ikut pilihan tier user) — Biaya Lainnya
+  // tetap pakai nilai lama (currentOrderBiayaLainnya) sbg preview, krn recompute
+  // persen-nya butuh subtotal final yg baru pasti di backend saat submit.
+  const biayaExprPreview = editItems.reduce((s,i) => s + (parseFloat(i.biaya_express)||0), 0);
+  const tot  = Math.max(sub - dis + biayaExprPreview + (currentOrderBiayaLainnya || 0), 0);
   const dp   = parseFloat(document.getElementById('edit_dp')?.value) || 0;
   const sisa = tot - dp;
   const subEl = document.getElementById('etSubtotal');
