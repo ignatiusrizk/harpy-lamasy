@@ -244,6 +244,7 @@ if ($action) {
                 trim((string)($it['nama_layanan'] ?? '')), trim((string)($it['satuan'] ?? '')),
                 (float)($it['jumlah'] ?? 0), (float)($it['harga_satuan'] ?? 0),
                 trim((string)($it['catatan_item'] ?? '')),
+                trim((string)($it['express_tier_nama'] ?? '')),  // include tier name dalam deteksi perubahan
             ]; }, $items ?? []); };
             $itemsChanged = ($sigItems($oldItems) != $sigItems($data['items'] ?? []));
 

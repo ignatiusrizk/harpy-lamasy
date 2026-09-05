@@ -5,14 +5,13 @@
 // supaya benar2 nge-test wiring-nya, bukan cuma algoritma.
 //
 // Run: php tests/orders/test_edit_tier_recompute.php
-// Butuh: server sudah live di https://lamasy.harpy.id, akun test
-// admintest/123456 (tenant 18, outlet 13) masih aktif.
+// Server lokal harus sudah jalan: php -S localhost:8091 -t /path/to/worktree
 
 require_once __DIR__ . '/../../master/config/db.php';
 $pdo = new PDO('mysql:host=' . DB_HOST . ';dbname=' . DB_NAME . ';charset=utf8mb4', DB_USER, DB_PASS,
     [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
 
-$BASE = 'https://lamasy.harpy.id';
+$BASE = 'http://localhost:8091';
 $TID = 18; $OID = 13;
 $pass = 0; $fail = 0;
 function check($label, $cond) {
@@ -21,22 +20,35 @@ function check($label, $cond) {
     else       { echo "FAIL: $label\n"; $fail++; }
 }
 
-// ── 1. Login, ambil cookie jar + csrf token ──
+// ── 1. Fetch CSRF token dari login.php, lalu login ──
 $cookieFile = tempnam(sys_get_temp_dir(), 'lmcookie');
+
+// GET login.php untuk ambil CSRF token (dan init session cookie)
 $ch = curl_init("$BASE/login.php");
 curl_setopt_array($ch, [
     CURLOPT_RETURNTRANSFER => true, CURLOPT_COOKIEJAR => $cookieFile,
-    CURLOPT_POST => true, CURLOPT_POSTFIELDS => http_build_query(['username'=>'admintest','password'=>'123456']),
     CURLOPT_FOLLOWLOCATION => true,
 ]);
-curl_exec($ch); curl_close($ch);
-
-$ch = curl_init("$BASE/orders.php");
-curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_COOKIEFILE => $cookieFile]);
 $html = curl_exec($ch); curl_close($ch);
-preg_match('/csrfToken\s*=\s*[\'"]([^\'"]+)[\'"]/', $html, $m);
+
+// Extract CSRF token dari form (name="_csrf" value="...")
+preg_match('/name="_csrf"\s+value="([^"]+)"/', $html, $m);
 $csrf = $m[1] ?? '';
-check('login berhasil & dapat csrf token', $csrf !== '');
+check('fetch login page & dapat csrf token', $csrf !== '');
+
+// POST login dengan CSRF token (gunakan cookie jar yang sama)
+$ch = curl_init("$BASE/login.php");
+curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER => true, CURLOPT_COOKIEFILE => $cookieFile,
+    CURLOPT_COOKIEJAR => $cookieFile,
+    CURLOPT_POST => true,
+    CURLOPT_POSTFIELDS => http_build_query(['username'=>'admintest','password'=>'123456','_csrf'=>$csrf]),
+    CURLOPT_FOLLOWLOCATION => true,
+]);
+$loginResp = curl_exec($ch); curl_close($ch);
+// Jika login gagal, akan di-redirect balik ke login.php. Cek apakah ada error message di response.
+$loginFailed = strpos($loginResp, 'tidak valid') !== false || strpos($loginResp, 'Username atau password') !== false;
+check('login berhasil (tanpa CSRF/auth error)', !$loginFailed);
 
 // ── 2. Cari 1 Tier Express aktif & 1 Biaya Lainnya Tier aktif (persen) di tenant ini ──
 $tier = $pdo->prepare("SELECT nama_tier, tipe_biaya, nilai_biaya FROM hl_express_tier WHERE tenant_id=? AND is_active=1 AND (outlet_id IS NULL OR outlet_id=?) LIMIT 1");
