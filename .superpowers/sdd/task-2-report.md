@@ -1,136 +1,159 @@
-# Task 2 Report: WelcomeKit — options + snapshot choice
+# Task 2 Report: Backend endpoint + Frontend UI — dropdown Tier Express di edit item
 
-## Status
-DONE — all tests GREEN, lint clean, committed.
+**Date:** 2026-09-05  
+**Implementer:** Claude Sonnet 5  
+**Status:** DONE  
+**Worktree:** `/Users/rizky/Documents/lamasy-tier-express-edit` (branch `feat/tier-express-edit-order`)
 
-## Methods Added to core/WelcomeKit.php
+## Summary
 
-| Method | Behaviour |
-|---|---|
-| `options(): array` | Reads `welcome_kit_options` JSON from BillingConfig; back-compat fallback wraps `welcome_kit_items` as one default 'standar' option if `welcome_kit_options` is empty/absent; validates each entry (skips missing nama or empty items); ensures exactly one `default:true` entry (auto-assigns first if none) |
-| `cleanItems($arr): array` | Private helper; filters/normalises item entries to `{nama, qty}` |
-| `slugKey(string $nama): string` | Private helper; generates URL-safe key from option name |
-| `defaultOption(): ?array` | Returns first option with `default:true`; falls back to first option; null if no options |
-| `optionByKey(string $key): ?array` | Returns matching option by key; null if not found |
-| `resolveChoiceKey(?string $key): ?string` | Validates key exists in options; falls back to defaultOption key; null if no options |
-| `items(): array` (shim) | Back-compat: returns `defaultOption()['items'] ?? []` so existing callers (add-outlet.php, welcome_kit.php, old test) stay functional during migration |
+Successfully implemented Task 2: added `action=express_tiers` backend endpoint and integrated Express tier dropdown UI into the order item edit form. Users can now select Express tiers from a dropdown when editing order items, with live preview of Express fees in the total calculation.
 
-## createForOutlet Changes
+## Changes Made
 
-- Added `welcome_kit_choice` to the outlet SELECT
-- Picks option via `optionByKey(choice) ?? defaultOption()`; returns `{ok:false, skipped:true}` if no option at all
-- Snapshots `kit_nama` + option's `items_json` into INSERT (which now includes the `kit_nama` column)
-- Column `` `trigger` `` remains backticked in INSERT
+### 1. Backend Endpoint (orders.php, line ~950)
+- Added new endpoint `action=express_tiers` that returns JSON array of active Express tiers for the tenant/outlet
+- Reuses existing `ExpressTier::forTenant()` method (already used in pos.php)
+- Returns format: `[{id, nama_tier, estimasi_jam, tipe_biaya, nilai_biaya, urutan, outlet_id}, ...]`
 
-## statusForOutlet Change
+### 2. Frontend: Global Variable & Loader (orders.php, lines ~1661, ~1704)
+- Added `availableTiersEdit = []` global variable to store fetched Express tiers
+- Added `loadExpressTiersEdit()` async function to fetch from `action=express_tiers` endpoint
+- Integrated call to `loadExpressTiersEdit()` in DOMContentLoaded (line ~1678)
 
-- Added `kit_nama` to SELECT; `listQueue` already uses `wk.*` so kit_nama auto-included
+### 3. Frontend: UI Column & Handler (orders.php, lines ~2306-2327)
+- Modified `renderEditItems()` to include new "Express" column (`<td data-lbl="Express">`)
+- Dropdown shows "⏱️ Reguler" (no tier) + list of available tiers with "⚡" emoji
+- Displays live preview of Express fee (e.g., "+Rp 150.000") when tier is selected
+- Added `onEditItemTierChange(idx, tierName)` handler function that:
+  - Updates `express_tier_nama` field
+  - Calculates `biaya_express` based on tier type (flat or percent)
+  - Re-renders and recalculates totals
 
-## items() Shim Behaviour
+### 4. Frontend: Item Initialization (orders.php, lines ~2330, ~2353)
+- Updated `addEditRow()` to initialize new fields: `express_tier_nama: null, biaya_express: 0`
+- Updated `addEditLayanan()` to include same initialization
 
-`items()` now delegates to `defaultOption()['items'] ?? []` instead of directly reading `welcome_kit_items`. Since `options()` has its own back-compat fallback (if `welcome_kit_options` empty → wraps `welcome_kit_items`), old callers still get the same item list.
+### 5. Frontend: Total Calculation (orders.php, lines ~2407-2408)
+- Modified `recalcEdit()` to calculate `biayaExprPreview` from `editItems` Express fees
+- Updated total formula: `tot = Math.max(sub - dis + biayaExprPreview + currentOrderBiayaLainnya, 0)`
+- Note: Frontend preview only; backend recomputes authoritative values on submit
 
-## TDD Evidence
+## Verification Results
 
-**RED (Step 1):** Appended logic tests to `test_welcome_kit_options.php` before implementing → Fatal: `Call to undefined method WelcomeKit::options()` (confirmed via run).
-
-**GREEN (Step 4):** After implementing methods + createForOutlet changes → all 16 assertions PASS.
-
-## Test Results
-
-### New: test_welcome_kit_options.php — 16/16 PASS
+### Endpoint Test ✓
 ```
-PASS: outlets.welcome_kit_choice ada
-PASS: saas_welcome_kit.kit_nama ada
-PASS: welcome_kit_options berisi >=1 opsi
-PASS: ada opsi default
-OK test_welcome_kit_options (schema)
-PASS: options() = 2 opsi
-PASS: defaultOption = standar
-PASS: optionByKey printer
-PASS: optionByKey key tak ada → null
-PASS: resolveChoiceKey valid
-PASS: resolveChoiceKey invalid → default
-PASS: resolveChoiceKey null → default
-PASS: createForOutlet ok
-PASS: snapshot kit_nama = pilihan owner (Paket Printer)
-PASS: snapshot items = opsi printer (4)
-PASS: choice kosong → opsi default (Standar)
-OK test_welcome_kit_options
+[OK] Login berhasil
+[HTTP 200] Response from express_tiers endpoint:
+[{"id":3,"nama_tier":"Express 2 Hari","estimasi_jam":48,"tipe_biaya":"percent","nilai_biaya":"30.00",...}]
+[OK] Valid JSON response with 4 tier(s)
+First tier: {"id":3,"nama_tier":"Express 2 Hari","estimasi_jam":48,"tipe_biaya":"percent","nilai_biaya":"30.00","urutan":0,"outlet_id":null}
 ```
 
-### Regression: test_welcome_kit.php — 41/41 PASS
-All 19 schema + 22 domain assertions pass. items() shim returns default-option items (same roll thermal items) so `snapshot items berisi thermal` still passes.
+### Code Structure Verification ✓
+- `availableTiersEdit` defined and populated: ✓ (4 references in code)
+- `loadExpressTiersEdit()` function: ✓ (defined at line 1701)
+- `onEditItemTierChange()` handler: ✓ (defined at line 2318)
+- Express dropdown column: ✓ (data-lbl="Express" confirmed at line 2306)
+- `biayaExprPreview` in recalcEdit: ✓ (line 2407-2408)
+- New fields in addEditRow/addEditLayanan: ✓ (initialized with null/0)
 
-## Schema Adaptations
-
-- Confirmed `outlets.welcome_kit_choice VARCHAR(40)` and `saas_welcome_kit.kit_nama VARCHAR(80)` exist (Task 1 migration ran).
-- `welcome_kit_options` row existed in `saas_billing_config` but had empty string value. Seeded it with one 'standar' option wrapping existing `welcome_kit_items` (the migration's `WHERE NOT EXISTS` was blocked by the pre-existing empty row).
-
-## DB Config Seeding Concern
-
-Task 1's migration SQL (`welcome_kit_options_migration.sql`) uses `WHERE NOT EXISTS` which failed to seed data because the `welcome_kit_options` row already existed with an empty string. Required manual seeding via `BillingConfig::set()` during Task 2. Recommend Task 1 migration be updated to use `ON DUPLICATE KEY UPDATE value_text=... WHERE value_text IS NULL OR value_text=''` for idempotent seeding. Task 3/4 callers (SA welcome_kit.php) should work once they see the populated config.
-
-## Items() Callers (back-compat maintained)
-
-- `add-outlet.php:713-714` — still uses `WelcomeKit::items()`; shim keeps it working
-- `superadmin/welcome_kit.php:32` — still uses `WelcomeKit::items()`; shim keeps it working
-- `tests/welcomekit/test_welcome_kit.php:32` — old test still passes (41/41)
-
-## Files Changed
-
-- **Modified:** `core/WelcomeKit.php` — added 5 public methods + 2 private helpers; updated createForOutlet + statusForOutlet; refactored items() to shim
-- **Modified:** `tests/welcomekit/test_welcome_kit_options.php` — appended 12 logic assertions + createForOutlet snapshot tests (choice + fallback)
-
-## Lint
-
-`php -l core/WelcomeKit.php` → No syntax errors detected.
-
-## Fix: capture+restore original config
-
-**Finding:** The test's `register_shutdown_function` was restoring `welcome_kit_options` to `''` (hardcoded empty string) instead of the original PROD value. Every test run wiped the live config.
-
-**PROD value BEFORE test run:**
+### Syntax Check ✓
 ```
-key_name              value_text
-welcome_kit_options   [{"key":"standar","nama":"Standar","default":true,"items":[{"nama":"Roll kertas thermal 58mm","qty":2},{"nama":"Plastik packing","qty":1},{"nama":"Solasi roll","qty":1}]}]
-welcome_kit_enabled   1
+No syntax errors detected in orders.php
 ```
 
-**Fix applied in `tests/welcomekit/test_welcome_kit_options.php`:**
-- Added `$origOpts = BillingConfig::get('welcome_kit_options', '');` BEFORE the first `BillingConfig::set()`
-- Changed shutdown function from `fn() => BillingConfig::set('welcome_kit_options', '', null)` to `function() use ($origOpts) { BillingConfig::set('welcome_kit_options', $origOpts, null); }`
-- No other global config (e.g. `welcome_kit_enabled`) is mutated by this test, so no additional capture needed.
+## Commits
 
-**test_welcome_kit_options.php run output — 16/16 PASS:**
-```
-PASS: outlets.welcome_kit_choice ada
-PASS: saas_welcome_kit.kit_nama ada
-PASS: welcome_kit_options berisi >=1 opsi
-PASS: ada opsi default
-OK test_welcome_kit_options (schema)
-PASS: options() = 2 opsi
-PASS: defaultOption = standar (got "standar", want "standar")
-PASS: optionByKey printer (got "Paket Printer", want "Paket Printer")
-PASS: optionByKey key tak ada → null
-PASS: resolveChoiceKey valid (got "printer", want "printer")
-PASS: resolveChoiceKey invalid → default (got "standar", want "standar")
-PASS: resolveChoiceKey null → default (got "standar", want "standar")
-PASS: createForOutlet ok
-PASS: snapshot kit_nama = pilihan owner (got "Paket Printer", want "Paket Printer")
-PASS: snapshot items = opsi printer (4)
-PASS: choice kosong → opsi default (got "Standar", want "Standar")
-OK test_welcome_kit_options
+| Hash | Message |
+|------|---------|
+| 9655be9 | feat(orders): dropdown Tier Express di form edit item order |
+
+**Related commits (Task 1 backend - already in worktree):**
+- b6ab566: fix: asymmetric comparison di itemsChanged — include express_tier_nama di query
+- a15fca0: feat(orders): recompute biaya_tambahan (Tier Express) & biaya_lainnya saat edit order
+
+## Technical Notes
+
+### Frontend vs Backend Calculation
+- **Frontend** (this task): Live preview of Express fee in dropdown select → `onEditItemTierChange()` → `renderEditItems()` + `recalcEdit()`
+- **Backend** (Task 1): Authoritative recompute via `ExpressTier::calcItemFee()` + `findByNama()` on order submit (action=update)
+- This design prevents inconsistency: even if client-side formula has bugs, the backend value is what gets saved
+
+### Tier Selection Flow
+1. User opens order edit form → `loadExpressTiersEdit()` fetches tiers in background
+2. User selects tier in dropdown → `onEditItemTierChange()` updates `editItems[i]`
+3. Preview updates: biaya_express calculated, renderEditItems() re-renders, recalcEdit() updates totals
+4. User clicks Save → orders.php `action=update` processes the item with `express_tier_nama` field
+5. Backend Task 1 logic: recomputes the biaya_express value from ExpressTier DB (this is what gets saved)
+6. Order detail page reloads → shows the tier selection + fee in readonly mode
+
+## No Concerns
+
+- Code follows established patterns (mirrors pos.php dropdown implementation)
+- All required fields initialized in item objects
+- Endpoint properly guarded by tenant_guard (session-based $tid/$oid)
+- Frontend preview does not interfere with backend validation/recompute
+- Syntax clean, no errors
+
+---
+
+## Post-Implementation: Code Review Fixes (2026-09-05)
+
+**Status:** COMPLETED  
+**Commit:** `40f1e6ab` — "fix(orders): dua critical bugs — editStateJSON gak nyertain tier, thead mismatch kolom"
+
+### Critical Bug #1: `editStateJSON()` Missing Express Tier Field
+
+**Problem:** The `editStateJSON()` function (line 1651-1659) serializes the current edit state to detect if any changes were made before submitting to the server. The function compares the current state with a snapshot taken when the form opened (`editSnapshot`). If they match exactly, the save is rejected with "Tidak ada perubahan untuk disimpan".
+
+However, the items array serialization was missing the `express_tier_nama` field:
+```javascript
+// BEFORE (line 1657)
+items: (editItems || []).map(it => ({ l: it.nama_layanan, s: it.satuan, j: it.jumlah, h: it.harga_satuan, k: it.catatan_item || '' }))
 ```
 
-**test_welcome_kit.php — 41/41 PASS** (all assertions intact, welcome_kit_enabled still 1 after run)
+**Impact:** If a user opened an order for editing and ONLY changed the Express tier (without touching any other field), the `editStateJSON()` would produce an identical result as the snapshot → system would falsely believe "no changes were made" → the tier selection would be silently discarded, never sent to the server.
 
-**PROD value AFTER both test runs:**
+**Fix Applied:** Added `t: it.express_tier_nama || ''` to the serialized object:
+```javascript
+// AFTER (line 1657)
+items: (editItems || []).map(it => ({ l: it.nama_layanan, s: it.satuan, j: it.jumlah, h: it.harga_satuan, t: it.express_tier_nama || '', k: it.catatan_item || '' }))
 ```
-key_name              value_text
-welcome_kit_options   [{"key":"standar","nama":"Standar","default":true,"items":[{"nama":"Roll kertas thermal 58mm","qty":2},{"nama":"Plastik packing","qty":1},{"nama":"Solasi roll","qty":1}]}]
-welcome_kit_enabled   1
-```
-**UNCHANGED — restore confirmed working.**
 
-**Lint:** `php -l tests/welcomekit/test_welcome_kit_options.php` → No syntax errors detected.
+Now tier changes are detected and properly sent to the server.
+
+### Critical Bug #2: Table Header Column Mismatch
+
+**Problem:** The `<thead>` in the order items table had only 7 `<th>` elements (line 2028-2029):
+```html
+<th>Layanan</th><th>Sat</th><th>Jml</th><th>Harga</th><th>Subtotal</th><th>Ket</th><th></th>
+```
+
+But the `renderEditItems()` JavaScript function generates 8 `<td>` elements per row (the new Express column was added between Subtotal and Ket).
+
+**Impact:** On desktop browsers, the table is rendered as a native HTML table (not collapsed to cards like on mobile). The header-body column mismatch caused:
+- The "Ket" header to appear above the Express column
+- The delete button column to have no header
+- Misaligned visual presentation that appears broken
+
+**Fix Applied:** Added `<th>Express</th>` between `<th>Subtotal</th>` and `<th>Ket</th>` (line 2029):
+```html
+<th>Layanan</th><th>Sat</th><th>Jml</th><th>Harga</th><th>Subtotal</th><th>Express</th><th>Ket</th><th></th>
+```
+
+Now all 8 headers align correctly with the 8 data columns.
+
+### Verification Results
+
+**Syntax Check:** ✓
+```
+$ php -l orders.php
+No syntax errors detected in orders.php
+```
+
+**Code Structure Verification:** ✓
+- Line 1657: `editStateJSON()` items map now includes `t: it.express_tier_nama || ''`
+- Line 2029: `<thead>` now has 8 `<th>` elements including `<th>Express</th>`
+
+Both fixes follow the established patterns in the codebase and address the exact issues identified in the code review.
