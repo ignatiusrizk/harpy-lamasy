@@ -8,6 +8,16 @@ punya dropdown tier per item. Fitur ini menambahkan UI pilih Tier Express di
 form edit item, dan sekaligus membetulkan bug data-loss yang ditemukan saat
 investigasi (lihat bawah).
 
+**Perluasan scope (revisi setelah design awal):** bukan cuma Tier Express —
+**`biaya_lainnya` (Biaya Lainnya Tier) juga ikut direcompute** saat order
+diedit, bukan snapshot beku lagi. Alasan: tier Biaya Lainnya bisa bertipe
+persen dari subtotal (`BiayaLainnyaTier::calcFee()`) — kalau item order
+berubah (subtotal berubah) tapi `biaya_lainnya` tetap dibekukan ke nilai
+lama, angkanya jadi salah/gak nyambung ke subtotal baru. Aturan umum:
+**setiap kali transaksi diedit dan item-nya berubah, SEMUA nilai yang
+sifatnya auto-calculated (Tier Express per-item + Biaya Lainnya Tier
+per-order) dihitung ulang dari kondisi terbaru** — bukan cuma Express.
+
 ## Bug yang ikut dibetulkan
 
 `orders.php` action `update`, saat `items` berubah (`$itemsChanged=true`):
@@ -41,6 +51,15 @@ tepat.
    "tier dominan") ikut di-recompute pakai `ExpressTier::dominantTier()`
    yang sudah ada di `core/ExpressTier.php`, konsisten dengan cara POS
    menghitungnya saat create.
+5. **`biaya_lainnya` ikut direcompute dari subtotal baru** —
+   `BiayaLainnyaTier::calcAppliedFees($tid, $oid, $subtotalBaru)`, sama
+   fungsi yang dipakai POS saat create. Breakdown-nya
+   (`hl_transaksi_biaya_lainnya`) di-refresh (DELETE+INSERT) sama pola
+   `hl_transaksi_item`, bukan lagi read-only snapshot. Ini otomatis
+   dipicu tier apapun (flat atau persen) — user TIDAK perlu pilih apa-apa
+   secara manual buat Biaya Lainnya (tetap otomatis sesuai desain
+   aslinya), cuma NILAINYA yang sekarang ikut nurut ke subtotal terbaru
+   alih-alih beku ke subtotal lama.
 
 ## Perubahan per Bagian
 
@@ -75,17 +94,20 @@ field itu (sekarang di-drop diam-diam saat mapping).
   `tipe_order` + `express_tier_nama` di header bersamaan dengan
   `biaya_tambahan` (ganti dari `$biayaTambahanLama` yang snapshot beku,
   jadi `$biayaTambahanBaru` yang direcompute).
-- **PENTING**: recompute ini HANYA jalan di dalam blok
-  `if (!empty($data['items']) && $itemsChanged)` yang sudah ada — kalau
-  items tidak berubah sama sekali, `biaya_tambahan` & item tier TIDAK
-  disentuh (tetap snapshot beku seperti sebelumnya untuk kasus itu).
-- `$biayaTambahanLama`/`$biayaLainnyaLama` (baris 271-272) — `biaya_lainnya`
-  TETAP snapshot beku (di luar scope fitur ini, itu murni tier-based
-  otomatis dari `BiayaLainnyaTier`, bukan pilihan manual per item).
-  Hanya `biaya_tambahan` (Express) yang berubah dari snapshot →
-  recompute.
-- Total order (`$total` di baris ~275) pakai `$biayaTambahanBaru` bukan
-  `$biayaTambahanLama` ketika `$itemsChanged`.
+- Setelah `$subtotal` baru dihitung (baris ~258-263, sudah ada): panggil
+  `BiayaLainnyaTier::calcAppliedFees($tid, $oid, $subtotal)` →
+  `$biayaLainnyaBaru` = SUM nominal-nya. `DELETE` +
+  `INSERT` ulang `hl_transaksi_biaya_lainnya` per baris hasilnya (sama
+  pola insert breakdown yang sudah ada di pos.php:592).
+- **PENTING**: semua recompute ini (Express + Biaya Lainnya) HANYA jalan
+  di dalam blok `if (!empty($data['items']) && $itemsChanged)` yang
+  sudah ada — kalau items tidak berubah sama sekali, `biaya_tambahan`,
+  `biaya_lainnya`, dan breakdown item-tier TIDAK disentuh (tetap persis
+  seperti sebelumnya untuk kasus itu, gak ada alasan buat recompute
+  kalau gak ada yang berubah).
+- Total order (`$total` di baris ~275) pakai `$biayaTambahanBaru` +
+  `$biayaLainnyaBaru`, bukan lagi `$biayaTambahanLama`/`$biayaLainnyaLama`,
+  ketika `$itemsChanged`.
 
 ### 4. Frontend — `editItems[]` bawa field tier
 
@@ -114,14 +136,15 @@ Tambahkan `express_tier_nama:null, biaya_express:0` ke object item baru
 
 ## Yang TIDAK termasuk scope
 
-- `biaya_lainnya` (Biaya Lainnya Tier) tetap snapshot beku saat edit —
-  itu murni otomatis dari master tier aktif, bukan pilihan manual per
-  item, jadi tidak relevan dengan fitur "pilih tier" ini.
+- Tidak ada UI baru untuk Biaya Lainnya di form edit — tetap murni
+  otomatis (owner atur tier aktif di `layanan.php`, bukan dipilih manual
+  per order). Yang berubah cuma NILAINYA sekarang direcompute mengikuti
+  subtotal terbaru, bukan beku ke subtotal lama.
 - Tidak ada perbaikan retroaktif untuk data lama yang mungkin sudah
-  kehilangan `express_tier_nama`/`biaya_express` di level item akibat
-  bug ini sebelumnya (di luar scope — kalau perlu, itu proyek data-repair
-  terpisah, keputusan sengaja: total uang historis tetap benar, cuma
-  breakdown per-item yang hilang untuk order yang KEBETULAN sudah pernah
-  diedit sebelum fix ini).
+  kehilangan `express_tier_nama`/`biaya_express` di level item, atau
+  `biaya_lainnya` yang sudah kadung beku dari edit-edit sebelumnya (di
+  luar scope — kalau perlu, itu proyek data-repair terpisah, keputusan
+  sengaja: total uang historis tetap seperti tercatat, cuma order yang
+  diedit SETELAH fix ini yang dapat perilaku baru).
 - Tidak ada perubahan pada bagaimana POS (`pos.php`) bekerja — POS sudah
   benar, fitur ini menyamakan Order edit dengan POS.
