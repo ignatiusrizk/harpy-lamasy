@@ -262,18 +262,42 @@ if ($action) {
                 }
             }
 
-            // biaya_tambahan & biaya_lainnya = snapshot dari saat order dibuat,
-            // TIDAK di-recompute di sini (Orders tidak mengelola ulang tier —
-            // baik Express maupun Biaya Lainnya, keduanya murni auto-generate
-            // saat order dibuat). BUGFIX lama: dulu rumus di bawah cuma
-            // "subtotal - diskon", biaya_tambahan ikut hilang dari total
-            // setiap kali item order diedit — sudah dibetulkan & TETAP begini.
-            $biayaTambahanLama = (float)($oldRow['biaya_tambahan'] ?? 0);
-            $biayaLainnyaLama  = (float)($oldRow['biaya_lainnya'] ?? 0);
+            // biaya_tambahan (Tier Express) & biaya_lainnya (Biaya Lainnya Tier)
+            // DIRECOMPUTE dari kondisi terbaru setiap kali item berubah — server-side,
+            // tidak percaya nilai fee dari klien (sama pola pos.php). Kalau item TIDAK
+            // berubah, tetap dari row lama (persis sebelumnya, tidak disentuh).
+            // Lihat docs/superpowers/specs/2026-09-05-tier-express-edit-order-design.md
+            require_once ROOT . '/core/ExpressTier.php';
+            require_once ROOT . '/core/BiayaLainnyaTier.php';
+            $itemsWithTier    = [];
+            $biayaLainnyaRows = [];
+            $dom = ['nama' => null, 'tipe_order' => 'reguler'];
+            if ($itemsChanged && !empty($data['items'])) {
+                $biayaTambahanBaru = 0.0;
+                foreach ($data['items'] as $i => $item) {
+                    $namaTier = trim((string)($item['express_tier_nama'] ?? ''));
+                    $tier = $namaTier !== '' ? ExpressTier::findByNama($tid, $namaTier, $oid) : null;
+                    $itSub = floatval($item['jumlah']) * floatval($item['harga_satuan']);
+                    $itFee = ExpressTier::calcItemFee($itSub, $tier);
+                    $itemsWithTier[$i] = [
+                        'express_tier_nama' => $tier ? $tier['nama_tier'] : null,
+                        'biaya_express'     => $itFee,
+                    ];
+                    $biayaTambahanBaru += $itFee;
+                }
+                $dom = ExpressTier::dominantTier(array_map(
+                    fn($it, $x) => array_merge($it, $x), $data['items'], $itemsWithTier
+                ));
+                $biayaLainnyaRows = BiayaLainnyaTier::calcAppliedFees($tid, $oid, $subtotal);
+                $biayaLainnyaBaru = array_sum(array_column($biayaLainnyaRows, 'nominal'));
+            } else {
+                $biayaTambahanBaru = (float)($oldRow['biaya_tambahan'] ?? 0);
+                $biayaLainnyaBaru  = (float)($oldRow['biaya_lainnya'] ?? 0);
+            }
 
             $diskon = floatval($data['diskon'] ?? 0);
             $total  = $subtotal > 0
-                ? max(0, $subtotal - $diskon + $biayaTambahanLama + $biayaLainnyaLama)
+                ? max(0, $subtotal - $diskon + $biayaTambahanBaru + $biayaLainnyaBaru)
                 : max(0, floatval($data['total'] ?? 0));
             $dp     = floatval($data['dp'] ?? 0);
             $sisa   = $total - $dp;
@@ -361,9 +385,9 @@ if ($action) {
             if (!empty($data['items']) && $itemsChanged) {
                 $db->prepare("DELETE FROM hl_transaksi_item WHERE tenant_id=? AND outlet_id=? AND transaksi_id=?")->execute([$tid, $oid, $id]);
                 $istmt = $db->prepare("INSERT INTO hl_transaksi_item
-                    (tenant_id,outlet_id,transaksi_id,layanan_id,nama_layanan,satuan,jumlah,harga_satuan,subtotal,catatan_item)
-                    VALUES (?,?,?,?,?,?,?,?,?,?)");
-                foreach ($data['items'] as $item) {
+                    (tenant_id,outlet_id,transaksi_id,layanan_id,nama_layanan,satuan,jumlah,harga_satuan,subtotal,catatan_item,express_tier_nama,biaya_express)
+                    VALUES (?,?,?,?,?,?,?,?,?,?,?,?)");
+                foreach ($data['items'] as $i => $item) {
                     $sub = floatval($item['jumlah']) * floatval($item['harga_satuan']);
                     $istmt->execute([
                         $tid, $oid, $id,
@@ -373,11 +397,23 @@ if ($action) {
                         $item['jumlah'],
                         $item['harga_satuan'],
                         $sub,
-                        $item['catatan_item'] ?? ''
+                        $item['catatan_item'] ?? '',
+                        $itemsWithTier[$i]['express_tier_nama'] ?? null,
+                        $itemsWithTier[$i]['biaya_express'] ?? 0,
                     ]);
                 }
-                // Update subtotal di header
-                $db->prepare("UPDATE hl_transaksi SET subtotal=? WHERE tenant_id=? AND outlet_id=? AND id=?")->execute([$subtotal, $tid, $oid, $id]);
+                // Update subtotal + biaya_tambahan + biaya_lainnya + ringkasan tier di header
+                $db->prepare("UPDATE hl_transaksi SET subtotal=?, biaya_tambahan=?, biaya_lainnya=?, tipe_order=?, express_tier_nama=? WHERE tenant_id=? AND outlet_id=? AND id=?")
+                   ->execute([$subtotal, $biayaTambahanBaru, $biayaLainnyaBaru, $dom['tipe_order'], $dom['nama'], $tid, $oid, $id]);
+
+                // Refresh breakdown Biaya Lainnya (persis pola insert di pos.php:592)
+                $db->prepare("DELETE FROM hl_transaksi_biaya_lainnya WHERE tenant_id=? AND outlet_id=? AND transaksi_id=?")->execute([$tid, $oid, $id]);
+                if (!empty($biayaLainnyaRows)) {
+                    $blstmt = $db->prepare("INSERT INTO hl_transaksi_biaya_lainnya (tenant_id, outlet_id, transaksi_id, nama, nominal) VALUES (?,?,?,?,?)");
+                    foreach ($biayaLainnyaRows as $r) {
+                        $blstmt->execute([$tid, $oid, $id, $r['nama'], $r['nominal']]);
+                    }
+                }
             }
 
             // ── Eksekusi uang utk resolusi gerbang lunas ──────────────
