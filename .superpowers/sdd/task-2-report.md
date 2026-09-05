@@ -157,3 +157,84 @@ No syntax errors detected in orders.php
 - Line 2029: `<thead>` now has 8 `<th>` elements including `<th>Express</th>`
 
 Both fixes follow the established patterns in the codebase and address the exact issues identified in the code review.
+
+---
+
+## Code Review Fix: Express Column Flex Wrapper (2026-09-05)
+
+**Status:** COMPLETED  
+**Commit:** `171f622` — "fix(orders): bungkus select+badge fee Express dalam wrapper flex — cegah overflow di HP"
+
+### Medium Finding: Express Column Risiko Kepotong/Tumpang-Tindih di Mobile
+
+**Problem:** Kolom Express mengandung 2 sibling elements langsung di dalam `<td>`:
+1. `<select>` dropdown tier
+2. `<div>` badge nominal fee (muncul kondisional saat tier dipilih)
+
+CSS untuk row items dirancang dengan asumsi 1 kontrol per `<td>` (label kiri, kontrol kanan, flex-row):
+```css
+.items-table tbody td { display:flex; justify-content:space-between; gap:8px; ... }
+.items-table tbody td input, 
+.items-table tbody td select { flex:1; max-width:170px; ... }
+```
+
+Selector CSS ini **hanya target `input`/`select`**, bukan div badge. Ketika badge muncul:
+- `<td>` melihat 3 children (label pseudoelement + select + div)
+- `justify-content:space-between` & no-wrap = dipaksa 1 baris
+- Select + badge gak dapat flex rule → risiko kepotong/tumpang-tindih di layar sempit
+
+**Pattern History:** Bug kelas ini sudah diperbaiki di 8 halaman lain (pos.php, dll) — commit deef40e, 4d87cbb, 6b41e99, 113258b; pola yang sama perlu diterapkan di sini.
+
+### Fix Applied
+
+Membungkus `<select>` dan div badge dalam 1 wrapper `<div style="flex:1;min-width:0;max-width:170px">`:
+- Dari sudut pandang CSS flex `<td>`, cuma ada 1 "kontrol" (wrapper)
+- Wrapper sendiri yang handle stacking select + badge secara vertikal (div block)
+- Select width diubah: `110px` → `100%` (isi wrapper)
+- Badge fee ditambah `text-align:right;` (align angka dengan konsisten)
+
+**Before:**
+```javascript
+<td data-lbl="Express">
+  <select style="width:110px">...</select>
+  ${item.biaya_express > 0 ? `<div>+Rp ...</div>` : ''}
+</td>
+```
+
+**After:**
+```javascript
+<td data-lbl="Express">
+  <div style="flex:1;min-width:0;max-width:170px">
+    <select style="width:100%">...</select>
+    ${item.biaya_express > 0 ? `<div style="text-align:right;">+Rp ...</div>` : ''}
+  </div>
+</td>
+```
+
+### Verification Results
+
+**Syntax Check:** ✓
+```
+$ php -l orders.php
+No syntax errors detected in orders.php
+```
+
+**Structure Verification:** ✓
+```
+$ grep -A 8 'data-lbl="Express"' orders.php | head -15
+<td data-lbl="Express">${CAN_EDIT_ORDER ? `
+        <div style="flex:1;min-width:0;max-width:170px">
+          <select class="item-input" style="width:100%;font-size:11px" ...>
+            ...
+          </select>
+          ${item.biaya_express > 0 ? `<div style="...text-align:right;">+Rp ...</div>` : ''}
+        </div>
+      ` : ...}</td>
+```
+
+- Wrapper `<div style="flex:1;...">` membungkus select ✓
+- Badge fee sebagai child div (block stacking) ✓
+- Select menggunakan `width:100%` ✓
+- Badge fee punya `text-align:right;` ✓
+
+Pola konsisten dengan fix sebelumnya di pos.php + halaman lain, menghindari overflow/blowout di breakpoint mobile.
