@@ -1654,7 +1654,7 @@ function editStateJSON() {
     s:  g('edit_status_proses'), c: g('edit_catatan'), ci: g('edit_catatan_internal'),
     m:  g('edit_metode'), d: g('edit_diskon'), dp: g('edit_dp'), e: g('edit_estimasi'),
     fp: (document.getElementById('edit_foto_pickup_path')?.value || ''),
-    items: (editItems || []).map(it => ({ l: it.nama_layanan, s: it.satuan, j: it.jumlah, h: it.harga_satuan, k: it.catatan_item || '' }))
+    items: (editItems || []).map(it => ({ l: it.nama_layanan, s: it.satuan, j: it.jumlah, h: it.harga_satuan, t: it.express_tier_nama || '', k: it.catatan_item || '' }))
   });
 }
 let layananAll = [];
@@ -2026,7 +2026,7 @@ async function openDetail(id) {
     <div style="overflow-x:auto;margin-bottom:8px">
       <table class="items-table">
         <thead><tr>
-          <th>Layanan</th><th>Sat</th><th>Jml</th><th>Harga</th><th>Subtotal</th><th>Ket</th><th></th>
+          <th>Layanan</th><th>Sat</th><th>Jml</th><th>Harga</th><th>Subtotal</th><th>Express</th><th>Ket</th><th></th>
         </tr></thead>
         <tbody id="editItemsBody"></tbody>
       </table>
