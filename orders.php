@@ -2304,11 +2304,13 @@ function renderEditItems() {
       <td data-lbl="Harga">${CAN_EDIT_ORDER ? `<input class="item-input" type="text" inputmode="numeric" value="${grpRibu(item.harga_satuan)}" style="width:80px" oninput="const v=parseInt(this.value.replace(/\\D/g,''))||0;editItems[${i}].harga_satuan=v;this.value=grpRibu(v);recalcEdit()"/>` : `<span style="font-family:var(--mono);font-size:13px">Rp ${grpRibu(item.harga_satuan)}</span>`}</td>
       <td data-lbl="Subtotal" class="item-sub">Rp ${grpRibu(item.jumlah*item.harga_satuan)}</td>
       <td data-lbl="Express">${CAN_EDIT_ORDER ? `
-        <select class="item-input" style="width:110px;font-size:11px" onchange="onEditItemTierChange(${i}, this.value)">
-          <option value="">⏱️ Reguler</option>
-          ${availableTiersEdit.map(t => `<option value="${esc(t.nama_tier)}" ${item.express_tier_nama===t.nama_tier?'selected':''}>⚡ ${esc(t.nama_tier)}</option>`).join('')}
-        </select>
-        ${item.biaya_express > 0 ? `<div style="font-size:10px;color:#92400E;margin-top:2px;">+Rp ${grpRibu(item.biaya_express)}</div>` : ''}
+        <div style="flex:1;min-width:0;max-width:170px">
+          <select class="item-input" style="width:100%;font-size:11px" onchange="onEditItemTierChange(${i}, this.value)">
+            <option value="">⏱️ Reguler</option>
+            ${availableTiersEdit.map(t => `<option value="${esc(t.nama_tier)}" ${item.express_tier_nama===t.nama_tier?'selected':''}>⚡ ${esc(t.nama_tier)}</option>`).join('')}
+          </select>
+          ${item.biaya_express > 0 ? `<div style="font-size:10px;color:#92400E;margin-top:2px;text-align:right;">+Rp ${grpRibu(item.biaya_express)}</div>` : ''}
+        </div>
       ` : `<span style="font-size:12px;color:var(--gray)">${item.express_tier_nama ? '⚡ ' + esc(item.express_tier_nama) : 'Reguler'}</span>`}</td>
       <td data-lbl="Ket">${CAN_EDIT_ORDER ? `<input class="item-input" value="${esc(item.catatan_item||'')}" placeholder="..." style="width:60px" oninput="editItems[${i}].catatan_item=this.value"/>` : `<span style="font-size:12px;color:var(--gray)">${esc(item.catatan_item||'-')}</span>`}</td>
       <td>${CAN_EDIT_ORDER ? `<button class="btn-remove" onclick="removeEditItem(${i})">✕ Hapus</button>` : ''}</td>
