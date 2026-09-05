@@ -238,3 +238,203 @@ $ grep -A 8 'data-lbl="Express"' orders.php | head -15
 - Badge fee punya `text-align:right;` ✓
 
 Pola konsisten dengan fix sebelumnya di pos.php + halaman lain, menghindari overflow/blowout di breakpoint mobile.
+
+---
+
+## Whole-Branch Code Review Fixes: 4 Temuan FINAL (2026-09-05)
+
+**Status:** COMPLETED  
+**Commit:** `4f699ff` — "fix(orders): 4 temuan review whole-branch FINAL"  
+**Worktree:** `/Users/rizky/Documents/lamasy-tier-express-edit` (branch `feat/tier-express-edit-order`)
+
+### Temuan #1 (CRITICAL) — `recalcEdit()` String Concatenation Bug
+
+**Problem:** Fungsi `recalcEdit()` (line 2409) menghitung `biayaExprPreview` dari `editItems`:
+```javascript
+const biayaExprPreview = editItems.reduce((s,i) => s + (i.biaya_express||0), 0);
+```
+
+**Root Cause:** Kolom `biaya_express` di database adalah tipe `DECIMAL(12,2)`, dan PDO/mysqlnd mengembalikannya **sebagai string** (misal `"0.00"` atau `"5000.00"`). String `"0.00"` adalah **truthy**, jadi `|| 0` tidak berfungsi. Ketika pertama kali `i.biaya_express` string:
+```javascript
+0 + "0.00"          // → "00.00" (string concat, bukan penjumlahan)
+"00.00" + "5000.00" // → "00.005000.00" (CONCATENATION!)
+```
+Hasil akhirnya bisa jadi NaN, atau angka yang sangat salah (jutaan rupiah error).
+
+**Impact:** SEMUA order yang dibuka detail-nya terpengaruh (bukan cuma order yang pakai Tier Express) karena field `biaya_express` ada di semua item dengan nilai default `"0.00"`. Total dan Sisa Bayar yang tampil di modal bisa jadi angka nonsense atau NaN.
+
+**Fix Applied (Line 2409):**
+```javascript
+// BEFORE:
+const biayaExprPreview = editItems.reduce((s,i) => s + (i.biaya_express||0), 0);
+
+// AFTER:
+const biayaExprPreview = editItems.reduce((s,i) => s + (parseFloat(i.biaya_express)||0), 0);
+```
+
+**Verification:** ✓
+- `parseFloat("0.00")` → `0` (angka)
+- `parseFloat("5000.00")` → `5000` (angka)
+- Menjumlahan numerik, bukan string concat
+- No regression test: 16/16 PASS
+
+---
+
+### Temuan #2 (IMPORTANT) — Tier Nonaktif Tampil sebagai "Reguler" di Dropdown
+
+**Problem:** Dropdown Express (line 2306-2314) hanya isi `<option>` dari `availableTiersEdit` (tier AKTIF doang):
+```javascript
+<select>
+  <option value="">⏱️ Reguler</option>
+  ${availableTiersEdit.map(t => `<option value="${esc(t.nama_tier)}" ...>...`)}
+</select>
+```
+
+Kalau item punya `express_tier_nama` yang sudah **dinonaktifkan/direname/dihapus owner** setelah order dibuat:
+- Item.express_tier_nama masih berisi nama tier lama (di data)
+- Tier itu tidak ada di `availableTiersEdit` (sudah nonaktif)
+- `<select>` jatuh ke opsi pertama "Reguler" secara visual
+- **Tapi** badge fee masih muncul di bawah (karena `item.biaya_express` masih ada nilainya)
+- **Hasil:** User liat dropdown bilang "Reguler" tapi ada badge fee → **MENYESATKAN**
+
+**Fix Applied (Line 2309-2310):**
+```javascript
+// BEFORE:
+<option value="">⏱️ Reguler</option>
+${availableTiersEdit.map(t => `...`)}
+
+// AFTER:
+<option value="">⏱️ Reguler</option>
+${item.express_tier_nama && !availableTiersEdit.some(t => t.nama_tier === item.express_tier_nama) ? `<option value="${esc(item.express_tier_nama)}" selected>⚠️ ${esc(item.express_tier_nama)} (nonaktif)</option>` : ''}
+${availableTiersEdit.map(t => `...`)}
+```
+
+**Behavior Sekarang:**
+- Item dengan tier nonaktif: opsi "⚠️ Express 1 Hari (nonaktif)" SELECTED (user tahu ada yang aneh)
+- Item dengan tier aktif: opsi tier aktif SELECTED (normal)
+- Item tanpa tier: "Reguler" SELECTED (normal)
+- Badge fee tetap akurat sesuai `item.biaya_express` di data
+
+---
+
+### Temuan #3 (MINOR) — Dead Code `currentOrderBiayaTambahan`
+
+**Problem:** Variable `currentOrderBiayaTambahan` dideklarasikan (line 1644) dan di-assign dari API saat modal dibuka (line 1998):
+```javascript
+currentOrderBiayaTambahan = parseFloat(d.biaya_tambahan) || 0;
+```
+
+Tapi **tidak pernah digunakan** di tempat lain. Setelah fix Temuan #1, logic total calculation diambil alih oleh `biayaExprPreview` yang dihitung dari `editItems` langsung.
+
+**Fix Applied:**
+- Hapus assignment di line 1998 (dead code)
+- Biarkan deklarasi di line 1644 (scope consistency)
+
+**Result:** Kurangi noise variable yang gak dipakai.
+
+---
+
+### Temuan #4 (MINOR) — Robustness & Error Handling
+
+#### 4a. `loadExpressTiersEdit()` Fetch Error Handling
+
+**Problem:** Fungsi `loadExpressTiersEdit()` (line 1702-1705) tidak ada try/catch:
+```javascript
+async function loadExpressTiersEdit() {
+  const r = await fetch('orders.php?action=express_tiers');
+  availableTiersEdit = await r.json();
+}
+```
+
+Kalau fetch gagal (network error, endpoint down), exception lolos ke caller (`DOMContentLoaded` wrapper). Bisa mematikan keseluruhan logic auto-open order dari Kanban.
+
+**Fix Applied (Line 1702-1708):**
+```javascript
+async function loadExpressTiersEdit() {
+  try {
+    const r = await fetch('orders.php?action=express_tiers');
+    availableTiersEdit = await r.json();
+  } catch (e) {
+    availableTiersEdit = [];
+  }
+}
+```
+
+**Fallback:** Kalau fetch gagal, `availableTiersEdit` tetap array kosong `[]` → dropdown cuma tampil "Reguler" option → order masih bisa diedit, cuma tanpa pilihan tier.
+
+#### 4b. Payload Item Validation (Backend)
+
+**Problem:** Backend `action=update` (line 289) langsung loop `$data['items']` tanpa validasi:
+```php
+$dom = ExpressTier::dominantTier(array_map(
+    fn($it, $x) => array_merge($it, $x), $data['items'], $itemsWithTier
+));
+```
+
+Kalau ada elemen `$data['items']` yang **bukan array** (payload rusak dari client):
+- `array_merge()` akan fatal error
+- PHP return HTTP 500 tanpa pesan JSON
+- Bukannya error response terstruktur
+
+**Fix Applied (Line 276-280):**
+```php
+if ($itemsChanged && !empty($data['items'])) {
+    // Validasi: pastikan setiap item adalah array (avoid fatal error dari payload rusak)
+    foreach ($data['items'] as $item) {
+        if (!is_array($item)) {
+            echo json_encode(['error'=>'Format item tidak valid']); exit;
+        }
+    }
+    // ... rest of loop
+}
+```
+
+**Result:** Invalid payload ditolak dengan JSON response yang rapi, bukan PHP fatal.
+
+---
+
+### Verification Results
+
+**PHP Syntax Check:** ✓
+```bash
+$ php -l /Users/rizky/Documents/lamasy-tier-express-edit/orders.php
+No syntax errors detected in orders.php
+```
+
+**Integration Test Results:** ✓
+```
+Test command: php tests/orders/test_edit_tier_recompute.php
+Server: localhost:8091
+
+PASS: fetch login page & dapat csrf token
+PASS: login berhasil (tanpa CSRF/auth error)
+PASS: ada minimal 1 Tier Express aktif di tenant test
+PASS: action=update tidak error
+PASS: biaya_tambahan header = 25000 (got 25000.00)
+PASS: express_tier_nama header = 'Express 1 Hari' (got 'Express 1 Hari')
+PASS: item.express_tier_nama = 'Express 1 Hari' (got 'Express 1 Hari')
+PASS: item.biaya_express = 25000 (got 25000.00)
+PASS: skenario 2: action=update tidak error
+PASS: item A (gak diubah) tetap tier 'Express 1 Hari'
+PASS: item A (gak diubah) tetap biaya_express 25000
+PASS: item B (qty berubah, tetap tanpa tier) express_tier_nama NULL
+PASS: skenario 3: status update tanpa ubah item → tidak error
+PASS: skenario 3: item.express_tier_nama tetap 'Express 1 Hari'
+PASS: skenario 3: item.biaya_express tetap 25000
+PASS: skenario 3: status_proses berubah ke 'cuci'
+
+RESULT: 16 PASS, 0 FAIL (No regression)
+```
+
+---
+
+### Summary
+
+Semua 4 temuan sudah diterapkan:
+1. **Temuan #1 (CRITICAL)** — parseFloat string concatenation bug: FIX ✓
+2. **Temuan #2 (IMPORTANT)** — Tier legacy nonaktif dropdown: FIX ✓
+3. **Temuan #3 (MINOR)** — Dead code cleanup: FIX ✓
+4. **Temuan #4 (MINOR)** — Robustness (try/catch + validation): FIX ✓
+
+**Test Status:** All 16 test cases PASS (no regression)  
+**Code Quality:** PHP syntax OK, patterns follow established codebase conventions
