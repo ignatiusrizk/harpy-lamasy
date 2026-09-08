@@ -2244,19 +2244,20 @@ async function openBayarById(id) {
 // ── SHARE TRACKING LINK VIA WHATSAPP ──
 function shareToWA() {
   if (!currentEditId) return;
-  shareToWAFromOrder(currentOrderData);
+  shareToWAFromOrder(currentOrderData, false); // klik langsung = ada user-gesture, window.open aman
 }
 
-// Dipanggil dari luar detail modal (mis. deep-link ?open=<id>&action=wa dari
+// Dipanggil dari luar detail modal (mis. deep-link ?open=<id>&qa=wa dari
 // detail pelanggan) — fetch order dulu, baru share, gak butuh modal kebuka.
 async function shareToWAById(id) {
   const r = await fetch('orders.php?action=get&id=' + id);
   const order = await r.json();
   if (order.error) { showToast(order.error, 'error'); return; }
-  shareToWAFromOrder(order);
+  shareToWAFromOrder(order, true); // auto-trigger stlh fetch async = bukan user-gesture lagi,
+                                     // browser bisa block window.open; navigasi tab ini langsung aman
 }
 
-function shareToWAFromOrder(order) {
+function shareToWAFromOrder(order, navigateInPlace) {
   if (!order) { showToast('Order belum di-load', 'error'); return; }
   const phone = (order.telepon || '').replace(/[^0-9]/g, '');
   if (!phone) { showToast('Pelanggan tidak punya nomor telepon', 'error'); return; }
@@ -2268,7 +2269,7 @@ function shareToWAFromOrder(order) {
   }[order.status_proses] || order.status_proses;
   const msg = `Halo ${order.nama_pelanggan}, cucian Anda dengan nomor *${order.no_order}* saat ini ${statusTxt}.\n\nCek status lengkap (real-time): ${trackUrl}\n\nVerifikasi pakai 4 digit terakhir nomor telepon Anda.`;
   const waUrl = `https://wa.me/${waNum}?text=${encodeURIComponent(msg)}`;
-  window.open(waUrl, '_blank');
+  if (navigateInPlace) location.href = waUrl; else window.open(waUrl, '_blank');
 }
 
 // ── REQUEST DELETE (Smartlink-style approval workflow) ──
