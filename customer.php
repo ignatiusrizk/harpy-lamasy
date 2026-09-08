@@ -424,6 +424,7 @@ let currentDetailId = null;
 const CAN_CREATE_CUST = <?= hasPermission('pelanggan.create') ? 'true' : 'false' ?>;
 const CAN_EDIT_CUST   = <?= hasPermission('pelanggan.edit')   ? 'true' : 'false' ?>;
 const CAN_VIEW_ORDERS = <?= (hasPermission('orders.view_all') || hasPermission('orders.view_own')) ? 'true' : 'false' ?>;
+const CAN_BAYAR_ORDER  = <?= hasPermission('orders.bayar')    ? 'true' : 'false' ?>;
 
 document.addEventListener('DOMContentLoaded', async () => {
   initFilter('custFilter'); loadStats(); loadSegmenStats();
@@ -721,7 +722,10 @@ async function openDetail(id) {
         <td style="font-size:12px;color:var(--gray);max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(o.layanan||'-')}</td>
         <td>${statusBayarBadge(o.status_bayar)}</td>
         <td style="font-family:var(--mono);font-size:12px;text-align:right;font-weight:600">Rp ${parseFloat(o.total).toLocaleString('id-ID')}</td>
-        ${CAN_VIEW_ORDERS ? `<td><a href="orders.php?open=${o.id}" target="_blank" class="hl-btn hl-btn-outline hl-btn-sm" style="padding:4px 10px;font-size:11px;white-space:nowrap">↗ Buka</a></td>` : ''}
+        ${CAN_VIEW_ORDERS ? `<td style="white-space:nowrap"><div style="display:flex;gap:4px">
+          ${CAN_BAYAR_ORDER && o.status_bayar !== 'lunas' ? `<a href="orders.php?open=${o.id}&action=bayar" target="_blank" class="hl-btn hl-btn-primary hl-btn-sm" style="padding:4px 8px;font-size:11px">💰 Bayar</a>` : ''}
+          <a href="orders.php?open=${o.id}&action=wa" target="_blank" class="hl-btn hl-btn-outline hl-btn-sm" style="padding:4px 8px;font-size:11px">💬 WA</a>
+        </div></td>` : ''}
       </tr>`).join('')}</tbody>
     </table></div>` : '<div class="hl-empty">Belum ada order</div>'}`;
 }

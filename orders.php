@@ -1683,9 +1683,17 @@ document.addEventListener('DOMContentLoaded', async () => {
   loadOrders();
   await loadLayanan();
   await loadExpressTiersEdit();
-  // Auto-buka detail bila datang dari Kanban (/orders?open=<id>)
-  const openId = new URLSearchParams(location.search).get('open');
-  if (openId && /^\d+$/.test(openId)) openDetail(parseInt(openId, 10));
+  // Auto-buka detail bila datang dari Kanban / detail pelanggan (/orders?open=<id>)
+  // &action=bayar|wa opsional — langsung trigger aksi itu di atas detail yg kebuka.
+  const params = new URLSearchParams(location.search);
+  const openId = params.get('open');
+  if (openId && /^\d+$/.test(openId)) {
+    const oid = parseInt(openId, 10);
+    await openDetail(oid);
+    const quickAction = params.get('action');
+    if (quickAction === 'bayar') openBayarById(oid);
+    else if (quickAction === 'wa') shareToWAById(oid);
+  }
 });
 
 // ── LOAD ──────────────────────────────────────────────
@@ -2233,7 +2241,19 @@ async function openBayarById(id) {
 // ── SHARE TRACKING LINK VIA WHATSAPP ──
 function shareToWA() {
   if (!currentEditId) return;
-  const order = currentOrderData;
+  shareToWAFromOrder(currentOrderData);
+}
+
+// Dipanggil dari luar detail modal (mis. deep-link ?open=<id>&action=wa dari
+// detail pelanggan) — fetch order dulu, baru share, gak butuh modal kebuka.
+async function shareToWAById(id) {
+  const r = await fetch('orders.php?action=get&id=' + id);
+  const order = await r.json();
+  if (order.error) { showToast(order.error, 'error'); return; }
+  shareToWAFromOrder(order);
+}
+
+function shareToWAFromOrder(order) {
   if (!order) { showToast('Order belum di-load', 'error'); return; }
   const phone = (order.telepon || '').replace(/[^0-9]/g, '');
   if (!phone) { showToast('Pelanggan tidak punya nomor telepon', 'error'); return; }
