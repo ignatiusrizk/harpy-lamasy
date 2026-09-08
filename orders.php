@@ -1587,6 +1587,29 @@ textarea{resize:vertical;min-height:64px}
   </div>
 </div>
 
+<!-- MODAL DETAIL PELANGGAN — dipicu klik nama pelanggan di detail order,
+     tetap di halaman Order (gak pindah ke customer.php). Isi & logic sama
+     persis customer.php punya customer.php (profil, poin, preferensi,
+     riwayat order) — di-mirror ke sini krn ID/nama fungsi orders.php sendiri
+     (modalDetail/openDetail) sudah dipakai utk detail ORDER, jadi butuh
+     nama beda. Tombol Bayar/WA di riwayat order-nya pakai fungsi orders.php
+     yg SUDAH ADA (openBayarById/shareToWAById) — gak perlu duplikat lagi. -->
+<div class="hl-modal-overlay" id="modalCustDetail" style="z-index:250">
+  <div class="hl-modal hl-modal-lg" style="max-height:90vh">
+    <div class="hl-modal-header">
+      <span class="hl-modal-title" id="custDetailTitle">Detail Customer</span>
+      <button class="hl-modal-close" onclick="closeCustDetail()">✕</button>
+    </div>
+    <div class="hl-modal-body" id="custDetailBody"></div>
+    <div class="hl-modal-footer">
+      <button class="hl-btn hl-btn-outline" onclick="closeCustDetail()">Tutup</button>
+      <?php if (hasPermission('pelanggan.edit')): ?>
+      <a class="hl-btn hl-btn-primary" id="custDetailEditLink" href="#" target="_blank">✏️ Edit Data Pelanggan</a>
+      <?php endif; ?>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL CETAK ULANG NOTA -->
 <div class="modal-overlay" id="modalCetak" style="align-items:center;justify-content:center;padding:20px;z-index:300">
   <div class="modal" style="height:auto;max-height:90vh;width:480px">
@@ -1673,6 +1696,8 @@ const CAN_BAYAR      = <?= hasPermission('orders.bayar')         ? 'true' : 'fal
 const CAN_EDIT_ORDER = <?= hasPermission('orders.edit')           ? 'true' : 'false' ?>;
 const CAN_DEL_ORDER  = <?= hasPermission('orders.delete')         ? 'true' : 'false' ?>;
 const CAN_VIEW_PELANGGAN = <?= hasPermission('pelanggan.view')    ? 'true' : 'false' ?>;
+const CAN_EDIT_CUST       = <?= hasPermission('pelanggan.edit')    ? 'true' : 'false' ?>;
+let currentCustDetailId = null;
 const PAY_METHODS  = <?= json_encode($activeMethods, JSON_UNESCAPED_UNICODE) ?>;
 const PAPER_WIDTH_PX = <?= (int)$paperWidthPx ?>; // lebar dot printer thermal outlet (384=58mm, 576=80mm)
 const PM_LABEL     = Object.fromEntries(PAY_METHODS.map(m => [m.code, ((m.emoji||'') + ' ' + m.label).trim()]));
@@ -2030,7 +2055,7 @@ async function openDetail(id) {
   document.getElementById('modalBody').innerHTML = `
     <div style="background:var(--off);border-radius:var(--r);padding:12px 14px;margin-bottom:16px;font-size:13px">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
-        <div><span style="color:var(--gray)">Pelanggan: </span><strong>${d.pelanggan_id && CAN_VIEW_PELANGGAN ? `<a href="customer.php?open=${d.pelanggan_id}" target="_blank" style="color:var(--teal-d)">${esc(d.nama_pelanggan)} ↗</a>` : esc(d.nama_pelanggan)}</strong></div>
+        <div><span style="color:var(--gray)">Pelanggan: </span><strong>${d.pelanggan_id && CAN_VIEW_PELANGGAN ? `<a href="javascript:void(0)" onclick="openCustDetail(${d.pelanggan_id})" style="color:var(--teal-d)">${esc(d.nama_pelanggan)} 👤</a>` : esc(d.nama_pelanggan)}</strong></div>
         <div><span style="color:var(--gray)">Telepon: </span>${d.telepon||'-'}</div>
         <div><span style="color:var(--gray)">Tanggal: </span>${fmtDate(d.tanggal)}</div>
         <div><span style="color:var(--gray)">Dibuat oleh: </span>${d.created_by||'-'}</div>
@@ -2270,6 +2295,174 @@ function shareToWAFromOrder(order, navigateInPlace) {
   const msg = `Halo ${order.nama_pelanggan}, cucian Anda dengan nomor *${order.no_order}* saat ini ${statusTxt}.\n\nCek status lengkap (real-time): ${trackUrl}\n\nVerifikasi pakai 4 digit terakhir nomor telepon Anda.`;
   const waUrl = `https://wa.me/${waNum}?text=${encodeURIComponent(msg)}`;
   if (navigateInPlace) location.href = waUrl; else window.open(waUrl, '_blank');
+}
+
+// ═══════════════════════════════════════════════════════
+// MODAL DETAIL PELANGGAN — dipicu klik nama pelanggan di detail order.
+// Isi & endpoint SAMA PERSIS customer.php (action=get/get_orders/
+// save_preferensi dipanggil langsung ke customer.php dari sini — backend-nya
+// tenant/session-scoped, gak peduli halaman mana yg manggil). Riwayat order
+// di dalamnya pakai openDetail/openBayarById/shareToWAById MILIK orders.php
+// SENDIRI (bukan duplikat) krn kita udah di halaman Order.
+// ═══════════════════════════════════════════════════════
+async function openCustDetail(id) {
+  currentCustDetailId = id;
+  document.getElementById('custDetailTitle').textContent = '⏳ Memuat...';
+  document.getElementById('custDetailBody').innerHTML = '<div class="hl-loading">⏳ Memuat...</div>';
+  document.getElementById('modalCustDetail').classList.add('open');
+  const editLink = document.getElementById('custDetailEditLink');
+  if (editLink) editLink.href = 'customer.php?open=' + id;
+
+  const [rc, ro] = await Promise.all([
+    fetch('customer.php?action=get&id=' + id),
+    fetch('customer.php?action=get_orders&id=' + id),
+  ]);
+  const cd = await rc.json();
+  const c  = cd.data;
+  const orders = await ro.json();
+  if (!c) { showToast('❌ Pelanggan tidak ditemukan', 'error'); closeCustDetail(); return; }
+
+  document.getElementById('custDetailTitle').textContent = '👤 ' + c.nama;
+
+  const poin = parseInt(c.poin_balance||0);
+  const nextThr = poin < 100 ? 100 : poin < 200 ? 200 : poin < 500 ? 500 : 0;
+  const prevThr = poin >= 500 ? 500 : poin >= 200 ? 200 : poin >= 100 ? 100 : 0;
+  const pct = nextThr ? Math.round(((poin - prevThr) / (nextThr - prevThr)) * 100) : 100;
+  const nextLabel = nextThr === 100 ? 'Silver' : nextThr === 200 ? 'Gold' : nextThr === 500 ? 'Platinum' : 'Max tier';
+
+  document.getElementById('custDetailBody').innerHTML = `
+    <div style="background:linear-gradient(135deg,#0F1C3A,#1E3A8A);color:#fff;border-radius:14px;padding:16px 18px;margin-bottom:16px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;margin-bottom:8px">
+        <div>
+          <div style="font-size:1.3rem;font-weight:800">${esc(c.nama)}</div>
+          <div style="font-size:12px;opacity:.8;margin-top:3px">📞 ${c.telepon||'-'} · Sejak ${fmtDate(c.created_at)}</div>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          ${c.tier && c.tier!=='regular' ? `<span style="background:rgba(255,255,255,.15);font-size:11px;font-weight:700;padding:4px 10px;border-radius:100px">${{silver:'🥈 Silver',gold:'🥇 Gold',platinum:'💎 Platinum'}[c.tier]||c.tier}</span>` : ''}
+          ${c.segmen && c.segmen!=='regular' ? `<span style="background:rgba(255,255,255,.15);font-size:11px;font-weight:700;padding:4px 10px;border-radius:100px">${{baru:'🆕 Baru',vip:'⭐ VIP',dormant:'😴 Dormant'}[c.segmen]||c.segmen}</span>` : ''}
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px;padding-top:14px;border-top:1px solid rgba(255,255,255,.15)">
+        <div><div style="font-size:11px;opacity:.7">Total Order</div><div style="font-size:1.2rem;font-weight:800">${c.total_order||0}</div></div>
+        <div><div style="font-size:11px;opacity:.7">Total Spending</div><div style="font-size:1.2rem;font-weight:800">Rp ${parseFloat(c.total_omset||0).toLocaleString('id-ID')}</div></div>
+      </div>
+    </div>
+
+    <div style="background:linear-gradient(90deg,#F0FDFB,#ECFDF5);border:1px solid #B6F0E6;border-radius:12px;padding:14px 16px;margin-bottom:14px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div>
+          <div style="font-size:11px;color:#0F766E;font-weight:700;text-transform:uppercase;letter-spacing:.06em">⭐ Saldo Poin</div>
+          <div style="font-size:1.4rem;font-weight:800;color:#0F1C3A">${poin.toLocaleString('id-ID')} <span style="font-size:13px;color:var(--gray);font-weight:500">poin</span></div>
+        </div>
+        ${nextThr ? `<div style="text-align:right;font-size:11px;color:#0F766E">
+          ${nextThr - poin} poin lagi<br><strong>→ ${nextLabel}</strong>
+        </div>` : '<div style="font-size:11px;color:#0F766E">💎 Tier tertinggi!</div>'}
+      </div>
+      ${nextThr ? `<div style="height:8px;background:#fff;border-radius:100px;overflow:hidden">
+        <div style="height:100%;width:${pct}%;background:linear-gradient(90deg,#10B981,#06B6D4);transition:width .3s"></div>
+      </div>` : ''}
+    </div>
+
+    <div style="background:#fff;border:1px solid rgba(27,45,90,.08);border-radius:12px;padding:14px 16px;margin-bottom:14px" id="custPrefBox">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div style="font-size:11px;color:var(--gray);font-weight:700;text-transform:uppercase;letter-spacing:.06em">🌸 Preferensi</div>
+        ${CAN_EDIT_CUST ? `<button class="hl-btn hl-btn-outline hl-btn-sm" onclick="toggleCustPrefEdit()" id="custPrefEditBtn">✏️ Edit</button>` : ''}
+      </div>
+      <div id="custPrefDisplay">
+        <div style="font-size:13px;line-height:1.7">
+          Parfum: <strong>${c.preferensi_parfum||'-'}</strong>
+          &nbsp;·&nbsp;Suhu: <strong>${c.preferensi_suhu||'-'}</strong>
+        </div>
+        ${c.catatan_tetap ? `<div style="font-size:13px;color:#475569;margin-top:5px;background:#F8FAFC;padding:7px 10px;border-radius:8px;border-left:3px solid var(--teal)">📝 ${esc(c.catatan_tetap)}</div>` : '<div style="font-size:12px;color:var(--gray);font-style:italic;margin-top:5px">Belum ada catatan tetap</div>'}
+      </div>
+      <div id="custPrefEdit" style="display:none">
+        <div class="hl-form-row" style="margin-bottom:8px">
+          <div class="hl-form-group" style="margin:0">
+            <label class="hl-label">Parfum</label>
+            <input type="text" id="custpf_parfum" class="hl-input" placeholder="Lavender / Vanilla / dll" value="${esc(c.preferensi_parfum||'')}"/>
+          </div>
+          <div class="hl-form-group" style="margin:0">
+            <label class="hl-label">Suhu Cuci</label>
+            <select id="custpf_suhu" class="hl-input">
+              <option value="">- Default -</option>
+              <option value="Normal" ${c.preferensi_suhu==='Normal'?'selected':''}>Normal</option>
+              <option value="Hangat" ${c.preferensi_suhu==='Hangat'?'selected':''}>Hangat</option>
+              <option value="Panas"  ${c.preferensi_suhu==='Panas'?'selected':''}>Panas</option>
+              <option value="Dingin" ${c.preferensi_suhu==='Dingin'?'selected':''}>Dingin</option>
+            </select>
+          </div>
+        </div>
+        <div class="hl-form-group" style="margin-bottom:10px">
+          <label class="hl-label">Catatan Tetap (auto-load ke POS saat pelanggan ini dipilih)</label>
+          <textarea id="custpf_catatan" class="hl-input hl-textarea" placeholder="Baju putih pisah, jangan setrika kerah, dll">${esc(c.catatan_tetap||'')}</textarea>
+        </div>
+        <div style="display:flex;gap:6px">
+          <button class="hl-btn hl-btn-outline hl-btn-sm" onclick="toggleCustPrefEdit()">Batal</button>
+          <button class="hl-btn hl-btn-primary hl-btn-sm" onclick="saveCustPreferensi(${c.id})">💾 Simpan</button>
+        </div>
+      </div>
+    </div>
+
+    <div style="background:var(--off);border-radius:var(--r);padding:14px 16px;margin-bottom:16px;display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:14px">
+      <div><span style="color:var(--gray)">Tipe: </span><strong>${c.tipe==='korporat'?'B2B / Korporat':'Retail'}</strong></div>
+      <div><span style="color:var(--gray)">Last Transaksi: </span><strong>${c.last_transaksi?fmtDate(c.last_transaksi):'-'}</strong></div>
+      ${c.alamat?`<div style="grid-column:1/-1"><span style="color:var(--gray)">Alamat: </span>${esc(c.alamat)}</div>`:''}
+      ${c.catatan?`<div style="grid-column:1/-1"><span style="color:var(--gray)">Catatan: </span>${esc(c.catatan)}</div>`:''}
+    </div>
+    <div style="font-size:12px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px">Riwayat Order (20 terakhir)</div>
+    ${orders.length ? `<div class="hl-table-wrap"><table class="hl-table">
+      <thead><tr><th>No Order</th><th>Tanggal</th><th>Layanan</th><th>Status</th><th style="text-align:right">Total</th><th></th></tr></thead>
+      <tbody>${orders.map(o=>`<tr>
+        <td style="font-family:var(--mono);font-size:12px;color:var(--teal-d)"><a href="javascript:void(0)" onclick="closeCustDetail();openDetail(${o.id})" style="color:inherit">${esc(o.no_order)}</a></td>
+        <td style="font-size:12px">${fmtDate(o.tanggal)}</td>
+        <td style="font-size:12px;color:var(--gray);max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(o.layanan||'-')}</td>
+        <td>${statusBayarBadgeCust(o.status_bayar)}</td>
+        <td style="font-family:var(--mono);font-size:12px;text-align:right;font-weight:600">Rp ${parseFloat(o.total).toLocaleString('id-ID')}</td>
+        <td style="white-space:nowrap"><div style="display:flex;gap:4px">
+          ${CAN_BAYAR && o.status_bayar !== 'lunas' ? `<button onclick="openBayarById(${o.id})" class="hl-btn hl-btn-primary hl-btn-sm" style="padding:4px 8px;font-size:11px">💰 Bayar</button>` : ''}
+          <button onclick="shareToWAById(${o.id})" class="hl-btn hl-btn-outline hl-btn-sm" style="padding:4px 8px;font-size:11px">💬 WA</button>
+        </div></td>
+      </tr>`).join('')}</tbody>
+    </table></div>` : '<div class="hl-empty">Belum ada order</div>'}`;
+}
+
+function closeCustDetail() {
+  document.getElementById('modalCustDetail').classList.remove('open');
+  currentCustDetailId = null;
+}
+
+function toggleCustPrefEdit(){
+  const disp = document.getElementById('custPrefDisplay');
+  const edit = document.getElementById('custPrefEdit');
+  const btn  = document.getElementById('custPrefEditBtn');
+  const showEdit = edit.style.display === 'none';
+  disp.style.display = showEdit ? 'none' : '';
+  edit.style.display = showEdit ? 'block' : 'none';
+  btn.textContent    = showEdit ? '✕ Batal' : '✏️ Edit';
+}
+
+async function saveCustPreferensi(pid){
+  const body = {
+    id: pid,
+    parfum:        document.getElementById('custpf_parfum').value,
+    suhu:          document.getElementById('custpf_suhu').value,
+    catatan_tetap: document.getElementById('custpf_catatan').value,
+  };
+  try {
+    const r = await fetch('customer.php?action=save_preferensi', {
+      method:'POST', headers:{'Content-Type':'application/json','X-CSRF-Token':csrfToken()},
+      body: JSON.stringify(body)
+    });
+    const d = await r.json();
+    if (d.error) { showToast(d.error,'error'); return; }
+    showToast('✓ Preferensi tersimpan','success');
+    openCustDetail(pid); // reload dengan data segar
+  } catch(e){ showToast('Network error','error'); }
+}
+
+function statusBayarBadgeCust(s){
+  const m={lunas:'<span class="hl-badge hl-badge-lunas">✅ Lunas</span>',dp:'<span class="hl-badge hl-badge-dp">⚡ DP</span>',belum_bayar:'<span class="hl-badge hl-badge-belum">⏳ Belum</span>'};
+  return m[s]||s;
 }
 
 // ── REQUEST DELETE (Smartlink-style approval workflow) ──
