@@ -846,7 +846,10 @@ function renderPaging() {
 }
 
 function debounce(){ clearTimeout(searchTimer); searchTimer=setTimeout(()=>loadCustomer(1),400); }
-function fmtDate(d){if(!d)return'-';return new Date(d+'T00:00:00').toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'})}
+// Terima DATE ('YYYY-MM-DD') maupun DATETIME ('YYYY-MM-DD HH:MM:SS', mis. created_at)
+// — DATETIME apa adanya + 'T00:00:00' jadi string ISO tidak valid ("...T00:00:00T00:00:00"
+// efektifnya) → new Date() balikin Invalid Date. Ganti spasi jadi 'T' kalau ada.
+function fmtDate(d){if(!d)return'-';const s=String(d);return new Date(s.includes(' ')?s.replace(' ','T'):s+'T00:00:00').toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'})}
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
 </script>
 </body>
