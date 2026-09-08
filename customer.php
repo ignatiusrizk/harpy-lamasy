@@ -117,6 +117,25 @@ if ($action) {
         echo json_encode(['success'=>true]); exit;
     }
 
+    // Ambil 1 pelanggan by id — dipakai deep-link (?open=<id>) dari halaman lain
+    // (mis. detail order) krn daftar di 'list' ter-paginasi, gak selalu ada di
+    // halaman yang lagi dimuat browser.
+    if ($action === 'get') {
+        $id = intval($_GET['id'] ?? 0);
+        $rows = TenantQuery::raw(
+            "SELECT p.*,
+                COUNT(t.id) as total_order,
+                COALESCE(SUM(t.total),0) as total_omset,
+                MAX(t.tanggal) as last_order
+                FROM hl_pelanggan p
+                LEFT JOIN hl_transaksi t ON t.pelanggan_id = p.id AND t.tenant_id = p.tenant_id
+                WHERE p.tenant_id = ? AND p.id = ?
+                GROUP BY p.id",
+            [$tid, $id]
+        );
+        echo json_encode(['data' => $rows[0] ?? null]); exit;
+    }
+
     if ($action === 'get_orders') {
         $id = intval($_GET['id']);
         $rows = TenantQuery::raw(
@@ -405,7 +424,13 @@ let currentDetailId = null;
 const CAN_CREATE_CUST = <?= hasPermission('pelanggan.create') ? 'true' : 'false' ?>;
 const CAN_EDIT_CUST   = <?= hasPermission('pelanggan.edit')   ? 'true' : 'false' ?>;
 
-document.addEventListener('DOMContentLoaded', () => { initFilter('custFilter'); loadCustomer(); loadStats(); loadSegmenStats(); });
+document.addEventListener('DOMContentLoaded', async () => {
+  initFilter('custFilter'); loadStats(); loadSegmenStats();
+  await loadCustomer();
+  // Deep-link dari halaman lain (mis. detail order): /customer?open=<id>
+  const openId = new URLSearchParams(location.search).get('open');
+  if (openId && /^\d+$/.test(openId)) openDetail(parseInt(openId, 10));
+});
 
 async function loadStats() {
   const r = await fetch('customer.php?action=stats');
@@ -580,8 +605,17 @@ function renderCustomer() {
 
 async function openDetail(id) {
   currentDetailId = id;
-  const c = allCustomer.find(x=>x.id==id);
-  if (!c) return;
+  let c = allCustomer.find(x=>x.id==id);
+  if (!c) {
+    // Gak ada di halaman yang lagi termuat (mis. deep-link dari luar, atau
+    // halaman pelanggan terpaginasi) — fetch langsung by id.
+    try {
+      const r = await fetch('customer.php?action=get&id='+id);
+      const d = await r.json();
+      c = d.data;
+    } catch (e) { c = null; }
+  }
+  if (!c) { showToast('❌ Pelanggan tidak ditemukan', 'error'); return; }
   document.getElementById('detailTitle').textContent = '👤 ' + c.nama;
   document.getElementById('detailBody').innerHTML = '<div class="hl-loading">⏳ Memuat riwayat...</div>';
   document.getElementById('modalDetail').classList.add('open');

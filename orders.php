@@ -1672,6 +1672,7 @@ const OUTLET_TELP  = <?= json_encode($_outletTelp) ?>;
 const CAN_BAYAR      = <?= hasPermission('orders.bayar')         ? 'true' : 'false' ?>;
 const CAN_EDIT_ORDER = <?= hasPermission('orders.edit')           ? 'true' : 'false' ?>;
 const CAN_DEL_ORDER  = <?= hasPermission('orders.delete')         ? 'true' : 'false' ?>;
+const CAN_VIEW_PELANGGAN = <?= hasPermission('pelanggan.view')    ? 'true' : 'false' ?>;
 const PAY_METHODS  = <?= json_encode($activeMethods, JSON_UNESCAPED_UNICODE) ?>;
 const PAPER_WIDTH_PX = <?= (int)$paperWidthPx ?>; // lebar dot printer thermal outlet (384=58mm, 576=80mm)
 const PM_LABEL     = Object.fromEntries(PAY_METHODS.map(m => [m.code, ((m.emoji||'') + ' ' + m.label).trim()]));
@@ -2018,7 +2019,7 @@ async function openDetail(id) {
   document.getElementById('modalBody').innerHTML = `
     <div style="background:var(--off);border-radius:var(--r);padding:12px 14px;margin-bottom:16px;font-size:13px">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
-        <div><span style="color:var(--gray)">Pelanggan: </span><strong>${esc(d.nama_pelanggan)}</strong></div>
+        <div><span style="color:var(--gray)">Pelanggan: </span><strong>${d.pelanggan_id && CAN_VIEW_PELANGGAN ? `<a href="customer.php?open=${d.pelanggan_id}" target="_blank" style="color:var(--teal-d)">${esc(d.nama_pelanggan)} ↗</a>` : esc(d.nama_pelanggan)}</strong></div>
         <div><span style="color:var(--gray)">Telepon: </span>${d.telepon||'-'}</div>
         <div><span style="color:var(--gray)">Tanggal: </span>${fmtDate(d.tanggal)}</div>
         <div><span style="color:var(--gray)">Dibuat oleh: </span>${d.created_by||'-'}</div>
