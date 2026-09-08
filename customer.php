@@ -723,8 +723,8 @@ async function openDetail(id) {
         <td>${statusBayarBadge(o.status_bayar)}</td>
         <td style="font-family:var(--mono);font-size:12px;text-align:right;font-weight:600">Rp ${parseFloat(o.total).toLocaleString('id-ID')}</td>
         ${CAN_VIEW_ORDERS ? `<td style="white-space:nowrap"><div style="display:flex;gap:4px">
-          ${CAN_BAYAR_ORDER && o.status_bayar !== 'lunas' ? `<a href="orders.php?open=${o.id}&action=bayar" target="_blank" class="hl-btn hl-btn-primary hl-btn-sm" style="padding:4px 8px;font-size:11px">💰 Bayar</a>` : ''}
-          <a href="orders.php?open=${o.id}&action=wa" target="_blank" class="hl-btn hl-btn-outline hl-btn-sm" style="padding:4px 8px;font-size:11px">💬 WA</a>
+          ${CAN_BAYAR_ORDER && o.status_bayar !== 'lunas' ? `<a href="orders.php?open=${o.id}&qa=bayar" target="_blank" class="hl-btn hl-btn-primary hl-btn-sm" style="padding:4px 8px;font-size:11px">💰 Bayar</a>` : ''}
+          <a href="orders.php?open=${o.id}&qa=wa" target="_blank" class="hl-btn hl-btn-outline hl-btn-sm" style="padding:4px 8px;font-size:11px">💬 WA</a>
         </div></td>` : ''}
       </tr>`).join('')}</tbody>
     </table></div>` : '<div class="hl-empty">Belum ada order</div>'}`;

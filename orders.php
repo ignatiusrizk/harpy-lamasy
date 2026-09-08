@@ -1684,13 +1684,16 @@ document.addEventListener('DOMContentLoaded', async () => {
   await loadLayanan();
   await loadExpressTiersEdit();
   // Auto-buka detail bila datang dari Kanban / detail pelanggan (/orders?open=<id>)
-  // &action=bayar|wa opsional — langsung trigger aksi itu di atas detail yg kebuka.
+  // &qa=bayar|wa opsional — langsung trigger aksi itu di atas detail yg kebuka.
+  // PAKAI 'qa' BUKAN 'action' — 'action' sudah dipakai routing API backend
+  // (?action=...) di file ini sendiri, kalau dipakai lagi di sini request-nya
+  // ketangkep sbg API call duluan, halaman gak pernah ke-render sama sekali.
   const params = new URLSearchParams(location.search);
   const openId = params.get('open');
   if (openId && /^\d+$/.test(openId)) {
     const oid = parseInt(openId, 10);
     await openDetail(oid);
-    const quickAction = params.get('action');
+    const quickAction = params.get('qa');
     if (quickAction === 'bayar') openBayarById(oid);
     else if (quickAction === 'wa') shareToWAById(oid);
   }
