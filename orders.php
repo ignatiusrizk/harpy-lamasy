@@ -2335,11 +2335,11 @@ async function openCustDetail(id) {
       <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;margin-bottom:8px">
         <div>
           <div style="font-size:1.3rem;font-weight:800">${esc(c.nama)}</div>
-          <div style="font-size:12px;opacity:.8;margin-top:3px">📞 ${c.telepon||'-'} · Sejak ${fmtDate(c.created_at)}</div>
+          <div style="font-size:12px;opacity:.8;margin-top:3px">📞 ${esc(c.telepon||'-')} · Sejak ${fmtDate(c.created_at)}</div>
         </div>
         <div style="display:flex;gap:6px;flex-wrap:wrap">
-          ${c.tier && c.tier!=='regular' ? `<span style="background:rgba(255,255,255,.15);font-size:11px;font-weight:700;padding:4px 10px;border-radius:100px">${{silver:'🥈 Silver',gold:'🥇 Gold',platinum:'💎 Platinum'}[c.tier]||c.tier}</span>` : ''}
-          ${c.segmen && c.segmen!=='regular' ? `<span style="background:rgba(255,255,255,.15);font-size:11px;font-weight:700;padding:4px 10px;border-radius:100px">${{baru:'🆕 Baru',vip:'⭐ VIP',dormant:'😴 Dormant'}[c.segmen]||c.segmen}</span>` : ''}
+          ${c.tier && c.tier!=='regular' ? `<span style="background:rgba(255,255,255,.15);font-size:11px;font-weight:700;padding:4px 10px;border-radius:100px">${{silver:'🥈 Silver',gold:'🥇 Gold',platinum:'💎 Platinum'}[c.tier]||esc(c.tier)}</span>` : ''}
+          ${c.segmen && c.segmen!=='regular' ? `<span style="background:rgba(255,255,255,.15);font-size:11px;font-weight:700;padding:4px 10px;border-radius:100px">${{baru:'🆕 Baru',vip:'⭐ VIP',dormant:'😴 Dormant'}[c.segmen]||esc(c.segmen)}</span>` : ''}
         </div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px;padding-top:14px;border-top:1px solid rgba(255,255,255,.15)">
@@ -2370,8 +2370,8 @@ async function openCustDetail(id) {
       </div>
       <div id="custPrefDisplay">
         <div style="font-size:13px;line-height:1.7">
-          Parfum: <strong>${c.preferensi_parfum||'-'}</strong>
-          &nbsp;·&nbsp;Suhu: <strong>${c.preferensi_suhu||'-'}</strong>
+          Parfum: <strong>${esc(c.preferensi_parfum||'-')}</strong>
+          &nbsp;·&nbsp;Suhu: <strong>${esc(c.preferensi_suhu||'-')}</strong>
         </div>
         ${c.catatan_tetap ? `<div style="font-size:13px;color:#475569;margin-top:5px;background:#F8FAFC;padding:7px 10px;border-radius:8px;border-left:3px solid var(--teal)">📝 ${esc(c.catatan_tetap)}</div>` : '<div style="font-size:12px;color:var(--gray);font-style:italic;margin-top:5px">Belum ada catatan tetap</div>'}
       </div>

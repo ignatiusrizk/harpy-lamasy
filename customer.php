@@ -696,7 +696,7 @@ function renderCustomer() {
         <div class="cust-list-avatar">${esc(c.nama).charAt(0).toUpperCase()}</div>
         <div class="cust-list-info">
           <div class="cust-list-nama">${esc(c.nama)} ${tierBadge(c.tier)} ${segmenBadge(c.segmen)}</div>
-          <div class="cust-list-telp">${c.telepon||'No telepon'} ·
+          <div class="cust-list-telp">${esc(c.telepon||'No telepon')} ·
             <span class="hl-badge ${c.tipe==='korporat'?'hl-badge-navy':'hl-badge-teal'}" style="font-size:10px">${c.tipe==='korporat'?'B2B':'Retail'}</span>
             ${c.metode_bayar==='bulanan'?'<span class="hl-badge" style="background:#FEF3C7;color:#92400E;font-size:10px;margin-left:4px">Bulanan</span>':''}
             ${parseInt(c.poin_balance||0) > 0 ? '<span class="hl-badge" style="background:#F0FDFB;color:#0F766E;font-size:10px;margin-left:4px">⭐ '+parseInt(c.poin_balance)+' poin</span>' : ''}
@@ -715,7 +715,7 @@ function renderCustomer() {
         <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
           <div>
             <div class="cust-nama">${esc(c.nama)}</div>
-            <div class="cust-telp">${c.telepon||'No telepon'}</div>
+            <div class="cust-telp">${esc(c.telepon||'No telepon')}</div>
             <div style="margin-top:5px;display:flex;gap:4px;flex-wrap:wrap">
               ${tierBadge(c.tier)} ${segmenBadge(c.segmen)}
               ${parseInt(c.poin_balance||0) > 0 ? '<span class="hl-badge" style="background:#F0FDFB;color:#0F766E;font-size:10px">⭐ '+grpRibu(c.poin_balance)+'</span>' : ''}
@@ -768,11 +768,11 @@ async function openDetail(id) {
       <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;margin-bottom:8px">
         <div>
           <div style="font-size:1.3rem;font-weight:800">${esc(c.nama)}</div>
-          <div style="font-size:12px;opacity:.8;margin-top:3px">📞 ${c.telepon||'-'} · Sejak ${fmtDate(c.created_at)}</div>
+          <div style="font-size:12px;opacity:.8;margin-top:3px">📞 ${esc(c.telepon||'-')} · Sejak ${fmtDate(c.created_at)}</div>
         </div>
         <div style="display:flex;gap:6px;flex-wrap:wrap">
-          ${c.tier && c.tier!=='regular' ? `<span style="background:rgba(255,255,255,.15);font-size:11px;font-weight:700;padding:4px 10px;border-radius:100px">${{silver:'🥈 Silver',gold:'🥇 Gold',platinum:'💎 Platinum'}[c.tier]||c.tier}</span>` : ''}
-          ${c.segmen && c.segmen!=='regular' ? `<span style="background:rgba(255,255,255,.15);font-size:11px;font-weight:700;padding:4px 10px;border-radius:100px">${{baru:'🆕 Baru',vip:'⭐ VIP',dormant:'😴 Dormant'}[c.segmen]||c.segmen}</span>` : ''}
+          ${c.tier && c.tier!=='regular' ? `<span style="background:rgba(255,255,255,.15);font-size:11px;font-weight:700;padding:4px 10px;border-radius:100px">${{silver:'🥈 Silver',gold:'🥇 Gold',platinum:'💎 Platinum'}[c.tier]||esc(c.tier)}</span>` : ''}
+          ${c.segmen && c.segmen!=='regular' ? `<span style="background:rgba(255,255,255,.15);font-size:11px;font-weight:700;padding:4px 10px;border-radius:100px">${{baru:'🆕 Baru',vip:'⭐ VIP',dormant:'😴 Dormant'}[c.segmen]||esc(c.segmen)}</span>` : ''}
         </div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px;padding-top:14px;border-top:1px solid rgba(255,255,255,.15)">
@@ -805,8 +805,8 @@ async function openDetail(id) {
       </div>
       <div id="prefDisplay">
         <div style="font-size:13px;line-height:1.7">
-          Parfum: <strong>${c.preferensi_parfum||'-'}</strong>
-          &nbsp;·&nbsp;Suhu: <strong>${c.preferensi_suhu||'-'}</strong>
+          Parfum: <strong>${esc(c.preferensi_parfum||'-')}</strong>
+          &nbsp;·&nbsp;Suhu: <strong>${esc(c.preferensi_suhu||'-')}</strong>
         </div>
         ${c.catatan_tetap ? `<div style="font-size:13px;color:#475569;margin-top:5px;background:#F8FAFC;padding:7px 10px;border-radius:8px;border-left:3px solid var(--teal)">📝 ${esc(c.catatan_tetap)}</div>` : '<div style="font-size:12px;color:var(--gray);font-style:italic;margin-top:5px">Belum ada catatan tetap</div>'}
       </div>
