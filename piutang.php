@@ -86,16 +86,20 @@ if ($action === 'list') {
     exit;
 }
 
-// ── API: list pelanggan B2B (tipe_bayar='bulanan') untuk dropdown ──
+// ── API: list pelanggan B2B (tipe='korporat' di menu Pelanggan, atau
+//    tipe_bayar='bulanan'/tipe='vip' dari jalur lain) untuk dropdown ──
 if ($action === 'list_b2b_customer') {
     header('Content-Type: application/json');
     // Defensive: cek kolom tipe_bayar
     $hasTipeBayar = true;
     try { $db->query("SELECT tipe_bayar FROM hl_pelanggan LIMIT 1"); } catch (Throwable) { $hasTipeBayar = false; }
     try {
+        // 'korporat' = satu2nya cara set pelanggan jadi "B2B" via UI menu
+        // Pelanggan (customer.php) — HARUS ikut di sini, dulu kelewat jadi
+        // pelanggan yg di-set B2B lewat menu Pelanggan gak pernah muncul.
         $where = $hasTipeBayar
-            ? "tenant_id=? AND is_active=1 AND (tipe_bayar='bulanan' OR tipe IN ('vip'))"
-            : "tenant_id=? AND is_active=1 AND tipe IN ('vip')";
+            ? "tenant_id=? AND is_active=1 AND (tipe_bayar='bulanan' OR tipe IN ('vip','korporat'))"
+            : "tenant_id=? AND is_active=1 AND tipe IN ('vip','korporat')";
         $s = $db->prepare("SELECT id, nama, telepon FROM hl_pelanggan
                             WHERE $where ORDER BY nama LIMIT 200");
         $s->execute([$tid]);
@@ -168,8 +172,10 @@ if ($action === 'generate_bulk' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         $where = "t.tenant_id=? AND t.outlet_id=? AND DATE(t.tanggal) BETWEEN ? AND ?";
         $params = [$tid, $oid, $start, $end];
         if ($scope === 'bulanan_only') {
-            // Filter pelanggan yang flagged tipe='bulanan' (atau bisa pakai tipe_bayar=bulanan kalau ada)
-            $where .= " AND (p.tipe='bulanan' OR p.tipe_bayar='bulanan')";
+            // Filter pelanggan yang flagged tipe='bulanan'/'korporat' (B2B via menu
+            // Pelanggan) atau tipe_bayar='bulanan' kalau ada. 'korporat' HARUS ikut —
+            // itu satu2nya cara set pelanggan jadi "B2B" via UI menu Pelanggan.
+            $where .= " AND (p.tipe IN ('bulanan','korporat') OR p.tipe_bayar='bulanan')";
         }
         $st = $db->prepare(
             "SELECT t.pelanggan_id, p.nama, COUNT(t.id) AS cnt,
