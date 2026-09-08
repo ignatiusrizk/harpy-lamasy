@@ -218,6 +218,22 @@ if ($action) {
 
     echo json_encode(['error'=>'Unknown']); exit;
 }
+
+// Metode pembayaran aktif outlet ini — dipakai modal Bayar (persis pola orders.php)
+$_pmTid = TenantResolver::id(); $_pmOid = TenantResolver::outletId();
+$_pmStmt = Database::get()->prepare(
+    "SELECT code, label, emoji FROM hl_payment_methods
+     WHERE tenant_id=? AND outlet_id=? AND is_active=1 ORDER BY sort_order, id"
+);
+$_pmStmt->execute([$_pmTid, $_pmOid]);
+$activeMethods = $_pmStmt->fetchAll(PDO::FETCH_ASSOC);
+if (!$activeMethods) {
+    $activeMethods = [
+        ['code'=>'cash',     'label'=>'Tunai',         'emoji'=>'💵'],
+        ['code'=>'transfer', 'label'=>'Transfer Bank', 'emoji'=>'🏦'],
+        ['code'=>'qris',     'label'=>'QRIS',          'emoji'=>'📱'],
+    ];
+}
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -266,6 +282,44 @@ if ($action) {
 }
 @media(max-width:400px){
   .cust-list-stats{display:none}
+}
+
+/* MODAL BAYAR (persis pola orders.php, di-scope #modalBayar semua supaya
+   gak nyenggol style input/select/textarea/tombol lain di halaman ini). */
+#modalBayar.modal-overlay{display:none;position:fixed;inset:0;background:rgba(15,28,58,.6);backdrop-filter:blur(4px);z-index:400;align-items:center;justify-content:center;padding:16px}
+#modalBayar.modal-overlay.open{display:flex}
+#modalBayar .modal{background:var(--white);border-radius:var(--r-lg);width:480px;max-width:95vw;max-height:90vh;overflow-y:auto;box-shadow:var(--shadow-lg);display:flex;flex-direction:column}
+#modalBayar .modal-header{padding:18px 20px;border-bottom:1px solid var(--light);display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:var(--white);z-index:10}
+#modalBayar .modal-title{font-size:15px;font-weight:700;color:var(--navy)}
+#modalBayar .modal-close{background:none;border:none;font-size:18px;cursor:pointer;color:var(--gray);padding:4px}
+#modalBayar .modal-body{padding:20px;flex:1;overflow-y:auto}
+#modalBayar .modal-footer{padding:16px 20px;border-top:1px solid var(--light);display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;position:sticky;bottom:0;background:var(--white)}
+#modalBayar .form-group{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
+#modalBayar label{font-size:11px;font-weight:700;color:var(--navy);letter-spacing:.05em;text-transform:uppercase}
+#modalBayar .req{color:var(--red)}
+#modalBayar input,#modalBayar select{padding:9px 12px;border:1.5px solid rgba(27,45,90,.14);border-radius:var(--r);font-family:var(--font);font-size:14px;color:var(--dark);background:var(--off);outline:none;transition:all .2s;width:100%}
+#modalBayar input:focus,#modalBayar select:focus{border-color:var(--teal);background:var(--white);box-shadow:0 0 0 3px rgba(53,232,213,.1)}
+#modalBayar .pay-opt{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+#modalBayar .pay-btn{padding:16px;border-radius:var(--r);border:2px solid rgba(27,45,90,.12);background:var(--off);cursor:pointer;text-align:center;transition:all .2s;font-family:var(--font)}
+#modalBayar .pay-btn:hover{border-color:var(--teal)}
+#modalBayar .pay-btn.selected{border-color:var(--teal);background:var(--teal-bg)}
+#modalBayar .pay-btn .pay-icon{font-size:1.6rem;display:block;margin-bottom:6px}
+#modalBayar .pay-btn .pay-label{font-size:13px;font-weight:700;color:var(--navy)}
+#modalBayar .pay-btn .pay-sub{font-size:11px;color:var(--gray);margin-top:2px}
+#modalBayar .bukti-preview{width:100%;max-height:160px;object-fit:cover;border-radius:var(--r);margin-top:8px;display:none}
+#modalBayar .bukti-drop{border:2px dashed rgba(27,45,90,.18);border-radius:var(--r);padding:20px;text-align:center;cursor:pointer;transition:all .2s;background:var(--off)}
+#modalBayar .bukti-drop:hover{border-color:var(--teal);background:var(--teal-bg)}
+#modalBayar .bukti-drop p{font-size:13px;color:var(--gray);margin-top:6px}
+#modalBayar .btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:9px 16px;border-radius:var(--r);font-family:var(--font);font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;border:none}
+#modalBayar .btn-primary{background:var(--teal);color:var(--navy-d)}
+#modalBayar .btn-primary:hover{background:var(--teal-d)}
+#modalBayar .btn-outline{background:transparent;color:var(--navy);border:1.5px solid rgba(27,45,90,.2)}
+#modalBayar .btn-outline:hover{background:var(--light)}
+#modalBayar .btn-sm{padding:6px 12px;font-size:12px}
+@media(max-width:680px){
+  #modalBayar .modal{width:100%;max-width:100%;border-radius:var(--r-lg) var(--r-lg) 0 0;max-height:92vh}
+  #modalBayar.modal-overlay{align-items:flex-end;padding:0}
+  #modalBayar .pay-opt{grid-template-columns:1fr 1fr}
 }
 </style>
 </head>
@@ -416,11 +470,88 @@ if ($action) {
   </div>
 </div>
 
+<!-- MODAL PEMBAYARAN — dipicu dari tombol 💰 Bayar di Riwayat Order, tetap
+     di halaman Pelanggan (gak pindah ke Order). POST ke orders.php?action=bayar
+     (endpoint sama yg dipakai halaman Order sendiri). -->
+<div class="modal-overlay" id="modalBayar" style="align-items:center;justify-content:center;padding:20px;z-index:400">
+  <div class="modal" style="max-height:90vh;width:480px">
+    <div class="modal-header">
+      <span class="modal-title">💰 Update Pembayaran</span>
+      <button class="modal-close" onclick="closeBayarModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="bayarInfo" style="background:var(--off);border-radius:var(--r);padding:12px 14px;margin-bottom:16px;font-size:13px"></div>
+
+      <div class="pay-opt">
+        <button class="pay-btn selected" id="btnSebagian" onclick="selectTipe('sebagian')">
+          <span class="pay-icon">⚡</span>
+          <div class="pay-label">Bayar Sebagian</div>
+          <div class="pay-sub">Input nominal yang dibayar</div>
+        </button>
+        <button class="pay-btn" id="btnLunas" onclick="selectTipe('lunas')">
+          <span class="pay-icon">✅</span>
+          <div class="pay-label">Lunas Sekarang</div>
+          <div class="pay-sub">Bayar semua sisa tagihan</div>
+        </button>
+      </div>
+
+      <div id="nominalWrap" class="form-group">
+        <label>Jumlah Dibayar (Rp) <span class="req">*</span></label>
+        <input class="lm-rp" type="number" id="bayarJumlah" placeholder="0" min="0" step="500"
+          oninput="updateBayarPreview()"/>
+        <div id="quickNominal" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px"></div>
+        <div id="bayarPreview" style="margin-top:8px;border-radius:var(--r);padding:10px 12px;display:none;font-size:13px"></div>
+      </div>
+
+      <div id="pembulatanWrap" style="display:none;margin-bottom:14px">
+        <label style="font-size:11px;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.05em">Pembulatan (Cash)</label>
+        <div style="display:flex;gap:6px;margin-top:6px">
+          <button class="btn btn-outline btn-sm" onclick="setPembulatan(500)">ke 500</button>
+          <button class="btn btn-outline btn-sm" onclick="setPembulatan(1000)">ke 1.000</button>
+          <button class="btn btn-outline btn-sm" onclick="setPembulatan(2000)">ke 2.000</button>
+          <button class="btn btn-outline btn-sm" onclick="setPembulatan(5000)">ke 5.000</button>
+          <button class="btn btn-outline btn-sm" onclick="setPembulatan(10000)">ke 10.000</button>
+        </div>
+        <div id="pembulatanInfo" style="font-size:12px;color:var(--gray);margin-top:6px"></div>
+      </div>
+
+      <div class="form-group">
+        <label>Metode Pembayaran</label>
+        <select id="bayarMetode" onchange="onMetodeChange()">
+          <?php foreach ($activeMethods as $_m): ?>
+          <option value="<?= htmlspecialchars($_m['code']) ?>"><?= htmlspecialchars(trim(($_m['emoji'] ?? '') . ' ' . $_m['label'])) ?></option>
+          <?php endforeach; ?>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Bukti Pembayaran (opsional)</label>
+        <div class="bukti-drop" onclick="document.getElementById('buktiFile').click()">
+          <div style="font-size:1.5rem">📎</div>
+          <p>Klik untuk upload foto bukti transfer/QRIS</p>
+          <p style="font-size:11px">JPG, PNG, maks 5MB</p>
+        </div>
+        <input type="file" id="buktiFile" accept="image/*" style="display:none"
+          onchange="previewBukti(this)"/>
+        <img id="buktiPreview" class="bukti-preview"/>
+        <div id="buktiName" style="font-size:12px;color:var(--teal);margin-top:4px"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline btn-sm" onclick="closeBayarModal()">Batal</button>
+      <button class="btn btn-primary btn-sm" onclick="submitBayar()">💾 Simpan Pembayaran</button>
+    </div>
+  </div>
+</div>
+
 <?php renderToast(); ?>
 <script>
 let allCustomer = [];
 let searchTimer = null;
 let currentDetailId = null;
+let currentBayarId = null;
+let currentBayarData = null;
+let currentTipeBayar = 'sebagian';
 const CAN_CREATE_CUST = <?= hasPermission('pelanggan.create') ? 'true' : 'false' ?>;
 const CAN_EDIT_CUST   = <?= hasPermission('pelanggan.edit')   ? 'true' : 'false' ?>;
 const CAN_VIEW_ORDERS = <?= (hasPermission('orders.view_all') || hasPermission('orders.view_own')) ? 'true' : 'false' ?>;
@@ -723,11 +854,206 @@ async function openDetail(id) {
         <td>${statusBayarBadge(o.status_bayar)}</td>
         <td style="font-family:var(--mono);font-size:12px;text-align:right;font-weight:600">Rp ${parseFloat(o.total).toLocaleString('id-ID')}</td>
         ${CAN_VIEW_ORDERS ? `<td style="white-space:nowrap"><div style="display:flex;gap:4px">
-          ${CAN_BAYAR_ORDER && o.status_bayar !== 'lunas' ? `<a href="orders.php?open=${o.id}&qa=bayar" target="_blank" class="hl-btn hl-btn-primary hl-btn-sm" style="padding:4px 8px;font-size:11px">💰 Bayar</a>` : ''}
+          ${CAN_BAYAR_ORDER && o.status_bayar !== 'lunas' ? `<button onclick="openBayarByIdCust(${o.id})" class="hl-btn hl-btn-primary hl-btn-sm" style="padding:4px 8px;font-size:11px">💰 Bayar</button>` : ''}
           <a href="orders.php?open=${o.id}&qa=wa" target="_blank" class="hl-btn hl-btn-outline hl-btn-sm" style="padding:4px 8px;font-size:11px">💬 WA</a>
         </div></td>` : ''}
       </tr>`).join('')}</tbody>
     </table></div>` : '<div class="hl-empty">Belum ada order</div>'}`;
+}
+
+// ═══════════════════════════════════════════════════════
+// MODAL BAYAR — dipicu tombol 💰 Bayar di Riwayat Order.
+// Sama persis logic-nya dgn orders.php (POST ke endpoint yg sama,
+// orders.php?action=bayar), cuma dipanggil dari sini supaya user
+// gak perlu pindah dari halaman Pelanggan.
+// ═══════════════════════════════════════════════════════
+async function openBayarByIdCust(id) {
+  const r = await fetch('orders.php?action=get&id=' + id);
+  const d = await r.json();
+  if (d.error) { showToast(d.error, 'error'); return; }
+  openBayarModal(d.id, d.nama_pelanggan, d.total, d.dp || 0, d.sisa_bayar || 0);
+}
+
+function openBayarModal(id, namaP, total, dp, sisa) {
+  currentBayarId   = id;
+  currentBayarData = {total: parseFloat(total), dp: parseFloat(dp), sisa: parseFloat(sisa)};
+  currentTipeBayar = 'sebagian';
+
+  document.getElementById('bayarInfo').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;text-align:center">
+      <div><div style="font-size:11px;color:var(--gray)">Total</div><div style="font-weight:700;font-family:var(--mono)">Rp ${parseFloat(total).toLocaleString('id-ID')}</div></div>
+      <div><div style="font-size:11px;color:var(--gray)">Sudah Bayar</div><div style="font-weight:700;font-family:var(--mono);color:var(--green)">Rp ${parseFloat(dp).toLocaleString('id-ID')}</div></div>
+      <div><div style="font-size:11px;color:var(--gray)">Sisa Tagihan</div><div style="font-weight:700;font-family:var(--mono);color:var(--red)">Rp ${parseFloat(sisa).toLocaleString('id-ID')}</div></div>
+    </div>
+    <div style="margin-top:8px;font-size:13px;font-weight:600;color:var(--navy)">Pelanggan: ${esc(namaP)}</div>`;
+
+  document.getElementById('bayarJumlah').value = '';
+  document.getElementById('bayarPreview').style.display = 'none';
+  document.getElementById('buktiPreview').style.display = 'none';
+  document.getElementById('buktiName').textContent = '';
+  document.getElementById('buktiFile').value = '';
+  document.getElementById('pembulatanInfo').textContent = '';
+  selectTipe('sebagian');
+  buildQuickNominal(parseFloat(sisa));
+  document.getElementById('modalBayar').classList.add('open');
+}
+
+function closeBayarModal() {
+  document.getElementById('modalBayar').classList.remove('open');
+  currentBayarId = null;
+}
+
+function buildQuickNominal(sisa) {
+  const roundUp = (n, to) => Math.ceil(n / to) * to;
+  const opts = new Set([
+    sisa,
+    roundUp(sisa, 500),
+    roundUp(sisa, 1000),
+    roundUp(sisa, 5000),
+    roundUp(sisa, 10000),
+  ]);
+  const el = document.getElementById('quickNominal');
+  el.innerHTML = [...opts].filter(v => v > 0).map(v =>
+    `<button class="btn btn-outline btn-sm" style="font-family:var(--mono);font-size:11px"
+      onclick="setNominal(${v})">Rp ${v.toLocaleString('id-ID')}</button>`
+  ).join('');
+}
+
+function setNominal(val) {
+  document.getElementById('bayarJumlah').value = val;
+  updateBayarPreview();
+}
+
+function setPembulatan(kelipatan) {
+  const sisa    = currentBayarData?.sisa || 0;
+  const rounded = Math.ceil(sisa / kelipatan) * kelipatan;
+  document.getElementById('bayarJumlah').value = rounded;
+  updateBayarPreview();
+}
+
+function onMetodeChange() {
+  const metode = document.getElementById('bayarMetode').value;
+  const wrap   = document.getElementById('pembulatanWrap');
+  wrap.style.display = metode === 'cash' ? 'block' : 'none';
+  if (metode !== 'cash') {
+    document.getElementById('pembulatanInfo').textContent = '';
+  }
+  updateBayarPreview();
+}
+
+function selectTipe(tipe) {
+  currentTipeBayar = tipe;
+  document.getElementById('btnSebagian').classList.toggle('selected', tipe==='sebagian');
+  document.getElementById('btnLunas').classList.toggle('selected', tipe==='lunas');
+  document.getElementById('nominalWrap').style.display = 'flex';
+  if (tipe === 'lunas' && currentBayarData) {
+    document.getElementById('bayarJumlah').value = currentBayarData.sisa;
+    buildQuickNominal(currentBayarData.sisa);
+  }
+  updateBayarPreview();
+  onMetodeChange();
+}
+
+function updateBayarPreview() {
+  const val    = parseFloat(document.getElementById('bayarJumlah').value) || 0;
+  const sisa   = currentBayarData?.sisa || 0;
+  const metode = document.getElementById('bayarMetode').value;
+  const el     = document.getElementById('bayarPreview');
+  const pInfo  = document.getElementById('pembulatanInfo');
+
+  if (val <= 0) { el.style.display='none'; return; }
+
+  el.style.display = 'block';
+  const kembalian = val - sisa;
+
+  if (val > sisa) {
+    el.style.background = '#D1FAE5';
+    el.style.color      = '#065F46';
+    el.innerHTML = `
+      <div style="display:flex;justify-content:space-between">
+        <span>Dibayar:</span><strong>Rp ${val.toLocaleString('id-ID')}</strong>
+      </div>
+      <div style="display:flex;justify-content:space-between;border-top:1px dashed rgba(0,0,0,.1);margin-top:6px;padding-top:6px">
+        <span>Kembalian:</span><strong>Rp ${kembalian.toLocaleString('id-ID')}</strong>
+      </div>`;
+    if (metode === 'cash' && kembalian > 0) {
+      pInfo.innerHTML = `<span style="color:var(--green)">Kembalian: Rp ${kembalian.toLocaleString('id-ID')}</span>`;
+    }
+  } else if (val === sisa) {
+    el.style.background = '#D1FAE5';
+    el.style.color      = '#065F46';
+    el.innerHTML = '<strong>✅ Pas — order akan lunas</strong>';
+  } else {
+    const sisaSetelah = sisa - val;
+    el.style.background = '#FEF3C7';
+    el.style.color      = '#92400E';
+    el.innerHTML = `
+      <div style="display:flex;justify-content:space-between">
+        <span>Dibayar:</span><strong>Rp ${val.toLocaleString('id-ID')}</strong>
+      </div>
+      <div style="display:flex;justify-content:space-between;border-top:1px dashed rgba(0,0,0,.1);margin-top:6px;padding-top:6px">
+        <span>Sisa setelah ini:</span><strong>Rp ${sisaSetelah.toLocaleString('id-ID')}</strong>
+      </div>`;
+  }
+
+  if (metode === 'cash' && val > 0 && val < sisa) {
+    pInfo.innerHTML = '<span style="color:var(--yellow)">⚠️ Bayar sebagian — tidak perlu pembulatan</span>';
+  } else if (metode === 'cash' && val === sisa) {
+    pInfo.innerHTML = '<span style="color:var(--green)">✅ Nominal pas</span>';
+  }
+}
+
+function previewBukti(input) {
+  const file = input.files[0];
+  if (!file) return;
+  if (file.size > 5*1024*1024) { showToast('❌ File terlalu besar (maks 5MB)', 'error'); input.value=''; return; }
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = document.getElementById('buktiPreview');
+    img.src = e.target.result;
+    img.style.display = 'block';
+  };
+  reader.readAsDataURL(file);
+  document.getElementById('buktiName').textContent = '📎 ' + file.name;
+}
+
+function bayarLabel(s){return{'lunas':'✅ Lunas','dp':'⚡ DP','belum_bayar':'⏳ Belum Bayar'}[s]||s}
+
+async function submitBayar() {
+  if (!currentBayarId) return;
+  const tipe   = currentTipeBayar;
+  const jumlah = parseFloat(document.getElementById('bayarJumlah').value) || 0;
+  const metode = document.getElementById('bayarMetode').value;
+  const file   = document.getElementById('buktiFile').files[0];
+
+  if (tipe === 'sebagian' && jumlah <= 0) {
+    showToast('⚠️ Masukkan jumlah yang dibayar', 'error'); return;
+  }
+
+  const fd = new FormData();
+  fd.append('id', currentBayarId);
+  fd.append('tipe_bayar', tipe);
+  fd.append('jumlah', tipe === 'lunas' ? (currentBayarData?.sisa || 0) : jumlah);
+  fd.append('metode', metode);
+  if (file) fd.append('bukti', file);
+
+  try {
+    const r = await fetch('orders.php?action=bayar', {
+      method: 'POST',
+      headers: {'X-CSRF-Token': csrfToken()},
+      body: fd
+    });
+    const d = await r.json();
+    if (d.success) {
+      showToast('✅ Pembayaran berhasil disimpan! Status: ' + bayarLabel(d.status_bayar), 'success');
+      closeBayarModal();
+      if (currentDetailId) openDetail(currentDetailId); // refresh Riwayat Order
+    } else {
+      showToast('❌ ' + (d.error||'Gagal'), 'error');
+    }
+  } catch(e) {
+    showToast('❌ Error: ' + e.message, 'error');
+  }
 }
 
 function togglePrefEdit(){
