@@ -3121,6 +3121,9 @@ async function submitBayar() {
       loadOrders();
       loadSummary();
       if (currentEditId) openDetail(currentEditId);
+      // Refresh Riwayat Order di modal pelanggan (bertingkat) juga kalau lagi kebuka —
+      // sebelum ini status "Belum" nyangkut di sana sampai modal dibuka ulang manual.
+      if (currentCustDetailId) openCustDetail(currentCustDetailId);
     } else {
       showToast('❌ ' + (d.error||'Gagal'), 'error');
     }
