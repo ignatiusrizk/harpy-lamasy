@@ -139,7 +139,7 @@ if ($action) {
     if ($action === 'get_orders') {
         $id = intval($_GET['id']);
         $rows = TenantQuery::raw(
-            "SELECT t.no_order,t.tanggal,t.total,t.status_proses,t.status_bayar,
+            "SELECT t.id,t.no_order,t.tanggal,t.total,t.status_proses,t.status_bayar,
                 GROUP_CONCAT(i.nama_layanan SEPARATOR ', ') as layanan
                 FROM hl_transaksi t
                 LEFT JOIN hl_transaksi_item i ON i.transaksi_id=t.id AND i.tenant_id=t.tenant_id AND i.outlet_id=t.outlet_id
@@ -423,6 +423,7 @@ let searchTimer = null;
 let currentDetailId = null;
 const CAN_CREATE_CUST = <?= hasPermission('pelanggan.create') ? 'true' : 'false' ?>;
 const CAN_EDIT_CUST   = <?= hasPermission('pelanggan.edit')   ? 'true' : 'false' ?>;
+const CAN_VIEW_ORDERS = <?= (hasPermission('orders.view_all') || hasPermission('orders.view_own')) ? 'true' : 'false' ?>;
 
 document.addEventListener('DOMContentLoaded', async () => {
   initFilter('custFilter'); loadStats(); loadSegmenStats();
@@ -713,13 +714,14 @@ async function openDetail(id) {
     </div>
     <div style="font-size:12px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px">Riwayat Order (20 terakhir)</div>
     ${orders.length ? `<div class="hl-table-wrap"><table class="hl-table">
-      <thead><tr><th>No Order</th><th>Tanggal</th><th>Layanan</th><th>Status</th><th style="text-align:right">Total</th></tr></thead>
+      <thead><tr><th>No Order</th><th>Tanggal</th><th>Layanan</th><th>Status</th><th style="text-align:right">Total</th>${CAN_VIEW_ORDERS ? '<th></th>' : ''}</tr></thead>
       <tbody>${orders.map(o=>`<tr>
-        <td style="font-family:var(--mono);font-size:12px;color:var(--teal-d)">${o.no_order}</td>
+        <td style="font-family:var(--mono);font-size:12px;color:var(--teal-d)">${CAN_VIEW_ORDERS ? `<a href="orders.php?open=${o.id}" target="_blank" style="color:inherit">${esc(o.no_order)}</a>` : esc(o.no_order)}</td>
         <td style="font-size:12px">${fmtDate(o.tanggal)}</td>
         <td style="font-size:12px;color:var(--gray);max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(o.layanan||'-')}</td>
         <td>${statusBayarBadge(o.status_bayar)}</td>
         <td style="font-family:var(--mono);font-size:12px;text-align:right;font-weight:600">Rp ${parseFloat(o.total).toLocaleString('id-ID')}</td>
+        ${CAN_VIEW_ORDERS ? `<td><a href="orders.php?open=${o.id}" target="_blank" class="hl-btn hl-btn-outline hl-btn-sm" style="padding:4px 10px;font-size:11px;white-space:nowrap">↗ Buka</a></td>` : ''}
       </tr>`).join('')}</tbody>
     </table></div>` : '<div class="hl-empty">Belum ada order</div>'}`;
 }
