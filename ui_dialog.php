@@ -94,6 +94,14 @@
             return '<option value="'+esc(val)+'">'+esc(lbl)+'</option>';
           }).join('');
           if(opts.defaultValue!=null) selectEl.value=opts.defaultValue;
+          // Native <select> di WebView bisa render dropdown-nya kepotong/salah posisi
+          // (kena clip dari transform/overflow parent .lm-dlg) — pola bakunya di app ini
+          // "de-native": ganti jadi custom dropdown (lmx-btn/lmx-panel, lihat components.php)
+          // yg posisinya dihitung manual & di-append ke body, bukan native browser popup.
+          // enhanceSelect() sendiri skip elemen yg awalnya display:none (kondisi #lmDlgSelect
+          // sebelum baris ini) — makanya baru dipicu di sini, SETELAH kepilih visible.
+          selectEl.dispatchEvent(new Event('change'));
+          if (window.lmxScan) window.lmxScan();
         } else selectEl.style.display='none';
         okBtn.textContent=opts.okText || (mode==='alert'?'OK':(mode==='select'?'Pilih':(mode==='prompt'?'Simpan':'Ya')));
         okBtn.className='lm-dlg-btn lm-dlg-ok'+(danger?' danger':'');
@@ -101,7 +109,11 @@
         cancelBtn.style.display=(mode==='alert')?'none':'';
         ov.classList.add('show');
         document.addEventListener('keydown',onKey,true);
-        setTimeout(function(){ (mode==='prompt'?inputEl:(mode==='select'?selectEl:okBtn)).focus(); },60);
+        setTimeout(function(){
+          if (mode==='prompt') { inputEl.focus(); return; }
+          if (mode==='select') { (selectEl.nextElementSibling && selectEl.nextElementSibling.classList.contains('lmx-btn') ? selectEl.nextElementSibling : selectEl).focus(); return; }
+          okBtn.focus();
+        },60);
         return new Promise(function(res){ resolver=res; });
       };
       window.lmAlert=function(msg,opts){ return window.lmDialog(Object.assign({type:'alert',message:msg},opts||{})); };
