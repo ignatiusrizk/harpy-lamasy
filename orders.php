@@ -1800,10 +1800,12 @@ function getBulkIds() {
 async function applyBulkPay() {
   const ids = getBulkIds();
   if (!ids.length) { showToast('Tidak ada order dipilih','error'); return; }
+  const totalTagihan = ids.reduce((sum, id) => sum + (parseFloat(ordersRowsById[id]?.sisa_bayar) || 0), 0);
+  const totalMsg = ' · total Rp ' + totalTagihan.toLocaleString('id-ID');
   const pmOptions = PAY_METHODS.map(m => ({value: m.code, label: ((m.emoji||'') + ' ' + m.label).trim()}));
-  const metode = await lmSelect('Pilih metode bayar untuk ' + ids.length + ' order terpilih:', pmOptions, pmOptions[0]?.value);
+  const metode = await lmSelect('Pilih metode bayar untuk ' + ids.length + ' order terpilih' + totalMsg + ':', pmOptions, pmOptions[0]?.value);
   if (!metode) return;
-  if (!(await lmConfirm('Tandai LUNAS ' + ids.length + ' order dengan metode "' + (PM_LABEL[metode] || metode) + '"?\n(Sudah lunas akan di-skip.)'))) return;
+  if (!(await lmConfirm('Tandai LUNAS ' + ids.length + ' order (Rp ' + totalTagihan.toLocaleString('id-ID') + ') dengan metode "' + (PM_LABEL[metode] || metode) + '"?\n(Sudah lunas akan di-skip.)'))) return;
   try {
     const r = await fetch('orders.php?action=bulk_pay', {
       method:'POST',
@@ -1900,6 +1902,7 @@ let ordersCurrentPage = 1;
 let ordersTotalPages  = 1;
 let ordersSort        = 'tanggal';
 let ordersSortDir     = 'desc';
+let ordersRowsById    = {}; // cache halaman aktif — dipakai bulk-pay utk hitung total tagihan terpilih
 
 function setSort(col) {
   if (ordersSort === col) {
@@ -1950,6 +1953,9 @@ async function loadOrders(page=1) {
     document.getElementById('ordersPaging').innerHTML = '';
     return;
   }
+
+  ordersRowsById = {};
+  d.data.forEach(row => { ordersRowsById[row.id] = row; });
 
   document.getElementById('tableBody').innerHTML = d.data.map(row => {
     const sisaColor = parseFloat(row.sisa_bayar) > 0 ? 'var(--red)' : 'var(--green)';
