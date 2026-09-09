@@ -236,6 +236,12 @@ function renderGlobalJsHelpers(): void { ?>
         closePanel();
         var p = document.createElement('div');
         p.className = 'lmx-panel';
+        // .lmx-panel z-index (harpy-erp.css) didesain utk konten halaman biasa.
+        // Kalau trigger-nya lagi dalam dialog lmDialog terbuka (z-index:100000,
+        // lihat ui_dialog.php) — mis. lmSelect() — panel ini harus menang di
+        // ATASNYA, bukan ke-clip di bawah backdrop dialog. Selain itu biarkan
+        // default CSS-nya (gak ganggu dropdown biasa di luar dialog).
+        if (document.querySelector('.lm-dlg-ov.show')) p.style.zIndex = '100001';
         build(p);
         document.body.appendChild(p);
         var r = btn.getBoundingClientRect();
