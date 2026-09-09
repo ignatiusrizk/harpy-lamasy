@@ -1,6 +1,7 @@
 <?php /* ui_dialog.php — Dialog cantik global (pengganti alert/confirm/prompt native).
    Dipakai oleh renderToast() (tenant/HQ) & saRenderNavClose() (superadmin).
    API JS global: lmAlert(msg), lmConfirm(msg,opts)→Promise<bool>, lmPrompt(msg,def,opts)→Promise<str|null>,
+   lmSelect(msg,options,def,opts)→Promise<str|null> (dropdown, options=array string atau {value,label}),
    lmAsk(event,msg) utk <a>, lmAskSubmit(event,msg) utk <form>. window.alert di-override. */ ?>
     <!-- ══ Dialog cantik global (pengganti alert/confirm/prompt native) ══ -->
     <style>
@@ -38,6 +39,7 @@
         <div class="lm-dlg-msg" id="lmDlgMsg"></div>
         <div class="lm-dlg-cost" id="lmDlgCost" style="display:none"></div>
         <input class="lm-dlg-input" id="lmDlgInput" style="display:none">
+        <select class="lm-dlg-input" id="lmDlgSelect" style="display:none"></select>
         <div class="lm-dlg-actions">
           <button type="button" class="lm-dlg-btn lm-dlg-cancel" id="lmDlgCancel">Batal</button>
           <button type="button" class="lm-dlg-btn lm-dlg-ok" id="lmDlgOk">OK</button>
@@ -50,6 +52,7 @@
       var ov=document.getElementById('lmDlgOv'), icon=document.getElementById('lmDlgIcon'),
           titleEl=document.getElementById('lmDlgTitle'), msgEl=document.getElementById('lmDlgMsg'),
           costEl=document.getElementById('lmDlgCost'), inputEl=document.getElementById('lmDlgInput'),
+          selectEl=document.getElementById('lmDlgSelect'),
           okBtn=document.getElementById('lmDlgOk'), cancelBtn=document.getElementById('lmDlgCancel');
       if(!ov) return;
       var resolver=null, mode='confirm';
@@ -60,41 +63,54 @@
         document.removeEventListener('keydown',onKey,true);
         if(r) setTimeout(function(){r(val);},120);
       }
+      function isTextMode(){ return mode==='prompt'||mode==='select'; }
       function onKey(e){
         if(!resolver) return;
-        if(e.key==='Escape'){ e.preventDefault(); close(mode==='prompt'?null:(mode==='alert'?undefined:false)); }
+        if(e.key==='Escape'){ e.preventDefault(); close(isTextMode()?null:(mode==='alert'?undefined:false)); }
         else if(e.key==='Enter' && mode!=='prompt'){ e.preventDefault(); okOnce(); }
       }
-      function okOnce(){ close(mode==='prompt'?(inputEl.value):(mode==='alert'?undefined:true)); }
+      function okOnce(){ close(mode==='prompt'?(inputEl.value):(mode==='select'?selectEl.value:(mode==='alert'?undefined:true))); }
       okBtn.addEventListener('click', okOnce);
-      cancelBtn.addEventListener('click', function(){ close(mode==='prompt'?null:false); });
-      ov.addEventListener('click', function(e){ if(e.target===ov && mode!=='alert') close(mode==='prompt'?null:false); });
+      cancelBtn.addEventListener('click', function(){ close(isTextMode()?null:false); });
+      ov.addEventListener('click', function(e){ if(e.target===ov && mode!=='alert') close(isTextMode()?null:false); });
 
       // API utama — return Promise
       window.lmDialog=function(opts){
         opts=opts||{}; mode=opts.type||'confirm';
         var danger=!!opts.danger;
-        icon.textContent=opts.icon || (mode==='alert'?'ℹ️':(mode==='prompt'?'✏️':'❓'));
+        icon.textContent=opts.icon || (mode==='alert'?'ℹ️':(mode==='prompt'?'✏️':(mode==='select'?'📋':'❓')));
         icon.className='lm-dlg-icon'+(danger?' danger':'');
-        titleEl.textContent=opts.title || (mode==='alert'?'Informasi':(mode==='prompt'?'Masukkan Data':'Konfirmasi'));
+        titleEl.textContent=opts.title || (mode==='alert'?'Informasi':(mode==='prompt'?'Masukkan Data':(mode==='select'?'Pilih Opsi':'Konfirmasi')));
         titleEl.style.display=opts.title===''?'none':'';
         msgEl.innerHTML=esc(opts.message).replace(/\n/g,'<br>');
         msgEl.style.display=opts.message?'':'none';
         if(opts.cost){ costEl.style.display=''; costEl.innerHTML='💰 '+esc(opts.cost); } else costEl.style.display='none';
         if(mode==='prompt'){ inputEl.style.display=''; inputEl.value=opts.defaultValue||''; inputEl.placeholder=opts.placeholder||''; }
         else inputEl.style.display='none';
-        okBtn.textContent=opts.okText || (mode==='alert'?'OK':(mode==='prompt'?'Simpan':'Ya'));
+        if(mode==='select'){
+          selectEl.style.display='';
+          selectEl.innerHTML=(opts.options||[]).map(function(o){
+            var val=(o&&typeof o==='object')?o.value:o, lbl=(o&&typeof o==='object')?o.label:o;
+            return '<option value="'+esc(val)+'">'+esc(lbl)+'</option>';
+          }).join('');
+          if(opts.defaultValue!=null) selectEl.value=opts.defaultValue;
+        } else selectEl.style.display='none';
+        okBtn.textContent=opts.okText || (mode==='alert'?'OK':(mode==='select'?'Pilih':(mode==='prompt'?'Simpan':'Ya')));
         okBtn.className='lm-dlg-btn lm-dlg-ok'+(danger?' danger':'');
         cancelBtn.textContent=opts.cancelText || 'Batal';
         cancelBtn.style.display=(mode==='alert')?'none':'';
         ov.classList.add('show');
         document.addEventListener('keydown',onKey,true);
-        setTimeout(function(){ (mode==='prompt'?inputEl:okBtn).focus(); },60);
+        setTimeout(function(){ (mode==='prompt'?inputEl:(mode==='select'?selectEl:okBtn)).focus(); },60);
         return new Promise(function(res){ resolver=res; });
       };
       window.lmAlert=function(msg,opts){ return window.lmDialog(Object.assign({type:'alert',message:msg},opts||{})); };
       window.lmConfirm=function(msg,opts){ return window.lmDialog(Object.assign({type:'confirm',message:msg},opts||{})); };
       window.lmPrompt=function(msg,def,opts){ return window.lmDialog(Object.assign({type:'prompt',message:msg,defaultValue:def},opts||{})); };
+      // Dropdown pilihan (pengganti lmPrompt pas jawabannya harus dari daftar tetap,
+      // bukan teks bebas). options: array string, ATAU array {value,label}.
+      // lmSelect(msg,options,def,opts) → Promise<string|null>
+      window.lmSelect=function(msg,options,def,opts){ return window.lmDialog(Object.assign({type:'select',message:msg,options:options,defaultValue:def},opts||{})); };
       // Gate link/navigasi: onclick="return lmAsk(event,'Yakin?')"
       window.lmAsk=function(ev, msg, opts){
         ev.preventDefault(); if(ev.stopPropagation) ev.stopPropagation();

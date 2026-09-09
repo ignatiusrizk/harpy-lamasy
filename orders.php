@@ -1800,11 +1800,9 @@ function getBulkIds() {
 async function applyBulkPay() {
   const ids = getBulkIds();
   if (!ids.length) { showToast('Tidak ada order dipilih','error'); return; }
-  const pmCodes = PAY_METHODS.map(m => m.code);
-  let metode = await lmPrompt('Metode bayar (' + pmCodes.join('/') + '):', pmCodes[0] || 'cash');
+  const pmOptions = PAY_METHODS.map(m => ({value: m.code, label: ((m.emoji||'') + ' ' + m.label).trim()}));
+  const metode = await lmSelect('Pilih metode bayar untuk ' + ids.length + ' order terpilih:', pmOptions, pmOptions[0]?.value);
   if (!metode) return;
-  metode = metode.trim().toLowerCase();
-  if (!pmCodes.includes(metode)) { showToast('Metode tidak dikenal: ' + metode, 'error'); return; }
   if (!(await lmConfirm('Tandai LUNAS ' + ids.length + ' order dengan metode "' + (PM_LABEL[metode] || metode) + '"?\n(Sudah lunas akan di-skip.)'))) return;
   try {
     const r = await fetch('orders.php?action=bulk_pay', {
