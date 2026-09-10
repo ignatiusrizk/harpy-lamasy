@@ -2041,6 +2041,15 @@ function lmNormKat(s){ return String(s||'').toLowerCase().replace(/[^a-z0-9]/g,'
 function isSelfServiceKat(kat){ return lmNormKat(kat) === 'selfservice'; }
 function isAddonKat(kat){ return lmNormKat(kat) === 'tambahanselfservice'; }
 
+// Satuan yang tersedia di form Layanan (layanan.php) — HARUS sinkron ke sini
+// biar layanan ber-satuan "meter"/"lembar"/"item"/"kodi" gak ke-reset jadi "kg" di POS.
+const SATUAN_OPSI = ['kg','pcs','item','pasang','set','lembar','meter','kodi'];
+function satuanOptions(cur) {
+  const list = SATUAN_OPSI.slice();
+  if (cur && !list.includes(cur)) list.unshift(cur); // satuan tak dikenal (preset HQ dll) tetap dipertahankan
+  return list.map(s => `<option value="${s}" ${cur === s ? 'selected' : ''}>${s}</option>`).join('');
+}
+
 function renderItems() {
   const tbody = document.getElementById('itemsBody');
   const empty = document.getElementById('emptyItems');
@@ -2061,7 +2070,7 @@ function renderItems() {
       <td data-lbl="Layanan"><input class="item-input" style="width:100%;min-width:120px" value="${esc(item.nama_layanan)}"
         placeholder="Nama layanan" oninput="items[${i}].nama_layanan=this.value;recalc()"/></td>
       <td data-lbl="Satuan"><select class="item-input" style="width:64px" onchange="items[${i}].satuan=this.value">
-        ${['kg','pcs','set','pasang'].map(s=>`<option value="${s}" ${item.satuan===s?'selected':''}>${s}</option>`).join('')}
+        ${satuanOptions(item.satuan)}
       </select></td>
       <td data-lbl="Jumlah">
         <span class="qty-wrap">
