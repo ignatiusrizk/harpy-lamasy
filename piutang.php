@@ -332,9 +332,51 @@ if ($action === 'bayar' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         $db->prepare("UPDATE hl_piutang SET total_dibayar=?, status=?, lunas_at=?, kas_id=?
                        WHERE id=? AND tenant_id=?")
            ->execute([$newDibayar, $status, $lunasAt, $kasId, $id, $tid]);
+
+        // Piutang B2B ini rekap agregat (per pelanggan+periode) dari hl_transaksi, BUKAN
+        // di-link row-by-row — jadi status lunas di sini TIDAK otomatis ke order aslinya
+        // kecuali disinkronkan manual di sini. Cuma sinkron saat piutang FULL lunas (bukan
+        // 'sebagian') karena partial payment gak bisa dialokasikan ke order mana yg mana.
+        $syncedOrders = [];
+        if ($status === 'lunas') {
+            $ordSel = $db->prepare(
+                "SELECT id, no_order, pelanggan_id FROM hl_transaksi
+                  WHERE tenant_id=? AND outlet_id=? AND pelanggan_id=?
+                    AND DATE(tanggal) BETWEEN ? AND ? AND status_bayar != 'lunas'
+                    FOR UPDATE"
+            );
+            $ordSel->execute([$tid, $oid, (int)$row['pelanggan_id'], $row['periode_start'], $row['periode_end']]);
+            $ordRows = $ordSel->fetchAll(PDO::FETCH_ASSOC);
+            if ($ordRows) {
+                $ordUpd = $db->prepare(
+                    "UPDATE hl_transaksi SET status_bayar='lunas', sisa_bayar=0, dp=total,
+                            metode_bayar='transfer', updated_at=NOW()
+                      WHERE tenant_id=? AND outlet_id=? AND id=?"
+                );
+                foreach ($ordRows as $o) {
+                    $ordUpd->execute([$tid, $oid, (int)$o['id']]);
+                    $syncedOrders[] = $o;
+                }
+            }
+        }
+
         $db->commit();
-        logAudit('bayar','piutang',"Bayar piutang #$id ".$row['nama']." Rp ".number_format($jumlah,0,',','.'));
-        echo json_encode(['ok'=>true, 'status'=>$status]);
+        logAudit('bayar','piutang',"Bayar piutang #$id ".$row['nama']." Rp ".number_format($jumlah,0,',','.')
+            . ($syncedOrders ? ' — sinkron '.count($syncedOrders).' order jadi lunas' : ''));
+
+        // Referral payout — best-effort, SETELAH commit (payoutOnFirstLunas buka tx sendiri)
+        if ($syncedOrders) {
+            require_once ROOT . '/core/Referral.php';
+            foreach ($syncedOrders as $o) {
+                try {
+                    Referral::payoutOnFirstLunas($tid, (int)$o['pelanggan_id'], (int)$o['id'], $user['id']);
+                } catch (Throwable $e) {
+                    ErrorLogger::logException('referral_payout_piutang_bayar', $e, $tid, $oid);
+                }
+            }
+        }
+
+        echo json_encode(['ok'=>true, 'status'=>$status, 'synced_orders'=>count($syncedOrders)]);
     } catch (Throwable $e) {
         if ($db->inTransaction()) $db->rollBack();
         apiErr($e);
@@ -765,7 +807,8 @@ async function doBayar(){
     const r = await fetch('piutang.php?action=bayar', {method:'POST', headers:{'Content-Type':'application/json','X-CSRF-Token':CSRF}, body:JSON.stringify(body)});
     const d = await r.json();
     if (d.error){ alert('⚠️ '+d.error); return; }
-    showToast(`✅ Tercatat (status: ${d.status})`,'success');
+    const syncMsg = d.synced_orders > 0 ? ` · ${d.synced_orders} order ikut ditandai lunas` : '';
+    showToast(`✅ Tercatat (status: ${d.status})${syncMsg}`,'success');
     closeModal('bayarModal'); loadList();
   } catch(e){ alert('Gagal: '+e.message); }
 }
