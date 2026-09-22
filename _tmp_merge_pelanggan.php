@@ -57,6 +57,8 @@ try {
     $out['reassigned'] = $reassigned;
 
     // Recompute aggregate fields on target from hl_transaksi (source of truth)
+    // total_order/last_transaksi ARE real stored columns on hl_pelanggan;
+    // total_omset/last_order in customer.php's list query are JOIN aliases, not columns.
     $agg = $db->prepare(
         "SELECT COUNT(*) cnt, COALESCE(SUM(total),0) omset, MAX(tanggal) last_order
            FROM hl_transaksi WHERE tenant_id=? AND pelanggan_id=?"
@@ -77,13 +79,13 @@ try {
 
     $upd = $db->prepare(
         "UPDATE hl_pelanggan
-            SET total_order = ?, total_omset = ?, last_order = ?,
+            SET total_order = ?, last_transaksi = ?,
                 saldo_deposit = saldo_deposit + ?, poin_balance = poin_balance + ?,
                 updated_at = NOW()
           WHERE id = ? AND tenant_id = ?"
     );
     $upd->execute([
-        (int)$aggRow['cnt'], (float)$aggRow['omset'], $aggRow['last_order'],
+        (int)$aggRow['cnt'], $aggRow['last_order'],
         (float)$extra['sd'], (int)$extra['pb'],
         $target, $tid,
     ]);
