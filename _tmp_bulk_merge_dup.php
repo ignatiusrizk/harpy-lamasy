@@ -135,5 +135,6 @@ try {
     echo json_encode($summary, JSON_PRETTY_PRINT);
 } catch (Throwable $e) {
     if ($db->inTransaction()) $db->rollBack();
-    echo json_encode(['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+    error_log('[_tmp_bulk_merge_dup] ' . $e->getMessage() . "\n" . $e->getTraceAsString());
+    echo json_encode(['error' => 'internal error — cek error_log server']);
 }
