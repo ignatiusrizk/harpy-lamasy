@@ -65,10 +65,18 @@ try {
         if (count($withPhone) === 1) {
             $target = $withPhone[0];
         } elseif (count($withPhone) === 0) {
-            usort($members, fn($a, $b) => $b['total_order'] <=> $a['total_order']);
-            $top = $members[0];
-            $tie = array_filter($members, fn($m) => $m['total_order'] === $top['total_order']);
-            if ($top['total_order'] > 0 && count($tie) === 1) $target = $top;
+            $maxOrder = max(array_column($members, 'total_order'));
+            if ($maxOrder === 0) {
+                // All members are empty duplicates (0 orders, no phone) — nothing to lose
+                // either way, so just keep the lowest id (oldest row) and drop the rest.
+                usort($members, fn($a, $b) => $a['id'] <=> $b['id']);
+                $target = $members[0];
+            } else {
+                $withMax = array_values(array_filter($members, fn($m) => $m['total_order'] === $maxOrder));
+                if (count($withMax) === 1) $target = $withMax[0];
+                // else: 2+ members genuinely have real (and equal) order history under
+                // the same name with no phone to disambiguate — true ambiguity, skip.
+            }
         }
 
         if (!$target) {
