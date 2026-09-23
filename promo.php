@@ -10,6 +10,7 @@ $action = $_GET['action'] ?? '';
 if ($action) {
     header('Content-Type: application/json');
     $tid = TenantResolver::id();
+    $oid = TenantResolver::outletId();
 
     // LIST PROMO
     // Filter: outlet-scope (outlet_id=current) ATAU account-scope (assigned to current/all outlets)
