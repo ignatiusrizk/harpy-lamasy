@@ -748,6 +748,10 @@ require_once ROOT . '/core/CoinLedger.php';
 const CAN_PIUTANG_WRITE = <?= hasPermission('laporan.export') ? 'true' : 'false' ?>;
 const CSRF = document.querySelector('meta[name="csrf-token"]').content;
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+// Buat string yang disisipkan ke dalam onclick="fn('...')" — bukan cuma HTML-escape (&<>"),
+// tapi juga escape backslash & petik satu, supaya nilai bebas (mis. catatan/nama pelanggan)
+// gak bisa keluar dari string literal JS-nya (XSS lewat event-handler attribute).
+const escAttr = s => esc(String(s ?? '').replace(/\\/g, '\\\\').replace(/'/g, "\\'"));
 const fmtRp = n => 'Rp ' + Number(n||0).toLocaleString('id-ID');
 let curFilter = '';
 let curPage = 1;
@@ -790,7 +794,7 @@ async function loadList(append = false){
         else              tempoStr += ` <small style="color:#9CA3AF">(${ht} hari)</small>`;
       }
       const correctionActions = CAN_PIUTANG_WRITE ? `
-        <button class="hl-btn hl-btn-outline btn-sm" onclick="openEdit(${r.id}, '${esc(r.jatuh_tempo)}', ${r.total_tagihan}, '${esc(r.catatan||'')}', '${r.status}')" title="Koreksi jatuh tempo / jumlah tagihan / catatan">✏️ Edit</button>
+        <button class="hl-btn hl-btn-outline btn-sm" onclick="openEdit(${r.id}, '${escAttr(r.jatuh_tempo)}', ${r.total_tagihan}, '${escAttr(r.catatan||'')}', '${escAttr(r.status)}')" title="Koreksi jatuh tempo / jumlah tagihan / catatan">✏️ Edit</button>
         ${r.status === 'sudah_tagih' ? `<button class="hl-btn hl-btn-outline btn-sm" onclick="undoInvoiced(${r.id})" title="Batalkan status Sudah Tagih, balik ke Belum Tagih">↩️ Batal Tagih</button>` : ''}
         ${(r.status === 'sebagian' || r.status === 'lunas') ? `<button class="hl-btn hl-btn-outline btn-sm" onclick="undoBayar(${r.id})" title="Batalkan pembayaran yang tercatat">↩️ Batal Bayar</button>` : ''}
         ${!r.kas_id ? `<button class="hl-btn hl-btn-outline btn-sm" style="color:#DC2626;border-color:#FCA5A5" onclick="hapusPiutang(${r.id})" title="Hapus piutang ini">🗑️ Hapus</button>` : ''}
@@ -805,7 +809,7 @@ async function loadList(append = false){
         ${CAN_PIUTANG_WRITE && r.status!=='belum_tagih' ? `<button class="hl-btn hl-btn-outline btn-sm" onclick="reminder(${r.id})">🔔 Reminder</button>` : ''}
         <a href="/api/struk.php?action=generate_invoice&id=${r.id}" target="_blank"
            class="hl-btn hl-btn-outline btn-sm" style="font-size:11px" title="Generate Invoice B2B (200 coin)">📄 Invoice</a>
-        ${CAN_PIUTANG_WRITE ? `<button class="hl-btn hl-btn-primary btn-sm" onclick="openBayar(${r.id}, '${esc(r.pelanggan_nama)}', ${r.sisa_tagihan})">💵 Bayar</button>` : ''}
+        ${CAN_PIUTANG_WRITE ? `<button class="hl-btn hl-btn-primary btn-sm" onclick="openBayar(${r.id}, '${escAttr(r.pelanggan_nama)}', ${r.sisa_tagihan})">💵 Bayar</button>` : ''}
         ${correctionActions}
       `;
       rowsHtml += `<tr>
