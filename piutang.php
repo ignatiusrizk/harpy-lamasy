@@ -387,6 +387,131 @@ if ($action === 'bayar' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     exit;
 }
 
+// ── EDIT MANUAL — koreksi jatuh tempo / total tagihan / catatan ──
+// total_tagihan sengaja gak boleh diubah kalau piutang sudah 'lunas' (sisa_tagihan
+// generated column bakal balik positif tanpa status ikut berubah — inkonsisten).
+if ($action === 'edit' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    header('Content-Type: application/json');
+    if (!hasPermission('laporan.export')) { echo json_encode(['error'=>'Akses ditolak']); exit; }
+    verifyCsrf();
+    $d  = json_decode(file_get_contents('php://input'), true) ?: [];
+    $id = (int)($d['id'] ?? 0);
+    if (!$id) { echo json_encode(['error'=>'ID tidak valid']); exit; }
+    try {
+        $row = TenantQuery::rawOne("SELECT * FROM hl_piutang WHERE id=? AND tenant_id=? AND outlet_id=?", [$id, $tid, $oid]);
+        if (!$row) { echo json_encode(['error'=>'Piutang tidak ditemukan']); exit; }
+
+        $set = []; $params = [];
+        if (array_key_exists('jatuh_tempo', $d) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $d['jatuh_tempo'])) {
+            $set[] = 'jatuh_tempo=?'; $params[] = $d['jatuh_tempo'];
+        }
+        if (array_key_exists('catatan', $d)) {
+            $set[] = 'catatan=?'; $params[] = substr(trim((string)$d['catatan']), 0, 500) ?: null;
+        }
+        if (array_key_exists('total_tagihan', $d)) {
+            if ($row['status'] === 'lunas') {
+                echo json_encode(['error'=>'Piutang sudah lunas — batalkan pembayarannya dulu kalau mau koreksi jumlah tagihan']); exit;
+            }
+            $newTagihan = max(0, (int)$d['total_tagihan']);
+            $set[] = 'total_tagihan=?'; $params[] = $newTagihan;
+            // Recompute status dari perbandingan total_dibayar existing vs total baru
+            $newStatus = $row['status'];
+            if ((int)$row['total_dibayar'] > 0) {
+                $newStatus = (int)$row['total_dibayar'] >= $newTagihan ? 'lunas' : 'sebagian';
+            }
+            $set[] = 'status=?'; $params[] = $newStatus;
+        }
+        if (!$set) { echo json_encode(['error'=>'Tidak ada perubahan']); exit; }
+
+        $params[] = $id; $params[] = $tid;
+        $db->prepare("UPDATE hl_piutang SET " . implode(', ', $set) . " WHERE id=? AND tenant_id=?")->execute($params);
+        logAudit('edit', 'piutang', "Koreksi piutang #$id (" . implode(',', array_map(fn($s)=>explode('=',$s)[0], $set)) . ")");
+        echo json_encode(['ok'=>true]);
+    } catch (Throwable $e) { apiErr($e); }
+    exit;
+}
+
+// ── HAPUS — cuma boleh kalau BELUM ada pembayaran tercatat (kas_id kosong).
+// Kalau sudah ada pembayaran, harus 'Batal Bayar' dulu (action=undo_bayar) baru bisa hapus —
+// mencegah kas masuk jadi orphan tanpa piutang rujukannya. ──
+if ($action === 'delete' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    header('Content-Type: application/json');
+    if (!hasPermission('laporan.export')) { echo json_encode(['error'=>'Akses ditolak']); exit; }
+    verifyCsrf();
+    $d  = json_decode(file_get_contents('php://input'), true) ?: [];
+    $id = (int)($d['id'] ?? 0);
+    if (!$id) { echo json_encode(['error'=>'ID tidak valid']); exit; }
+    try {
+        $row = TenantQuery::rawOne("SELECT * FROM hl_piutang WHERE id=? AND tenant_id=? AND outlet_id=?", [$id, $tid, $oid]);
+        if (!$row) { echo json_encode(['error'=>'Piutang tidak ditemukan']); exit; }
+        if (!empty($row['kas_id'])) {
+            echo json_encode(['error'=>'Piutang ini sudah ada pembayaran tercatat — batalkan pembayarannya dulu sebelum menghapus']); exit;
+        }
+        $db->prepare("DELETE FROM hl_piutang WHERE id=? AND tenant_id=?")->execute([$id, $tid]);
+        logAudit('delete', 'piutang', "Hapus piutang #$id (".$row['periode_start']." s/d ".$row['periode_end'].")");
+        echo json_encode(['ok'=>true]);
+    } catch (Throwable $e) { apiErr($e); }
+    exit;
+}
+
+// ── BATAL TAGIH — undo mark_invoiced, balik ke 'belum_tagih'. Coin yg sudah
+// kepotong pas mark_invoiced TIDAK dikembalikan (invoice-nya sempat benar2 dibuat). ──
+if ($action === 'undo_invoiced' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    header('Content-Type: application/json');
+    if (!hasPermission('laporan.export')) { echo json_encode(['error'=>'Akses ditolak']); exit; }
+    verifyCsrf();
+    $d  = json_decode(file_get_contents('php://input'), true) ?: [];
+    $id = (int)($d['id'] ?? 0);
+    if (!$id) { echo json_encode(['error'=>'ID tidak valid']); exit; }
+    try {
+        $row = TenantQuery::rawOne("SELECT * FROM hl_piutang WHERE id=? AND tenant_id=? AND outlet_id=?", [$id, $tid, $oid]);
+        if (!$row) { echo json_encode(['error'=>'Piutang tidak ditemukan']); exit; }
+        if ($row['status'] !== 'sudah_tagih') { echo json_encode(['error'=>'Cuma piutang berstatus "Sudah Tagih" yang bisa dibatalkan tagihnya']); exit; }
+        $db->prepare("UPDATE hl_piutang SET status='belum_tagih', invoice_sent_at=NULL WHERE id=? AND tenant_id=?")
+           ->execute([$id, $tid]);
+        logAudit('undo_invoiced', 'piutang', "Batal tagih piutang #$id");
+        echo json_encode(['ok'=>true]);
+    } catch (Throwable $e) { apiErr($e); }
+    exit;
+}
+
+// ── BATAL BAYAR — undo action=bayar. Hapus entri kas masuk terkait + reset
+// total_dibayar/status. ⚠️ TIDAK otomatis membalikin order hl_transaksi yang
+// sempat disinkron jadi lunas (lihat action=bayar) — dp/sisa_bayar asli tiap
+// order sebelum sinkron sudah tidak tersimpan di manapun, jadi gak aman ditebak.
+// Cek manual di menu Order kalau perlu dibalikin. ──
+if ($action === 'undo_bayar' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    header('Content-Type: application/json');
+    if (!hasPermission('laporan.export')) { echo json_encode(['error'=>'Akses ditolak']); exit; }
+    verifyCsrf();
+    $d  = json_decode(file_get_contents('php://input'), true) ?: [];
+    $id = (int)($d['id'] ?? 0);
+    if (!$id) { echo json_encode(['error'=>'ID tidak valid']); exit; }
+    try {
+        $row = TenantQuery::rawOne("SELECT * FROM hl_piutang WHERE id=? AND tenant_id=? AND outlet_id=?", [$id, $tid, $oid]);
+        if (!$row) { echo json_encode(['error'=>'Piutang tidak ditemukan']); exit; }
+        if (!in_array($row['status'], ['sebagian', 'lunas'], true)) {
+            echo json_encode(['error'=>'Piutang ini belum ada pembayaran yang tercatat']); exit;
+        }
+        $db->beginTransaction();
+        if (!empty($row['kas_id'])) {
+            $db->prepare("DELETE FROM hl_kas WHERE id=? AND tenant_id=?")->execute([$row['kas_id'], $tid]);
+        }
+        $newStatus = $row['invoice_sent_at'] ? 'sudah_tagih' : 'belum_tagih';
+        $db->prepare("UPDATE hl_piutang SET total_dibayar=0, status=?, lunas_at=NULL, kas_id=NULL WHERE id=? AND tenant_id=?")
+           ->execute([$newStatus, $id, $tid]);
+        $db->commit();
+        logAudit('undo_bayar', 'piutang',
+            "Batal bayar piutang #$id — kas #{$row['kas_id']} dihapus, total_dibayar direset. "
+            . "PERHATIAN: order yg sempat disinkron lunas TIDAK ikut dibalikin otomatis.");
+        echo json_encode(['ok'=>true, 'warning'=>'Kas & status piutang sudah dibatalkan. Order yang sempat ikut ditandai lunas TIDAK otomatis dibalikin — cek manual di menu Order kalau perlu.']);
+    } catch (Throwable $e) {
+        if ($db->inTransaction()) $db->rollBack();
+        apiErr($e);
+    }
+    exit;
+}
+
 // ── API: kirim reminder + log + return WA link ──
 if ($action === 'reminder' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     header('Content-Type: application/json');
@@ -601,6 +726,23 @@ require_once ROOT . '/core/CoinLedger.php';
   </div>
 </div></div>
 
+<!-- EDIT / KOREKSI MODAL -->
+<div class="modal-bg" id="editModal"><div class="modal">
+  <h3>✏️ Koreksi Piutang</h3>
+  <input type="hidden" id="editId">
+  <div class="fld"><label>Jatuh Tempo</label><div class="lm-date"><button type="button" class="lm-date-btn" onclick="lmDateOpen('editTempo',this)"><span class="lm-date-txt">Pilih tanggal</span> <span>📅</span></button><input type="hidden" id="editTempo"></div></div>
+  <div class="fld">
+    <label>Total Tagihan (Rp)</label>
+    <input class="lm-rp" type="number" id="editTagihan" min="0" step="1000">
+    <div id="editTagihanLock" style="display:none;font-size:11px;color:#92400E;margin-top:4px">🔒 Sudah lunas — batalkan pembayaran dulu kalau mau ubah jumlah tagihan.</div>
+  </div>
+  <div class="fld"><label>Catatan (opsional)</label><input type="text" id="editCatatan" maxlength="500" placeholder="Alasan koreksi, dll"></div>
+  <div style="display:flex;gap:8px;justify-content:flex-end">
+    <button class="hl-btn hl-btn-outline" onclick="closeModal('editModal')">Batal</button>
+    <button class="hl-btn hl-btn-primary" onclick="doEdit()">Simpan Koreksi</button>
+  </div>
+</div></div>
+
 <?php renderToast(); ?>
 <script>
 const CAN_PIUTANG_WRITE = <?= hasPermission('laporan.export') ? 'true' : 'false' ?>;
@@ -647,16 +789,24 @@ async function loadList(append = false){
         else if (ht <= 3) tempoStr += ` <span class="tempo-warn">(${ht} hari)</span>`;
         else              tempoStr += ` <small style="color:#9CA3AF">(${ht} hari)</small>`;
       }
+      const correctionActions = CAN_PIUTANG_WRITE ? `
+        <button class="hl-btn hl-btn-outline btn-sm" onclick="openEdit(${r.id}, '${esc(r.jatuh_tempo)}', ${r.total_tagihan}, '${esc(r.catatan||'')}', '${r.status}')" title="Koreksi jatuh tempo / jumlah tagihan / catatan">✏️ Edit</button>
+        ${r.status === 'sudah_tagih' ? `<button class="hl-btn hl-btn-outline btn-sm" onclick="undoInvoiced(${r.id})" title="Batalkan status Sudah Tagih, balik ke Belum Tagih">↩️ Batal Tagih</button>` : ''}
+        ${(r.status === 'sebagian' || r.status === 'lunas') ? `<button class="hl-btn hl-btn-outline btn-sm" onclick="undoBayar(${r.id})" title="Batalkan pembayaran yang tercatat">↩️ Batal Bayar</button>` : ''}
+        ${!r.kas_id ? `<button class="hl-btn hl-btn-outline btn-sm" style="color:#DC2626;border-color:#FCA5A5" onclick="hapusPiutang(${r.id})" title="Hapus piutang ini">🗑️ Hapus</button>` : ''}
+      ` : '';
       const actions = r.status === 'lunas' ? `
         <span style="color:#9CA3AF;font-size:11px">✓ lunas</span>
         <a href="/api/struk.php?action=generate_invoice&id=${r.id}&preview=1" target="_blank"
            class="hl-btn hl-btn-outline btn-sm" style="font-size:11px">📄 Invoice</a>
+        ${correctionActions}
       ` : `
         ${CAN_PIUTANG_WRITE && r.status==='belum_tagih' ? `<button class="hl-btn hl-btn-outline btn-sm" onclick="markInvoiced(${r.id})">📤 Tagih</button>` : ''}
         ${CAN_PIUTANG_WRITE && r.status!=='belum_tagih' ? `<button class="hl-btn hl-btn-outline btn-sm" onclick="reminder(${r.id})">🔔 Reminder</button>` : ''}
         <a href="/api/struk.php?action=generate_invoice&id=${r.id}" target="_blank"
            class="hl-btn hl-btn-outline btn-sm" style="font-size:11px" title="Generate Invoice B2B (200 coin)">📄 Invoice</a>
         ${CAN_PIUTANG_WRITE ? `<button class="hl-btn hl-btn-primary btn-sm" onclick="openBayar(${r.id}, '${esc(r.pelanggan_nama)}', ${r.sisa_tagihan})">💵 Bayar</button>` : ''}
+        ${correctionActions}
       `;
       rowsHtml += `<tr>
         <td data-lbl="Pelanggan"><strong>${esc(r.pelanggan_nama)}</strong><br><small style="color:#9CA3AF">${esc(r.pelanggan_wa||'-')}</small></td>
@@ -813,6 +963,68 @@ async function doBayar(){
     const syncMsg = d.synced_orders > 0 ? ` · ${d.synced_orders} order ikut ditandai lunas` : '';
     showToast(`✅ Tercatat (status: ${d.status})${syncMsg}`,'success');
     closeModal('bayarModal'); loadList();
+  } catch(e){ alert('Gagal: '+e.message); }
+}
+
+function openEdit(id, jatuhTempo, totalTagihan, catatan, status){
+  document.getElementById('editId').value = id;
+  lmDateSet('editTempo', jatuhTempo);
+  const tagihanEl = document.getElementById('editTagihan');
+  tagihanEl.value = totalTagihan;
+  const locked = status === 'lunas';
+  tagihanEl.disabled = locked;
+  document.getElementById('editTagihanLock').style.display = locked ? '' : 'none';
+  document.getElementById('editCatatan').value = catatan || '';
+  document.getElementById('editModal').classList.add('open');
+  lmSyncModal('editModal');
+}
+async function doEdit(){
+  const id = document.getElementById('editId').value;
+  const tagihanEl = document.getElementById('editTagihan');
+  const body = {
+    id,
+    jatuh_tempo: document.getElementById('editTempo').value,
+    catatan: document.getElementById('editCatatan').value,
+  };
+  if (!tagihanEl.disabled) body.total_tagihan = tagihanEl.value;
+  try {
+    const r = await fetch('piutang.php?action=edit', {method:'POST', headers:{'Content-Type':'application/json','X-CSRF-Token':CSRF}, body:JSON.stringify(body)});
+    const d = await r.json();
+    if (d.error){ alert('⚠️ '+d.error); return; }
+    showToast('✅ Koreksi tersimpan', 'success');
+    closeModal('editModal'); loadList();
+  } catch(e){ alert('Gagal: '+e.message); }
+}
+
+async function undoInvoiced(id){
+  if (!await lmConfirm('Batalkan status "Sudah Tagih"? Balik ke "Belum Tagih".\n(Coin yang sudah dipakai generate invoice tidak dikembalikan.)')) return;
+  try {
+    const r = await fetch('piutang.php?action=undo_invoiced', {method:'POST', headers:{'Content-Type':'application/json','X-CSRF-Token':CSRF}, body:JSON.stringify({id})});
+    const d = await r.json();
+    if (d.error){ alert('⚠️ '+d.error); return; }
+    showToast('✅ Status dibatalkan', 'success'); loadList();
+  } catch(e){ alert('Gagal: '+e.message); }
+}
+
+async function undoBayar(id){
+  if (!await lmConfirm('Batalkan pembayaran piutang ini?\n\nEntri Kas Masuk terkait akan DIHAPUS dan status balik ke belum dibayar.\n\n⚠️ Order yang sempat ikut ditandai lunas dari pembayaran ini TIDAK otomatis dibalikin — cek manual di menu Order kalau perlu.', {danger:true})) return;
+  try {
+    const r = await fetch('piutang.php?action=undo_bayar', {method:'POST', headers:{'Content-Type':'application/json','X-CSRF-Token':CSRF}, body:JSON.stringify({id})});
+    const d = await r.json();
+    if (d.error){ alert('⚠️ '+d.error); return; }
+    showToast('✅ Pembayaran dibatalkan', 'success');
+    if (d.warning) setTimeout(() => showToast('⚠️ ' + d.warning, 'info'), 600);
+    loadList();
+  } catch(e){ alert('Gagal: '+e.message); }
+}
+
+async function hapusPiutang(id){
+  if (!await lmConfirm('Hapus piutang ini? Aksi ini tidak bisa dibatalkan.', {danger:true})) return;
+  try {
+    const r = await fetch('piutang.php?action=delete', {method:'POST', headers:{'Content-Type':'application/json','X-CSRF-Token':CSRF}, body:JSON.stringify({id})});
+    const d = await r.json();
+    if (d.error){ alert('⚠️ '+d.error); return; }
+    showToast('✅ Piutang dihapus', 'success'); loadList();
   } catch(e){ alert('Gagal: '+e.message); }
 }
 
