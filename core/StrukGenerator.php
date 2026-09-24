@@ -1104,8 +1104,10 @@ tbody tr:nth-child(even) td { background: #f8faff; }
             $h .= "  <hr style='margin:8px 0;border-color:#ddd'>\n";
             $h .= "  <div>" . nl2br(self::esc($tmpl['footer_syarat'])) . "</div>\n";
         }
-        // QR Code Tracking
-        if (!empty($trx['no_order'])) {
+        // QR Code Tracking — hanya untuk nota retail. Invoice B2B ('no_order' di sini
+        // sebenarnya nomor invoice sintetis, bukan order asli) gak relevan dicek status
+        // cucian per-order; cukup Metode Bayar yang sudah tampil di tabel totals di atas.
+        if (!$isInvoice && !empty($trx['no_order'])) {
             $qrSrc = 'https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=' . urlencode(self::qrUrlForStruk($trx));
             $h .= "  <div style='text-align:center;margin-top:10px;padding-top:10px;border-top:1px dashed #ddd'>";
             $h .= "<img src='" . self::esc($qrSrc) . "' alt='QR Cek Status' style='width:100px;height:100px'/>";
