@@ -122,20 +122,22 @@ if ($action === 'generate' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!$pelId || !$start || !$end || !$tempo) { echo json_encode(['error'=>'Field tidak lengkap']); exit; }
 
     try {
+        // Cuma tagih order yang BELUM lunas di periode ini — order yang sudah lunas
+        // gak perlu (dan gak boleh) ditagih ulang lewat invoice B2B.
         $s = $db->prepare("SELECT COUNT(*) cnt, COALESCE(SUM(total),0) total
                              FROM hl_transaksi
                             WHERE tenant_id=? AND outlet_id=? AND pelanggan_id=?
-                              AND DATE(tanggal) BETWEEN ? AND ?");
+                              AND DATE(tanggal) BETWEEN ? AND ? AND status_bayar != 'lunas'");
         $s->execute([$tid, $oid, $pelId, $start, $end]);
         $r = $s->fetch(PDO::FETCH_ASSOC);
         $totalTagihan = (int)$r['total'];
         $totalOrder   = (int)$r['cnt'];
-        if ($totalOrder === 0) { echo json_encode(['error'=>'Tidak ada order pelanggan ini di periode tsb']); exit; }
+        if ($totalOrder === 0) { echo json_encode(['error'=>'Semua order pelanggan ini di periode tsb sudah lunas — tidak ada yang perlu ditagih']); exit; }
 
-        // Sudah dibayar dari hl_transaksi (kalau ada dp/lunas)
+        // Sudah dibayar (DP) dari order yang belum lunas itu sendiri
         $sb = $db->prepare("SELECT COALESCE(SUM(dp),0) FROM hl_transaksi
                              WHERE tenant_id=? AND outlet_id=? AND pelanggan_id=?
-                               AND DATE(tanggal) BETWEEN ? AND ?");
+                               AND DATE(tanggal) BETWEEN ? AND ? AND status_bayar != 'lunas'");
         $sb->execute([$tid,$oid,$pelId,$start,$end]);
         $totalDibayar = (int)$sb->fetchColumn();
 
@@ -168,8 +170,9 @@ if ($action === 'generate_bulk' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!$start || !$end || !$tempo) { echo json_encode(['error'=>'Tanggal periode & jatuh tempo wajib']); exit; }
 
     try {
-        // Find pelanggan yang punya order di periode (& filter tipe kalau scope=bulanan_only)
-        $where = "t.tenant_id=? AND t.outlet_id=? AND DATE(t.tanggal) BETWEEN ? AND ?";
+        // Find pelanggan yang punya order BELUM LUNAS di periode (& filter tipe kalau
+        // scope=bulanan_only) — order yang sudah lunas gak ikut ditagih ulang.
+        $where = "t.tenant_id=? AND t.outlet_id=? AND DATE(t.tanggal) BETWEEN ? AND ? AND t.status_bayar != 'lunas'";
         $params = [$tid, $oid, $start, $end];
         if ($scope === 'bulanan_only') {
             // Filter pelanggan yang flagged tipe='bulanan'/'korporat' (B2B via menu
@@ -189,7 +192,7 @@ if ($action === 'generate_bulk' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         );
         $st->execute($params);
         $candidates = $st->fetchAll(PDO::FETCH_ASSOC);
-        if (!$candidates) { echo json_encode(['error'=>'Tidak ada pelanggan dengan order di periode tsb']); exit; }
+        if (!$candidates) { echo json_encode(['error'=>'Tidak ada pelanggan dengan order belum lunas di periode tsb']); exit; }
 
         $generated = 0; $skipped = 0; $errors = [];
         $ins = $db->prepare("INSERT INTO hl_piutang

@@ -353,7 +353,13 @@ class StrukGenerator
         $piu = $p->fetch(PDO::FETCH_ASSOC);
         if (!$piu) throw new RuntimeException("Piutang #{$piutangId} tidak ditemukan.");
 
-        // Load transaksi dalam periode (sebagai line items invoice)
+        // Load transaksi dalam periode (sebagai line items invoice) — kalau piutang ini
+        // masih belum lunas, order yang sudah lunas duluan (dibayar di luar invoice ini,
+        // mis. langsung di POS) gak ikut ditampilkan, konsisten dgn total_tagihan yang
+        // juga sudah exclude order lunas sejak digenerate (lihat piutang.php action=generate).
+        // Kalau piutang-nya SUDAH lunas (invoice ini reprint histori), tampilkan semua
+        // order apa adanya — jangan sampai reprint invoice yang sudah dibayar jadi kosong.
+        $excludeLunas = ($piu['status'] ?? '') !== 'lunas';
         $trxSt = $db->prepare(
             "SELECT t.id, t.no_order, t.tanggal, t.total, t.subtotal, t.diskon,
                     t.metode_bayar, t.status_bayar, t.catatan,
@@ -361,7 +367,8 @@ class StrukGenerator
                FROM hl_transaksi t
               WHERE t.tenant_id = ? AND t.outlet_id = ?
                 AND t.pelanggan_id = ?
-                AND t.tanggal BETWEEN ? AND ?
+                AND t.tanggal BETWEEN ? AND ?"
+                . ($excludeLunas ? " AND t.status_bayar != 'lunas'" : "") . "
               ORDER BY t.tanggal ASC"
         );
         $trxSt->execute([$tid, $oid, $piu['pelanggan_id'], $piu['periode_start'], $piu['periode_end']]);
