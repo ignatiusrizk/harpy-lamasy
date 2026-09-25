@@ -2523,6 +2523,17 @@ async function uploadFotoPickup(input) {
 // Pemisah ribuan manual (tak bergantung Intl locale — konsisten di WebView APK)
 function grpRibu(n){ return String(Math.round(parseFloat(n)||0)).replace(/\B(?=(\d{3})+(?!\d))/g,'.'); }
 
+// Satuan yang tersedia di form Layanan (layanan.php) — HARUS sinkron biar layanan
+// ber-satuan "meter"/"lembar"/"item"/"kodi" gak ke-reset jadi "kg" pas dibuka lagi
+// (sama seperti fix di pos.php — bug ini kejadian dobel karena tabel edit-item di sini
+// punya list satuan sendiri yg gak lengkap).
+const SATUAN_OPSI_EDIT = ['kg','pcs','item','pasang','set','lembar','meter','kodi'];
+function satuanOptionsEdit(cur) {
+  const list = SATUAN_OPSI_EDIT.slice();
+  if (cur && !list.includes(cur)) list.unshift(cur);
+  return list.map(s => `<option value="${s}" ${cur === s ? 'selected' : ''}>${s}</option>`).join('');
+}
+
 // ── EDIT ITEMS ────────────────────────────────────────
 function renderEditItems() {
   const tbody = document.getElementById('editItemsBody');
@@ -2530,7 +2541,7 @@ function renderEditItems() {
   tbody.innerHTML = editItems.map((item, i) => `
     <tr>
       <td data-lbl="Layanan">${CAN_EDIT_ORDER ? `<input class="item-input" value="${esc(item.nama_layanan)}" style="width:110px" oninput="editItems[${i}].nama_layanan=this.value;recalcEdit()"/>` : `<span style="font-size:13px">${esc(item.nama_layanan)}</span>`}</td>
-      <td data-lbl="Satuan">${CAN_EDIT_ORDER ? `<select class="item-input" style="width:52px" onchange="editItems[${i}].satuan=this.value">${['kg','pcs','set','pasang'].map(s=>`<option value="${s}" ${item.satuan===s?'selected':''}>${s}</option>`).join('')}</select>` : `<span style="font-size:13px">${item.satuan}</span>`}</td>
+      <td data-lbl="Satuan">${CAN_EDIT_ORDER ? `<select class="item-input" style="width:52px" onchange="editItems[${i}].satuan=this.value">${satuanOptionsEdit(item.satuan)}</select>` : `<span style="font-size:13px">${item.satuan}</span>`}</td>
       <td data-lbl="Jumlah">${CAN_EDIT_ORDER ? `<input class="item-input" type="number" value="${item.jumlah}" step="0.1" min="0" style="width:52px" oninput="editItems[${i}].jumlah=parseFloat(this.value)||0;recalcEdit()"/>` : `<span style="font-family:var(--mono);font-size:13px">${item.jumlah}</span>`}</td>
       <td data-lbl="Harga">${CAN_EDIT_ORDER ? `<input class="item-input" type="text" inputmode="numeric" value="${grpRibu(item.harga_satuan)}" style="width:80px" oninput="const v=parseInt(this.value.replace(/\\D/g,''))||0;editItems[${i}].harga_satuan=v;this.value=grpRibu(v);recalcEdit()"/>` : `<span style="font-family:var(--mono);font-size:13px">Rp ${grpRibu(item.harga_satuan)}</span>`}</td>
       <td data-lbl="Subtotal" class="item-sub">Rp ${grpRibu(item.jumlah*item.harga_satuan)}</td>

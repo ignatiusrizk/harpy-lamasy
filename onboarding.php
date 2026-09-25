@@ -49,7 +49,7 @@ if (!$LAYANAN_PRESETS) {
         ['nama'=>'Bed Cover',            'satuan'=>'pcs',    'kategori'=>'Satuan', 'checked'=>false],
         ['nama'=>'Selimut',              'satuan'=>'pcs',    'kategori'=>'Satuan', 'checked'=>false],
         ['nama'=>'Sepatu',               'satuan'=>'pasang', 'kategori'=>'Satuan', 'checked'=>false],
-        ['nama'=>'Karpet',               'satuan'=>'m²',     'kategori'=>'Satuan', 'checked'=>false],
+        ['nama'=>'Karpet',               'satuan'=>'meter',  'kategori'=>'Satuan', 'checked'=>false],
     ];
 }
 
