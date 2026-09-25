@@ -205,6 +205,53 @@ if ($action) {
         ]); exit;
     }
 
+    // ── LAPORAN LAYANAN — performa & tren tiap jenis layanan ──
+    if ($action === 'layanan') {
+        if (!hasPermission('laporan.view')) { echo json_encode(['error'=>'Akses ditolak']); exit; }
+        $dari   = substr(trim($_GET['dari']   ?? date('Y-m-01')), 0, 10);
+        $sampai = substr(trim($_GET['sampai'] ?? date('Y-m-d')), 0, 10);
+
+        // Performa per layanan — SEMUA layanan (bukan cuma top 5 kayak di Bulanan)
+        $performa = TenantQuery::raw(
+            "SELECT ti.nama_layanan AS nama,
+                    COUNT(DISTINCT ti.transaksi_id) AS total_order,
+                    COALESCE(SUM(ti.jumlah), 0) AS total_qty,
+                    COALESCE(SUM(ti.subtotal), 0) AS omset
+               FROM hl_transaksi_item ti
+               JOIN hl_transaksi t ON t.id = ti.transaksi_id AND t.tenant_id = ti.tenant_id
+              WHERE t.tenant_id=? AND t.outlet_id=? AND DATE(t.tanggal) BETWEEN ? AND ?
+              GROUP BY ti.nama_layanan
+              ORDER BY omset DESC",
+            [$tid, $oid, $dari, $sampai]
+        );
+
+        // Tren mingguan — cuma top 6 layanan (by omset) biar grafik gak penuh sesak
+        $topNama = array_column(array_slice($performa, 0, 6), 'nama');
+        $trend = [];
+        if ($topNama) {
+            $ph = implode(',', array_fill(0, count($topNama), '?'));
+            $trend = TenantQuery::raw(
+                "SELECT DATE_SUB(t.tanggal, INTERVAL WEEKDAY(t.tanggal) DAY) AS minggu,
+                        ti.nama_layanan AS nama,
+                        COALESCE(SUM(ti.subtotal), 0) AS omset
+                   FROM hl_transaksi_item ti
+                   JOIN hl_transaksi t ON t.id = ti.transaksi_id AND t.tenant_id = ti.tenant_id
+                  WHERE t.tenant_id=? AND t.outlet_id=? AND DATE(t.tanggal) BETWEEN ? AND ?
+                    AND ti.nama_layanan IN ($ph)
+                  GROUP BY minggu, ti.nama_layanan
+                  ORDER BY minggu ASC",
+                [$tid, $oid, $dari, $sampai, ...$topNama]
+            );
+        }
+
+        echo json_encode([
+            'performa' => $performa,
+            'trend'    => $trend,
+            'top_nama' => $topNama,
+            'periode'  => ['dari'=>$dari,'sampai'=>$sampai],
+        ]); exit;
+    }
+
     // ── AI INSIGHT ────────────────────────────────────
     if ($action === 'ai_insight') {
         if (!AIRateLimiter::canCall('ai_insight_laporan')) {
@@ -492,6 +539,7 @@ tfoot td{padding:9px 12px;font-weight:700;font-size:13px}
       <button type="button" class="active" data-v="harian"  onclick="repPick('harian','📅 Harian')">📅 Harian</button>
       <button type="button" data-v="bulanan" onclick="repPick('bulanan','📆 Bulanan')">📆 Bulanan</button>
       <button type="button" data-v="lr"      onclick="repPick('lr','📈 Laba / Rugi')">📈 Laba / Rugi</button>
+      <button type="button" data-v="layanan" onclick="repPick('layanan','🧺 Layanan')">🧺 Layanan</button>
       <?php endif; ?>
       <button type="button" data-v="produktivitas" <?= hasPermission('laporan.view') ? '' : 'class="active"' ?> onclick="repPick('produktivitas','👥 Produktivitas Karyawan')">👥 Produktivitas Karyawan</button>
     </div>
@@ -744,6 +792,30 @@ tfoot td{padding:9px 12px;font-weight:700;font-size:13px}
   </div>
   <?php endif; ?>
 
+  <!-- ══ TAB LAYANAN ══════════════════════════════════ -->
+  <?php if (hasPermission('laporan.view')): ?>
+  <div id="tabLayanan" style="display:none">
+    <div class="hl-filter-collapsible no-print">
+      <button class="hl-filter-toggle-btn" id="layananFilterBtn" onclick="toggleFilter('layananFilter')">
+        📅 Pilih Periode <span class="hl-toggle-arrow">▼</span>
+      </button>
+      <div class="hl-filter-bar" id="layananFilter">
+        <span class="rep-field"><label>Dari</label><div class="lm-date"><button type="button" class="lm-date-btn" onclick="lmDateOpen('lynDari',this)"><span class="lm-date-txt">Pilih tanggal</span> <span>📅</span></button><input type="hidden" id="lynDari"></div></span>
+        <span class="rep-field"><label>s/d</label><div class="lm-date"><button type="button" class="lm-date-btn" onclick="lmDateOpen('lynSampai',this)"><span class="lm-date-txt">Pilih tanggal</span> <span>📅</span></button><input type="hidden" id="lynSampai"></div></span>
+        <button class="hl-btn hl-btn-primary hl-btn-sm rep-primary" onclick="loadLayanan()">🔍 Tampilkan</button>
+        <?php if (hasPermission('laporan.export')): ?>
+        <div class="rep-actions">
+          <button class="hl-btn hl-btn-outline hl-btn-sm" onclick="exportCSV('layanan')">📥 Export CSV</button>
+          <button class="hl-btn hl-btn-outline hl-btn-sm" onclick="printReport()">🖨️ Print</button>
+        </div>
+        <?php endif; ?>
+      </div>
+    </div>
+
+    <div id="layananContent"><div class="empty">Pilih periode lalu klik "Tampilkan"</div></div>
+  </div>
+  <?php endif; ?>
+
   <!-- TAB PRODUKTIVITAS KARYAWAN -->
   <div id="tabProd" style="display:none">
     <div class="hl-card">
@@ -908,6 +980,7 @@ document.addEventListener('click', function(e){
 let chartOmsetInstance = null;
 let harianData  = null;
 let bulananData = null;
+let lrData      = null;
 
 function localDateStr(d) {
   const dt = d || new Date();
@@ -924,6 +997,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initFilter('harianFilter');
   initFilter('bulananFilter');
   initFilter('lrFilter');
+  initFilter('layananFilter');
   const today = localDateStr();
   const bulan = today.substring(0,7);
   lmDateSet('hTgl', today);
@@ -931,26 +1005,34 @@ document.addEventListener('DOMContentLoaded', () => {
   lmMonthSet('prodBulan', document.getElementById('prodBulan').value);
   lmDateSet('lrDari', bulan + '-01');
   lmDateSet('lrSampai', today);
+  lmDateSet('lynDari', bulan + '-01');
+  lmDateSet('lynSampai', today);
   loadHarian();
 });
 
 // ── TABS ──────────────────────────────────────────────
+// currentTab dipakai getCurrentData() (utk widget "Tanya AI") — sebelumnya deteksi
+// tab aktif pakai document.querySelector('.ptab.active'), tapi class .ptab gak pernah
+// lagi dipasang ke elemen manapun sejak UI tab diganti jadi dropdown (#repDD).
+// Akibatnya getCurrentData() SELALU jatuh ke cabang 'lr' dgn data:null, apapun tab
+// yg lagi dibuka — itu sebabnya AI selalu bilang "data kosong". Fix: track eksplisit.
+let currentTab = 'harian';
 function switchTab(name, el) {
-  ['tabHarian','tabBulanan','tabLR','tabProd'].forEach(id => {
+  ['tabHarian','tabBulanan','tabLR','tabProd','tabLayanan'].forEach(id => {
     const el2 = document.getElementById(id);
     if (el2) el2.style.display = 'none';
   });
-  const tabMap = {'harian':'tabHarian','bulanan':'tabBulanan','lr':'tabLR','produktivitas':'tabProd'};
+  const tabMap = {'harian':'tabHarian','bulanan':'tabBulanan','lr':'tabLR','produktivitas':'tabProd','layanan':'tabLayanan'};
   const target = document.getElementById(tabMap[name]);
   if (target) target.style.display = 'block';
-  document.querySelectorAll('.ptab').forEach(b => b.classList.remove('active'));
-  if (el && el.classList) el.classList.add('active');
+  currentTab = name;
   // Sync dropdown kustom Jenis Laporan
-  const _rl = {harian:'📅 Harian', bulanan:'📆 Bulanan', lr:'📈 Laba / Rugi', produktivitas:'👥 Produktivitas Karyawan'};
+  const _rl = {harian:'📅 Harian', bulanan:'📆 Bulanan', lr:'📈 Laba / Rugi', layanan:'🧺 Layanan', produktivitas:'👥 Produktivitas Karyawan'};
   const _lbl = document.getElementById('repDDLabel'); if (_lbl && _rl[name]) _lbl.textContent = _rl[name];
   document.querySelectorAll('#repDDPanel button').forEach(b => b.classList.toggle('active', b.dataset.v === name));
   if (name==='bulanan' && !bulananData) loadBulanan();
   if (name==='produktivitas') loadProd();
+  if (name==='layanan' && !layananData) loadLayanan();
 }
 
 // ── HARIAN ────────────────────────────────────────────
@@ -1164,6 +1246,7 @@ async function loadLR() {
 
   const r = await fetch(`laporan.php?action=lr&dari=${dari}&sampai=${sampai}`);
   const d = await r.json();
+  lrData = d;
 
   const isLaba  = d.laba_rugi >= 0;
   const pend    = d.pendapatan;
@@ -1263,9 +1346,111 @@ async function loadLR() {
   }
 }
 
+// ── TAB LAYANAN — performa & tren tiap jenis layanan ──
+let layananData = null;
+let chartLayananInstance = null;
+const LYN_COLORS = ['#1B2D5A','#35E8D5','#F59E0B','#8B5CF6','#EF4444','#10B981'];
+
+async function loadLayanan() {
+  const dari   = document.getElementById('lynDari').value;
+  const sampai = document.getElementById('lynSampai').value;
+  if (!dari || !sampai) return;
+
+  document.getElementById('layananContent').innerHTML = `
+    <div class="hl-skel-card"><span class="hl-skel xl" style="width:55%"></span>
+      <div style="margin-top:14px">
+        <span class="hl-skel" style="width:80%;display:block"></span>
+        <span class="hl-skel" style="width:60%;display:block;margin-top:8px"></span>
+      </div>
+    </div>`;
+
+  const r = await fetch(`laporan.php?action=layanan&dari=${dari}&sampai=${sampai}`);
+  const d = await r.json();
+  layananData = d;
+
+  const fmtDari = fmtDate(dari), fmtSampai = fmtDate(sampai);
+  const totalOmset = d.performa.reduce((s,x)=>s+parseFloat(x.omset),0);
+
+  if (!d.performa.length) {
+    document.getElementById('layananContent').innerHTML =
+      `<div class="empty">Tidak ada order dengan layanan tercatat di periode ${fmtDari} — ${fmtSampai}</div>`;
+    return;
+  }
+
+  const rowsHtml = d.performa.map(x => {
+    const pct = totalOmset > 0 ? (parseFloat(x.omset)/totalOmset*100) : 0;
+    return `<tr>
+      <td style="padding:9px 0;color:var(--navy);font-weight:600">${esc(x.nama)}</td>
+      <td style="text-align:right;font-family:var(--mono)">${parseFloat(x.total_qty).toLocaleString('id-ID')}</td>
+      <td style="text-align:right;font-family:var(--mono)">${x.total_order}</td>
+      <td style="text-align:right;font-family:var(--mono);font-weight:700">Rp ${parseFloat(x.omset).toLocaleString('id-ID')}</td>
+      <td style="text-align:right;color:var(--gray);font-size:12px">${pct.toFixed(1)}%</td>
+    </tr>`;
+  }).join('');
+
+  const trendHTML = d.trend.length > 1 ? `<div class="card">
+      <div class="card-header"><div class="card-title">📈 Tren Omset Mingguan per Layanan (top ${d.top_nama.length})</div></div>
+      <div class="card-body"><div class="chart-wrap"><canvas id="chartLayanan"></canvas></div></div>
+    </div>` : '';
+
+  document.getElementById('layananContent').innerHTML = `
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-header"><div class="card-title">🧺 Performa Layanan · ${fmtDari} — ${fmtSampai}</div></div>
+      <div class="card-body" style="overflow-x:auto">
+        <table style="width:100%;font-size:13px;border-collapse:collapse">
+          <thead><tr style="border-bottom:2px solid var(--light)">
+            <th style="text-align:left;padding:8px 0;color:var(--gray);font-size:11px;text-transform:uppercase">Layanan</th>
+            <th style="text-align:right;color:var(--gray);font-size:11px;text-transform:uppercase">Qty</th>
+            <th style="text-align:right;color:var(--gray);font-size:11px;text-transform:uppercase">Order</th>
+            <th style="text-align:right;color:var(--gray);font-size:11px;text-transform:uppercase">Omset</th>
+            <th style="text-align:right;color:var(--gray);font-size:11px;text-transform:uppercase">% Total</th>
+          </tr></thead>
+          <tbody>${rowsHtml}</tbody>
+          <tfoot><tr style="border-top:2px solid var(--navy)">
+            <td style="padding:10px 0;font-weight:800;color:var(--navy)">Total</td>
+            <td></td><td></td>
+            <td style="text-align:right;font-family:var(--mono);font-weight:800;color:var(--navy)">Rp ${totalOmset.toLocaleString('id-ID')}</td>
+            <td></td>
+          </tr></tfoot>
+        </table>
+      </div>
+    </div>
+    ${trendHTML}`;
+
+  if (d.trend.length > 1) {
+    const minggu = [...new Set(d.trend.map(x=>x.minggu))].sort();
+    const datasets = d.top_nama.map((nama, i) => ({
+      label: nama,
+      data: minggu.map(mg => {
+        const row = d.trend.find(x => x.minggu === mg && x.nama === nama);
+        return row ? parseFloat(row.omset) : 0;
+      }),
+      borderColor: LYN_COLORS[i % LYN_COLORS.length],
+      backgroundColor: LYN_COLORS[i % LYN_COLORS.length] + '1A',
+      tension: .35,
+    }));
+    setTimeout(() => {
+      if (chartLayananInstance) chartLayananInstance.destroy();
+      chartLayananInstance = new Chart(document.getElementById('chartLayanan'), {
+        type: 'line',
+        data: { labels: minggu.map(fmtDate), datasets },
+        options: {
+          responsive:true, maintainAspectRatio:false,
+          plugins:{ legend:{ position:'top' } },
+          scales:{ y:{ beginAtZero:true, ticks:{ callback: v => 'Rp '+v.toLocaleString('id-ID') } } }
+        }
+      });
+    }, 100);
+  }
+}
+
 // ── EXPORT CSV ────────────────────────────────────────
 function exportCSV(type) {
-  if (type === 'harian' && harianData) {
+  if (type === 'layanan' && layananData) {
+    const rows = [['Layanan','Qty','Order','Omset']];
+    layananData.performa.forEach(x => rows.push([x.nama, x.total_qty, x.total_order, x.omset]));
+    downloadCSV(rows, 'laporan_layanan_' + document.getElementById('lynDari').value + '_' + document.getElementById('lynSampai').value + '.csv');
+  } else if (type === 'harian' && harianData) {
     const rows = [['No Order','Pelanggan','Layanan','Status','Bayar','Total','Terkumpul']];
     harianData.orders.forEach(o => rows.push([o.no_order,o.nama_pelanggan,o.layanan_list||'',o.status_proses,o.status_bayar,o.total,o.dp||0]));
     downloadCSV(rows, 'laporan_harian_' + document.getElementById('hTgl').value + '.csv');
@@ -1310,7 +1495,7 @@ function printReport(){
 }
 
 function _activeReportTab(){
-  var ids = ['tabHarian','tabBulanan','tabLR','tabProd'];
+  var ids = ['tabHarian','tabBulanan','tabLR','tabProd','tabLayanan'];
   for (var i=0;i<ids.length;i++){
     var el = document.getElementById(ids[i]);
     if (el && getComputedStyle(el).display !== 'none') return { el: el, id: ids[i] };
@@ -1399,13 +1584,14 @@ async function loadProd(){
 let chatHistory = [];
 
 function getCurrentData() {
-  const activeTab = document.querySelector('.ptab.active')?.textContent?.trim() || '';
-  if (activeTab.includes('Harian')) {
+  if (currentTab === 'harian') {
     return { tipe:'harian', tgl:document.getElementById('hTgl').value, data:harianData };
-  } else if (activeTab.includes('Bulanan')) {
+  } else if (currentTab === 'bulanan') {
     return { tipe:'bulanan', bulan:document.getElementById('bBulan').value, data:bulananData };
+  } else if (currentTab === 'layanan') {
+    return { tipe:'layanan', dari:document.getElementById('lynDari').value, sampai:document.getElementById('lynSampai').value, data:layananData };
   } else {
-    return { tipe:'lr', dari:document.getElementById('lrDari').value, sampai:document.getElementById('lrSampai').value, data:null };
+    return { tipe:'lr', dari:document.getElementById('lrDari').value, sampai:document.getElementById('lrSampai').value, data:lrData };
   }
 }
 
@@ -1414,7 +1600,7 @@ async function askAI(quickQuestion = null) {
   if (!pertanyaan) { document.getElementById('aiQuestion').focus(); return; }
 
   const ctx = getCurrentData();
-  if (!ctx.data && ctx.tipe !== 'lr') {
+  if (!ctx.data) {
     showToast('Muat laporan terlebih dahulu', 'error'); return;
   }
 
