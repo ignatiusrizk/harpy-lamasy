@@ -324,10 +324,34 @@ if ($action) {
             // total/dp/status dihitung SETELAH pel_id + redeem diketahui
 
             // Upsert pelanggan — TENANT-SCOPED (lintas outlet)
-            // Lookup by tenant_id + telepon (HP unique per tenant)
             $pel_id        = null;
             $isNewPelanggan = false;
-            if ($nama_pel && $telepon !== '') {
+
+            // Kasir milih pelanggan SPESIFIK dari autocomplete (bukan cuma ngetik nama+telp
+            // bebas) — hormati pilihan itu apa adanya. WAJIB, karena beberapa pelanggan B2B
+            // beda cabang bisa sengaja pakai 1 nomor HP yang sama (1 PIC pesan buat banyak
+            // cabang) — kalau di-re-lookup by telepon lagi di bawah, order SELALU nyasar ke
+            // baris pertama yang match nomor itu, walau kasir udah jelas milih cabang lain.
+            $explicitPelId = (int)($data['pelanggan_id'] ?? 0);
+            if ($explicitPelId > 0) {
+                $pelCheck = TenantQuery::rawOne(
+                    "SELECT id FROM hl_pelanggan WHERE id=? AND tenant_id=?",
+                    [$explicitPelId, $tid]
+                );
+                if ($pelCheck) {
+                    $pel_id = (int)$pelCheck['id'];
+                    $db->prepare(
+                        "UPDATE hl_pelanggan
+                            SET total_order = total_order + 1,
+                                total_visit_count = total_visit_count + 1
+                          WHERE id = ? AND tenant_id = ?"
+                    )->execute([$pel_id, $tid]);
+                }
+            }
+
+            // Fallback: kasir cuma ngetik nama+telp bebas tanpa milih dari autocomplete —
+            // lookup by tenant_id + telepon (HP unique per tenant) seperti sebelumnya.
+            if (!$pel_id && $nama_pel && $telepon !== '') {
                 $pelRow = TenantQuery::rawOne(
                     "SELECT id FROM hl_pelanggan WHERE tenant_id=? AND telepon=? LIMIT 1",
                     [$tid, $telepon]
@@ -2349,6 +2373,11 @@ function recalc() {
 }
 
 function searchPelanggan(q) {
+  // User ngetik lagi setelah sempat pilih pelanggan dari autocomplete (selectPelanggan
+  // set .value via JS, bukan keystroke, jadi gak pernah masuk sini) — anggap batal pilihan
+  // lama, reset currentPelangganId. Cegah order nyasar ke pelanggan lain kalau kasir ganti
+  // pikiran/koreksi nama tanpa klik ulang dari daftar autocomplete.
+  currentPelangganId = null;
   clearTimeout(acTimeout);
   const list = document.getElementById('acList');
   if (q.length < 2) { list.classList.remove('open'); return; }
@@ -2783,6 +2812,7 @@ async function doSaveTransaksi() {
     estimasi:       document.getElementById('f_estimasi').value,
     nama_pelanggan: nama,
     telepon:        document.getElementById('f_telepon').value,
+    pelanggan_id:   currentPelangganId || null,
     catatan:        document.getElementById('f_catatan').value,
     diskon:         document.getElementById('f_diskon').value,
     biaya_tambahan: document.getElementById('f_biaya_tambahan').value,
