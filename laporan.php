@@ -1118,6 +1118,19 @@ async function loadBulanan() {
   bulananData = await r.json();
   const d = bulananData;
 
+  // Ikut ambil ringkasan bulan sebelumnya (best-effort, gak nunggu/nge-block render) —
+  // biar widget "Tanya AI" bisa langsung jawab pertanyaan "bandingkan sama bulan lalu"
+  // tanpa user perlu pindah tab manual dulu.
+  (async () => {
+    try {
+      const [y, m] = bulan.split('-').map(Number);
+      const prevBulan = (m === 1 ? (y-1)+'-12' : y+'-'+String(m-1).padStart(2,'0'));
+      const rp = await fetch('laporan.php?action=bulanan&bulan=' + prevBulan);
+      const dp = await rp.json();
+      bulananData.prev_bulan = { bulan: prevBulan, summary: dp.summary, top_layanan: dp.top_layanan };
+    } catch (e) { /* best-effort — biarin gak ada kalau gagal */ }
+  })();
+
   document.getElementById('bOmset').textContent    = 'Rp ' + parseFloat(d.summary.omset||0).toLocaleString('id-ID');
   document.getElementById('bTerkumpul').textContent= 'Rp ' + parseFloat(d.summary.terkumpul||0).toLocaleString('id-ID');
   document.getElementById('bOrder').textContent    = d.summary.total_order + ' order';
