@@ -666,10 +666,13 @@ require __DIR__ . '/_layout_open.php';
   .pl-arrow{font-size:20px;color:#CBD5E1;font-weight:800}
   @media(max-width:640px){.pl-arrow{display:none}.pl-stage{min-width:100%}}
   .alerts{margin-bottom:18px;display:flex;flex-direction:column;gap:8px}
-  .alert{padding:10px 16px;border-radius:10px;font-size:13px}
+  .alert{padding:10px 16px;border-radius:10px;font-size:13px;display:flex;align-items:center;justify-content:space-between;gap:12px}
   .alert.warning{background:#FEF3C7;color:#92400E;border:1px solid #FDE68A}
   .alert.danger{background:#FEE2E2;color:#991B1B;border:1px solid #FECACA}
   .alert.info{background:#DBEAFE;color:#1E40AF;border:1px solid #BFDBFE}
+  .alert-close{flex:0 0 auto;background:none;border:none;cursor:pointer;font-size:15px;line-height:1;
+    color:inherit;opacity:.55;padding:2px 4px;border-radius:6px}
+  .alert-close:hover{opacity:1;background:rgba(0,0,0,.06)}
 
   /* Best/Worst highlight */
   .ranking{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px}
@@ -838,7 +841,10 @@ require __DIR__ . '/_layout_open.php';
   <?php if (!empty($alerts)): ?>
   <div class="alerts">
     <?php foreach ($alerts as $a): ?>
-    <div class="alert <?= $a['level'] ?>"><?= $a['msg'] ?></div>
+    <div class="alert <?= $a['level'] ?>">
+      <span><?= $a['msg'] ?></span>
+      <button type="button" class="alert-close" onclick="this.closest('.alert').remove()" aria-label="Tutup" title="Tutup">✕</button>
+    </div>
     <?php endforeach; ?>
   </div>
   <?php endif; ?>
