@@ -180,6 +180,7 @@ class TenantProvisioner
             ['kas.view',             'kas',       'view',          'Lihat halaman kas'],
             ['kas.create',           'kas',       'create',        'Input kas masuk/keluar'],
             ['kas.delete',           'kas',       'delete',        'Hapus entri kas'],
+            ['kas.view_summary',     'kas',       'view_summary',  'Lihat ringkasan total kas (masuk/keluar/saldo)'],
             ['inventori.view',       'inventori', 'view',          'Lihat stok & riwayat bahan baku'],
             ['inventori.manage',     'inventori', 'manage',        'Tambah/edit/hapus bahan & input mutasi stok'],
             ['mesin.view',           'mesin',     'view',          'Lihat status mesin self-service'],
@@ -261,12 +262,17 @@ class TenantProvisioner
             $stmtPerm->execute([$tenantId, $kode, $modul, $aksi, $desc]);
             $permId = (int) $db->lastInsertId();
 
+            // kas.view_summary bukan pakai filter_data 'all'/'own' generik — nilainya
+            // langsung 'harian'/'bulanan' (default tampilan ringkasan kas per role).
+            $defaultFilter = $kode === 'kas.view_summary' ? 'bulanan' : 'all';
+
             // Owner: semua
-            $stmtMap->execute([$tenantId, $roleIds['owner'], $permId, 'all']);
+            $stmtMap->execute([$tenantId, $roleIds['owner'], $permId, $defaultFilter]);
 
             // Admin: semua kecuali daftar excluded
             if (!in_array($kode, $adminExclude)) {
-                $stmtMap->execute([$tenantId, $roleIds['admin'], $permId, 'all']);
+                $adminFilter = $kode === 'kas.view_summary' ? 'harian' : 'all';
+                $stmtMap->execute([$tenantId, $roleIds['admin'], $permId, $adminFilter]);
             }
 
             // Kasir: hanya yang included

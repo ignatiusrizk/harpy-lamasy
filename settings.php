@@ -409,14 +409,15 @@ function renderPermMatrix() {
 
     perms.forEach(p => {
       // Cek pakai "in" bukan !! agar null filter_data (seeded row) tetap dianggap checked
-      const checked    = p.id in currentRolePerms;
-      const filterVal  = currentRolePerms[p.id] || 'all';
-      const hasFilter  = ['orders.view_all','orders.view_own'].includes(p.kode);
+      const checked     = p.id in currentRolePerms;
+      const isKasSummary = p.kode === 'kas.view_summary';
+      const filterVal   = currentRolePerms[p.id] || (isKasSummary ? 'bulanan' : 'all');
+      const hasFilter   = ['orders.view_all','orders.view_own'].includes(p.kode);
 
       html += `<div class="perm-row">
         <input type="checkbox" class="hl-check perm-cb" id="perm_${p.id}"
-          data-id="${p.id}" data-has-filter="${hasFilter}"
-          ${checked?'checked':''} onchange="togglePerm(${p.id},this.checked)"/>
+          data-id="${p.id}" data-has-filter="${hasFilter || isKasSummary}" data-default-filter="${isKasSummary?'bulanan':'all'}"
+          ${checked?'checked':''} onchange="togglePerm(${p.id},this.checked,this.dataset.defaultFilter)"/>
         <label for="perm_${p.id}" style="flex:1;cursor:pointer">
           <div class="perm-label">${esc(p.kode)}</div>
           <div class="perm-desc">${esc(p.deskripsi||'')}</div>
@@ -428,6 +429,13 @@ function renderPermMatrix() {
           <option value="own" ${filterVal==='own'?'selected':''}>Data Sendiri</option>
           <option value="today" ${filterVal==='today'?'selected':''}>Hari Ini Saja</option>
         </select>` : ''}
+        ${isKasSummary ? `
+        <select class="filter-sel ${checked?'active':''}" id="filter_${p.id}"
+          onchange="updateFilter(${p.id},this.value)" ${checked?'':'disabled'}
+          title="Default tampilan kartu ringkasan Kas buat role ini">
+          <option value="harian" ${filterVal==='harian'?'selected':''}>Default: Harian</option>
+          <option value="bulanan" ${filterVal==='bulanan'?'selected':''}>Default: Bulanan</option>
+        </select>` : ''}
       </div>`;
     });
     html += '</div>';
@@ -436,9 +444,9 @@ function renderPermMatrix() {
   el.innerHTML = html;
 }
 
-function togglePerm(id, checked) {
+function togglePerm(id, checked, defaultVal) {
   if (checked) {
-    currentRolePerms[id] = 'all';
+    currentRolePerms[id] = defaultVal || 'all';
   } else {
     delete currentRolePerms[id];
   }
@@ -458,7 +466,7 @@ function updateFilter(id, val) {
 function checkAll(checked) {
   document.querySelectorAll('.perm-cb').forEach(cb => {
     cb.checked = checked;
-    togglePerm(parseInt(cb.dataset.id), checked);
+    togglePerm(parseInt(cb.dataset.id), checked, cb.dataset.defaultFilter);
   });
 }
 
@@ -466,7 +474,7 @@ function toggleModul(modul, checked) {
   const perms = allPerms[modul] || [];
   perms.forEach(p => {
     const cb = document.getElementById('perm_'+p.id);
-    if (cb) { cb.checked = checked; togglePerm(p.id, checked); }
+    if (cb) { cb.checked = checked; togglePerm(p.id, checked, cb.dataset.defaultFilter); }
   });
 }
 

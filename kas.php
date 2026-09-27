@@ -349,12 +349,14 @@ tfoot td.td-jumlah{font-family:var(--mono)}
 <?php renderTopbar('kas'); ?>
 <div class="hl-main">
 
+  <?php if (hasPermission('kas.view_summary')): ?>
   <div class="summary-grid">
     <div class="sum-card masuk"><div class="sum-num green" id="sumMasuk">Rp 0</div><div class="sum-label">💚 Total Kas Masuk</div></div>
     <div class="sum-card keluar"><div class="sum-num red" id="sumKeluar">Rp 0</div><div class="sum-label">❤️ Total Kas Keluar</div></div>
     <div class="sum-card saldo" data-tour="t_kas_saldo"><div class="sum-num teal" id="sumSaldo">Rp 0</div><div class="sum-label">💎 Saldo Bersih</div></div>
     <div class="sum-card order"><div class="sum-num" id="sumOrder" style="color:#8B5CF6">0</div><div class="sum-label">📋 Transaksi Kas</div></div>
   </div>
+  <?php endif; ?>
 
   <div class="hl-filter-collapsible">
     <button class="hl-filter-toggle-btn" id="kasFilterBtn" onclick="toggleFilter('kasFilter')">
@@ -372,7 +374,7 @@ tfoot td.td-jumlah{font-family:var(--mono)}
       </select>
       <div class="shortcut-btns">
         <button class="sc-btn" onclick="setRange('hari',this)">Hari Ini</button>
-        <button class="sc-btn active" onclick="setRange('bulan',this)">Bulan Ini</button>
+        <button class="sc-btn" onclick="setRange('bulan',this)">Bulan Ini</button>
         <button class="sc-btn" onclick="setRange('minggu',this)">7 Hari</button>
       </div>
       <button class="hl-btn hl-btn-outline hl-btn-sm" onclick="loadKas()" style="margin-left:auto">🔄</button>
@@ -445,7 +447,8 @@ tfoot td.td-jumlah{font-family:var(--mono)}
         </div>
       </div>
 
-      <!-- SALDO BOX HARI INI -->
+      <!-- SALDO BOX HARI INI — sama sensitifnya kayak kartu ringkasan atas, gate juga -->
+      <?php if (hasPermission('kas.view_summary')): ?>
       <div class="saldo-box" id="saldoBox">
         <div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:12px">📊 Ringkasan Hari Ini</div>
         <div class="sb-row"><span class="sb-label">Order Masuk</span><span class="sb-value" id="sbOrder">-</span></div>
@@ -457,6 +460,7 @@ tfoot td.td-jumlah{font-family:var(--mono)}
         <hr class="sb-divider"/>
         <div class="sb-row"><span style="color:white;font-weight:700">Saldo Bersih</span><span class="sb-saldo" id="sbSaldo">-</span></div>
       </div>
+      <?php endif; ?>
     </div>
     <?php endif; ?>
 
@@ -577,6 +581,10 @@ tfoot td.td-jumlah{font-family:var(--mono)}
 <script>
 const CAN_CREATE_KAS = <?= hasPermission('kas.create') ? 'true' : 'false' ?>;
 const CAN_DEL_KAS    = <?= hasPermission('kas.delete') ? 'true' : 'false' ?>;
+const CAN_VIEW_KAS_SUMMARY = <?= hasPermission('kas.view_summary') ? 'true' : 'false' ?>;
+// Default tampilan ringkasan kas (Hari Ini vs Bulan Ini) beda per role — diatur lewat
+// filter_data permission kas.view_summary di menu Kelola Role (bukan hardcode).
+const KAS_SUMMARY_DEFAULT = <?= json_encode($_SESSION['hl_permissions']['kas.view_summary'] ?? 'bulanan') ?>;
 
 function localDateStr(d) {
   const dt = d || new Date();
@@ -585,7 +593,9 @@ function localDateStr(d) {
 
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('f_tanggal').value = localDateStr();
-  setRange('bulan');
+  const defaultRange = KAS_SUMMARY_DEFAULT === 'harian' ? 'hari' : 'bulan';
+  const defaultBtn = document.querySelector(`.sc-btn[onclick*="setRange('${defaultRange}'"]`);
+  setRange(defaultRange, defaultBtn);
   loadSaldoHarian();
   loadKasKategori();
 });
@@ -837,11 +847,15 @@ async function loadKas() {
   const keluar = parseFloat(sm.total_keluar||0);
   const saldo  = masuk - keluar;
 
-  document.getElementById('sumMasuk').textContent  = 'Rp '+masuk.toLocaleString('id-ID');
-  document.getElementById('sumKeluar').textContent = 'Rp '+keluar.toLocaleString('id-ID');
-  document.getElementById('sumSaldo').textContent  = 'Rp '+saldo.toLocaleString('id-ID');
-  document.getElementById('sumOrder').textContent  = sm.total_transaksi||0;
-  document.getElementById('sumSaldo').style.color  = saldo>=0?'var(--green)':'#EF4444';
+  // Kartu ringkasan gak dirender sama sekali kalau user gak punya kas.view_summary
+  const elMasuk = document.getElementById('sumMasuk');
+  if (elMasuk) {
+    elMasuk.textContent = 'Rp '+masuk.toLocaleString('id-ID');
+    document.getElementById('sumKeluar').textContent = 'Rp '+keluar.toLocaleString('id-ID');
+    document.getElementById('sumSaldo').textContent  = 'Rp '+saldo.toLocaleString('id-ID');
+    document.getElementById('sumOrder').textContent  = sm.total_transaksi||0;
+    document.getElementById('sumSaldo').style.color  = saldo>=0?'var(--green)':'#EF4444';
+  }
 
   if (!d.data?.length) {
     document.getElementById('tableBody').innerHTML = '<tr><td colspan="8" class="hl-empty">📭 Belum ada data kas untuk periode ini.</td></tr>';
