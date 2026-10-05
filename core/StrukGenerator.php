@@ -955,6 +955,9 @@ tbody td { padding: 7px 10px; border-bottom: 1px solid #eee; font-size:0.93em; }
 tbody td.r { text-align:right; }
 tbody tr:nth-child(even) td { background: #f8faff; }
 /* Invoice B2B: baris header per-nota + baris item di bawahnya (tanpa zebra) */
+/* jangan potong nota di pergantian halaman: header nempel ke item pertamanya */
+tbody tr.grp, tbody tr.it, tbody tr.adj { page-break-inside:avoid; break-inside:avoid; }
+tbody tr.grp { page-break-after:avoid; break-after:avoid; }
 tbody tr.grp td { background:#EEF2FB !important; font-weight:700; color:#1B2D5A; border-bottom:1px solid #D9E1F2; padding-top:8px; }
 tbody tr.grp td small { font-weight:500; color:#6B7280; }
 tbody tr.it td { background:#fff !important; font-size:0.9em; padding-top:4px; padding-bottom:4px; border-bottom:1px dotted #eee; }
