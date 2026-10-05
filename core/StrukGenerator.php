@@ -400,17 +400,73 @@ class StrukGenerator
             'kasir_nama'     => null,
         ];
 
-        // Setiap transaksi jadi satu line item
+        // Rincian per nota: header "Order #… (tgl)" lalu tiap layanan + qty + harga di bawahnya.
+        // Ambil item semua nota sekaligus (1 query), kelompokkan per transaksi_id.
+        // Rincian detail cuma utk format PDF (a4/a5); thermal tetap 1 baris/nota seperti dulu.
+        $detailMode = in_array(self::loadTemplate($tid, $oid, 'b2b')['format'] ?? 'a4', ['a4', 'a5'], true);
+        $itemsByTrx = [];
+        if ($transactions && $detailMode) {
+            $ids = array_map(fn($t) => (int)$t['id'], $transactions);
+            $ph  = implode(',', array_fill(0, count($ids), '?'));
+            $itSt = $db->prepare(
+                "SELECT transaksi_id, nama_layanan, jumlah, satuan, harga_satuan, subtotal,
+                        express_tier_nama, biaya_express
+                   FROM hl_transaksi_item
+                  WHERE tenant_id = ? AND transaksi_id IN ($ph)
+                  ORDER BY id ASC"
+            );
+            $itSt->execute(array_merge([$tid], $ids));
+            foreach ($itSt->fetchAll(PDO::FETCH_ASSOC) as $r) {
+                $itemsByTrx[(int)$r['transaksi_id']][] = $r;
+            }
+        }
+
         $items = [];
         foreach ($transactions as $t) {
-            $fmt = self::fmtDate($t['tanggal'], 'd/m/Y');
+            $fmt  = self::fmtDate($t['tanggal'], 'd/m/Y');
+            $rows = $itemsByTrx[(int)$t['id']] ?? [];
+
+            // Nota tanpa item tercatat → fallback satu baris seperti format lama
+            if (!$rows) {
+                $items[] = [
+                    'nama_layanan' => "Order #{$t['no_order']} ({$fmt})",
+                    'jumlah'       => 1,
+                    'satuan'       => 'invoice',
+                    'harga_satuan' => (float)$t['total'],
+                    'subtotal'     => (float)$t['total'],
+                ];
+                continue;
+            }
+
             $items[] = [
-                'nama_layanan' => "Order #{$t['no_order']} ({$fmt})",
-                'jumlah'       => 1,
-                'satuan'       => 'invoice',
-                'harga_satuan' => (float)$t['total'],
-                'subtotal'     => (float)$t['total'],
+                '_header'       => "Order #{$t['no_order']} ({$fmt})",
+                '_header_total' => (float)$t['total'],
             ];
+            $sumItem = 0.0;
+            foreach ($rows as $r) {
+                $name = $r['nama_layanan'];
+                $tier = trim((string)($r['express_tier_nama'] ?? ''));
+                if ($tier !== '') $name .= ' (' . $tier . ')';
+                $sumItem += (float)$r['subtotal'];
+                $items[] = [
+                    '_child'       => true,
+                    'nama_layanan' => $name,
+                    'jumlah'       => (float)$r['jumlah'],
+                    'satuan'       => $r['satuan'] ?: 'kg',
+                    'harga_satuan' => (float)$r['harga_satuan'],
+                    'subtotal'     => (float)$r['subtotal'],
+                ];
+            }
+            // Selisih item vs total nota (diskon, biaya tambahan, biaya express) —
+            // ditampilkan eksplisit supaya rincian per nota tetap sama dgn total nota.
+            $selisih = round((float)$t['total'] - $sumItem, 2);
+            if (abs($selisih) >= 1) {
+                $items[] = [
+                    '_adj'         => true,
+                    'nama_layanan' => $selisih < 0 ? 'Diskon / potongan' : 'Biaya tambahan / express',
+                    'subtotal'     => $selisih,
+                ];
+            }
         }
         if (empty($items)) {
             // Fallback: satu baris total
@@ -898,6 +954,12 @@ thead th.r { text-align:right; }
 tbody td { padding: 7px 10px; border-bottom: 1px solid #eee; font-size:0.93em; }
 tbody td.r { text-align:right; }
 tbody tr:nth-child(even) td { background: #f8faff; }
+/* Invoice B2B: baris header per-nota + baris item di bawahnya (tanpa zebra) */
+tbody tr.grp td { background:#EEF2FB !important; font-weight:700; color:#1B2D5A; border-bottom:1px solid #D9E1F2; padding-top:8px; }
+tbody tr.grp td small { font-weight:500; color:#6B7280; }
+tbody tr.it td { background:#fff !important; font-size:0.9em; padding-top:4px; padding-bottom:4px; border-bottom:1px dotted #eee; }
+tbody tr.it td.ind { padding-left:22px; }
+tbody tr.adj td { background:#fff !important; font-size:0.85em; color:#6B7280; font-style:italic; padding-top:3px; padding-bottom:3px; border-bottom:1px dotted #eee; }
 /* ── Totals ── */
 .totals { margin-left: auto; width: 55%; margin-bottom: 16px; }
 .totals table { margin-bottom:0; }
@@ -1008,7 +1070,36 @@ tbody tr:nth-child(even) td { background: #f8faff; }
 
         $no = 1;
         foreach ($items as $item) {
+            // Invoice B2B: header per-nota (nomor + no. order + total nota)
+            if (!empty($item['_header'])) {
+                $h .= "    <tr class='grp'>
+      <td>{$no}</td>
+      <td colspan='3'>" . self::esc($item['_header']) . "</td>
+      <td class='r'><small>Total nota Rp " . self::rpNum($item['_header_total'] ?? 0) . "</small></td>
+    </tr>\n";
+                $no++;
+                continue;
+            }
+            // Baris penyesuaian (diskon / biaya tambahan / express di level nota)
+            if (!empty($item['_adj'])) {
+                $h .= "    <tr class='adj'>
+      <td></td>
+      <td class='ind' colspan='3'>" . self::esc($item['nama_layanan']) . "</td>
+      <td class='r'>" . ((float)$item['subtotal'] < 0 ? '−' : '') . "Rp " . self::rpNum(abs((float)$item['subtotal'])) . "</td>
+    </tr>\n";
+                continue;
+            }
             $qty = rtrim(rtrim(number_format((float)$item['jumlah'], 2), '0'), '.') . ' ' . ($item['satuan'] ?? 'kg');
+            if (!empty($item['_child'])) {
+                $h .= "    <tr class='it'>
+      <td></td>
+      <td class='ind'>" . self::esc($item['nama_layanan']) . "</td>
+      <td class='r'>{$qty}</td>
+      <td class='r'>Rp " . self::rpNum($item['harga_satuan']) . "</td>
+      <td class='r'>Rp " . self::rpNum($item['subtotal']) . "</td>
+    </tr>\n";
+                continue;
+            }
             $itTier = trim((string)($item['express_tier_nama'] ?? ''));
             $itFee  = (float)($item['biaya_express'] ?? 0);
             $tierBadge = ($itTier !== '' && $itFee > 0)
