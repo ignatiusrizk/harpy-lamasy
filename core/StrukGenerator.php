@@ -959,7 +959,7 @@ tbody tr:nth-child(even) td { background: #f8faff; }
 tbody tr.grp, tbody tr.it, tbody tr.adj { page-break-inside:avoid; break-inside:avoid; }
 tbody tr.grp { page-break-after:avoid; break-after:avoid; }
 tbody tr.grp td { background:#EEF2FB !important; font-weight:700; color:#1B2D5A; border-bottom:1px solid #D9E1F2; padding-top:8px; }
-tbody tr.grp td small { font-weight:500; color:#6B7280; }
+tbody tr.grp td small { font-weight:700; color:#1B2D5A; font-size:0.85em; }
 tbody tr.it td { background:#fff !important; font-size:0.9em; padding-top:4px; padding-bottom:4px; border-bottom:1px dotted #eee; }
 tbody tr.it td.ind { padding-left:22px; }
 tbody tr.adj td { background:#fff !important; font-size:0.85em; color:#6B7280; font-style:italic; padding-top:3px; padding-bottom:3px; border-bottom:1px dotted #eee; }
