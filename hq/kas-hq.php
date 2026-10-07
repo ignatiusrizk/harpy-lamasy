@@ -103,7 +103,8 @@ if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && ($_SERVER['HTTP_SEC_FETCH_MODE'
             if (!in_array($tipe, ['masuk', 'keluar'], true)) throw new RuntimeException('Tipe harus masuk atau keluar');
             if ($kat === '') throw new RuntimeException('Kategori wajib diisi');
             if ($ket === '') throw new RuntimeException('Keterangan wajib diisi');
-            if ($jumlah <= 0 || $jumlah > 999999999999) throw new RuntimeException('Jumlah harus lebih dari 0');
+            if ($jumlah <= 0) throw new RuntimeException('Jumlah harus lebih dari 0');
+            if ($jumlah > 999999999999) throw new RuntimeException('Jumlah terlalu besar (maks Rp 999.999.999.999)');
 
             if ($id) {
                 $st = $db->prepare("UPDATE hl_hq_kas SET tanggal=?, tipe=?, kategori=?, keterangan=?, jumlah=?, updated_by=?
@@ -283,6 +284,12 @@ const khRp  = n => 'Rp ' + Math.round(Number(n||0)).toLocaleString('id-ID');
 const khDate = d => { const p = String(d).split('-'); return p.length===3 ? p[2]+'/'+p[1]+'/'+p[0] : d; };
 const khLocal = d => d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 
+async function khJson(r) {
+  const t = await r.text();
+  try { return JSON.parse(t); }
+  catch (e) { throw new Error(r.status === 403 ? 'Sesi/token kedaluwarsa — muat ulang halaman lalu coba lagi.' : 'Respons server tidak valid (' + r.status + ').'); }
+}
+
 function khAlert(msg, type='success') {
   const el = document.getElementById('khAlert');
   el.textContent = msg; el.className = type;
@@ -296,7 +303,7 @@ async function loadKas() {
   });
   try {
     const r = await fetch('/hq/kas-hq?' + q, { headers:{'X-Requested-With':'XMLHttpRequest'} });
-    const j = await r.json();
+    const j = await khJson(r);
     if (!j.ok) throw new Error(j.error || 'Gagal memuat data');
     KH_ROWS = j.rows;
 
@@ -377,7 +384,7 @@ async function submitForm(e) {
     fd.append('jumlah', document.getElementById('mJumlah').value);
     fd.append('keterangan', document.getElementById('mKet').value);
     const r = await fetch('/hq/kas-hq?action=save', { method:'POST', headers:{'X-Requested-With':'XMLHttpRequest','X-CSRF-Token':KH_CSRF}, body:fd });
-    const j = await r.json();
+    const j = await khJson(r);
     if (!j.ok) throw new Error(j.error || 'Gagal menyimpan');
     closeModal(); khAlert('Transaksi tersimpan.'); loadKas();
   } catch (err) { khAlert(err.message, 'error'); }
@@ -389,7 +396,7 @@ async function delRow(row) {
   try {
     const fd = new FormData(); fd.append('id', row.id);
     const r = await fetch('/hq/kas-hq?action=delete', { method:'POST', headers:{'X-Requested-With':'XMLHttpRequest','X-CSRF-Token':KH_CSRF}, body:fd });
-    const j = await r.json();
+    const j = await khJson(r);
     if (!j.ok) throw new Error(j.error || 'Gagal menghapus');
     khAlert('Transaksi dihapus.'); loadKas();
   } catch (err) { khAlert(err.message, 'error'); }
