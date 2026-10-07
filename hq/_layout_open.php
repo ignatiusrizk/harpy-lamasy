@@ -18,7 +18,7 @@ $_tenantNama = $hqTenant['nama_perusahaan'] ?? 'Kantor Pusat';
 // Group active state
 $_inTim = in_array($_aPage, ['hq-karyawan','hq-mutasi','hq-sdm','hq-penggajian','hq-bonus-rule','hq-roles'], true);
 $_inCrm = in_array($_aPage, ['hq-pelanggan','hq-promo','hq-loyalty'], true);
-$_inKeu = in_array($_aPage, ['hq-keuangan','hq-laporan'], true);
+$_inKeu = in_array($_aPage, ['hq-keuangan','hq-laporan','hq-kas'], true);
 
 // Switch button visibility (owner & manager only)
 $_canSwitch = !empty($hqIsOwner) || !empty($hqIsManager);
@@ -162,6 +162,12 @@ $_canSwitch = !empty($hqIsOwner) || !empty($hqIsManager);
          class="hq-side-link <?= $_aPage === 'hq-keuangan' ? 'active' : '' ?>">
         <span class="ico">📒</span> Keuangan
       </a>
+      <?php if (hasPermission('keuangan.view')): ?>
+      <a href="/hq/kas-hq"
+         class="hq-side-link <?= $_aPage === 'hq-kas' ? 'active' : '' ?>">
+        <span class="ico">🏦</span> Kas HQ
+      </a>
+      <?php endif; ?>
       <a href="/hq/billing"
          class="hq-side-link <?= $_aPage === 'hq-billing' ? 'active' : '' ?>">
         <span class="ico">💳</span> Coin & Billing
