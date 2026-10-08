@@ -25,7 +25,11 @@ if ($action) {
         catch (Throwable) { $hasNotaCols = false; }
 
         $cols = "id, tenant_id, nama_outlet, slug, kota, telepon, status, is_main";
-        if ($hasNotaCols) $cols .= ", nota_prefix, nota_format, telepon_wajib, label_size, antar_mode, absensi_selfie_wajib, absensi_geofence_aktif, absensi_lat, absensi_lng, absensi_radius_m, pickup_reminder_days";
+        if ($hasNotaCols) {
+            try { $db->query("SELECT label_layout FROM outlets LIMIT 0"); }
+            catch (Throwable) { try { $db->exec("ALTER TABLE outlets ADD COLUMN label_layout VARCHAR(10) NOT NULL DEFAULT 'classic'"); } catch (Throwable) {} }
+        }
+        if ($hasNotaCols) $cols .= ", nota_prefix, nota_format, telepon_wajib, label_size, label_layout, antar_mode, absensi_selfie_wajib, absensi_geofence_aktif, absensi_lat, absensi_lng, absensi_radius_m, pickup_reminder_days";
         // Scope: di mode OUTLET tampilkan HANYA outlet aktif (jangan bocorkan config
         // outlet lain). Fallback semua outlet hanya kalau tak ada konteks outlet (HQ).
         $oid = TenantResolver::outletId();
@@ -70,6 +74,12 @@ if ($action) {
         try {
             $st = $db->prepare("UPDATE outlets SET nota_prefix=?, nota_format=?, label_size=?, antar_mode=?, telepon_wajib=? WHERE id=? AND tenant_id=?");
             $st->execute([$prefix, $format, $labelSize, $antarMode, $teleponWajib, $id, $tid]);
+            if (array_key_exists('label_layout', $d)) {
+                $labelLayout = $d['label_layout'] === 'modern' ? 'modern' : 'classic';
+                try { $db->query("SELECT label_layout FROM outlets LIMIT 0"); }
+                catch (Throwable) { $db->exec("ALTER TABLE outlets ADD COLUMN label_layout VARCHAR(10) NOT NULL DEFAULT 'classic'"); }
+                $db->prepare("UPDATE outlets SET label_layout=? WHERE id=? AND tenant_id=?")->execute([$labelLayout, $id, $tid]);
+            }
             logAudit('update', 'outlet', "Update outlet #$id: prefix=$prefix, format=$format, label=$labelSize");
             echo json_encode(['success'=>true]);
         } catch (Throwable $e) {
@@ -379,6 +389,15 @@ if ($action) {
             <input type="radio" name="ed_label_size" value="80" checked> 80mm (thermal standar)
           </label>
         </div>
+        <label class="hl-label" style="margin:12px 0 8px">Tampilan Label</label>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:6px 12px;border:1px solid #E5E7EB;border-radius:8px;background:#fff">
+            <input type="radio" name="ed_label_layout" value="classic" checked> Klasik (default)
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:6px 12px;border:1px solid #E5E7EB;border-radius:8px;background:#fff">
+            <input type="radio" name="ed_label_layout" value="modern"> Modern (nama pelanggan besar, kotak AMBIL)
+          </label>
+        </div>
       </div>
 
       <!-- Antar Jemput Mode + Zona -->
@@ -521,6 +540,8 @@ function openEdit(r) {
   document.getElementById('ed_telepon_wajib').checked = !!r.telepon_wajib;
   const lsz = (r.label_size === '58') ? '58' : '80';
   document.querySelectorAll('input[name=ed_label_size]').forEach(el => el.checked = (el.value === lsz));
+  const llo = (r.label_layout === 'modern') ? 'modern' : 'classic';
+  document.querySelectorAll('input[name=ed_label_layout]').forEach(el => el.checked = (el.value === llo));
   const am = (r.antar_mode === 'zona') ? 'zona' : 'free';
   document.querySelectorAll('input[name=ed_antar_mode]').forEach(el => el.checked = (el.value === am));
   toggleZonaSection();
@@ -577,7 +598,7 @@ async function saveFormat() {
   const teleponWajib = document.getElementById('ed_telepon_wajib').checked;
   const r = await fetch('?action=save', {
     method:'POST', headers:{'Content-Type':'application/json','X-CSRF-Token':csrfToken()},
-    body: JSON.stringify({id, nota_prefix: prefix, nota_format: format, label_size: labelSize, telepon_wajib: teleponWajib, antar_mode: document.querySelector('input[name=ed_antar_mode]:checked')?.value || 'free'})
+    body: JSON.stringify({id, nota_prefix: prefix, nota_format: format, label_size: labelSize, label_layout: document.querySelector('input[name=ed_label_layout]:checked')?.value || 'classic', telepon_wajib: teleponWajib, antar_mode: document.querySelector('input[name=ed_antar_mode]:checked')?.value || 'free'})
   });
   const d = await r.json();
   if (d.error) { showToast(d.error, 'error'); return; }

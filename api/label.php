@@ -22,11 +22,15 @@ $oid  = TenantResolver::outletId();
 
 if ($id <= 0) { http_response_code(400); exit('Bad id'); }
 
+// Kolom label_layout dibuat lazy (migrations/2026-10-08-label-layout.sql)
+try { Database::get()->query("SELECT label_layout FROM outlets LIMIT 0"); }
+catch (Throwable) { try { Database::get()->exec("ALTER TABLE outlets ADD COLUMN label_layout VARCHAR(10) NOT NULL DEFAULT 'classic'"); } catch (Throwable) {} }
+
 $order = TenantQuery::rawOne(
     "SELECT t.no_order, t.nama_pelanggan, t.telepon, t.tanggal, t.estimasi_selesai,
             t.estimasi_jam, t.status_bayar, t.sisa_bayar, t.total, t.parfum, t.catatan, t.catatan_internal,
             t.tipe_order, t.express_tier_nama,
-            o.nama_outlet, o.label_size
+            o.nama_outlet, o.label_size, o.label_layout
        FROM hl_transaksi t
   LEFT JOIN outlets o ON o.id = t.outlet_id
       WHERE t.id=? AND t.tenant_id=? AND t.outlet_id=? LIMIT 1",
@@ -87,6 +91,17 @@ if ($bayar === 'lunas') {
     $bayarTxt = 'BELUM BAYAR — Rp ' . number_format((float)$order['total'], 0, ',', '.');
 }
 
+$modern = (($order['label_layout'] ?? 'classic') === 'modern');
+if ($modern) {
+    $qrMm = $size === '58' ? 24 : 32;
+    $hari = ['Min','Sen','Sel','Rab','Kam','Jum','Sab'];
+    $ambilTs = $order['estimasi_selesai']
+        ? strtotime($order['estimasi_selesai'])
+        : ($order['tanggal'] ? strtotime($order['tanggal'] . ' +' . max(1, (int)($order['estimasi_jam'] ?: 24)) . ' hours') : 0);
+    $ambilBig = $ambilTs ? $hari[(int)date('w', $ambilTs)] . ', ' . date('d M', $ambilTs) : '-';
+    $outletShort = trim(preg_replace('/^harpy\s+laundry\s+/i', '', $outlet)) ?: $outlet;
+    $kodeShort   = implode('-', array_slice(explode('-', $kode), -2));
+}
 $qrSrc  = "https://api.qrserver.com/v1/create-qr-code/?size={$qrPx}x{$qrPx}&data=" . urlencode($kode);
 ?><!doctype html>
 <html lang="id">
@@ -157,6 +172,22 @@ $qrSrc  = "https://api.qrserver.com/v1/create-qr-code/?size={$qrPx}x{$qrPx}&data
 
   .foot { font-size: 7pt; color: #666; margin-top: 1.6mm; letter-spacing: .04em; }
 
+<?php if ($modern): ?>
+  /* ── Layout modern: sans-serif, nama pelanggan besar, kotak AMBIL ── */
+  body { font-family: Helvetica, Arial, sans-serif; }
+  .m .top { display: flex; justify-content: space-between; align-items: center; background: #000; color: #fff; padding: 1.6mm 3mm; font-size: 7.5pt; font-weight: 700; letter-spacing: .06em; }
+  .m .top b { font-size: 8pt; text-transform: uppercase; }
+  .m .nama { font-size: <?= $size === '58' ? 19 : 24 ?>pt; font-weight: 800; line-height: 1.05; margin: 2.5mm 0 .8mm; overflow-wrap: anywhere; }
+  .m .telp { font-size: 8.5pt; color: #333; margin-bottom: 1.5mm; }
+  .m .nota { font-size: 9pt; font-weight: 800; letter-spacing: .02em; }
+  .m .ambil { border: 2.5px solid #000; border-radius: 2mm; padding: 1.2mm 1mm 1.4mm; margin: 2mm 0; }
+  .m .ambil .t { font-size: 7pt; font-weight: 700; letter-spacing: .14em; }
+  .m .ambil .d { font-size: <?= $size === '58' ? 15 : 19 ?>pt; font-weight: 800; line-height: 1.1; }
+  .m .meta { font-size: 8pt; text-align: left; display: flex; justify-content: space-between; margin-bottom: 1mm; }
+  .m .items { font-size: 9pt; }
+  .m .exp { background: #000; color: #fff; font-size: 8.5pt; font-weight: 800; letter-spacing: .1em; padding: 1mm; margin-top: 2mm; text-transform: uppercase; }
+<?php endif; ?>
+
   /* Layar (preview sebelum print) */
   @media screen {
     body { background: #eee; padding: 16px; display: flex; justify-content: center; }
@@ -165,6 +196,40 @@ $qrSrc  = "https://api.qrserver.com/v1/create-qr-code/?size={$qrPx}x{$qrPx}&data
 </style>
 </head>
 <body>
+<?php if ($modern): ?>
+<div class="label m">
+  <div class="top"><b><?= htmlspecialchars($outletShort) ?></b><span><?= htmlspecialchars($kodeShort) ?></span></div>
+  <div class="inner">
+    <?php if ($isExpress): ?>
+      <div class="exp">⚡ <?= htmlspecialchars($order['express_tier_nama'] ?: 'Express') ?></div>
+    <?php endif; ?>
+    <div class="nama"><?= htmlspecialchars($nama) ?></div>
+    <?php if ($telp): ?><div class="telp"><?= htmlspecialchars($telp) ?></div><?php endif; ?>
+    <div class="nota"><?= htmlspecialchars($kode) ?></div>
+    <div class="ambil"><div class="t">AMBIL</div><div class="d"><?= htmlspecialchars($ambilBig) ?></div></div>
+    <div class="meta">
+      <span>Masuk <b><?= htmlspecialchars($tglMasuk) ?></b></span>
+      <?php if ($parfum): ?><span>Parfum <b><?= htmlspecialchars($parfum) ?></b></span><?php endif; ?>
+    </div>
+    <?php if ($itemLines): ?>
+      <hr class="sep">
+      <div class="items">
+        <?php foreach ($itemLines as $l): ?><div class="i"><?= htmlspecialchars($l) ?></div><?php endforeach; ?>
+      </div>
+    <?php endif; ?>
+    <?php if ($catatan): ?>
+      <hr class="sep">
+      <div class="catatan"><span class="t">Catatan:</span> <?= htmlspecialchars($catatan) ?></div>
+    <?php endif; ?>
+    <?php if ($catatanInt): ?>
+      <hr class="sep">
+      <div class="catatan"><span class="t">Internal:</span> <?= htmlspecialchars($catatanInt) ?></div>
+    <?php endif; ?>
+    <div class="qr" style="margin-top:1.5mm"><img src="<?= htmlspecialchars($qrSrc) ?>" alt="QR <?= htmlspecialchars($kode) ?>"></div>
+    <div class="bayar<?= $bayar === 'lunas' ? ' lunas' : '' ?>"><?= htmlspecialchars($bayarTxt) ?></div>
+  </div>
+</div>
+<?php else: ?>
 <div class="label">
   <?php if ($outlet): ?>
     <div class="outlet"><?= htmlspecialchars($outlet) ?></div>
@@ -215,6 +280,8 @@ $qrSrc  = "https://api.qrserver.com/v1/create-qr-code/?size={$qrPx}x{$qrPx}&data
     <div class="foot">Terima kasih · <?= htmlspecialchars($outlet ?: 'LAMASY') ?></div>
   </div>
 </div>
+
+<?php endif; ?>
 
 <script>window.LABEL_WIDTH_PX = <?= ($widthMm === 58) ? 384 : 576 ?>;</script>
 <?php if (empty($_GET['embed'])): // embed=1 → dicetak via thermal BT (iframe), jangan window.print ?>
