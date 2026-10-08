@@ -81,7 +81,7 @@ if ($action) {
             'show_qr_wa','show_border','show_watermark',
         ];
         $strings = [
-            'format','logo_size','tagline',
+            'format','layout','logo_size','tagline',
             'show_alamat','show_telp',
             'footer_ucapan','footer_syarat','footer_sosmed','footer_extra',
             'rekening_bank','rekening_nomor','rekening_atas_nama',
@@ -338,6 +338,13 @@ function renderForm(tipe, t) {
     </select>
   </div>
   <div class="form-field">
+    <label>Layout Nota Thermal</label>
+    <select id="f_layout" onchange="onField()">
+      <option value="classic" ${v('layout')!=='modern'?'selected':''}>Klasik (Default)</option>
+      <option value="modern"  ${v('layout')==='modern'?'selected':''}>Modern — nama pelanggan besar, estimasi jelas, QR lacak + WhatsApp</option>
+    </select>
+  </div>
+  <div class="form-field">
     <label>Ukuran Font</label>
     <select id="f_font_size" onchange="onField()">
       ${sel('font_size',[{v:'small',l:'Kecil'},{v:'normal',l:'Normal'},{v:'large',l:'Besar'}],'normal')}
@@ -460,7 +467,7 @@ function collectForm() {
     'show_border','show_watermark',
   ];
   const strings = [
-    'format','logo_size','tagline','header_extra',
+    'format','layout','logo_size','tagline','header_extra',
     'footer_ucapan','footer_syarat','footer_sosmed',
     // rekening_bank/nomor/atas_nama juga cuma dirender di tab B2B — pola exclude
     // sama seperti show_rekening di atas, biar tak ikut ke-push saat !isB2b.

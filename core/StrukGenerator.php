@@ -523,13 +523,23 @@ class StrukGenerator
     // ══════════════════════════════════════════════════
     // PUBLIC: Simpan / upsert template dari form
     // ══════════════════════════════════════════════════
+    /** Kolom layout dibuat lazy (migrasi: migrations/2026-10-08-struk-layout.sql) */
+    private static function ensureLayoutColumn(PDO $db): void
+    {
+        try {
+            $db->query("SELECT layout FROM hl_struk_template LIMIT 0");
+        } catch (Throwable $e) {
+            $db->exec("ALTER TABLE hl_struk_template ADD COLUMN layout VARCHAR(10) NOT NULL DEFAULT 'classic'");
+        }
+    }
+
     public static function saveTemplate(int $tenantId, int $outletId, string $tipe, array $data): void
     {
         $db = Database::get();
 
         // Field-field yang boleh disimpan (whitelist)
         $allowed = [
-            'format','show_logo','logo_url','logo_size','nama_outlet','tagline',
+            'format','layout','show_logo','logo_url','logo_size','nama_outlet','tagline',
             'show_alamat','alamat_override','show_telp','show_email','header_extra',
             'show_no_order','show_tanggal','show_nama_kasir','show_nama_pelanggan',
             'show_telp_pelanggan','show_alamat_pelanggan','show_detail_item',
@@ -542,6 +552,11 @@ class StrukGenerator
             'footer_sosmed','show_footer_sosmed','show_qr_wa','footer_extra',
             'font_size','show_border','show_watermark',
         ];
+
+        if (array_key_exists('layout', $data)) {
+            $data['layout'] = $data['layout'] === 'modern' ? 'modern' : 'classic';
+            self::ensureLayoutColumn($db);
+        }
 
         $set = []; $vals = [];
         foreach ($allowed as $col) {
@@ -603,6 +618,270 @@ class StrukGenerator
         };
     }
 
+
+    // ══════════════════════════════════════════════════
+    // PRIVATE: Render Thermal MODERN (58mm / 80mm)
+    // Layout baru: nama pelanggan jadi fokus, TOTAL + status bayar dalam satu kotak,
+    // dua QR berdampingan (lacak order + WhatsApp outlet), estimasi selesai + lama layanan.
+    // Aktif kalau $tmpl['layout'] === 'modern'. Font sans-serif — aman utk cetak BT
+    // (nota dirender jadi bitmap); utk cetak teks mentah pakai layout klasik (Courier).
+    // ══════════════════════════════════════════════════
+    private static function waNumber(?string $telp): string
+    {
+        $d = preg_replace('/\D/', '', (string)$telp);
+        if ($d === '') return '';
+        if (str_starts_with($d, '0')) $d = '62' . substr($d, 1);
+        elseif (!str_starts_with($d, '62')) $d = '62' . $d;
+        return $d;
+    }
+
+    private static function tglPendek(string $s, bool $withTime = false): string
+    {
+        if (!$s || str_starts_with($s, '0000')) return '-';
+        try {
+            $dt  = new DateTime($s);
+            $bln = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+            $out = $dt->format('d') . ' ' . $bln[(int)$dt->format('n') - 1] . ' ' . $dt->format('Y');
+            if ($withTime && $dt->format('H:i') !== '00:00') $out .= ', ' . $dt->format('H.i');
+            return $out;
+        } catch (Throwable) { return $s; }
+    }
+
+    public static function renderThermalModern(
+        array  $trx,
+        array  $items,
+        array  $tmpl,
+        ?array $pel,
+        ?array $poin,
+        array  $outlet,
+        int    $width
+    ): string {
+        $fs = match ($tmpl['font_size'] ?? 'normal') { 'small' => '11px', 'large' => '14px', default => '12.5px' };
+        $namaOutlet = self::esc($tmpl['nama_outlet'] ?: ($outlet['nama_outlet'] ?? 'Outlet'));
+        $maxChar    = $width === 58 ? 30 : 40;
+        $qrPx       = $width === 58 ? 84 : 126;   // 2 QR + gap harus muat dlm lebar kertas dikurangi padding
+
+        $row = fn(string $l, string $r, string $cls = '') =>
+            "<div class='row {$cls}'><span class='l'>" . self::esc($l) . "</span><span class='rv'>" . self::esc($r) . "</span></div>\n";
+
+        $h = "<!DOCTYPE html>
+<html lang='id'>
+<head>
+<meta charset='UTF-8'>
+<title>Struk {$trx['no_order']}</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:-apple-system,'Helvetica Neue',Arial,'Segoe UI',Roboto,sans-serif; font-size:{$fs};
+  width:{$width}mm; padding:3mm 4mm 6mm; color:#000; background:#fff; line-height:1.3; }
+.c { text-align:center; } .b { font-weight:700; } .sm { font-size:.82em; }
+.rule  { border:none; border-top:2px dashed #000; margin:7px 0; }
+.rule1 { border:none; border-top:1.5px solid #000; margin:0; }
+.lbl { font-size:.74em; font-weight:800; letter-spacing:.05em; text-transform:uppercase; }
+.row { display:flex; justify-content:space-between; align-items:baseline; gap:6px; }
+.row .l { flex:1; } .row .rv { white-space:nowrap; flex-shrink:0; }
+.logo { display:block; margin:0 auto 4px; max-height:26mm; }
+.oname { font-size:1.2em; font-weight:800; letter-spacing:.02em; text-transform:uppercase; }
+.hero { font-size:2em; font-weight:800; line-height:1.1; text-align:center; word-break:break-word; padding:2px 0; }
+.sec { display:flex; justify-content:space-between; padding:4px 0; border-top:1.5px solid #000; border-bottom:1.5px solid #000; margin:6px 0 5px; }
+.it { margin-bottom:4px; } .it .nm { font-weight:600; } .it .dt { font-size:.82em; }
+.box { border:2.5px solid #000; border-radius:5px; padding:6px 8px; margin:8px 0 2px; }
+.box .brow { display:flex; justify-content:space-between; align-items:baseline; gap:6px; }
+.box .brow + .brow { margin-top:3px; }
+.box .big { font-size:1.75em; font-weight:800; line-height:1.1; white-space:nowrap; }
+.box .st { font-weight:800; }
+.qrs { display:flex; justify-content:center; gap:8px; margin-top:4px; }
+.qr { text-align:center; } .qr img { display:block; margin:0 auto 2px; width:{$qrPx}px; height:{$qrPx}px; }
+.qr .t { font-size:.74em; font-weight:800; letter-spacing:.04em; text-transform:uppercase; }
+.qr .cap { font-size:.66em; line-height:1.2; }
+@media print { body { margin:0; padding:3mm 4mm 6mm; } @page { margin:0; size:{$width}mm auto; } .no-print { display:none !important; } }
+</style>
+</head>
+<body>\n";
+
+        // ── HEADER ────────────────────────────────────
+        if (!empty($tmpl['show_logo']) && !empty($tmpl['logo_url'])) {
+            $logoW = match ($tmpl['logo_size'] ?? 'medium') { 'small' => '24mm', 'large' => '44mm', default => '34mm' };
+            $h .= "<img src='" . self::esc($tmpl['logo_url']) . "' class='logo' style='max-width:{$logoW}'>\n";
+        }
+        $h .= "<div class='c oname'>{$namaOutlet}</div>\n";
+        if (!empty($tmpl['tagline'])) $h .= "<div class='c sm'>" . self::esc($tmpl['tagline']) . "</div>\n";
+        if (!empty($tmpl['show_alamat'])) {
+            $alamat = $tmpl['alamat_override'] ?: trim(($outlet['alamat'] ?? '') . (!empty($outlet['kota']) ? ', ' . $outlet['kota'] : ''));
+            foreach (explode("\n", wordwrap(trim((string)$alamat), $maxChar, "\n", true)) as $line) {
+                if ($line !== '') $h .= "<div class='c sm'>" . self::esc($line) . "</div>\n";
+            }
+        }
+        if (!empty($tmpl['show_telp']) && !empty($outlet['telepon'])) {
+            $h .= "<div class='c sm b'>WA " . self::esc($outlet['telepon']) . "</div>\n";
+        }
+        if (!empty($tmpl['header_extra'])) $h .= "<div class='c sm'>" . self::esc($tmpl['header_extra']) . "</div>\n";
+
+        // ── NO NOTA + NAMA PELANGGAN (fokus) ──────────
+        $h .= "<hr class='rule'>\n";
+        if (!empty($tmpl['show_no_order'])) {
+            $h .= "<div class='row'><span class='lbl'>No. Nota</span><span class='b'>" . self::esc($trx['no_order']) . "</span></div>\n";
+            $h .= "<hr class='rule'>\n";
+        }
+        if (!empty($tmpl['show_nama_pelanggan'])) {
+            $nama = $pel ? ($pel['nama'] ?? '') : ($trx['nama_pelanggan'] ?? '');
+            if ($nama) $h .= "<div class='hero'>" . self::esc($nama) . "</div>\n";
+        }
+        if (!empty($tmpl['show_telp_pelanggan'])) {
+            $telp = $pel['telepon'] ?? $trx['telepon'] ?? '';
+            if ($telp) $h .= "<div class='c sm'>" . self::esc($telp) . "</div>\n";
+        }
+        $h .= "<hr class='rule'>\n";
+
+        // ── TANGGAL & ESTIMASI ────────────────────────
+        if (!empty($tmpl['show_tanggal'])) {
+            $h .= "<div class='row'><span class='lbl'>Tanggal Masuk</span><span>"
+                . self::esc(self::fmtDate($trx['created_at'] ?: $trx['tanggal'], 'd/m/y H.i')) . "</span></div>\n";
+        }
+        if (!empty($tmpl['show_nama_kasir']) && !empty($trx['kasir_nama'])) {
+            $h .= "<div class='row'><span class='lbl'>Kasir</span><span>" . self::esc($trx['kasir_nama']) . "</span></div>\n";
+        }
+        if (!empty($tmpl['show_estimasi']) && !empty($trx['estimasi_selesai'])) {
+            $est = (string)$trx['estimasi_selesai'];
+            $h .= "<div class='row'><span class='lbl'>Estimasi Selesai</span><span>" . self::esc(self::tglPendek($est, true)) . "</span></div>\n";
+            // Lama pengerjaan: selisih tanggal masuk → estimasi (jam kalau < 1 hari)
+            $startRaw = (string)($trx['tanggal'] ?: $trx['created_at']);
+            $lama = '';
+            if ($items && $startRaw) {
+                $tEst = strtotime($est); $tSt = strtotime(substr($startRaw, 0, 10));
+                $dateOnly = str_ends_with($est, '00:00:00') || strlen($est) <= 10;
+                if ($tEst && $tSt) {
+                    if ($dateOnly) {
+                        $hari = (int)round((strtotime(substr($est, 0, 10)) - $tSt) / 86400);
+                        $lama = $hari >= 1 ? "{$hari} hari" : 'hari ini';
+                    } else {
+                        $jam = (int)ceil(($tEst - strtotime((string)$trx['created_at'])) / 3600);
+                        $lama = $jam >= 24 ? (int)ceil($jam / 24) . ' hari' : max(1, $jam) . ' jam';
+                    }
+                }
+            }
+            if ($lama !== '') {
+                $svc = (string)$items[0]['nama_layanan'] . (count($items) > 1 ? ' +' . (count($items) - 1) . ' lainnya' : '');
+                $h .= "<div class='sm'>" . self::esc($svc) . " · {$lama}</div>\n";
+            }
+        }
+
+        // ── RINCIAN LAYANAN ───────────────────────────
+        if (!empty($tmpl['show_detail_item'])) {
+            $h .= "<div class='sec'><span class='lbl'>Rincian Layanan</span><span class='lbl'>Total</span></div>\n";
+            foreach ($items as $item) {
+                $qty = rtrim(rtrim(number_format((float)$item['jumlah'], 2, ',', '.'), '0'), ',') . ' ' . ($item['satuan'] ?? 'kg');
+                $h .= "<div class='it'><div class='row'><span class='l nm'>" . self::esc($item['nama_layanan']) . "</span>"
+                    . "<span class='rv b'>Rp " . self::rpNum($item['subtotal']) . "</span></div>"
+                    . "<div class='dt'>" . self::esc($qty) . " × Rp " . self::rpNum($item['harga_satuan']) . "</div>";
+                $itTier = trim((string)($item['express_tier_nama'] ?? ''));
+                $itFee  = (float)($item['biaya_express'] ?? 0);
+                if ($itTier !== '' && $itFee > 0) {
+                    $h .= "<div class='dt row'><span class='l'>⚡ " . self::esc($itTier) . "</span><span class='rv'>+Rp " . self::rpNum($itFee) . "</span></div>";
+                }
+                $h .= "</div>\n";
+            }
+        }
+
+        // ── Rincian biaya (hanya kalau ada diskon / biaya tambahan) ──
+        $biayaTbh = (float)($trx['biaya_tambahan'] ?? 0);
+        $diskon   = (float)($trx['diskon'] ?? 0);
+        $hasBreak = $diskon > 0 || $biayaTbh > 0 || (float)($trx['biaya_lainnya'] ?? 0) > 0;
+        if ($hasBreak) {
+            $h .= "<hr class='rule1' style='margin:4px 0'>\n";
+            if (!empty($tmpl['show_subtotal'])) $h .= $row('Subtotal', 'Rp ' . self::rpNum($trx['subtotal']), 'sm');
+            if (!empty($tmpl['show_diskon']) && $diskon > 0) $h .= $row('Diskon', '-Rp ' . self::rpNum($diskon), 'sm');
+            if ($biayaTbh > 0) {
+                $tipeLabel = !empty($trx['express_tier_nama']) ? 'Biaya ' . $trx['express_tier_nama']
+                    : match ($trx['tipe_order'] ?? 'reguler') { 'express' => 'Biaya Express', 'kilat' => 'Biaya Kilat', default => 'Biaya Tambahan' };
+                $h .= $row($tipeLabel, 'Rp ' . self::rpNum($biayaTbh), 'sm');
+            }
+            foreach (($trx['_biaya_lainnya_rows'] ?? []) as $bl) {
+                if ((float)($bl['nominal'] ?? 0) > 0) $h .= $row($bl['nama'], 'Rp ' . self::rpNum($bl['nominal']), 'sm');
+            }
+        }
+
+        // ── KOTAK TOTAL + STATUS BAYAR ────────────────
+        $total = (float)$trx['total'];
+        $dp    = (float)($trx['dp'] ?? 0);
+        $sisa  = (float)($trx['sisa_bayar'] ?? 0);
+        $lunas = (($trx['status_bayar'] ?? '') === 'lunas') || $sisa <= 0;
+        $metodeLbl = '';
+        if (!empty($tmpl['show_metode_bayar']) && !empty($trx['metode_bayar'])) {
+            $metodeLbl = trim(preg_replace('/[^\p{L}\p{N}\s\-\/&.]/u', '', self::metodeBayarLabel($trx['metode_bayar'], $trx['outlet_id'] ?? null)));
+        }
+        if ($lunas)        $status = 'Lunas' . ($metodeLbl !== '' ? ' · ' . $metodeLbl : '');
+        elseif ($dp > 0)   $status = 'DP Rp ' . self::rpNum($dp);
+        else               $status = 'Belum dibayar';
+
+        $h .= "<div class='box'>\n";
+        $h .= "<div class='brow'><span class='lbl'>Total</span><span class='big'>Rp " . self::rpNum($total) . "</span></div>\n";
+        $h .= "<div class='brow'><span class='lbl'>Pembayaran</span><span class='st'>" . self::esc($status) . "</span></div>\n";
+        if (!$lunas && $dp > 0 && $sisa > 0) {
+            $h .= "<div class='brow'><span class='lbl'>Sisa Bayar</span><span class='st'>Rp " . self::rpNum($sisa) . "</span></div>\n";
+        }
+        $h .= "</div>\n";
+
+        // ── Alat bayar (QRIS / rekening) — sama spt layout klasik ──
+        $aid = self::paymentAidFor($trx, $tmpl, $outlet);
+        if ($aid) {
+            $h .= "<hr class='rule'>\n";
+            if ($aid['type'] === 'qris') {
+                $h .= "<div class='c'><img src='" . self::esc($aid['image']) . "' alt='QRIS' style='width:140px;max-width:90%;height:auto'/></div>\n";
+                if (!empty($aid['label'])) $h .= "<div class='c sm'>" . self::esc($aid['label']) . "</div>\n";
+                $h .= "<div class='c b'>Sisa Bayar: Rp " . self::rpNum($aid['sisa_bayar']) . "</div>\n";
+                $h .= "<div class='c sm'>Scan lalu masukkan nominal di atas</div>\n";
+            } else {
+                $h .= "<div class='c lbl'>Transfer ke</div>\n";
+                $h .= "<div class='c b'>" . self::esc($aid['bank']) . " — " . self::esc($aid['nomor']) . "</div>\n";
+                if (!empty($aid['atas_nama'])) $h .= "<div class='c sm'>a.n. " . self::esc($aid['atas_nama']) . "</div>\n";
+            }
+        }
+
+        // ── Parfum / catatan / poin ───────────────────
+        $extra = '';
+        if (!empty($trx['parfum'])) $extra .= "<div class='sm'>Parfum: " . self::esc($trx['parfum']) . "</div>\n";
+        if (!empty($tmpl['show_catatan']) && !empty($trx['catatan'])) $extra .= "<div class='sm'>Catatan: " . self::esc($trx['catatan']) . "</div>\n";
+        if ($poin && !empty($tmpl['show_poin_earned'])) $extra .= $row('Poin Didapat', '+' . (int)$poin['poin'] . ' poin', 'sm');
+        if ($poin && !empty($tmpl['show_saldo_poin']))  $extra .= $row('Total Poin', (int)$poin['balance_after'] . ' poin', 'sm');
+        if ($extra !== '') $h .= "<hr class='rule'>\n" . $extra;
+
+        // ── Promo (footer_extra) ──────────────────────
+        $h .= "<hr class='rule'>\n";
+        if (!empty($tmpl['footer_extra'])) {
+            foreach (explode("\n", wordwrap((string)$tmpl['footer_extra'], $maxChar, "\n", true)) as $line) {
+                $h .= "<div class='c b sm'>" . self::esc($line) . "</div>\n";
+            }
+            $h .= "<hr class='rule'>\n";
+        }
+
+        // ── QR: lacak order + WhatsApp outlet ─────────
+        if (!empty($trx['no_order'])) {
+            $qr = fn(string $data) => 'https://api.qrserver.com/v1/create-qr-code/?size=240x240&margin=0&data=' . urlencode($data);
+            $wa = !empty($tmpl['show_qr_wa']) ? self::waNumber($outlet['telepon'] ?? '') : '';
+            $h .= "<div class='qrs'>\n";
+            $h .= "<div class='qr'><img src='" . self::esc($qr(self::qrUrlForStruk($trx))) . "' alt='QR Lacak'>"
+                . "<div class='t'>Lacak Order</div><div class='cap'>Pindai QR live tracking</div></div>\n";
+            if ($wa !== '') {
+                $h .= "<div class='qr'><img src='" . self::esc($qr('https://wa.me/' . $wa)) . "' alt='QR WhatsApp'>"
+                    . "<div class='t'>WhatsApp Outlet</div><div class='cap'>Pindai untuk chat outlet</div></div>\n";
+            }
+            $h .= "</div>\n<hr class='rule'>\n";
+        }
+
+        // ── Footer ────────────────────────────────────
+        if (!empty($tmpl['show_footer_ucapan']) && !empty($tmpl['footer_ucapan'])) {
+            foreach (explode("\n", wordwrap((string)$tmpl['footer_ucapan'], $maxChar, "\n", true)) as $line) {
+                $h .= "<div class='c b'>" . self::esc($line) . "</div>\n";
+            }
+        }
+        if (!empty($tmpl['show_footer_sosmed']) && !empty($tmpl['footer_sosmed'])) $h .= "<div class='c sm'>" . self::esc($tmpl['footer_sosmed']) . "</div>\n";
+        if (!empty($tmpl['show_footer_syarat']) && !empty($tmpl['footer_syarat'])) $h .= "<div class='sm' style='margin-top:4px'>" . nl2br(self::esc($tmpl['footer_syarat'])) . "</div>\n";
+        if (!empty($tmpl['show_watermark'])) $h .= "<div class='c b' style='opacity:.3;font-size:2em;margin-top:4px'>COPY</div>\n";
+
+        $h .= "\n<script>window.strucLoaded = true; if (window.autoPrint) { window.print(); }</script>\n</body></html>";
+        return $h;
+    }
+
     // ══════════════════════════════════════════════════
     // PRIVATE: Render Thermal (58mm / 80mm)
     // ══════════════════════════════════════════════════
@@ -615,6 +894,9 @@ class StrukGenerator
         array  $outlet,
         int    $width
     ): string {
+        if (($tmpl['layout'] ?? '') === 'modern') {
+            return self::renderThermalModern($trx, $items, $tmpl, $pel, $poin, $outlet, $width);
+        }
         $maxChar  = $width === 58 ? 32 : 42;
         $fontSize = match ($tmpl['font_size'] ?? 'normal') {
             'small' => '10px', 'large' => '14px', default => '12px',
@@ -1236,6 +1518,7 @@ if (window.autoPrint) { window.print(); }
         return [
             'tipe'                   => $tipe,
             'format'                 => $isB2b ? 'a4' : 'thermal_80',
+            'layout'                 => 'classic',
             'show_logo'              => 0,
             'logo_url'               => null,
             'logo_size'              => 'medium',

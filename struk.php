@@ -57,7 +57,7 @@ if ($action) {
             $data[$f] = empty($body[$f]) ? 0 : 1;
         }
         $strings = [
-            'format','logo_size','nama_outlet','tagline',
+            'format','layout','logo_size','nama_outlet','tagline',
             'alamat_override','header_extra','footer_ucapan',
             'footer_syarat','footer_sosmed','footer_extra',
             'rekening_bank','rekening_nomor','rekening_atas_nama',
@@ -417,6 +417,13 @@ function renderForm(tipe, t) {
     </select>
   </div>
   <div class="form-field">
+    <label>Layout Nota Thermal</label>
+    <select id="f_layout" onchange="onFieldChange()">
+      <option value="classic" ${v('layout')!=='modern'?'selected':''}>Klasik (Default)</option>
+      <option value="modern"  ${v('layout')==='modern'?'selected':''}>Modern — nama pelanggan besar, estimasi jelas, QR lacak + WhatsApp</option>
+    </select>
+  </div>
+  <div class="form-field">
     <label>Ukuran Font</label>
     <select id="f_font_size" onchange="onFieldChange()">
       ${sel('font_size',[{val:'small',lbl:'Kecil'},{val:'normal',lbl:'Normal'},{val:'large',lbl:'Besar'}],'normal')}
@@ -590,7 +597,7 @@ function collectForm() {
     'show_qr_wa','show_border','show_watermark',
   ];
   const strings = [
-    'format','logo_size','nama_outlet','tagline','alamat_override','header_extra',
+    'format','layout','logo_size','nama_outlet','tagline','alamat_override','header_extra',
     'footer_ucapan','footer_syarat','footer_sosmed','footer_extra','font_size',
     'rekening_bank','rekening_nomor','rekening_atas_nama',
   ];
