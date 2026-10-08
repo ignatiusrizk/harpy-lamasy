@@ -742,7 +742,9 @@ body { font-family:-apple-system,'Helvetica Neue',Arial,'Segoe UI',Roboto,sans-s
         }
         if (!empty($tmpl['show_estimasi']) && !empty($trx['estimasi_selesai'])) {
             $est = (string)$trx['estimasi_selesai'];
-            $h .= "<div class='row'><span class='lbl'>Estimasi Selesai</span><span>" . self::esc(self::tglPendek($est, true)) . "</span></div>\n";
+            // Label di atas, tanggal+jam di baris sendiri rata kiri (tak terdorong ke tengah/patah di 58mm)
+            $h .= "<div class='lbl' style='margin-top:.5em'>Estimasi Selesai</div>"
+                . "<div style='font-weight:800;font-size:1.1em;line-height:1.25;white-space:nowrap'>" . self::esc(self::tglPendek($est, true)) . "</div>\n";
             // Lama pengerjaan: selisih tanggal masuk → estimasi (jam kalau < 1 hari)
             $startRaw = (string)($trx['tanggal'] ?: $trx['created_at']);
             $lama = '';
