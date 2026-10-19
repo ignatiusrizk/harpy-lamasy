@@ -83,6 +83,7 @@ $pipelineKeys = array_keys($pipeline);
 $currentIdx = -1;
 if ($order) {
     $st = $order['status_proses'] ?? '';
+    $isAntriSetrika = ($st === 'antri_setrika');
     if ($st === 'antri_setrika') $st = 'kering'; // istilah internal, pelanggan lihat langkah Kering
     if ($st === 'diambil' || $st === 'selesai') $currentIdx = count($pipelineKeys); // semua done
     else $currentIdx = array_search($st, $pipelineKeys, true);
@@ -238,6 +239,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
           <div class="pl-step <?= $cls ?>">
             <div class="pl-dot"><?= $p['icon'] ?></div>
             <div class="pl-lbl"><?= $p['label'] ?></div>
+            <?php if (!empty($isAntriSetrika) && $cls === 'active'): ?><div style="font-size:10px;color:#64748B;margin-top:2px">menunggu disetrika</div><?php endif; ?>
           </div>
         <?php endforeach; ?>
       </div>

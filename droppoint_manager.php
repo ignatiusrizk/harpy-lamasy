@@ -773,7 +773,7 @@ async function loadOrders(){
         <td data-lbl="Mitra">${esc(o.nama_mitra)}</td>
         <td data-lbl="Pelanggan">${esc(o.nama_pelanggan)}<br><small style="color:#9CA3AF">${esc(o.telepon||'-')}</small></td>
         <td data-lbl="Total" class="num">${fmtRp(o.total)}</td>
-        <td data-lbl="Status"><span class="pill" style="background:#DBEAFE;color:#1E40AF">${esc(o.status_proses)}</span></td>
+        <td data-lbl="Status"><span class="pill" style="background:#DBEAFE;color:#1E40AF">${esc(o.status_proses==='antri_setrika'?'Antri Setrika':o.status_proses)}</span></td>
         <td data-lbl="Waktu"><small>${new Date(o.created_at).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})}</small></td>
         <td>${o.status_proses==='masuk'?`<button class="btn btn-primary btn-sm" onclick="confirmPickup(${o.id})">✓ Pickup</button>`:''}</td>
       </tr>`;

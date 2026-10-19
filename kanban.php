@@ -56,7 +56,7 @@ if ($action) {
                       FROM hl_transaksi t
                      WHERE t.tenant_id=? AND t.outlet_id=?
                        AND t.status_proses IN ('masuk','cuci','kering','antri_setrika','setrika','siap')
-                       AND t.created_at >= DATE_SUB(NOW(), INTERVAL 5 DAY)
+                       AND (t.created_at >= DATE_SUB(NOW(), INTERVAL 5 DAY) OR t.status_proses='antri_setrika')
                      ORDER BY t.created_at ASC LIMIT $cap";
             $stmt = $db->prepare($sql);
             $stmt->execute([$tid, $oid]);

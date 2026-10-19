@@ -740,6 +740,12 @@ if ($action) {
             if ($stampSelesai) {
                 $setParts[] = 'tgl_selesai = CASE WHEN tgl_selesai IS NULL THEN NOW() ELSE tgl_selesai END';
             }
+            // Hanya order yang statusnya benar-benar berubah yang dicatat di log
+            // (re-apply status sama tak boleh mereset posisi FIFO antrean).
+            $chg = $db->prepare("SELECT id FROM hl_transaksi WHERE tenant_id=? AND outlet_id=? AND id IN ($ph) AND status_proses <> ?");
+            $chg->execute([$tid, $oid, ...$ids, $status]);
+            $changedIds = array_map('intval', $chg->fetchAll(PDO::FETCH_COLUMN));
+
             $sql = "UPDATE hl_transaksi SET " . implode(', ', $setParts)
                  . " WHERE tenant_id=? AND outlet_id=? AND id IN ($ph)";
             $params = [...$params, $tid, $oid, ...$ids];
@@ -749,7 +755,7 @@ if ($action) {
 
             // Log per id
             $lg = $db->prepare("INSERT INTO hl_proses_log (tenant_id,transaksi_id,status_baru,oleh,catatan,created_at) VALUES (?,?,?,?,?,?)");
-            foreach ($ids as $oidord) {
+            foreach ($changedIds as $oidord) {
                 $lg->execute([$tid, $oidord, $status, $user['nama'], 'Bulk update', date('Y-m-d H:i:s')]);
             }
             $db->commit();

@@ -1167,7 +1167,7 @@ if ($_dashRole === 'kasir'):
     </div>
     <div style="display:flex;align-items:center;gap:8px">
       <span style="background:#FEF3C7;color:#92400E;font-size:10px;font-weight:700;padding:3px 10px;border-radius:100px;text-transform:uppercase">
-        <?= $o['status_proses'] ?>
+        <?= htmlspecialchars(['antri_setrika'=>'Antri Setrika'][$o['status_proses']] ?? $o['status_proses']) ?>
       </span>
       <a href="/orders?id=<?= $o['id'] ?>" style="color:#0891B2;text-decoration:none;font-size:12px;font-weight:700">Update →</a>
     </div>
@@ -1685,7 +1685,7 @@ if (qsInput) {
                   <div style="font-size:11px;color:#6B7280;margin-top:2px">${qsEsc(r.telepon||'-')} · Rp ${Number(r.total).toLocaleString('id-ID')}</div>
                 </div>
                 <div style="text-align:right;white-space:nowrap">
-                  <span style="background:${bg};color:${fg};font-size:10px;font-weight:700;padding:2px 8px;border-radius:100px;text-transform:uppercase">${qsEsc(r.status_proses)}</span>
+                  <span style="background:${bg};color:${fg};font-size:10px;font-weight:700;padding:2px 8px;border-radius:100px;text-transform:uppercase">${qsEsc(r.status_proses==='antri_setrika'?'Antri Setrika':r.status_proses)}</span>
                   <div style="font-size:11px;font-weight:600;color:${timerColor};margin-top:3px">⏱ ${timer}</div>
                 </div>
               </div>
