@@ -1,7 +1,7 @@
 <?php
 // ══════════════════════════════════════════════════════
 // kanban.php — Kanban Board Antrian Order (Staff/Kasir POV)
-// 5 kolom status: masuk → cuci → kering → setrika → siap
+// 6 kolom status: masuk → cuci → kering → antri_setrika → setrika → siap
 // Card timer countdown, [Lanjut] update status 1-click, auto-refresh 60s.
 // ══════════════════════════════════════════════════════
 
@@ -9,6 +9,7 @@ $activePage = 'kanban';
 define('ROOT', __DIR__);
 require_once ROOT . '/middleware/tenant_guard.php';
 require_once __DIR__ . '/components.php';
+require_once __DIR__ . '/core/AntriSetrika.php';
 $user = currentUser();
 
 // Permission: kalau bisa lihat orders, bisa pakai kanban
@@ -37,19 +38,24 @@ if ($action) {
 
     // ── action=data: return semua order aktif 3 hari terakhir, group by status ──
     if ($action === 'data') {
-        $statuses = ['masuk','cuci','kering','setrika','siap'];
+        $statuses = ['masuk','cuci','kering','antri_setrika','setrika','siap'];
         try {
             $db = Database::get();
             $cap = 500; // safety cap — outlet super-busy mungkin > 200 active orders dlm 5 hari
             $sql = "SELECT t.id, t.no_order, t.nama_pelanggan, t.telepon,
                            t.total, t.status_proses, t.created_at,
                            t.estimasi_selesai, t.estimasi_jam,
+                           EXISTS (SELECT 1 FROM hl_transaksi_item xi
+                                    WHERE xi.transaksi_id=t.id AND xi.tenant_id=t.tenant_id
+                                      AND xi.express_tier_nama IS NOT NULL AND xi.express_tier_nama <> '') AS is_express,
+                           (SELECT MAX(pl.created_at) FROM hl_proses_log pl
+                             WHERE pl.transaksi_id=t.id AND pl.status_baru='antri_setrika') AS antri_at,
                            (SELECT GROUP_CONCAT(CONCAT(jumlah,' ',satuan,' ',nama_layanan) SEPARATOR ' · ')
                               FROM hl_transaksi_item
                              WHERE transaksi_id=t.id AND tenant_id=t.tenant_id) AS items_summary
                       FROM hl_transaksi t
                      WHERE t.tenant_id=? AND t.outlet_id=?
-                       AND t.status_proses IN ('masuk','cuci','kering','setrika','siap')
+                       AND t.status_proses IN ('masuk','cuci','kering','antri_setrika','setrika','siap')
                        AND t.created_at >= DATE_SUB(NOW(), INTERVAL 5 DAY)
                      ORDER BY t.created_at ASC LIMIT $cap";
             $stmt = $db->prepare($sql);
@@ -62,6 +68,7 @@ if ($action) {
                 $st = $r['status_proses'];
                 if (isset($cols[$st])) $cols[$st][] = $r;
             }
+            $cols['antri_setrika'] = AntriSetrika::sort($cols['antri_setrika']);
             $reachedCap = count($rows) >= $cap;
             echo json_encode([
                 'ok'           => true,
@@ -70,6 +77,7 @@ if ($action) {
                 'reached_cap'  => $reachedCap,
                 'total_loaded' => count($rows),
                 'cap'          => $cap,
+                'antri_threshold' => AntriSetrika::THRESHOLD,
             ]);
         } catch (Throwable $e) {
             apiErr($e);
@@ -86,7 +94,7 @@ if ($action) {
         $d = json_decode(file_get_contents('php://input'), true) ?: [];
         $id = (int)($d['order_id'] ?? 0);
         $next = $d['status_baru'] ?? '';
-        $allowed = ['cuci','kering','setrika','siap','diambil'];
+        $allowed = ['cuci','kering','antri_setrika','setrika','siap','diambil'];
         if (!$id || !in_array($next, $allowed, true)) { echo json_encode(['error'=>'Param invalid']); exit; }
 
         try {
@@ -185,7 +193,7 @@ if ($action) {
 <head>
 <?php renderHead('Kanban Antrian'); ?>
 <style>
-.kb-wrap{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;padding:0 4px}
+.kb-wrap{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;padding:0 4px}
 @media(max-width:1100px){.kb-wrap{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:720px){
   /* Horizontal scroll-snap di HP — UX seperti Trello mobile */
@@ -209,6 +217,10 @@ if ($action) {
 .kb-col.col-masuk   .kb-col-count{background:#3B82F6}
 .kb-col.col-cuci    .kb-col-count{background:#F59E0B}
 .kb-col.col-kering  .kb-col-count{background:#06B6D4}
+.kb-col.col-antri_setrika .kb-col-count{background:#D946EF}
+.kb-col.col-antri_setrika.kb-warn .kb-col-count{background:#DC2626}
+.kb-col.col-antri_setrika.kb-warn .kb-col-head{border-bottom-color:#DC2626}
+.kb-exp{display:inline-block;margin-left:6px;font-size:11px;font-weight:800;color:#B45309;background:#FEF3C7;border-radius:6px;padding:1px 6px}
 .kb-col.col-setrika .kb-col-count{background:#8B5CF6}
 .kb-col.col-siap    .kb-col-count{background:#10B981}
 
@@ -268,6 +280,7 @@ if ($action) {
     <div class="kb-col col-masuk"  ><div class="kb-col-head"><span class="kb-col-title">📥 Masuk</span><span class="kb-col-count" id="cnt-masuk">0</span></div><div id="col-masuk"  ><div class="kb-empty">Memuat…</div></div></div>
     <div class="kb-col col-cuci"   ><div class="kb-col-head"><span class="kb-col-title">🫧 Cuci</span><span class="kb-col-count" id="cnt-cuci">0</span></div><div id="col-cuci"   ><div class="kb-empty">Memuat…</div></div></div>
     <div class="kb-col col-kering" ><div class="kb-col-head"><span class="kb-col-title">💨 Kering</span><span class="kb-col-count" id="cnt-kering">0</span></div><div id="col-kering" ><div class="kb-empty">Memuat…</div></div></div>
+    <div class="kb-col col-antri_setrika"><div class="kb-col-head"><span class="kb-col-title">⏳ Antri Setrika</span><span class="kb-col-count" id="cnt-antri_setrika">0</span></div><div id="col-antri_setrika"><div class="kb-empty">Memuat…</div></div></div>
     <div class="kb-col col-setrika"><div class="kb-col-head"><span class="kb-col-title">👔 Setrika</span><span class="kb-col-count" id="cnt-setrika">0</span></div><div id="col-setrika"><div class="kb-empty">Memuat…</div></div></div>
     <div class="kb-col col-siap"   ><div class="kb-col-head"><span class="kb-col-title">✅ Siap Ambil</span><span class="kb-col-count" id="cnt-siap">0</span></div><div id="col-siap"   ><div class="kb-empty">Memuat…</div></div></div>
   </div>
@@ -298,8 +311,9 @@ function closeKbDetail(){
 }
 // Detail modal di iframe menutup → tutup overlay
 window.addEventListener('message', function(e){ if (e.data === 'lmOrderDetailClosed') closeKbDetail(); });
-const NEXT = {masuk:'cuci', cuci:'kering', kering:'setrika', setrika:'siap', siap:'diambil'};
-const LABEL_NEXT = {masuk:'→ Cuci', cuci:'→ Kering', kering:'→ Setrika', setrika:'→ Siap', siap:'✓ Ambil'};
+const NEXT = {masuk:'cuci', cuci:'kering', kering:'antri_setrika', antri_setrika:'setrika', setrika:'siap', siap:'diambil'};
+const LABEL_NEXT = {masuk:'→ Cuci', cuci:'→ Kering', kering:'→ Antri Setrika', antri_setrika:'→ Setrika', setrika:'→ Siap', siap:'✓ Ambil'};
+const LABEL_STATUS = {cuci:'Cuci', kering:'Kering', antri_setrika:'Antri Setrika', setrika:'Setrika', siap:'Siap', diambil:'Diambil'};
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
 function timeAgo(ts){
@@ -339,7 +353,7 @@ function renderCard(r){
   const next = NEXT[r.status_proses];
   const isLast = r.status_proses === 'siap';
   return `<div class="kb-card ${t.cls}" data-id="${r.id}" style="cursor:pointer" onclick="openKbDetail(${r.id})" title="Ketuk untuk lihat detail order">
-    <div class="kb-no">${esc(r.no_order)}</div>
+    <div class="kb-no">${esc(r.no_order)}${Number(r.is_express) ? '<span class="kb-exp">⚡ EXPRESS</span>' : ''}</div>
     <div class="kb-nama">${esc(r.nama_pelanggan)}</div>
     <div class="kb-items">${esc(r.items_summary || '-')}</div>
     <div class="kb-timer">
@@ -357,13 +371,15 @@ async function loadKanban(){
     if (d.error){ console.warn('Kanban:', d.error); return; }
     document.getElementById('kbTs').textContent = d.ts;
     document.getElementById('kbCapWarn').style.display = d.reached_cap ? 'inline-block' : 'none';
-    ['masuk','cuci','kering','setrika','siap'].forEach(s => {
+    ['masuk','cuci','kering','antri_setrika','setrika','siap'].forEach(s => {
       const items = d.columns[s] || [];
       document.getElementById('cnt-'+s).textContent = items.length;
       document.getElementById('col-'+s).innerHTML = items.length
         ? items.map(renderCard).join('')
         : '<div class="kb-empty">— kosong —</div>';
     });
+    const antri = (d.columns.antri_setrika || []).length;
+    document.querySelector('.kb-col.col-antri_setrika').classList.toggle('kb-warn', antri > (d.antri_threshold || 10));
   } catch(e){ console.warn(e); }
 }
 
@@ -378,7 +394,7 @@ async function advanceStatus(orderId, nextStatus, btn){
     });
     const d = await r.json();
     if (d.error){ showToast('⚠️ '+d.error,'error'); btn.disabled=false; loadKanban(); return; }
-    showToast('✅ Status → ' + nextStatus, 'success');
+    showToast('✅ Status → ' + (LABEL_STATUS[nextStatus] || nextStatus), 'success');
     if (d.wa) {
       // Buka WA notif siap ambil di tab baru
       window.open(d.wa, '_blank');
