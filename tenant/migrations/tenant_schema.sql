@@ -153,7 +153,7 @@ CREATE TABLE IF NOT EXISTS hl_transaksi (
   tipe_order       VARCHAR(20)  DEFAULT 'reguler',
   express_tier_nama VARCHAR(50) DEFAULT NULL,
   status_bayar     ENUM('belum_bayar','dp','lunas') DEFAULT 'belum_bayar',
-  status_proses    ENUM('masuk','cuci','kering','setrika','siap','diambil') DEFAULT 'masuk',
+  status_proses    ENUM('masuk','cuci','kering','antri_setrika','setrika','siap','diambil') DEFAULT 'masuk',
   estimasi_selesai DATE         DEFAULT NULL,
   catatan          TEXT         DEFAULT NULL,
   catatan_internal TEXT         DEFAULT NULL,
