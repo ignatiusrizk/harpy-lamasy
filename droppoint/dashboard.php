@@ -76,7 +76,7 @@ require __DIR__ . '/_layout_open.php';
         <div style="font-weight:700;color:#0F1C3A;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><?= mitraEsc($r['nama_pelanggan']) ?></div>
         <div style="font-size:11px;color:#9CA3AF">Rp <?= number_format((int)$r['total'],0,',','.') ?> · <?= date('d M H:i', strtotime($r['created_at'])) ?></div>
       </div>
-      <span class="pill pl-<?= mitraEsc($st) ?>"><?= mitraEsc($st) ?></span>
+      <span class="pill pl-<?= mitraEsc($st) ?>"><?= $st === 'antri_setrika' ? 'Kering, menunggu disetrika' : mitraEsc($st) ?></span>
     </div>
   <?php endforeach; endif; ?>
   <a href="orders.php" style="display:block;text-align:center;font-size:12px;color:#0891B2;font-weight:700;margin-top:10px">Lihat semua order →</a>

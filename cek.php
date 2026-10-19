@@ -104,6 +104,7 @@ if ($noOrder) {
 function statusLabel($s) {
     return [
         'masuk'=>'📥 Diterima','cuci'=>'🫧 Sedang Dicuci','kering'=>'💨 Dikeringkan',
+        'antri_setrika'=>'💨 Kering, menunggu disetrika',
         'setrika'=>'👔 Disetrika','siap'=>'✅ Siap Diambil','diambil'=>'📦 Sudah Diambil',
     ][$s] ?? $s;
 }

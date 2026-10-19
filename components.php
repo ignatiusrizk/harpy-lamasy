@@ -1879,13 +1879,13 @@ function renderSplashScripts(): void
 
 function statusProsesBadge(string $status): string {
     $map = [
-        'masuk'   => ['Masuk',       'masuk'],
-        'cuci'    => ['🫧 Cuci',     'cuci'],
-        'kering'  => ['💨 Kering',   'kering'],
-        'antri_setrika' => ['⏳ Antri Setrika', 'antri_setrika'],
-        'setrika' => ['👔 Setrika',  'setrika'],
-        'siap'    => ['✅ Siap',      'siap'],
-        'diambil' => ['📦 Diambil',  'diambil'],
+        'masuk'         => ['Masuk',             'masuk'],
+        'cuci'          => ['🫧 Cuci',           'cuci'],
+        'kering'        => ['💨 Kering',         'kering'],
+        'antri_setrika' => ['⏳ Antri Setrika',  'antri_setrika'],
+        'setrika'       => ['👔 Setrika',        'setrika'],
+        'siap'          => ['✅ Siap',            'siap'],
+        'diambil'       => ['📦 Diambil',        'diambil'],
     ];
     [$label, $type] = $map[$status] ?? [$status, 'gray'];
     return '<span class="hl-badge hl-badge-' . $type . '">' . htmlspecialchars($label) . '</span>';

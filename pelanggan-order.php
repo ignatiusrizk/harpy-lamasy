@@ -98,7 +98,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 
   <div class="card">
     <div class="no-order">#<?= htmlspecialchars($order['no_order']) ?></div>
-    <div style="margin-top:6px"><span class="status-pill"><?= htmlspecialchars($order['status_proses']) ?></span></div>
+    <div style="margin-top:6px"><span class="status-pill"><?= $order['status_proses'] === 'antri_setrika' ? 'Kering, menunggu disetrika' : htmlspecialchars($order['status_proses']) ?></span></div>
     <div style="margin-top:10px;font-size:13px;color:#64748B"><?= htmlspecialchars($order['nama_outlet'] ?? '') ?> · <?= date('d M Y', strtotime($order['tanggal'])) ?></div>
     <?php if (!empty($order['estimasi_selesai'])): ?>
       <div style="margin-top:4px;font-size:13px;color:#64748B">Estimasi: <?= date('d M Y', strtotime($order['estimasi_selesai'])) ?></div>

@@ -82,7 +82,7 @@ require __DIR__ . '/_layout_open.php';
         <div style="font-weight:800;color:#0F1C3A;font-size:14px"><?= mitraEsc($r['nama_pelanggan']) ?></div>
         <div style="font-size:11px;color:#9CA3AF;margin-top:1px"><?= mitraEsc($r['no_order']) ?> · <?= date('d M H:i', strtotime($r['created_at'])) ?></div>
       </div>
-      <span class="pill pl-<?= mitraEsc($st) ?>"><?= mitraEsc($st) ?></span>
+      <span class="pill pl-<?= mitraEsc($st) ?>"><?= $st === 'antri_setrika' ? 'Kering, menunggu disetrika' : mitraEsc($st) ?></span>
     </div>
     <div style="font-size:12px;color:#374151;margin-top:6px">
       <?= mitraEsc($r['nama_layanan'] ?? '-') ?> · <?= number_format((float)$r['jumlah'],1) ?> <?= mitraEsc($r['satuan'] ?? 'kg') ?>
@@ -134,7 +134,7 @@ async function openDetail(id){
       <div style="font-size:1.1rem;font-weight:800;color:#0F1C3A">${escDp(o.nama_pelanggan)}</div>
       <div style="font-size:12px;color:#374151;margin-top:1px">📞 ${escDp(o.telepon||'-')}</div>
       <div style="margin:12px 0;display:flex;gap:6px;flex-wrap:wrap">
-        <span class="pill pl-${escDp(o.status_proses)}">${escDp(o.status_proses)}</span>
+        <span class="pill pl-${escDp(o.status_proses)}">${o.status_proses==='antri_setrika'?'Kering, menunggu disetrika':escDp(o.status_proses)}</span>
         ${bayarBadge}
       </div>
       <div style="background:#F8FAFC;border-radius:9px;padding:10px 12px;margin-bottom:10px">${itemsHtml || '<em style="color:#9CA3AF;font-size:12px">Tidak ada item</em>'}</div>

@@ -320,7 +320,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
       <div class="order-card">
         <div class="row1">#<?= htmlspecialchars($o['no_order']) ?> · <?= (int)$o['jml_item'] ?> item · Rp <?= number_format((float)$o['total'], 0, ',', '.') ?></div>
         <div class="row2">
-          <span class="pill p-<?= htmlspecialchars($o['status_proses']) ?>"><?= htmlspecialchars($o['status_proses']) ?></span>
+          <span class="pill p-<?= htmlspecialchars($o['status_proses']) ?>"><?= $o['status_proses'] === 'antri_setrika' ? 'Kering, menunggu disetrika' : htmlspecialchars($o['status_proses']) ?></span>
           <?php if (!empty($o['estimasi_selesai'])): ?> · Est. <?= date('d M', strtotime($o['estimasi_selesai'])) ?><?php endif; ?>
         </div>
       </div>
@@ -336,7 +336,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
       <a href="/pelanggan-order?o=<?= urlencode($o['no_order']) ?>" style="text-decoration:none;color:inherit">
       <div class="order-card">
         <div class="row1">#<?= htmlspecialchars($o['no_order']) ?> · Rp <?= number_format((float)$o['total'], 0, ',', '.') ?></div>
-        <div class="row2"><?= date('d M Y', strtotime($o['tanggal'])) ?> · <?= htmlspecialchars($o['status_proses']) ?></div>
+        <div class="row2"><?= date('d M Y', strtotime($o['tanggal'])) ?> · <?= $o['status_proses'] === 'antri_setrika' ? 'Kering, menunggu disetrika' : htmlspecialchars($o['status_proses']) ?></div>
       </div>
       </a>
     <?php endforeach; endif; ?>

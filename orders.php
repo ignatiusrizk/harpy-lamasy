@@ -1064,7 +1064,7 @@ if ($action) {
                  . "Mohon segera dilunasi saat pengambilan ya.\n"
                  . "\nTerima kasih.\n_{$brandName}_";
         } else {
-            $statusLabel = ['masuk'=>'Diterima','cuci'=>'Sedang Dicuci','kering'=>'Sedang Dikeringkan','antri_setrika'=>'Kering, Menunggu Disetrika',
+            $statusLabel = ['masuk'=>'Diterima','cuci'=>'Sedang Dicuci','kering'=>'Sedang Dikeringkan','antri_setrika'=>'Kering, menunggu disetrika',
                 'setrika'=>'Sedang Disetrika','siap'=>'Siap Diambil','diambil'=>'Sudah Diambil/Diantar'];
             $stLabel = $statusLabel[$t['status_proses']] ?? $t['status_proses'];
             $msg = "Halo *{$t['nama_pelanggan']}*,\n\n"
@@ -2831,7 +2831,7 @@ async function cetakUlang(id) {
 
   const isFull = parseFloat(d.dp) >= parseFloat(d.total);
   const metodeTxt = PM_LABEL[d.metode_bayar] || d.metode_bayar || '-';
-  const statusProsesLabel = {'masuk':'Diterima','cuci':'Sedang Dicuci','kering':'Sedang Dikeringkan','antri_setrika':'Antri Setrika','setrika':'Sedang Disetrika','siap':'Siap Diambil','diambil':'Sudah Diambil/Diantar'}[d.status_proses] || d.status_proses;
+  const statusProsesLabel = {'masuk':'Diterima','cuci':'Sedang Dicuci','kering':'Sedang Dikeringkan','antri_setrika':'Kering, menunggu disetrika','setrika':'Sedang Disetrika','siap':'Siap Diambil','diambil':'Sudah Diambil/Diantar'}[d.status_proses] || d.status_proses;
 
   const itemRows = (d.items||[]).map(item => `
     <div class="struk-item">
