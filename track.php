@@ -83,6 +83,7 @@ $pipelineKeys = array_keys($pipeline);
 $currentIdx = -1;
 if ($order) {
     $st = $order['status_proses'] ?? '';
+    if ($st === 'antri_setrika') $st = 'kering'; // istilah internal, pelanggan lihat langkah Kering
     if ($st === 'diambil' || $st === 'selesai') $currentIdx = count($pipelineKeys); // semua done
     else $currentIdx = array_search($st, $pipelineKeys, true);
     if ($currentIdx === false) $currentIdx = 0;
@@ -242,7 +243,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
       </div>
 
       <!-- COUNTDOWN -->
-      <?php if (in_array($order['status_proses'], ['masuk','cuci','kering','setrika'], true) && !empty($order['estimasi_selesai'])): ?>
+      <?php if (in_array($order['status_proses'], ['masuk','cuci','kering','antri_setrika','setrika'], true) && !empty($order['estimasi_selesai'])): ?>
         <?php $estTs = strtotime($order['estimasi_selesai']); ?>
         <div class="countdown" id="cd" data-est="<?= $estTs ?>">
           ⏱️ Estimasi selesai: <strong><?= date('d M, H:i', $estTs) ?></strong>
@@ -399,7 +400,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
   <div class="brand-footer">Powered by Harpy Laundry System</div>
 </div>
 
-<?php if ($order && in_array($order['status_proses'] ?? '', ['masuk','cuci','kering','setrika'], true)): ?>
+<?php if ($order && in_array($order['status_proses'] ?? '', ['masuk','cuci','kering','antri_setrika','setrika'], true)): ?>
 <script>
 const cd = document.getElementById('cd');
 if (cd) {

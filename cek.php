@@ -64,7 +64,7 @@ function lookupOrder(string $noOrder, string $phoneLast4): ?array
         if (!$trx) return null;
 
         // Status timeline
-        $progresMap = ['masuk'=>10,'cuci'=>30,'kering'=>50,'setrika'=>70,'siap'=>90,'diambil'=>100];
+        $progresMap = ['masuk'=>10,'cuci'=>30,'kering'=>50,'antri_setrika'=>60,'setrika'=>70,'siap'=>90,'diambil'=>100];
         $trx['progress_percent'] = $progresMap[$trx['status_proses']] ?? 0;
 
         // Items detail
@@ -109,7 +109,7 @@ function statusLabel($s) {
     ][$s] ?? $s;
 }
 function statusColor($s) {
-    return ['masuk'=>'#3B82F6','cuci'=>'#F59E0B','kering'=>'#F97316','setrika'=>'#8B5CF6','siap'=>'#10B981','diambil'=>'#6B7280'][$s] ?? '#6B7280';
+    return ['masuk'=>'#3B82F6','cuci'=>'#F59E0B','kering'=>'#F97316','antri_setrika'=>'#F97316','setrika'=>'#8B5CF6','siap'=>'#10B981','diambil'=>'#6B7280'][$s] ?? '#6B7280';
 }
 function fmtDate($d) { if (!$d) return '-'; return date('d M Y H:i', strtotime($d)); }
 // Utk kolom UTC (created_at/timestamp via NOW()) → tampilkan WIB (+7)
@@ -269,7 +269,7 @@ form input:focus { outline:none; border-color:var(--teal); box-shadow:0 0 0 3px 
       <div class="progress-fill" style="width:<?= $order['progress_percent'] ?>%"></div>
     </div>
     <div class="steps">
-      <?php $allSteps = ['masuk','cuci','kering','setrika','siap','diambil']; $curIdx = array_search($order['status_proses'], $allSteps); ?>
+      <?php $allSteps = ['masuk','cuci','kering','setrika','siap','diambil']; $curIdx = array_search($order['status_proses'] === 'antri_setrika' ? 'kering' : $order['status_proses'], $allSteps); ?>
       <?php foreach ($allSteps as $i => $s): ?>
         <div class="step <?= ($i <= $curIdx) ? 'active' : '' ?>"><?= explode(' ', statusLabel($s))[0] ?></div>
       <?php endforeach; ?>
