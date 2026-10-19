@@ -1882,6 +1882,7 @@ function statusProsesBadge(string $status): string {
         'masuk'   => ['Masuk',       'masuk'],
         'cuci'    => ['🫧 Cuci',     'cuci'],
         'kering'  => ['💨 Kering',   'kering'],
+        'antri_setrika' => ['⏳ Antri Setrika', 'antri_setrika'],
         'setrika' => ['👔 Setrika',  'setrika'],
         'siap'    => ['✅ Siap',      'siap'],
         'diambil' => ['📦 Diambil',  'diambil'],

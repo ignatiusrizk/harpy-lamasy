@@ -1122,7 +1122,7 @@ if ($_dashRole === 'kasir'):
     // ── DASHBOARD STAFF (produksi) ────────────────────
     $perluKerja = (int)(TenantQuery::rawOne(
         "SELECT COUNT(*) AS c FROM hl_transaksi
-          WHERE tenant_id=? AND outlet_id=? AND status_proses IN ('cuci','kering','setrika')",
+          WHERE tenant_id=? AND outlet_id=? AND status_proses IN ('cuci','kering','antri_setrika','setrika')",
         [$tid, $oid]
     )['c'] ?? 0);
     $selesaiHariIni = (int)(TenantQuery::rawOne(
@@ -1135,7 +1135,7 @@ if ($_dashRole === 'kasir'):
   <div style="background:#fff;border-radius:12px;padding:18px;box-shadow:0 1px 6px rgba(0,0,0,.05);border-top:3px solid #F59E0B">
     <div style="font-size:1.5rem;font-weight:800;color:#0F1C3A;font-family:var(--mono)"><?= $perluKerja ?></div>
     <div style="font-size:12px;color:#6B7280;font-weight:600">Perlu Dikerjakan</div>
-    <div style="font-size:11px;color:#9CA3AF;margin-top:3px">Status: cuci / kering / setrika</div>
+    <div style="font-size:11px;color:#9CA3AF;margin-top:3px">Status: cuci / kering / antri setrika / setrika</div>
   </div>
   <div style="background:#fff;border-radius:12px;padding:18px;box-shadow:0 1px 6px rgba(0,0,0,.05);border-top:3px solid #34D399">
     <div style="font-size:1.5rem;font-weight:800;color:#0F1C3A;font-family:var(--mono)"><?= $selesaiHariIni ?></div>
@@ -1150,7 +1150,7 @@ if ($_dashRole === 'kasir'):
   $orderList = TenantQuery::raw(
     "SELECT id, no_order, nama_pelanggan, status_proses, tanggal, estimasi_selesai
        FROM hl_transaksi
-      WHERE tenant_id=? AND outlet_id=? AND status_proses IN ('cuci','kering','setrika')
+      WHERE tenant_id=? AND outlet_id=? AND status_proses IN ('cuci','kering','antri_setrika','setrika')
       ORDER BY estimasi_selesai ASC, tanggal ASC LIMIT 10",
     [$tid, $oid]
   );
@@ -1642,7 +1642,7 @@ async function loadHandoverBanner(){
 
 // ── QUICK SEARCH ──
 const STATUS_PILL_BG = {
-  masuk:'#DBEAFE/#1E40AF', cuci:'#FEF3C7/#92400E', kering:'#CFFAFE/#155E75',
+  masuk:'#DBEAFE/#1E40AF', cuci:'#FEF3C7/#92400E', kering:'#CFFAFE/#155E75', antri_setrika:'#FAE8FF/#86198F',
   setrika:'#EDE9FE/#5B21B6', siap:'#D1FAE5/#065F46', diambil:'#F3F4F6/#6B7280'
 };
 function qsEsc(s){return String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
@@ -1914,7 +1914,7 @@ function renderTargetProgress(d){
 async function loadPipeline(){
   const r=await fetch('dashboard.php?action=pipeline');
   const d=await r.json();
-  const steps=[{key:'masuk',label:'Diterima'},{key:'cuci',label:'Cuci'},{key:'kering',label:'Kering'},{key:'setrika',label:'Setrika'},{key:'siap',label:'Siap Ambil'}];
+  const steps=[{key:'masuk',label:'Diterima'},{key:'cuci',label:'Cuci'},{key:'kering',label:'Kering'},{key:'antri_setrika',label:'Antri Setrika'},{key:'setrika',label:'Setrika'},{key:'siap',label:'Siap Ambil'}];
   const total=Object.values(d).reduce((s,v)=>s+parseInt(v||0),0);
   document.getElementById('pipeTotal').textContent=total+' order aktif';
   document.getElementById('pipeline').innerHTML=steps.map(s=>`<div class="pipe-item ${s.key==='siap'?'active':''}"><div class="pipe-num">${d[s.key]||0}</div><div class="pipe-label">${s.label}</div></div>`).join('');
@@ -2034,7 +2034,7 @@ async function loadChart(){
   });
 }
 
-function statusLabel(s){return{masuk:'Diterima',cuci:'Cuci',kering:'Kering',setrika:'Setrika',siap:'Siap',diambil:'Diambil'}[s]||s;}
+function statusLabel(s){return{masuk:'Diterima',cuci:'Cuci',kering:'Kering',antri_setrika:'Antri Setrika',setrika:'Setrika',siap:'Siap',diambil:'Diambil'}[s]||s;}
 function fmtDate(d){if(!d)return'-';const s=String(d);return new Date(s.includes(' ')?s.replace(' ','T'):s+'T00:00:00').toLocaleDateString('id-ID',{day:'2-digit',month:'short'});}
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 

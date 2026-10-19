@@ -195,6 +195,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .pill{display:inline-block;padding:2px 8px;border-radius:100px;font-size:11px;font-weight:600}
 .p-cuci{background:#CCFBF1;color:#0F766E}
 .p-kering{background:#DBEAFE;color:#1E40AF}
+.p-antri_setrika{background:#FAE8FF;color:#86198F}
 .p-setrika{background:#EDE9FE;color:#5B21B6}
 .p-siap{background:#D1FAE5;color:#065F46}
 .p-masuk{background:#FEF3C7;color:#92400E}

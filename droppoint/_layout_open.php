@@ -47,7 +47,7 @@ body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:#F4F7FB;col
 .empty .ico{font-size:42px;margin-bottom:8px;display:block}
 .pill{font-size:10px;font-weight:700;padding:2px 8px;border-radius:100px;text-transform:uppercase}
 .pl-masuk{background:#DBEAFE;color:#1E40AF}
-.pl-cuci,.pl-kering,.pl-setrika{background:#FEF3C7;color:#92400E}
+.pl-cuci,.pl-kering,.pl-antri_setrika,.pl-setrika{background:#FEF3C7;color:#92400E}
 .pl-siap{background:#FED7AA;color:#9A3412}
 .pl-diambil,.pl-selesai{background:#D1FAE5;color:#065F46}
 .stat-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:12px}

@@ -71,7 +71,7 @@ SKEMA DATABASE (semua tabel WAJIB di-filter dengan `tenant_id = ?`):
 hl_transaksi (transaksi/order)
   - id, tenant_id, outlet_id, pelanggan_id, user_id (kasir)
   - no_order, tanggal (DATETIME), total (DECIMAL), dp, diskon
-  - status_proses ENUM('masuk','cuci','kering','setrika','siap','diambil')
+  - status_proses ENUM('masuk','cuci','kering','antri_setrika','setrika','siap','diambil')
   - status_bayar ENUM('lunas','dp','belum_bayar')
   - metode_bayar VARCHAR
 

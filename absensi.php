@@ -343,7 +343,7 @@ if ($action) {
             } catch (Throwable $e) { $kas = 0; }
 
             $pending = TenantQuery::count('hl_transaksi',
-                "status_proses IN ('masuk','cuci','kering','setrika')", []);
+                "status_proses IN ('masuk','cuci','kering','antri_setrika','setrika')", []);
             $siap    = TenantQuery::count('hl_transaksi',
                 "status_proses='siap'", []);
 

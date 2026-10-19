@@ -302,6 +302,7 @@ body { font-family: var(--font); background: var(--off); color: var(--dark); min
 .hl-badge-masuk    { background: #DBEAFE; color: #1D4ED8; }
 .hl-badge-cuci     { background: #FEF9C3; color: #854D0E; }
 .hl-badge-kering   { background: #FEF3C7; color: #92400E; }
+.hl-badge-antri_setrika { background: #FAE8FF; color: #86198F; }
 .hl-badge-setrika  { background: #EDE9FE; color: #5B21B6; }
 .hl-badge-siap     { background: #D1FAE5; color: #065F46; }
 .hl-badge-diambil  { background: #F3F4F6; color: #374151; }

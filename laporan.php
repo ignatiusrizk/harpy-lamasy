@@ -1687,7 +1687,7 @@ function formatAIResponse(text) {
 }
 
 // ── HELPERS ───────────────────────────────────────────
-function statusLabel(s){return{'masuk':'Masuk','cuci':'Cuci','kering':'Kering','setrika':'Setrika','siap':'Siap','diambil':'Diambil'}[s]||s}
+function statusLabel(s){return{'masuk':'Masuk','cuci':'Cuci','kering':'Kering','antri_setrika':'Antri Setrika','setrika':'Setrika','siap':'Siap','diambil':'Diambil'}[s]||s}
 function bayarLabel(s){return{'lunas':'✅ Lunas','dp':'⚡ DP','belum_bayar':'⏳ Belum'}[s]||s}
 function fmtDate(d){if(!d)return'-';return new Date(d+'T00:00:00').toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'})}
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}

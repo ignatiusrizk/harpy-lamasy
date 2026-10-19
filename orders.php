@@ -715,7 +715,7 @@ if ($action) {
         $data = json_decode(file_get_contents('php://input'), true);
         $ids    = $data['ids'] ?? [];
         $status = $data['status'] ?? '';
-        $allowed = ['masuk','cuci','kering','setrika','siap','diambil'];
+        $allowed = ['masuk','cuci','kering','antri_setrika','setrika','siap','diambil'];
         if (!in_array($status, $allowed, true)) { echo json_encode(['error'=>'Status tidak valid']); exit; }
         $ids = array_values(array_unique(array_map('intval', $ids)));
         $ids = array_filter($ids, fn($x) => $x > 0);
@@ -728,7 +728,7 @@ if ($action) {
             $ph = implode(',', array_fill(0, count($ids), '?'));
             // Status sudah divalidasi di PHP → tentukan stamp di PHP, hindari
             // perbandingan `? IN (...)` di SQL (penyebab error collation 1271).
-            $stampHandled = in_array($status, ['cuci','kering','setrika','siap','diambil','selesai'], true);
+            $stampHandled = in_array($status, ['cuci','kering','antri_setrika','setrika','siap','diambil','selesai'], true);
             $stampSelesai = in_array($status, ['siap','diambil','selesai'], true);
 
             $setParts = ['status_proses=?'];
@@ -944,7 +944,7 @@ if ($action) {
 
     // SUMMARY stats
     if ($action === 'summary') {
-        $statuses = ['masuk','cuci','kering','setrika','siap','diambil'];
+        $statuses = ['masuk','cuci','kering','antri_setrika','setrika','siap','diambil'];
         $sc = [];
         foreach ($statuses as $s) {
             $sc[$s] = TenantQuery::count('hl_transaksi', 'status_proses=?', [$s]);
@@ -1064,7 +1064,7 @@ if ($action) {
                  . "Mohon segera dilunasi saat pengambilan ya.\n"
                  . "\nTerima kasih.\n_{$brandName}_";
         } else {
-            $statusLabel = ['masuk'=>'Diterima','cuci'=>'Sedang Dicuci','kering'=>'Sedang Dikeringkan',
+            $statusLabel = ['masuk'=>'Diterima','cuci'=>'Sedang Dicuci','kering'=>'Sedang Dikeringkan','antri_setrika'=>'Kering, Menunggu Disetrika',
                 'setrika'=>'Sedang Disetrika','siap'=>'Siap Diambil','diambil'=>'Sudah Diambil/Diantar'];
             $stLabel = $statusLabel[$t['status_proses']] ?? $t['status_proses'];
             $msg = "Halo *{$t['nama_pelanggan']}*,\n\n"
@@ -1172,6 +1172,7 @@ tbody td{padding:11px 12px;vertical-align:middle}
 .b-masuk{background:#DBEAFE;color:#1D4ED8}
 .b-cuci{background:#FEF9C3;color:#854D0E}
 .b-kering{background:#FEF3C7;color:#92400E}
+.b-antri_setrika{background:#FAE8FF;color:#86198F}
 .b-setrika{background:#EDE9FE;color:#5B21B6}
 .b-siap{background:#D1FAE5;color:#065F46}
 .b-diambil{background:#F3F4F6;color:#374151}
@@ -1401,6 +1402,7 @@ textarea{resize:vertical;min-height:64px}
         <option value="masuk">Masuk</option>
         <option value="cuci">Proses Cuci</option>
         <option value="kering">Proses Kering</option>
+        <option value="antri_setrika">Antri Setrika</option>
         <option value="setrika">Setrika</option>
         <option value="siap">Siap Diambil</option>
         <option value="diambil">Sudah Diambil</option>
@@ -1448,6 +1450,7 @@ textarea{resize:vertical;min-height:64px}
         <option value="masuk">📥 Masuk</option>
         <option value="cuci">🫧 Cuci</option>
         <option value="kering">💨 Kering</option>
+        <option value="antri_setrika">⏳ Antri Setrika</option>
         <option value="setrika">👔 Setrika</option>
         <option value="siap">✅ Siap</option>
         <option value="diambil">📦 Diambil/Diantar</option>
@@ -2052,7 +2055,7 @@ async function openDetail(id) {
   document.getElementById('modalTitle').textContent = '📋 ' + d.no_order;
 
   const statuses = [
-    ['masuk','📥 Masuk'],['cuci','🫧 Cuci'],['kering','💨 Kering'],
+    ['masuk','📥 Masuk'],['cuci','🫧 Cuci'],['kering','💨 Kering'],['antri_setrika','⏳ Antri Setrika'],
     ['setrika','👔 Setrika'],['siap','✅ Siap'],['diambil','📦 Diambil/Diantar']
   ];
 
@@ -2293,7 +2296,7 @@ function shareToWAFromOrder(order, navigateInPlace) {
   const waNum = phone.startsWith('0') ? '62' + phone.substring(1) : phone;
   const trackUrl = location.origin + '/cek?n=' + encodeURIComponent(order.no_order);
   const statusTxt = {
-    'masuk':'sudah kami terima','cuci':'sedang dicuci','kering':'sedang dikeringkan',
+    'masuk':'sudah kami terima','cuci':'sedang dicuci','kering':'sedang dikeringkan','antri_setrika':'sudah kering, menunggu disetrika',
     'setrika':'sedang disetrika','siap':'siap diambil','diambil':'sudah diambil'
   }[order.status_proses] || order.status_proses;
   const msg = `Halo ${order.nama_pelanggan}, cucian Anda dengan nomor *${order.no_order}* saat ini ${statusTxt}.\n\nCek status lengkap (real-time): ${trackUrl}\n\nVerifikasi pakai 4 digit terakhir nomor telepon Anda.`;
@@ -2802,10 +2805,10 @@ async function printLabel() {
 }
 
 // ── HELPERS ───────────────────────────────────────────
-function statusLabel(s){return{'masuk':'📥 Masuk','cuci':'🫧 Cuci','kering':'💨 Kering','setrika':'👔 Setrika','siap':'✅ Siap','diambil':'📦 Diambil/Diantar'}[s]||s}
+function statusLabel(s){return{'masuk':'📥 Masuk','cuci':'🫧 Cuci','kering':'💨 Kering','antri_setrika':'⏳ Antri Setrika','setrika':'👔 Setrika','siap':'✅ Siap','diambil':'📦 Diambil/Diantar'}[s]||s}
 function bayarLabel(s){return{'lunas':'✅ Lunas','dp':'⚡ DP','belum_bayar':'⏳ Belum Bayar'}[s]||s}
 // Progress % visual per status (inspired by Smartlink — visual KPI)
-function prosesPercent(s){return{'masuk':10,'cuci':30,'kering':50,'setrika':70,'siap':90,'diambil':100}[s]||0}
+function prosesPercent(s){return{'masuk':10,'cuci':30,'kering':50,'antri_setrika':60,'setrika':70,'siap':90,'diambil':100}[s]||0}
 function fmtDate(d){if(!d)return'-';return new Date(d).toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'})}
 function fmtDateTime(d){if(!d)return'-';return new Date(d).toLocaleString('id-ID',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})}
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;')}
@@ -2828,7 +2831,7 @@ async function cetakUlang(id) {
 
   const isFull = parseFloat(d.dp) >= parseFloat(d.total);
   const metodeTxt = PM_LABEL[d.metode_bayar] || d.metode_bayar || '-';
-  const statusProsesLabel = {'masuk':'Diterima','cuci':'Sedang Dicuci','kering':'Sedang Dikeringkan','setrika':'Sedang Disetrika','siap':'Siap Diambil','diambil':'Sudah Diambil/Diantar'}[d.status_proses] || d.status_proses;
+  const statusProsesLabel = {'masuk':'Diterima','cuci':'Sedang Dicuci','kering':'Sedang Dikeringkan','antri_setrika':'Antri Setrika','setrika':'Sedang Disetrika','siap':'Siap Diambil','diambil':'Sudah Diambil/Diantar'}[d.status_proses] || d.status_proses;
 
   const itemRows = (d.items||[]).map(item => `
     <div class="struk-item">
