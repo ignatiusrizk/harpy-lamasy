@@ -195,6 +195,20 @@ if ($action === 'preview') {
 .modal-meta{display:flex;flex-wrap:wrap;gap:12px 20px;padding:10px 20px;background:#F8FAFC;border-bottom:1px solid #F1F5F9}
 .modal-meta-item{font-size:12px;color:#6B7280}
 .modal-meta-item b{color:#374151;font-weight:600}
+.modal-body.pf-body{padding:18px 20px;white-space:normal;line-height:1.4;display:flex;flex-direction:column;gap:14px;background:#F8FAFC}
+.pf-card{background:#fff;border:1px solid #E5E9F2;border-radius:14px;padding:14px 16px}
+.pf-head{display:flex;gap:12px;align-items:center;margin-bottom:8px}
+.pf-ic{width:38px;height:38px;border-radius:10px;background:#E6F9FA;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.pf-t{font-weight:800;color:var(--navy);font-size:14px}
+.pf-d{font-size:12px;color:var(--gray);margin-top:2px}
+.pf-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-top:1px solid #F1F4F9;font-size:13px;color:#374151;cursor:pointer}
+.pf-row input[type=checkbox]{width:18px;height:18px;accent-color:#1FC0CB;cursor:pointer}
+.pf-time{padding:6px 10px;border:1px solid #E5E9F2;border-radius:8px;font-size:13px}
+.pf-sub{font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.06em;margin:6px 0}
+.pf-chips{display:flex;gap:8px;flex-wrap:wrap}
+.pf-chip{cursor:pointer}.pf-chip input{display:none}
+.pf-chip span{display:inline-block;padding:6px 12px;border:1px solid #E5E9F2;border-radius:100px;font-size:12px;color:#6B7280;background:#fff}
+.pf-chip input:checked+span{background:#E6F9FA;border-color:#1FC0CB;color:#0E7C86;font-weight:700}
 .modal-body{padding:20px;overflow-y:auto;flex:1;font-size:13px;color:#374151;line-height:1.75;white-space:pre-wrap;word-break:break-word}
 .modal-footer{padding:12px 20px;border-top:1px solid #F1F5F9;display:flex;justify-content:flex-end;gap:8px;background:#FAFBFC}
 </style>
@@ -261,24 +275,19 @@ if ($action === 'preview') {
       </div>
       <button class="modal-close" onclick="closePrefs()" title="Tutup">✕</button>
     </div>
-    <div class="modal-body" style="padding:20px">
-      <div style="display:flex;flex-direction:column;gap:14px">
-        <div>
-          <div style="font-weight:700;color:var(--navy);font-size:13px;margin-bottom:6px">📊 Laporan Harian</div>
-          <label style="display:flex;gap:8px;align-items:center;font-size:13px;margin-bottom:4px"><input type="checkbox" id="pf_dr_email"> Email</label>
-          <label style="display:flex;gap:8px;align-items:center;font-size:13px"><input type="checkbox" id="pf_dr_inapp"> In-app (feed)</label>
-          <div style="margin-top:8px;font-size:12px;color:var(--gray)">Jam kirim: <input type="time" id="pf_jam" style="padding:4px 8px;border:1px solid #E5E9F2;border-radius:6px"></div>
-          <div style="margin-top:8px;display:flex;gap:10px;flex-wrap:wrap">
-            <?php foreach (['omset'=>'💰 Omset','order'=>'📦 Order','kas'=>'💵 Kas','absensi'=>'👥 Absensi','alert'=>'⚠️ Alert'] as $k=>$lbl): ?>
-              <label style="display:flex;gap:5px;align-items:center;font-size:12px"><input type="checkbox" class="pf_konten" value="<?= $k ?>"> <?= $lbl ?></label>
-            <?php endforeach; ?>
-          </div>
-        </div>
-        <div>
-          <div style="font-weight:700;color:var(--navy);font-size:13px;margin-bottom:6px">⚠️ Alert Anomali</div>
-          <label style="display:flex;gap:8px;align-items:center;font-size:13px;margin-bottom:4px"><input type="checkbox" id="pf_an_email"> Email</label>
-          <label style="display:flex;gap:8px;align-items:center;font-size:13px"><input type="checkbox" id="pf_an_inapp"> In-app (feed)</label>
-        </div>
+    <div class="modal-body pf-body">
+      <div class="pf-card">
+        <div class="pf-head"><span class="pf-ic">📊</span><div><div class="pf-t">Laporan Harian</div><div class="pf-d">Ringkasan hasil usaha yang dikirim setiap hari</div></div></div>
+        <label class="pf-row"><span>Kirim lewat Email</span><input type="checkbox" id="pf_dr_email"></label>
+        <label class="pf-row"><span>Tampil di feed aplikasi</span><input type="checkbox" id="pf_dr_inapp"></label>
+        <div class="pf-row"><span>Jam kirim</span><input type="time" id="pf_jam" class="pf-time"></div>
+        <div class="pf-sub">Isi laporan</div>
+        <div class="pf-chips"><?php foreach (['omset'=>'💰 Omset','order'=>'📦 Order','kas'=>'💵 Kas','absensi'=>'👥 Absensi','alert'=>'⚠️ Alert'] as $k=>$lbl): ?><label class="pf-chip"><input type="checkbox" class="pf_konten" value="<?= $k ?>"><span><?= $lbl ?></span></label><?php endforeach; ?></div>
+      </div>
+      <div class="pf-card">
+        <div class="pf-head"><span class="pf-ic" style="background:#FEF3C7">⚠️</span><div><div class="pf-t">Alert Anomali</div><div class="pf-d">Peringatan saat ada hal tidak wajar (omset turun, selisih kas, dll.)</div></div></div>
+        <label class="pf-row"><span>Kirim lewat Email</span><input type="checkbox" id="pf_an_email"></label>
+        <label class="pf-row"><span>Tampil di feed aplikasi</span><input type="checkbox" id="pf_an_inapp"></label>
       </div>
     </div>
     <div class="modal-footer">
