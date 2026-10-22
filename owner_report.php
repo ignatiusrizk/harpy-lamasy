@@ -414,7 +414,7 @@ function showPreviewModal(row){
     // Bold lines that look like section headers (ALL CAPS, or ending with ':')
     const html = raw.split('\n').map(line => {
       const t = line.trim();
-      if (!t) return '<br>';
+      if (!t) return '';  // baris kosong → cukup \n (pre-wrap); '<br>' bikin jarak dobel
       if (/^[A-Z\sÀ-ÿ]{4,}$/.test(t) || t.endsWith(':')) {
         return `<strong style="color:#0F1C3A">${esc(t)}</strong>`;
       }

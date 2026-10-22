@@ -560,9 +560,7 @@ function renderThread(ticket, replies) {
   let origHtml = '';
   if (!replies || !replies.length) {
     origHtml = `
-      <div style="background:var(--off);border:1px solid var(--light);border-radius:10px;padding:14px;margin:4px 0 12px;font-size:13.5px;color:var(--dark);white-space:pre-wrap;">
-        ${esc(ticket.message)}
-      </div>`;
+      <div style="background:var(--off);border:1px solid var(--light);border-radius:10px;padding:14px;margin:4px 0 12px;font-size:13.5px;color:var(--dark);white-space:pre-wrap;">${esc(ticket.message)}</div>`;
     bubblesHtml = origHtml; // replace the "no replies" message
   }
 
