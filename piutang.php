@@ -9,6 +9,7 @@ define('ROOT', __DIR__);
 require_once ROOT . '/middleware/tenant_guard.php';
 require_once ROOT . '/core/Notifier.php';
 require_once __DIR__ . '/components.php';
+require_once ROOT . '/core/StrukGenerator.php';
 
 $user = currentUser();
 requirePermission('laporan.view');
@@ -26,13 +27,7 @@ if ($action === '') {
 
 // ── Helper: Generate invoice number INV/YYYY/MM/000N ──
 function generateInvoiceNo(PDO $db, int $tid): string {
-    $ym = date('Y/m');
-    $prefix = "INV/$ym/";
-    $stmt = $db->prepare("SELECT COUNT(*) FROM hl_piutang
-                          WHERE tenant_id=? AND invoice_no LIKE ?");
-    $stmt->execute([$tid, $prefix . '%']);
-    $next = (int)$stmt->fetchColumn() + 1;
-    return $prefix . str_pad((string)$next, 4, '0', STR_PAD_LEFT);
+    return StrukGenerator::nextInvoiceNo($db, $tid);
 }
 
 // ── API: list piutang + summary (paginated) ──

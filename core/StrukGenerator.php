@@ -375,8 +375,14 @@ class StrukGenerator
         $transactions = $trxSt->fetchAll(PDO::FETCH_ASSOC);
 
         // Bangun synthetic transaksi & items untuk renderPdf
-        $bulanId   = $tid . '-INV-' . str_pad((string)$piutangId, 5, '0', STR_PAD_LEFT);
-        $invoiceNo = $piu['invoice_no'] ?: $bulanId;   // formal kalau ada, else synthetic
+        // Nomor resmi (INV/YYYY/MM/000N) diberikan saat invoice pertama kali dibuat/diunduh,
+        // bukan hanya saat 'Tagih' — jadi nomornya tak berubah antara sebelum & sesudah Tagih.
+        $invoiceNo = $piu['invoice_no'] ?: '';
+        if ($invoiceNo === '') {
+            try { $invoiceNo = self::ensureInvoiceNo($db, $tid, (int)$piutangId); }
+            catch (Throwable $e) { error_log('[ensureInvoiceNo] ' . $e->getMessage()); }
+        }
+        if ($invoiceNo === '') $invoiceNo = $tid . '-INV-' . str_pad((string)$piutangId, 5, '0', STR_PAD_LEFT); // fallback darurat
         $pajakPersen = (float)($piu['pajak_persen'] ?? 0);
         $subtotalInv = (float)$piu['total_tagihan'];
         $pajakAmount = $subtotalInv * $pajakPersen / 100;
@@ -502,6 +508,33 @@ class StrukGenerator
             catch (Throwable $e) { if (class_exists('ErrorLogger')) ErrorLogger::logException('coin_deduct', $e); }
         }
         return $html;
+    }
+
+    /** Nomor invoice berikutnya: INV/YYYY/MM/000N, urut per tenant per bulan (MAX+1, bukan COUNT). */
+    public static function nextInvoiceNo(PDO $db, int $tid): string
+    {
+        $prefix = 'INV/' . date('Y/m') . '/';
+        $st = $db->prepare("SELECT MAX(CAST(SUBSTRING_INDEX(invoice_no, '/', -1) AS UNSIGNED))
+                              FROM hl_piutang WHERE tenant_id = ? AND invoice_no LIKE ?");
+        $st->execute([$tid, $prefix . '%']);
+        return $prefix . str_pad((string)((int)$st->fetchColumn() + 1), 4, '0', STR_PAD_LEFT);
+    }
+
+    /** Pastikan piutang punya nomor resmi; idempoten (yang sudah bernomor tak diubah). */
+    public static function ensureInvoiceNo(PDO $db, int $tid, int $piutangId): string
+    {
+        for ($try = 0; $try < 3; $try++) {
+            $cur = $db->prepare("SELECT invoice_no FROM hl_piutang WHERE id = ? AND tenant_id = ?");
+            $cur->execute([$piutangId, $tid]);
+            $no = (string)($cur->fetchColumn() ?: '');
+            if ($no !== '') return $no;
+            $new = self::nextInvoiceNo($db, $tid);
+            $up = $db->prepare("UPDATE hl_piutang SET invoice_no = ?
+                                 WHERE id = ? AND tenant_id = ? AND (invoice_no IS NULL OR invoice_no = '')");
+            try { $up->execute([$new, $piutangId, $tid]); } catch (Throwable $e) { continue; } // bentrok unik → ulang
+            if ($up->rowCount() > 0) return $new;
+        }
+        return '';
     }
 
     // ══════════════════════════════════════════════════
