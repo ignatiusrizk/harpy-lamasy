@@ -1189,7 +1189,52 @@ if (window.autoPrint) { window.print(); }
     // ══════════════════════════════════════════════════
     // PRIVATE: Render PDF A4 / A5 (formal, untuk B2B)
     // HTML output → dicetak via browser / html2pdf.js
-    // ══════════════════════════════════════════════════
+     /** Blok "Pembayaran dapat dilakukan melalui" di invoice B2B: semua metode aktif outlet + detailnya. */
+    private static function invoicePaymentBlock(array $tmpl, array $outlet): string
+    {
+        $oid = (int)($outlet['id'] ?? 0) ?: (int)TenantResolver::outletId();
+        $methods = [];
+        try {
+            $st = Database::get()->prepare(
+                "SELECT code, label, emoji FROM hl_payment_methods
+                  WHERE outlet_id = ? AND is_active = 1 ORDER BY sort_order, id"
+            );
+            $st->execute([$oid]);
+            $methods = $st->fetchAll(PDO::FETCH_ASSOC);
+        } catch (Throwable $e) { return ''; }
+        $methods = array_values(array_filter($methods, fn($m) => $m['code'] !== 'deposit'));
+        if (!$methods) return '';
+
+        $qrisImg = $outlet['qris_image'] ?? null; $qrisLbl = $outlet['qris_label'] ?? null;
+        if ($qrisImg === null) {
+            try {
+                $q = Database::get()->prepare("SELECT qris_image, qris_label FROM outlets WHERE id = ?");
+                $q->execute([$oid]); $r = $q->fetch(PDO::FETCH_ASSOC) ?: [];
+                $qrisImg = $r['qris_image'] ?? null; $qrisLbl = $r['qris_label'] ?? null;
+            } catch (Throwable $e) {}
+        }
+        $rekOk = !empty($tmpl['show_rekening']) && !empty($tmpl['rekening_bank']) && !empty($tmpl['rekening_nomor']);
+
+        $rows = '';
+        foreach ($methods as $m) {
+            $lbl = self::esc(trim(preg_replace('/[^\p{L}\p{N}\s\-\/&.]/u', '', (string)$m['label'])));
+            $detail = '';
+            if ($m['code'] === 'transfer' && $rekOk) {
+                $detail = self::esc($tmpl['rekening_bank']) . ' &middot; <strong>' . self::esc($tmpl['rekening_nomor']) . '</strong>'
+                    . (!empty($tmpl['rekening_atas_nama']) ? '<br>a.n. ' . self::esc($tmpl['rekening_atas_nama']) : '');
+            } elseif ($m['code'] === 'qris' && $qrisImg) {
+                $detail = "<img src='" . self::esc($qrisImg) . "' alt='QRIS' style='width:110px;height:auto;display:block;margin-top:4px'/>"
+                    . ($qrisLbl ? '<span>' . self::esc($qrisLbl) . '</span>' : '');
+            } elseif ($m['code'] === 'cash') {
+                $detail = 'Dibayar langsung di outlet';
+            }
+            $rows .= "<div class='pay-row'><div class='pay-name'>" . $lbl . "</div>"
+                   . ($detail !== '' ? "<div class='pay-detail'>" . $detail . "</div>" : '') . "</div>\n";
+        }
+        return "<div class='rekening-box pay-box'>\n  <div class='title'>💳 Pembayaran dapat dilakukan melalui</div>\n" . $rows . "</div>\n";
+    }
+
+   // ══════════════════════════════════════════════════
     public static function renderPdf(
         array  $trx,
         array  $items,
@@ -1293,6 +1338,11 @@ tbody tr.adj td { background:#fff !important; font-size:0.85em; color:#6B7280; f
 }
 .rekening-box .title { font-weight: 700; color:#1F3864; margin-bottom:6px; }
 .rekening-box table td { padding:2px 10px 2px 0; border:none; }
+.pay-box { page-break-inside: avoid; }
+.pay-row { display:flex; gap:14px; padding:5px 0; border-top:1px solid #dbe3f1; }
+.pay-row:first-of-type { border-top:none; }
+.pay-name { width:130px; font-weight:700; color:#1F3864; flex-shrink:0; }
+.pay-detail { flex:1; color:#333; line-height:1.45; }
 /* ── Footer ── */
 .doc-footer {
   text-align: center; color: #777; font-size: 0.82em;
@@ -1481,7 +1531,7 @@ tbody tr.adj td { background:#fff !important; font-size:0.85em; color:#6B7280; f
         if (!empty($tmpl['show_dp']) && (float)($trx['dp'] ?? 0) > 0) {
             $h .= "  <tr><td>DP</td><td class='r'>Rp " . self::rpNum($trx['dp']) . "</td></tr>\n";
         }
-        if (!empty($tmpl['show_metode_bayar']) && !empty($trx['metode_bayar'])) {
+        if (!$isInvoice && !empty($tmpl['show_metode_bayar']) && !empty($trx['metode_bayar'])) {
             $h .= "  <tr><td>Metode Bayar</td><td class='r'>" . self::esc(self::metodeBayarLabel($trx['metode_bayar'], $trx['outlet_id'] ?? null)) . "</td></tr>\n";
         }
         if (!empty($tmpl['show_sisa_bayar']) && (float)($trx['sisa_bayar'] ?? 0) > 0) {
@@ -1491,8 +1541,12 @@ tbody tr.adj td { background:#fff !important; font-size:0.85em; color:#6B7280; f
         $h .= "</table>
 </div><!-- /totals -->\n";
 
-        // ── Rekening B2B ──────────────────────────────
-        if (!empty($tmpl['show_rekening']) && !empty($tmpl['rekening_bank'])) {
+        // ── Cara pembayaran ───────────────────────────
+        // Invoice: daftar semua metode bayar aktif outlet (transfer + rekening, QRIS + gambar, tunai, dst).
+        $payHtml = $isInvoice ? self::invoicePaymentBlock($tmpl, $outlet) : '';
+        if ($payHtml !== '') {
+            $h .= $payHtml;
+        } elseif (!empty($tmpl['show_rekening']) && !empty($tmpl['rekening_bank'])) {
             $h .= "<div class='rekening-box'>
   <div class='title'>💳 Informasi Transfer Pembayaran</div>
   <table>
