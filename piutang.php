@@ -978,8 +978,14 @@ async function downloadInvoice(id, preview, btn, noInv, nama){
       pdf.addImage(sl.toDataURL('image/jpeg', 0.92), 'JPEG', 0, first ? 0 : mY, pw, (end - y0) * k);
       first = false; y0 = end;
     }
-    const safe = function(t){ return String(t || '').replace(/[^A-Za-z0-9._-]+/g, '_').replace(/^_+|_+$/g, ''); };
-    const name = 'Invoice_' + safe(noInv) + (nama ? '_' + safe(nama) : '') + '.pdf';
+    // Nama file: "Invoice - <pelanggan> - <no invoice dari dokumen>.pdf"
+    const safe = function(t){ return String(t || '').replace(/[\\\/:*?"<>|]+/g, '-').replace(/\s+/g, ' ').trim(); };
+    let noDoc = '';
+    doc.querySelectorAll('.val').forEach(function(el){
+      const m = /^\s*No:\s*(.+)$/.exec(el.textContent || '');
+      if (m && !noDoc) noDoc = m[1].trim();
+    });
+    const name = ['Invoice', safe(nama), safe(noDoc || noInv)].filter(Boolean).join(' - ') + '.pdf';
     await window.lmSaveFile(name, pdf.output('blob'), 'application/pdf');
     if (!preview) loadList();
   } catch(e){
