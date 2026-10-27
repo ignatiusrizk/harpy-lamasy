@@ -739,8 +739,6 @@ require_once ROOT . '/core/CoinLedger.php';
 </div></div>
 
 <?php renderToast(); ?>
-<script src="/assets/vendor/html2canvas.min.js?v=<?= @filemtime(__DIR__.'/assets/vendor/html2canvas.min.js') ?: '1' ?>"></script>
-<script src="/assets/vendor/jspdf.umd.min.js?v=<?= @filemtime(__DIR__.'/assets/vendor/jspdf.umd.min.js') ?: '1' ?>"></script>
 <script>
 const CAN_PIUTANG_WRITE = <?= hasPermission('laporan.export') ? 'true' : 'false' ?>;
 const CSRF = document.querySelector('meta[name="csrf-token"]').content;
@@ -798,14 +796,14 @@ async function loadList(append = false){
       ` : '';
       const actions = r.status === 'lunas' ? `
         <span style="color:#9CA3AF;font-size:11px">✓ lunas</span>
-        <button class="hl-btn hl-btn-outline btn-sm" style="font-size:11px" title="Download invoice (PDF)"
-           onclick="downloadInvoice(${r.id}, true, this, '${escAttr(r.invoice_no || ('piutang-' + r.id))}', '${escAttr(r.pelanggan_nama || '')}')">📄 Invoice</button>
+        <a href="/api/struk.php?action=generate_invoice&id=${r.id}&preview=1" target="_blank"
+           class="hl-btn hl-btn-outline btn-sm" style="font-size:11px" title="Buka invoice (ada tombol Download PDF di dalamnya)">📄 Invoice</a>
         ${correctionActions}
       ` : `
         ${CAN_PIUTANG_WRITE && r.status==='belum_tagih' ? `<button class="hl-btn hl-btn-outline btn-sm" onclick="markInvoiced(${r.id})">📤 Tagih</button>` : ''}
         ${CAN_PIUTANG_WRITE && r.status!=='belum_tagih' ? `<button class="hl-btn hl-btn-outline btn-sm" onclick="reminder(${r.id})">🔔 Reminder</button>` : ''}
-        <button class="hl-btn hl-btn-outline btn-sm" style="font-size:11px" title="Download invoice PDF (200 coin, gratis kalau sudah pernah dibuat)"
-           onclick="downloadInvoice(${r.id}, false, this, '${escAttr(r.invoice_no || ('piutang-' + r.id))}', '${escAttr(r.pelanggan_nama || '')}')">📄 Invoice</button>
+        <a href="/api/struk.php?action=generate_invoice&id=${r.id}" target="_blank"
+           class="hl-btn hl-btn-outline btn-sm" style="font-size:11px" title="Buka invoice B2B (200 coin, gratis kalau sudah pernah dibuat). Download PDF ada di dalamnya.">📄 Invoice</a>
         ${CAN_PIUTANG_WRITE ? `<button class="hl-btn hl-btn-primary btn-sm" onclick="openBayar(${r.id}, '${escAttr(r.pelanggan_nama)}', ${r.sisa_tagihan})">💵 Bayar</button>` : ''}
         ${correctionActions}
       `;
@@ -910,85 +908,6 @@ async function doBulkGen(){
     closeModal('bulkGenModal');
     loadList();
   } catch(e){ alert('Gagal: '+e.message); }
-}
-
-// ── Download invoice sebagai PDF (A4) ─────────────────────────────
-// Ambil HTML invoice dari server → render di iframe tersembunyi → html2canvas →
-// potong per halaman A4 di batas baris tabel (tak memotong teks) → jsPDF → lmSaveFile
-// (APK: share sheet; browser: unduhan biasa).
-async function downloadInvoice(id, preview, btn, noInv, nama){
-  if (typeof html2canvas === 'undefined' || !window.jspdf || !window.jspdf.jsPDF){
-    window.open('/api/struk.php?action=generate_invoice&id=' + id + (preview ? '&preview=1' : ''), '_blank');
-    return;
-  }
-  const label = btn ? btn.innerHTML : '';
-  if (btn){ btn.disabled = true; btn.innerHTML = '⏳ Menyiapkan…'; }
-  let frame = null;
-  try {
-    const res = await fetch('/api/struk.php?action=generate_invoice&id=' + id + (preview ? '&preview=1' : ''), { credentials:'same-origin' });
-    if (!res.ok) {
-      let msg = 'Gagal membuat invoice';
-      try { const j = await res.clone().json(); if (j.error) msg = j.error; } catch(e){}
-      showToast(msg, 'error'); return;
-    }
-    const html = await res.text();
-    frame = document.createElement('iframe');
-    frame.style.cssText = 'position:fixed;left:-10000px;top:0;width:794px;height:1123px;border:0;visibility:hidden';
-    document.body.appendChild(frame);
-    await new Promise(function(ok){ frame.onload = ok; frame.srcdoc = html; });
-    const doc = frame.contentDocument;
-    await Promise.all(Array.from(doc.images).map(function(im){
-      return im.complete ? 1 : new Promise(function(r){ im.onload = im.onerror = r; });
-    }));
-    const page = doc.querySelector('.page') || doc.body;
-    const W = 794, H = Math.ceil(doc.documentElement.scrollHeight);
-    frame.style.height = H + 'px';
-    const SC = 2;
-    const canvas = await html2canvas(doc.body, { scale: SC, backgroundColor: '#ffffff', useCORS: true, width: W, windowWidth: W, height: H, windowHeight: H });
-    // Titik potong aman: bawah tiap baris, kecuali baris header nota (grp) agar tak terpisah dari itemnya
-    const cuts = [];
-    doc.querySelectorAll('tr').forEach(function(tr){
-      if (tr.classList.contains('grp')) return;
-      cuts.push(Math.round(tr.getBoundingClientRect().bottom * SC));
-    });
-    cuts.push(canvas.height);
-    const pdf = new window.jspdf.jsPDF('p', 'pt', 'a4');
-    const pw = pdf.internal.pageSize.getWidth(), ph = pdf.internal.pageSize.getHeight();
-    const mY = 28, k = pw / canvas.width;
-    const pageHpx = Math.floor((ph - mY * 2) / k);
-    let y0 = 0, first = true;
-    while (y0 < canvas.height - 2) {
-      let end = Math.min(y0 + pageHpx, canvas.height);
-      if (end < canvas.height) {
-        let best = 0;
-        for (let i = 0; i < cuts.length; i++) { if (cuts[i] > y0 + 40 && cuts[i] <= end) best = cuts[i]; }
-        if (best) end = best;
-      }
-      const sl = document.createElement('canvas');
-      sl.width = canvas.width; sl.height = end - y0;
-      const cx = sl.getContext('2d');
-      cx.fillStyle = '#fff'; cx.fillRect(0, 0, sl.width, sl.height);
-      cx.drawImage(canvas, 0, y0, canvas.width, end - y0, 0, 0, canvas.width, end - y0);
-      if (!first) pdf.addPage();
-      pdf.addImage(sl.toDataURL('image/jpeg', 0.92), 'JPEG', 0, first ? 0 : mY, pw, (end - y0) * k);
-      first = false; y0 = end;
-    }
-    // Nama file: "Invoice - <pelanggan> - <no invoice dari dokumen>.pdf"
-    const safe = function(t){ return String(t || '').replace(/[\\\/:*?"<>|]+/g, '-').replace(/\s+/g, ' ').trim(); };
-    let noDoc = '';
-    doc.querySelectorAll('.val').forEach(function(el){
-      const m = /^\s*No:\s*(.+)$/.exec(el.textContent || '');
-      if (m && !noDoc) noDoc = m[1].trim();
-    });
-    const name = ['Invoice', safe(nama), safe(noDoc || noInv)].filter(Boolean).join(' - ') + '.pdf';
-    await window.lmSaveFile(name, pdf.output('blob'), 'application/pdf');
-    if (!preview) loadList();
-  } catch(e){
-    showToast('Gagal membuat PDF: ' + (e && e.message ? e.message : e), 'error');
-  } finally {
-    if (frame) frame.remove();
-    if (btn){ btn.disabled = false; btn.innerHTML = label; }
-  }
 }
 
 async function markInvoiced(id){

@@ -1189,7 +1189,77 @@ if (window.autoPrint) { window.print(); }
     // ══════════════════════════════════════════════════
     // PRIVATE: Render PDF A4 / A5 (formal, untuk B2B)
     // HTML output → dicetak via browser / html2pdf.js
-     /** Blok "Pembayaran dapat dilakukan melalui" di invoice B2B: semua metode aktif outlet + detailnya. */
+     /** Tombol "Download PDF" di halaman invoice: render dokumen (lebar A4) → html2canvas → jsPDF. */
+    private static function invoiceDownloadScript(string $noInv, string $nama): string
+    {
+        $cfg = json_encode(['no' => $noInv, 'nama' => $nama], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE);
+        return <<<HTML
+<script src="/assets/vendor/html2canvas.min.js"></script>
+<script src="/assets/vendor/jspdf.umd.min.js"></script>
+<script>
+(function(){
+  var CFG = {$cfg};
+  if (window.top !== window) { var b = document.getElementById('dlBar'); if (b) b.style.display = 'none'; } // preview di iframe
+  function safe(t){ return String(t||'').replace(/[\\\\\\/:*?"<>|]+/g,'-').replace(/\\s+/g,' ').trim(); }
+  async function save(name, blob){
+    if (window.parent !== window && window.parent.lmSaveFile) { return window.parent.lmSaveFile(name, blob, 'application/pdf'); }
+    var C = window.Capacitor;
+    if (C && C.isNativePlatform && C.isNativePlatform() && window.lmSaveFile) { return window.lmSaveFile(name, blob, 'application/pdf'); }
+    var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name;
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(function(){ URL.revokeObjectURL(a.href); }, 4000);
+  }
+  window.lmInvDownload = async function(){
+    var btn = document.getElementById('dlBtn'), label = btn ? btn.innerHTML : '';
+    if (typeof html2canvas === 'undefined' || !window.jspdf || !window.jspdf.jsPDF){ window.print(); return; }
+    if (btn){ btn.disabled = true; btn.innerHTML = '⏳ Menyiapkan…'; }
+    var frame = null;
+    try {
+      var bar = document.getElementById('dlBar'); if (bar) bar.remove();
+      var html = '<!doctype html>' + document.documentElement.outerHTML;
+      document.body.insertBefore(bar, document.body.firstChild);
+      frame = document.createElement('iframe');
+      frame.style.cssText = 'position:fixed;left:-10000px;top:0;width:794px;height:1123px;border:0;visibility:hidden';
+      document.body.appendChild(frame);
+      await new Promise(function(ok){ frame.onload = ok; frame.srcdoc = html; });
+      var doc = frame.contentDocument;
+      await Promise.all(Array.from(doc.images).map(function(im){ return im.complete ? 1 : new Promise(function(r){ im.onload = im.onerror = r; }); }));
+      var W = 794, H = Math.ceil(doc.documentElement.scrollHeight), SC = 2;
+      frame.style.height = H + 'px';
+      var canvas = await html2canvas(doc.body, { scale: SC, backgroundColor: '#ffffff', useCORS: true, width: W, windowWidth: W, height: H, windowHeight: H });
+      var cuts = [];
+      doc.querySelectorAll('tr, .pay-row').forEach(function(el){
+        if (el.classList.contains('grp')) return;
+        cuts.push(Math.round(el.getBoundingClientRect().bottom * SC));
+      });
+      cuts.push(canvas.height);
+      var pdf = new window.jspdf.jsPDF('p','pt','a4');
+      var pw = pdf.internal.pageSize.getWidth(), ph = pdf.internal.pageSize.getHeight();
+      var mY = 28, k = pw / canvas.width, pageHpx = Math.floor((ph - mY*2) / k), y0 = 0, first = true;
+      while (y0 < canvas.height - 2) {
+        var end = Math.min(y0 + pageHpx, canvas.height);
+        if (end < canvas.height) { var best = 0; for (var i=0;i<cuts.length;i++){ if (cuts[i] > y0 + 40 && cuts[i] <= end) best = cuts[i]; } if (best) end = best; }
+        var sl = document.createElement('canvas'); sl.width = canvas.width; sl.height = end - y0;
+        var cx = sl.getContext('2d'); cx.fillStyle = '#fff'; cx.fillRect(0,0,sl.width,sl.height);
+        cx.drawImage(canvas, 0, y0, canvas.width, end - y0, 0, 0, canvas.width, end - y0);
+        if (!first) pdf.addPage();
+        pdf.addImage(sl.toDataURL('image/jpeg', 0.92), 'JPEG', 0, first ? 0 : mY, pw, (end - y0) * k);
+        first = false; y0 = end;
+      }
+      var name = ['Invoice', safe(CFG.nama), safe(CFG.no)].filter(Boolean).join(' - ') + '.pdf';
+      await save(name, pdf.output('blob'));
+    } catch(e){
+      alert('Gagal membuat PDF: ' + (e && e.message ? e.message : e));
+    } finally {
+      if (frame) frame.remove();
+      if (btn){ btn.disabled = false; btn.innerHTML = label; }
+    }
+  };
+})();
+</script>
+HTML;
+    }
+
+    /** Blok "Pembayaran dapat dilakukan melalui" di invoice B2B: semua metode aktif outlet + detailnya. */
     private static function invoicePaymentBlock(array $tmpl, array $outlet): string
     {
         $oid = (int)($outlet['id'] ?? 0) ?: (int)TenantResolver::outletId();
@@ -1330,6 +1400,10 @@ tbody tr.adj td { background:#fff !important; font-size:0.85em; color:#6B7280; f
 .totals table { margin-bottom:0; }
 .totals td { padding: 5px 8px; border:none; }
 .totals .grand { font-size: 1.1em; font-weight: 700; color:#1F3864; }
+.dl-bar { position:sticky; top:0; z-index:50; display:flex; justify-content:space-between; align-items:center; gap:10px;
+  background:#1F3864; color:#fff; padding:9px 14px; font-size:13px; font-weight:700; }
+.dl-bar button { background:#1FC0CB; color:#0b2a33; border:0; border-radius:8px; padding:8px 16px; font-size:13px; font-weight:800; cursor:pointer; }
+.dl-bar button:disabled { opacity:.6; cursor:wait; }
 /* ── Rekening ── */
 .rekening-box {
   border: 1px solid #c8d4e8; border-radius: 6px;
@@ -1363,6 +1437,7 @@ tbody tr.adj td { background:#fff !important; font-size:0.85em; color:#6B7280; f
 </style>
 </head>
 <body>
+" . ($isInvoice ? "<div class='dl-bar no-print' id='dlBar'><span>📄 " . self::esc($trx['no_order']) . "</span><button type='button' id='dlBtn' onclick='lmInvDownload()'>⬇️ Download PDF</button></div>" : "") . "
 " . (!empty($tmpl['show_watermark']) ? "<div class='watermark'>COPY</div>" : "") . "
 <div class='page'>
 
@@ -1589,6 +1664,7 @@ tbody tr.adj td { background:#fff !important; font-size:0.85em; color:#6B7280; f
         $h .= "</div><!-- /doc-footer -->
 
 </div><!-- /page -->
+" . ($isInvoice ? self::invoiceDownloadScript((string)$trx['no_order'], (string)($trx['nama_pelanggan'] ?? '')) : "") . "
 <script>
 window.strucLoaded = true;
 if (window.autoPrint) { window.print(); }
