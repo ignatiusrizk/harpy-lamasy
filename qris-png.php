@@ -24,15 +24,4 @@ if (!$t || !$base || !$abs || strpos($abs, $base . DIRECTORY_SEPARATOR) !== 0 ||
     header('Content-Type: text/plain; charset=utf-8');
     exit('QRIS belum tersedia.');
 }
-$mime = mime_content_type($abs);
-if (!in_array($mime, ['image/png', 'image/jpeg', 'image/webp'], true)) { http_response_code(404); exit; }
-$mtime = filemtime($abs); $size = filesize($abs);
-$etag  = '"' . md5($abs . $mtime . $size) . '"';
-header('Cache-Control: public, max-age=86400');
-header('ETag: ' . $etag);
-header('Last-Modified: ' . gmdate('D, d M Y H:i:s', $mtime) . ' GMT');
-if (($_SERVER['HTTP_IF_NONE_MATCH'] ?? '') === $etag) { http_response_code(304); exit; }
-header('Content-Type: ' . $mime);
-header('Content-Length: ' . $size);
-header('Content-Disposition: inline; filename="qris-harpy-laundry.' . ['image/png'=>'png','image/jpeg'=>'jpg','image/webp'=>'webp'][$mime] . '"');
-readfile($abs);
+PublicLinks::serveImage($abs, 86400, 'qris-harpy-laundry');

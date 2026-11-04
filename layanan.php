@@ -3,7 +3,6 @@ $activePage = 'layanan';
 define('ROOT', __DIR__);
 require_once ROOT . '/middleware/tenant_guard.php';
 require_once ROOT . '/core/ServiceCatalog.php';
-require_once ROOT . '/core/PublicLinks.php';
 require_once __DIR__ . '/components.php';
 $user = currentUser();
 requirePermission('layanan.view');
@@ -102,7 +101,6 @@ if ($action) {
             ]);
         }
         logAudit(!empty($d['id'])?'update':'create','layanan',(!empty($d['id'])?'Edit':'Tambah').' layanan: '.$nama);
-        try { PublicLinks::refreshIfTarget(Database::get(), $tid, $oid); } catch (Throwable) {}
         echo json_encode(['success'=>true, 'id'=>$newId ?? intval($d['id'] ?? 0)]); exit;
     }
     if ($action === 'delete' && $_SERVER['REQUEST_METHOD']==='POST') {
@@ -110,7 +108,6 @@ if ($action) {
         verifyCsrf();
         $d = json_decode(file_get_contents('php://input'), true);
         TenantQuery::update('hl_layanan', ['is_active'=>0], 'id = ?', [intval($d['id'])]);
-        try { PublicLinks::refreshIfTarget(Database::get(), $tid, $oid); } catch (Throwable) {}
         echo json_encode(['success'=>true]); exit;
     }
 
@@ -180,7 +177,7 @@ if ($action) {
                 $existing[$key] = 1; $added++;
             } catch (Throwable $e) { error_log('[layanan save_presets] '.$e->getMessage()); }
         }
-        if ($added > 0) { logAudit('create', 'layanan', "Tambah $added layanan dari preset"); try { PublicLinks::refreshIfTarget(Database::get(), $tid, $oid); } catch (Throwable) {} }
+        if ($added > 0) logAudit('create', 'layanan', "Tambah $added layanan dari preset");
         echo json_encode(['ok'=>true, 'added'=>$added, 'skip'=>$skip]); exit;
     }
     if ($action === 'toggle' && $_SERVER['REQUEST_METHOD']==='POST') {
@@ -188,7 +185,6 @@ if ($action) {
         verifyCsrf();
         $d = json_decode(file_get_contents('php://input'), true);
         TenantQuery::update('hl_layanan', ['is_active'=>intval($d['is_active'])], 'id = ?', [intval($d['id'])]);
-        try { PublicLinks::refreshIfTarget(Database::get(), $tid, $oid); } catch (Throwable) {}
         echo json_encode(['success'=>true]); exit;
     }
 

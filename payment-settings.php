@@ -177,16 +177,31 @@ try {
     $publicT = PublicLinks::target($db);
     if ($publicT && ((int)$publicT['tenant_id'] !== $tid || (int)$publicT['outlet_id'] !== $oid)) $publicT = null; // hanya outlet tujuan
 } catch (Throwable) {}
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'harga_refresh') {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'harga_upload') {
     verifyCsrf();
     try {
         if (!$publicT) throw new RuntimeException('Outlet ini bukan tujuan link publik.');
-        $r = PublicLinks::regenerate($db, $publicT);
-        try { logAudit('update', 'link_publik', 'Perbarui gambar daftar harga (' . $r['kiloan'] . ' kiloan, ' . $r['satuan'] . ' satuan)'); } catch (Throwable) {}
-        $msg = 'Gambar daftar harga diperbarui: ' . $r['kiloan'] . ' layanan kiloan, ' . $r['satuan'] . ' layanan satuan.';
+        $f = $_FILES['harga_image'] ?? null;
+        if (!$f || $f['error'] !== UPLOAD_ERR_OK) throw new RuntimeException('File upload gagal atau tidak ada file');
+        $mime = mime_content_type($f['tmp_name']);
+        if (!isset(PublicLinks::MIME[$mime])) throw new RuntimeException('Format harus JPG, PNG, atau WebP. Detected: ' . $mime);
+        if ($f['size'] > 2 * 1024 * 1024) throw new RuntimeException('Ukuran max 2 MB. Anda: ' . round($f['size'] / 1024) . ' KB');
+        $info = @getimagesize($f['tmp_name']);
+        if (!$info || $info[0] < 600) throw new RuntimeException('Lebar gambar minimal 600 px agar terbaca di HP');
+        $dir = ROOT . '/assets/pricelist';
+        if (!is_dir($dir)) @mkdir($dir, 0755, true);
+        $name = sprintf('harga_%d_%d_%d_%s.%s', $tid, $oid, time(), bin2hex(random_bytes(3)), PublicLinks::MIME[$mime]);
+        if (!move_uploaded_file($f['tmp_name'], "$dir/$name")) throw new RuntimeException('Gagal menyimpan file. Cek permission /assets/pricelist/');
+        $old = (string)($publicT['harga_image'] ?? '');
+        $up = $db->prepare("UPDATE hl_public_link SET harga_image=?, harga_generated_at=? WHERE slug=?");
+        $up->execute(['/assets/pricelist/' . $name, date('Y-m-d H:i:s'), $publicT['slug']]);
+        // hapus berkas lama hasil unggahan (berkas bawaan repo tidak dihapus)
+        if (preg_match('#^/assets/pricelist/harga_\d+_\d+_\d+_[0-9a-f]+\.(jpg|png|webp)$#', $old) && is_file(ROOT . $old)) @unlink(ROOT . $old);
+        try { logAudit('update', 'link_publik', 'Ganti gambar daftar harga publik'); } catch (Throwable) {}
+        $msg = 'Gambar daftar harga diganti.';
         $publicT = PublicLinks::target($db);
     } catch (Throwable $e) {
-        $err = 'Gagal memperbarui gambar harga: ' . $e->getMessage();
+        $err = $e->getMessage();
     }
 }
 
@@ -400,16 +415,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'uploa
       <h3 style="margin:0 0 6px 0;font-size:16px">🔗 Link Publik</h3>
       <p style="margin:0 0 14px 0;font-size:13px;color:#6b7280">
         Tempel link ini di balasan WhatsApp (mis. Meta Business Agent) yang tidak bisa mengirim gambar.
-        Dibuka pelanggan tanpa login. QRIS memakai gambar yang di-upload di atas.
+        Dibuka pelanggan tanpa login. QRIS memakai gambar yang di-upload di atas; daftar harga memakai gambar yang di-upload di bawah.
       </p>
       <?php if ($publicT): ?>
         <?php $pubBase = PublicLinks::absBase(); $links = [
           ['QRIS (halaman)',          '/qris',              $outlet['qris_image'] ? 'siap' : 'QRIS belum di-upload'],
           ['QRIS (gambar)',           '/qris.png',          $outlet['qris_image'] ? 'siap' : 'QRIS belum di-upload'],
-          ['Daftar harga (halaman)',  '/harga',             'siap'],
-          ['Daftar harga (gambar)',   '/harga.png',         'siap'],
-          ['Harga kiloan (gambar)',   '/harga-kiloan.png',  'siap'],
-          ['Harga satuan (gambar)',   '/harga-satuan.png',  'siap'],
+          ['Daftar harga (halaman)',  '/harga',             PublicLinks::hargaFile($publicT) ? 'siap' : 'gambar harga belum di-upload'],
+          ['Daftar harga (gambar)',   '/harga.png',         PublicLinks::hargaFile($publicT) ? 'siap' : 'gambar harga belum di-upload'],
         ]; ?>
         <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">
           <?php foreach ($links as [$lbl, $path, $stat]): ?>
@@ -423,18 +436,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'uploa
           </div>
           <?php endforeach; ?>
         </div>
-        <div style="font-size:13px;color:#374151;margin-bottom:12px">
-          Gambar harga terakhir diperbarui:
-          <strong><?= $publicT['harga_generated_at'] ? htmlspecialchars($publicT['harga_generated_at']) . ' WIB' : 'belum pernah' ?></strong>
-          <div style="color:#9ca3af;font-size:12px;margin-top:2px">Otomatis diperbarui saat layanan atau harga disimpan.</div>
+        <div style="border-top:1px solid #e5e7eb;padding-top:16px">
+          <div style="font-weight:600;color:#374151;margin-bottom:8px">Gambar daftar harga</div>
+          <?php $hf = PublicLinks::hargaFile($publicT); ?>
+          <?php if ($hf): ?>
+            <img src="/harga.png?v=<?= (int)filemtime($hf) ?>" alt="Daftar harga" style="max-width:200px;width:100%;border:1px solid #e5e7eb;border-radius:8px;display:block;margin-bottom:8px">
+            <div style="color:#9ca3af;font-size:12px;margin-bottom:12px">
+              Terakhir diganti: <?= htmlspecialchars((string)$publicT['harga_generated_at']) ?> WIB
+            </div>
+          <?php endif; ?>
+          <form method="POST" enctype="multipart/form-data">
+            <input type="hidden" name="_csrf" value="<?= htmlspecialchars(getCsrfToken()) ?>">
+            <input type="hidden" name="action" value="harga_upload">
+            <input type="file" name="harga_image" accept="image/jpeg,image/png,image/webp" required
+                   style="width:100%;padding:10px;border:1px dashed #d1d5db;border-radius:8px;background:#f9fafb;margin-bottom:8px">
+            <div style="font-size:12px;color:#9ca3af;margin-bottom:12px">
+              JPG, PNG, atau WebP, maks 2 MB (ideal di bawah 300 KB agar preview WhatsApp tidak gagal). Disajikan apa adanya, tanpa dikompres.
+              Gambar tidak ikut berubah saat harga di Daftar Layanan diubah. Unggah ulang bila harga berubah.
+            </div>
+            <button type="submit" style="background:#0d9488;color:#fff;border:0;padding:11px 18px;border-radius:8px;cursor:pointer;font-weight:600;font-size:14px">
+              ⬆️ Ganti gambar daftar harga
+            </button>
+          </form>
         </div>
-        <form method="POST">
-          <input type="hidden" name="_csrf" value="<?= htmlspecialchars(getCsrfToken()) ?>">
-          <input type="hidden" name="action" value="harga_refresh">
-          <button type="submit" style="background:#0d9488;color:#fff;border:0;padding:11px 18px;border-radius:8px;cursor:pointer;font-weight:600;font-size:14px">
-            🔄 Perbarui gambar harga
-          </button>
-        </form>
       <?php else: ?>
         <div style="font-size:13px;color:#6b7280">Outlet yang sedang aktif bukan tujuan link publik, jadi tidak ada link untuk ditampilkan di sini.</div>
       <?php endif; ?>
