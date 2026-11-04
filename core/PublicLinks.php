@@ -11,7 +11,7 @@ final class PublicLinks
 {
     public const SLUG = 'harpy';
     /** Naikkan angka ini kalau tampilan gambar diubah → paksa regenerasi. */
-    private const RENDER_VERSION = 1;
+    private const RENDER_VERSION = 2;
     private const W = 1080;
 
     private const BULAN = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
@@ -282,9 +282,9 @@ final class PublicLinks
                     imagettftext($im, $lines[0][1], 0, $x0, $cy + 40, $cream, $reg, $lines[0][0]);
                     $py = $cy + 94;
                 } else {
-                    imagettftext($im, 29, 0, $x0, $cy + 30, $cream, $reg, $lines[0][0]);
-                    imagettftext($im, 29, 0, $x0, $cy + 60, $cream, $reg, $lines[1][0]);
-                    $py = $cy + 115;
+                    imagettftext($im, 29, 0, $x0, $cy + 28, $cream, $reg, $lines[0][0]);
+                    imagettftext($im, 29, 0, $x0, $cy + 62, $cream, $reg, $lines[1][0]);
+                    $py = $cy + 116;
                 }
                 $pw = self::textW(38, $bold, $r['price']);
                 $uw = self::textW(27, $reg, ' ' . $r['unit']);
