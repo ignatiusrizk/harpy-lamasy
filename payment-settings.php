@@ -10,6 +10,7 @@ $activePage = 'payment-settings';
 define('ROOT', __DIR__);
 require_once ROOT . '/middleware/tenant_guard.php';
 require_once __DIR__ . '/components.php';
+require_once ROOT . '/core/PublicLinks.php';
 $user = currentUser();
 requirePermission('settings.roles');
 
@@ -170,6 +171,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'metho
     exit;
 }
 
+// ─── POST: Perbarui gambar daftar harga (link publik) ──
+$publicT = null;
+try {
+    $publicT = PublicLinks::target($db);
+    if ($publicT && ((int)$publicT['tenant_id'] !== $tid || (int)$publicT['outlet_id'] !== $oid)) $publicT = null; // hanya outlet tujuan
+} catch (Throwable) {}
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'harga_refresh') {
+    verifyCsrf();
+    try {
+        if (!$publicT) throw new RuntimeException('Outlet ini bukan tujuan link publik.');
+        $r = PublicLinks::regenerate($db, $publicT);
+        try { logAudit('update', 'link_publik', 'Perbarui gambar daftar harga (' . $r['kiloan'] . ' kiloan, ' . $r['satuan'] . ' satuan)'); } catch (Throwable) {}
+        $msg = 'Gambar daftar harga diperbarui: ' . $r['kiloan'] . ' layanan kiloan, ' . $r['satuan'] . ' layanan satuan.';
+        $publicT = PublicLinks::target($db);
+    } catch (Throwable $e) {
+        $err = 'Gagal memperbarui gambar harga: ' . $e->getMessage();
+    }
+}
+
 // ─── POST: Delete QRIS ─────────────────────────────────
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'delete') {
     verifyCsrf();
@@ -182,6 +202,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'delet
         $up = $db->prepare("UPDATE outlets SET qris_image=NULL, qris_label=NULL, qris_uploaded_at=NULL
                             WHERE id=? AND tenant_id=?");
         $up->execute([$oid, $tid]);
+        try { logAudit('delete', 'pembayaran', 'Hapus QRIS outlet ' . $outlet['nama_outlet']); } catch (Throwable) {}
         $msg = 'QRIS berhasil dihapus.';
         $stmt->execute([$oid, $tid]);
         $outlet = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -239,6 +260,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'uploa
                             WHERE id=? AND tenant_id=?");
         $up->execute([$relPath, $label, $oid, $tid]);
 
+        try { logAudit('update', 'pembayaran', 'Ganti QRIS outlet ' . $outlet['nama_outlet']); } catch (Throwable) {}
         $msg = 'QRIS berhasil di-upload.';
         $stmt->execute([$oid, $tid]);
         $outlet = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -371,6 +393,51 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'uploa
           💾 Simpan QRIS
         </button>
       </form>
+    </div>
+
+    <!-- ═══ Link Publik (QRIS & Daftar Harga) ═══ -->
+    <div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:20px;margin-top:20px">
+      <h3 style="margin:0 0 6px 0;font-size:16px">🔗 Link Publik</h3>
+      <p style="margin:0 0 14px 0;font-size:13px;color:#6b7280">
+        Tempel link ini di balasan WhatsApp (mis. Meta Business Agent) yang tidak bisa mengirim gambar.
+        Dibuka pelanggan tanpa login. QRIS memakai gambar yang di-upload di atas.
+      </p>
+      <?php if ($publicT): ?>
+        <?php $pubBase = PublicLinks::absBase(); $links = [
+          ['QRIS (halaman)',          '/qris',              $outlet['qris_image'] ? 'siap' : 'QRIS belum di-upload'],
+          ['QRIS (gambar)',           '/qris.png',          $outlet['qris_image'] ? 'siap' : 'QRIS belum di-upload'],
+          ['Daftar harga (halaman)',  '/harga',             'siap'],
+          ['Daftar harga (gambar)',   '/harga.png',         'siap'],
+          ['Harga kiloan (gambar)',   '/harga-kiloan.png',  'siap'],
+          ['Harga satuan (gambar)',   '/harga-satuan.png',  'siap'],
+        ]; ?>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">
+          <?php foreach ($links as [$lbl, $path, $stat]): ?>
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 12px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px">
+            <div style="flex:1;min-width:200px">
+              <div style="font-size:12px;color:#6b7280"><?= htmlspecialchars($lbl) ?><?= $stat !== 'siap' ? ' · <span style="color:#b45309">' . htmlspecialchars($stat) . '</span>' : '' ?></div>
+              <a href="<?= htmlspecialchars($path) ?>" target="_blank" rel="noopener" style="font-family:ui-monospace,Menlo,monospace;font-size:13px;color:#0f766e;word-break:break-all"><?= htmlspecialchars($pubBase . $path) ?></a>
+            </div>
+            <button type="button" class="pl-copy" data-url="<?= htmlspecialchars($pubBase . $path) ?>"
+                    style="background:#fff;border:1px solid #d1d5db;padding:7px 12px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600">Salin</button>
+          </div>
+          <?php endforeach; ?>
+        </div>
+        <div style="font-size:13px;color:#374151;margin-bottom:12px">
+          Gambar harga terakhir diperbarui:
+          <strong><?= $publicT['harga_generated_at'] ? htmlspecialchars($publicT['harga_generated_at']) . ' WIB' : 'belum pernah' ?></strong>
+          <div style="color:#9ca3af;font-size:12px;margin-top:2px">Otomatis diperbarui saat layanan atau harga disimpan.</div>
+        </div>
+        <form method="POST">
+          <input type="hidden" name="_csrf" value="<?= htmlspecialchars(getCsrfToken()) ?>">
+          <input type="hidden" name="action" value="harga_refresh">
+          <button type="submit" style="background:#0d9488;color:#fff;border:0;padding:11px 18px;border-radius:8px;cursor:pointer;font-weight:600;font-size:14px">
+            🔄 Perbarui gambar harga
+          </button>
+        </form>
+      <?php else: ?>
+        <div style="font-size:13px;color:#6b7280">Outlet yang sedang aktif bukan tujuan link publik, jadi tidak ada link untuk ditampilkan di sini.</div>
+      <?php endif; ?>
     </div>
   </div>
 </div>
@@ -727,6 +794,14 @@ function finishQrisCrop(blob, filename) {
 
   closeQrisCrop();
 }
+
+document.addEventListener('click', function(e){
+  const b = e.target.closest('.pl-copy'); if(!b) return;
+  const url = b.dataset.url, done = () => { const o=b.textContent; b.textContent='Tersalin ✓'; setTimeout(()=>b.textContent=o,1500); };
+  const fallback = () => { const ta=document.createElement('textarea'); ta.value=url; ta.style.position='fixed'; ta.style.opacity='0';
+    document.body.appendChild(ta); ta.select(); try{ document.execCommand('copy'); done(); }catch(_){ b.textContent='Salin manual'; } ta.remove(); };
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(done, fallback); else fallback();
+});
 </script>
 
 </body>

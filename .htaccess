@@ -46,6 +46,12 @@ RewriteRule ^owner-report$ owner_report.php [L,QSA]
 # Affiliate pages
 RewriteRule ^affiliate/(register|login|dashboard|logout)$ affiliate/$1.php [L,QSA]
 RewriteRule ^(pending-verify|resend-verify|select-outlet|switch-outlet|no-assignment|account-suspended|outlet-suspended|add-outlet|verify-email|reset-password|demo-exit)$ $1.php [L,QSA]
+# Link publik (QRIS & daftar harga) — tanpa login, tanpa ID di URL (trailing slash diterima)
+RewriteRule ^qris/?$ qris.php [L,QSA]
+RewriteRule ^qris\.png$ qris-png.php [L]
+RewriteRule ^harga/?$ harga.php [L,QSA]
+RewriteRule ^harga\.png$ harga-png.php?kind=kiloan [L]
+RewriteRule ^harga-(kiloan|satuan)\.png$ harga-png.php?kind=$1 [L]
 
 # ── Block sensitive file types from web access ──────
 <FilesMatch "\.(sql|md|yml|yaml|log|bak|env|ini|conf|sh)$">
