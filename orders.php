@@ -1701,6 +1701,7 @@ textarea{resize:vertical;min-height:64px}
     </div>
     <div class="modal-footer">
       <button class="btn btn-outline btn-sm" onclick="closeWAModal()">Tutup</button>
+      <button class="btn btn-outline btn-sm" onclick="salinWA()">📋 Salin Teks</button>
       <button class="btn btn-primary btn-sm" onclick="kirimWA()">📲 Buka WhatsApp</button>
     </div>
   </div>
@@ -2994,6 +2995,22 @@ async function loadWAMessage() {
   document.getElementById('waBubble').innerHTML = formatted;
   document.getElementById('waPhone').textContent = d.phone ? '+' + d.phone : 'Tidak ada nomor';
   document.getElementById('waTrackLink').href = 'track.php?order=' + encodeURIComponent(d.no_order);
+}
+
+function salinWA() {
+  const t = currentWAData?.message;
+  if (!t) { showToast('⚠️ Tidak ada teks untuk disalin', 'error'); return; }
+  const fallback = () => {
+    const ta = document.createElement('textarea');
+    ta.value = t; ta.setAttribute('readonly', ''); ta.style.cssText = 'position:fixed;opacity:0';
+    document.body.appendChild(ta); ta.select();
+    let ok = false; try { ok = document.execCommand('copy'); } catch (e) {}
+    document.body.removeChild(ta);
+    showToast(ok ? '📋 Teks tersalin' : '❌ Gagal menyalin', ok ? 'success' : 'error');
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText)
+    navigator.clipboard.writeText(t).then(() => showToast('📋 Teks tersalin', 'success'), fallback);
+  else fallback();
 }
 
 function kirimWA() {
