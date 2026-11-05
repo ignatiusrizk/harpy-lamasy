@@ -161,16 +161,25 @@ class DepositManager
         string $catatan     = '',
         ?int   $createdBy   = null
     ): array {
-        if ($jumlah <= 0) return [0, 'Jumlah deduct harus > 0'];
         $db = Database::get();
+        // Transaction-aware (sama seperti topup): bila pemanggil sudah dalam transaksi
+        // (pos.php / orders.php action=bayar), numpang — error dilempar supaya
+        // transaksi luar rollback utuh.
+        $ownTx = !$db->inTransaction();
+        if ($jumlah <= 0) {
+            if (!$ownTx) throw new InvalidArgumentException('Jumlah deduct harus > 0');
+            return [0, 'Jumlah deduct harus > 0'];
+        }
         try {
-            $db->beginTransaction();
+            if ($ownTx) $db->beginTransaction();
             $st = $db->prepare("SELECT saldo_deposit FROM hl_pelanggan WHERE id=? AND tenant_id=? FOR UPDATE");
             $st->execute([$pelangganId, $tenantId]);
             $saldoSebelum = (float)$st->fetchColumn();
             if ($saldoSebelum < $jumlah) {
+                $msg = 'Saldo tidak cukup. Saldo: Rp ' . number_format($saldoSebelum, 0, ',', '.') . ', dibutuhkan: Rp ' . number_format($jumlah, 0, ',', '.');
+                if (!$ownTx) throw new RuntimeException($msg);
                 $db->rollBack();
-                return [0, 'Saldo tidak cukup. Saldo: Rp ' . number_format($saldoSebelum, 0, ',', '.') . ', dibutuhkan: Rp ' . number_format($jumlah, 0, ',', '.')];
+                return [0, $msg];
             }
             $saldoSesudah = $saldoSebelum - $jumlah;
             $db->prepare("UPDATE hl_pelanggan SET saldo_deposit = ? WHERE id = ? AND tenant_id = ?")
@@ -187,9 +196,10 @@ class DepositManager
                 $catatan ?: null, $createdBy,
             ]);
             $usageId = (int)$db->lastInsertId();
-            $db->commit();
+            if ($ownTx) $db->commit();
             return [$usageId, null];
         } catch (Throwable $e) {
+            if (!$ownTx) throw $e;
             try { $db->rollBack(); } catch (Throwable $rbErr) {
                 if (class_exists('ErrorLogger')) ErrorLogger::logException('db_rollback', $rbErr);
             }

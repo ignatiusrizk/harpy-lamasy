@@ -560,6 +560,13 @@ if ($action) {
         exit;
     }
 
+    // Saldo deposit pelanggan dari sebuah order (untuk opsi "Saldo Deposit" di modal bayar)
+    if ($action === 'saldo_deposit') {
+        $r = TenantQuery::rawOne("SELECT pelanggan_id FROM hl_transaksi WHERE tenant_id=? AND outlet_id=? AND id=?", [$tid, $oid, intval($_GET['id'] ?? 0)]);
+        echo json_encode(['balance' => ($r && $r['pelanggan_id']) ? DepositManager::balance($tid, (int)$r['pelanggan_id']) : 0]);
+        exit;
+    }
+
     // UPDATE PEMBAYARAN — pilihan sebagian/lunas + bukti
     if ($action === 'bayar' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         verifyCsrf();
@@ -574,10 +581,19 @@ if ($action) {
         }
 
         // Verify ownership & get current data
-        $row = TenantQuery::rawOne("SELECT total, dp, sisa_bayar FROM hl_transaksi WHERE tenant_id=? AND outlet_id=? AND id=?", [$tid, $oid, $id]);
+        $row = TenantQuery::rawOne("SELECT total, dp, sisa_bayar, pelanggan_id, no_order FROM hl_transaksi WHERE tenant_id=? AND outlet_id=? AND id=?", [$tid, $oid, $id]);
         if (!$row) { echo json_encode(['error'=>'Order tidak ditemukan']); exit; }
 
         $old_dp = floatval($row['dp']);
+        // Bagian bayar dari Saldo Deposit (dipilih kasir, boleh kombinasi dgn metode lain).
+        // Dibatasi sisa tagihan; saldo dikunci & dicek ulang di DepositManager::deduct.
+        $depositPay = max(0, floatval($_POST['deposit_jumlah'] ?? 0));
+        if ($depositPay > 0 && empty($row['pelanggan_id'])) {
+            echo json_encode(['error'=>'Order ini tidak terhubung ke pelanggan — tidak bisa bayar pakai saldo deposit.']); exit;
+        }
+        $depositPay = min($depositPay, max(0, floatval($row['total']) - $old_dp));
+        $cashPart   = $jumlah;
+        $jumlah    += $depositPay;
         // Clamp new_dp ke total order — kalau kasir terima cash lebih dari yg
         // dibutuhkan (mis. lunasin sisa Rp20rb tapi customer kasih Rp50rb), sisanya
         // KEMBALIAN, bukan bagian dari dp/pendapatan order ini.
@@ -590,7 +606,7 @@ if ($action) {
         // Jumlah yg BENERAN nambah ke dp order (dipakai sbg nominal kas, bukan $jumlah
         // mentah) — supaya kelebihan cash yg jadi kembalian tidak ikut tercatat sbg
         // pendapatan di Kas.
-        $kasJumlahBayar = max(0, $new_dp - $old_dp);
+        $kasJumlahBayar = max(0, $new_dp - $old_dp - $depositPay);
 
         // Upload bukti bayar — validasi MIME type (bukan hanya ekstensi)
         $bukti_path = null;
@@ -624,16 +640,28 @@ if ($action) {
             $pmMap    = validPayMethods($tid, $oid);
             $metodeIn = $_POST['metode'] ?? 'cash';
             if (!isset($pmMap[$metodeIn])) $metodeIn = 'cash';
+            if ($depositPay > 0 && $cashPart <= 0) $metodeIn = 'deposit'; // lunas/dicicil murni dari saldo
             $upd    = "UPDATE hl_transaksi SET dp=?, sisa_bayar=?, status_bayar=?, metode_bayar=?";
             $params = [$new_dp, $new_sisa, $new_status, $metodeIn];
             if ($bukti_path) { $upd .= ", bukti_bayar=?"; $params[] = $bukti_path; }
             $upd .= " WHERE tenant_id=? AND outlet_id=? AND id=?"; $params[] = $tid; $params[] = $oid; $params[] = $id;
             $db->prepare($upd)->execute($params);
 
+            // Potong saldo deposit — numpang transaksi ini (error → rollback utuh).
+            // TIDAK masuk kas: uangnya sudah tercatat saat top-up (sama seperti POS).
+            if ($depositPay > 0) {
+                [, $depErr] = DepositManager::deduct(
+                    $tid, $oid, (int)$row['pelanggan_id'], $depositPay,
+                    $id, 'Bayar nota ' . ($row['no_order'] ?? ''), (int)$user['id']
+                );
+                if ($depErr) throw new RuntimeException($depErr);
+            }
+
             // Log
             $ket = $tipe === 'lunas'
                 ? "Pembayaran LUNAS Rp " . number_format($new_dp, 0, ',', '.')
                 : "Pembayaran sebagian Rp " . number_format($jumlah, 0, ',', '.') . " · Sisa Rp " . number_format(max($new_sisa, 0), 0, ',', '.');
+            if ($depositPay > 0) $ket .= " · Saldo Deposit Rp " . number_format($depositPay, 0, ',', '.');
             if ($bukti_path) $ket .= " · Bukti bayar terlampir";
 
             $db->prepare("INSERT INTO hl_proses_log (transaksi_id,status_lama,status_baru,tipe,catatan,oleh,created_at) VALUES (?,?,?,?,?,?,?)")
@@ -701,7 +729,8 @@ if ($action) {
             ]);
         } catch (Throwable $e) {
             $db->rollBack();
-            apiErr($e);
+            if (str_starts_with($e->getMessage(), 'Saldo tidak cukup')) echo json_encode(['error' => $e->getMessage()]);
+            else apiErr($e);
         }
         exit;
     }
@@ -1522,11 +1551,21 @@ textarea{resize:vertical;min-height:64px}
       </div>
 
       <div id="nominalWrap" class="form-group">
-        <label>Jumlah Dibayar (Rp) <span class="req">*</span></label>
+        <label><span id="lblJumlah">Jumlah Dibayar (Rp)</span> <span class="req">*</span></label>
         <input class="lm-rp" type="number" id="bayarJumlah" placeholder="0" min="0" step="500"
           oninput="updateBayarPreview()"/>
         <div id="quickNominal" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px"></div>
         <div id="bayarPreview" style="margin-top:8px;border-radius:var(--r);padding:10px 12px;display:none;font-size:13px"></div>
+      </div>
+
+      <div id="depositBox" style="display:none;background:#F0FDF4;border:1px solid #BBF7D0;border-radius:var(--r);padding:10px 14px;margin-bottom:14px;font-size:13px;color:#166534">
+        <div>💳 <strong>Saldo Deposit:</strong> <span id="depositSaldo">Rp 0</span></div>
+        <div style="display:flex;gap:6px;margin-top:8px;align-items:center">
+          <input class="lm-rp" type="number" id="depositJumlah" placeholder="Bayar dari saldo (Rp)" min="0" step="500" oninput="onDepositChange()" style="flex:1"/>
+          <button type="button" class="btn btn-outline btn-sm" onclick="setDepositMax()">Maks</button>
+          <button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('depositJumlah').value='';onDepositChange()">Reset</button>
+        </div>
+        <div id="depositInfo" style="font-size:12px;margin-top:6px"></div>
       </div>
 
       <div id="pembulatanWrap" style="display:none;margin-bottom:14px">
@@ -2970,6 +3009,49 @@ function kirimWA() {
 let currentBayarId = null;
 let currentBayarData = null;
 let currentTipeBayar = 'sebagian';
+let currentDepositBalance = 0;
+
+// Sisa tagihan setelah dikurangi bagian saldo deposit (yang harus dibayar metode lain)
+function depositAmt() {
+  const sisa = currentBayarData?.sisa || 0;
+  const v = parseFloat(document.getElementById('depositJumlah').value) || 0;
+  return Math.max(0, Math.min(v, currentDepositBalance, sisa));
+}
+function efSisa() { return Math.max(0, (currentBayarData?.sisa || 0) - depositAmt()); }
+
+function setDepositMax() {
+  document.getElementById('depositJumlah').value = Math.min(currentDepositBalance, currentBayarData?.sisa || 0);
+  onDepositChange();
+}
+
+function onDepositChange() {
+  const raw = parseFloat(document.getElementById('depositJumlah').value) || 0;
+  const dep = depositAmt();
+  const info = document.getElementById('depositInfo');
+  if (raw > dep) info.innerHTML = `<span style="color:#B45309">Dibatasi ke Rp ${dep.toLocaleString('id-ID')} (saldo / sisa tagihan)</span>`;
+  else info.textContent = dep > 0 ? `Sisa dibayar metode lain: Rp ${efSisa().toLocaleString('id-ID')}` : '';
+  if (raw > dep) document.getElementById('depositJumlah').value = dep || '';
+  if (currentTipeBayar === 'lunas') document.getElementById('bayarJumlah').value = efSisa();
+  buildQuickNominal(efSisa());
+  updateBayarPreview();
+}
+
+async function loadDepositSaldo(id) {
+  currentDepositBalance = 0;
+  document.getElementById('depositBox').style.display = 'none';
+  document.getElementById('depositJumlah').value = '';
+  document.getElementById('depositInfo').textContent = '';
+  try {
+    const r = await fetch('orders.php?action=saldo_deposit&id=' + id);
+    const d = await r.json();
+    if (id !== currentBayarId) return; // modal sudah ganti order
+    currentDepositBalance = parseFloat(d.balance) || 0;
+    if (currentDepositBalance > 0 && (currentBayarData?.sisa || 0) > 0) {
+      document.getElementById('depositSaldo').textContent = 'Rp ' + currentDepositBalance.toLocaleString('id-ID');
+      document.getElementById('depositBox').style.display = 'block';
+    }
+  } catch (e) { /* tanpa saldo: modal tetap jalan normal */ }
+}
 
 function openBayarModal(id, namaP, total, dp, sisa) {
   currentBayarId   = id;
@@ -2993,6 +3075,7 @@ function openBayarModal(id, namaP, total, dp, sisa) {
   selectTipe('sebagian');
   buildQuickNominal(parseFloat(sisa));
   document.getElementById('modalBayar').classList.add('open');
+  loadDepositSaldo(id);
 }
 
 function closeBayarModal() {
@@ -3022,7 +3105,7 @@ function setNominal(val) {
 }
 
 function setPembulatan(kelipatan) {
-  const sisa    = currentBayarData?.sisa || 0;
+  const sisa    = efSisa();
   const rounded = Math.ceil(sisa / kelipatan) * kelipatan;
   document.getElementById('bayarJumlah').value = rounded;
   updateBayarPreview();
@@ -3044,8 +3127,8 @@ function selectTipe(tipe) {
   document.getElementById('btnLunas').classList.toggle('selected', tipe==='lunas');
   document.getElementById('nominalWrap').style.display = 'flex';
   if (tipe === 'lunas' && currentBayarData) {
-    document.getElementById('bayarJumlah').value = currentBayarData.sisa;
-    buildQuickNominal(currentBayarData.sisa);
+    document.getElementById('bayarJumlah').value = efSisa();
+    buildQuickNominal(efSisa());
   }
   updateBayarPreview();
   onMetodeChange();
@@ -3053,12 +3136,18 @@ function selectTipe(tipe) {
 
 function updateBayarPreview() {
   const val    = parseFloat(document.getElementById('bayarJumlah').value) || 0;
-  const sisa   = currentBayarData?.sisa || 0;
+  const dep    = depositAmt();
+  const sisa   = efSisa();
   const metode = document.getElementById('bayarMetode').value;
   const el     = document.getElementById('bayarPreview');
   const pInfo  = document.getElementById('pembulatanInfo');
+  document.getElementById('lblJumlah').textContent = dep > 0 ? 'Jumlah Dibayar — metode lain (Rp)' : 'Jumlah Dibayar (Rp)';
 
-  if (val <= 0) { el.style.display='none'; return; }
+  if (val <= 0) {
+    if (dep > 0 && sisa <= 0) { el.style.display='block'; el.style.background='#D1FAE5'; el.style.color='#065F46'; el.innerHTML='<strong>✅ Lunas dari Saldo Deposit</strong>'; }
+    else el.style.display='none';
+    return;
+  }
 
   el.style.display = 'block';
   const kembalian = val - sisa;
@@ -3121,14 +3210,16 @@ async function submitBayar() {
   const metode = document.getElementById('bayarMetode').value;
   const file   = document.getElementById('buktiFile').files[0];
 
-  if (tipe === 'sebagian' && jumlah <= 0) {
+  const dep = depositAmt();
+  if (tipe === 'sebagian' && jumlah <= 0 && dep <= 0) {
     showToast('⚠️ Masukkan jumlah yang dibayar', 'error'); return;
   }
 
   const fd = new FormData();
   fd.append('id', currentBayarId);
   fd.append('tipe_bayar', tipe);
-  fd.append('jumlah', tipe === 'lunas' ? (currentBayarData?.sisa || 0) : jumlah);
+  fd.append('jumlah', tipe === 'lunas' ? efSisa() : jumlah);
+  if (dep > 0) fd.append('deposit_jumlah', dep);
   fd.append('metode', metode);
   if (file) fd.append('bukti', file);
 
