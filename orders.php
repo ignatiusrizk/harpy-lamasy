@@ -1550,14 +1550,6 @@ textarea{resize:vertical;min-height:64px}
         </button>
       </div>
 
-      <div id="nominalWrap" class="form-group">
-        <label><span id="lblJumlah">Jumlah Dibayar (Rp)</span> <span class="req">*</span></label>
-        <input class="lm-rp" type="number" id="bayarJumlah" placeholder="0" min="0" step="500"
-          oninput="updateBayarPreview()"/>
-        <div id="quickNominal" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px"></div>
-        <div id="bayarPreview" style="margin-top:8px;border-radius:var(--r);padding:10px 12px;display:none;font-size:13px"></div>
-      </div>
-
       <div id="depositBox" style="display:none;background:#F0FDF4;border:1px solid #BBF7D0;border-radius:var(--r);padding:10px 14px;margin-bottom:14px;font-size:13px;color:#166534">
         <div>💳 <strong>Saldo Deposit:</strong> <span id="depositSaldo">Rp 0</span></div>
         <div style="display:flex;gap:6px;margin-top:8px;align-items:center">
@@ -1566,6 +1558,14 @@ textarea{resize:vertical;min-height:64px}
           <button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('depositJumlah').value='';onDepositChange()">Reset</button>
         </div>
         <div id="depositInfo" style="font-size:12px;margin-top:6px"></div>
+      </div>
+
+      <div id="nominalWrap" class="form-group">
+        <label><span id="lblJumlah">Jumlah Dibayar (Rp)</span> <span class="req">*</span></label>
+        <input class="lm-rp" type="number" id="bayarJumlah" placeholder="0" min="0" step="500"
+          oninput="updateBayarPreview()"/>
+        <div id="quickNominal" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px"></div>
+        <div id="bayarPreview" style="margin-top:8px;border-radius:var(--r);padding:10px 12px;display:none;font-size:13px"></div>
       </div>
 
       <div id="pembulatanWrap" style="display:none;margin-bottom:14px">
@@ -1580,7 +1580,7 @@ textarea{resize:vertical;min-height:64px}
         <div id="pembulatanInfo" style="font-size:12px;color:var(--gray);margin-top:6px"></div>
       </div>
 
-      <div class="form-group">
+      <div class="form-group" id="metodeWrap">
         <label>Metode Pembayaran</label>
         <select id="bayarMetode" onchange="onMetodeChange()">
           <?php foreach ($activeMethods as $_m): ?>
@@ -1589,7 +1589,7 @@ textarea{resize:vertical;min-height:64px}
         </select>
       </div>
 
-      <div class="form-group">
+      <div class="form-group" id="buktiWrap">
         <label>Bukti Pembayaran (opsional)</label>
         <div class="bukti-drop" onclick="document.getElementById('buktiFile').click()">
           <div style="font-size:1.5rem">📎</div>
@@ -3141,6 +3141,15 @@ function updateBayarPreview() {
   const metode = document.getElementById('bayarMetode').value;
   const el     = document.getElementById('bayarPreview');
   const pInfo  = document.getElementById('pembulatanInfo');
+  // Lunas murni dari saldo: kolom nominal/metode/bukti tidak relevan → sembunyikan
+  const penuh = dep > 0 && sisa <= 0;
+  // (bayarPreview ada di dalam nominalWrap, jadi hanya input+tombol nominal yang disembunyikan)
+  document.getElementById('bayarJumlah').style.display = penuh ? 'none' : '';
+  document.getElementById('quickNominal').style.display = penuh ? 'none' : 'flex';
+  document.querySelector('#nominalWrap > label').style.display = penuh ? 'none' : '';
+  ['metodeWrap','buktiWrap'].forEach(id => { document.getElementById(id).style.display = penuh ? 'none' : ''; });
+  if (penuh) document.getElementById('pembulatanWrap').style.display = 'none';
+  else document.getElementById('pembulatanWrap').style.display = metode === 'cash' ? 'block' : 'none';
   document.getElementById('lblJumlah').textContent = dep > 0 ? 'Jumlah Dibayar — metode lain (Rp)' : 'Jumlah Dibayar (Rp)';
 
   if (val <= 0) {
@@ -3218,7 +3227,7 @@ async function submitBayar() {
   const fd = new FormData();
   fd.append('id', currentBayarId);
   fd.append('tipe_bayar', tipe);
-  fd.append('jumlah', tipe === 'lunas' ? efSisa() : jumlah);
+  fd.append('jumlah', tipe === 'lunas' || efSisa() <= 0 ? efSisa() : jumlah);
   if (dep > 0) fd.append('deposit_jumlah', dep);
   fd.append('metode', metode);
   if (file) fd.append('bukti', file);
