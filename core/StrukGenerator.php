@@ -1488,7 +1488,7 @@ tbody tr.adj td { background:#fff !important; font-size:0.85em; color:#6B7280; f
   <div class='meta-box'>
     <div class='lbl'>Detail Dokumen</div>
     <div class='val'>No: <strong>" . self::esc($trx['no_order']) . "</strong></div>
-    <div class='val'>Tanggal: " . self::fmtDate($trx['created_at'] ?: $trx['tanggal'], 'd F Y') . "</div>\n";
+    <div class='val'>" . ($isInvoice ? 'Tanggal Terbit' : 'Tanggal') . ": " . self::fmtDate($trx['created_at'] ?: $trx['tanggal'], 'd F Y') . "</div>\n";
 
         if (!empty($tmpl['show_jatuh_tempo']) && !empty($trx['jatuh_tempo'])) {
             $h .= "    <div class='val'>Jatuh Tempo: " . self::fmtDate($trx['jatuh_tempo'], 'd F Y') . "</div>\n";
