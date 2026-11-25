@@ -41,8 +41,32 @@ if ($action === 'list') {
         $where = "p.tenant_id=? AND p.outlet_id=?"; $params = [$tid, $oid];
         if ($statusF) { $where .= " AND p.status=?"; $params[] = $statusF; }
 
-        // Total count untuk pagination
-        $cntStmt = $db->prepare("SELECT COUNT(*) FROM hl_piutang p WHERE $where");
+        // Search: nama / telepon pelanggan, nomor invoice, catatan (LIKE wildcard di-escape)
+        $q = trim((string)($_GET['q'] ?? ''));
+        if ($q !== '') {
+            $like = '%' . addcslashes(mb_substr($q, 0, 60), '%_\\') . '%';
+            $where .= " AND (pl.nama LIKE ? OR pl.telepon LIKE ? OR p.invoice_no LIKE ? OR p.catatan LIKE ?)";
+            array_push($params, $like, $like, $like, $like);
+        }
+
+        // Sort (whitelist) — default: belum lunas dulu, jatuh tempo terdekat
+        $sortMap = [
+            'pelanggan' => 'pl.nama',
+            'periode'   => 'p.periode_start',
+            'tempo'     => 'p.jatuh_tempo',
+            'tagihan'   => 'p.total_tagihan',
+            'sisa'      => 'p.sisa_tagihan',
+            'status'    => "FIELD(p.status,'belum_tagih','sudah_tagih','sebagian','lunas')",
+        ];
+        $sortKey = (string)($_GET['sort'] ?? '');
+        $dir     = (($_GET['dir'] ?? 'asc') === 'desc') ? 'DESC' : 'ASC';
+        $orderBy = isset($sortMap[$sortKey])
+            ? $sortMap[$sortKey] . " $dir, p.id DESC"
+            : "p.status!='lunas' DESC, p.jatuh_tempo ASC";
+
+        // Total count untuk pagination (join pelanggan dibutuhkan utk search)
+        $cntStmt = $db->prepare("SELECT COUNT(*) FROM hl_piutang p
+              JOIN hl_pelanggan pl ON pl.id=p.pelanggan_id AND pl.tenant_id=p.tenant_id WHERE $where");
         $cntStmt->execute($params);
         $total = (int)$cntStmt->fetchColumn();
 
@@ -53,7 +77,7 @@ if ($action === 'list') {
               FROM hl_piutang p
               JOIN hl_pelanggan pl ON pl.id=p.pelanggan_id AND pl.tenant_id=p.tenant_id
              WHERE $where
-             ORDER BY p.status!='lunas' DESC, p.jatuh_tempo ASC
+             ORDER BY $orderBy
              LIMIT $perPage OFFSET $offset
         ");
         $stmt->execute($params);
@@ -576,6 +600,13 @@ require_once ROOT . '/core/CoinLedger.php';
 .tbl{width:100%;border-collapse:collapse;font-size:13px;background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.04)}
 .tbl th{background:#F7F8FC;padding:9px 11px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;color:#6B7280}
 .tbl td{padding:10px 11px;border-top:1px solid #F0F1F4}
+.tbl th.srt{cursor:pointer;user-select:none;white-space:nowrap}
+.tbl th.srt:hover{color:#0F1C3A}
+.tbl th.srt .ar{display:inline-block;width:10px;color:#1FC0CB;font-size:10px}
+.ptools{display:flex;gap:8px;margin:0 0 12px;flex-wrap:wrap}
+.ptools #pSearch{flex:1 1 240px;min-width:0;padding:9px 12px;border:1px solid #E5E9F2;border-radius:10px;font-size:13px;background:#fff}
+.ptools #pSearch:focus{outline:none;border-color:#1FC0CB;box-shadow:0 0 0 3px rgba(31,192,203,.15)}
+.ptools #pSort{flex:0 1 220px}
 .tbl .num{font-family:var(--mono);font-weight:700;text-align:right}
 .pill{font-size:10px;font-weight:700;padding:2px 8px;border-radius:100px;text-transform:uppercase}
 .pl-belum_tagih{background:#F3F4F6;color:#6B7280}
@@ -648,6 +679,24 @@ require_once ROOT . '/core/CoinLedger.php';
     <button class="hl-btn hl-btn-outline hl-btn-sm" data-filter="sudah_tagih" onclick="setFilter('sudah_tagih')">Sudah Tagih</button>
     <button class="hl-btn hl-btn-outline hl-btn-sm" data-filter="sebagian" onclick="setFilter('sebagian')">Sebagian</button>
     <button class="hl-btn hl-btn-outline hl-btn-sm" data-filter="lunas" onclick="setFilter('lunas')">Lunas</button>
+  </div>
+
+  <div class="ptools">
+    <input type="search" id="pSearch" placeholder="🔍 Cari pelanggan, no. HP, no. invoice…" oninput="onSearch()" autocomplete="off">
+    <select id="pSort" class="lm-cust" onchange="onSortSelect(this.value)" title="Urutkan">
+      <option value="">Urutan: Default</option>
+      <option value="pelanggan:asc">Pelanggan A–Z</option>
+      <option value="pelanggan:desc">Pelanggan Z–A</option>
+      <option value="tempo:asc">Jatuh tempo terdekat</option>
+      <option value="tempo:desc">Jatuh tempo terjauh</option>
+      <option value="periode:desc">Periode terbaru</option>
+      <option value="periode:asc">Periode terlama</option>
+      <option value="tagihan:desc">Tagihan terbesar</option>
+      <option value="tagihan:asc">Tagihan terkecil</option>
+      <option value="sisa:desc">Sisa terbesar</option>
+      <option value="sisa:asc">Sisa terkecil</option>
+      <option value="status:asc">Status (Belum Tagih → Lunas)</option>
+    </select>
   </div>
 
   <div id="listBox"><div class="empty">⏳ Memuat…</div></div>
@@ -749,6 +798,9 @@ const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;
 const escAttr = s => esc(String(s ?? '').replace(/\\/g, '\\\\').replace(/'/g, "\\'"));
 const fmtRp = n => 'Rp ' + Number(n||0).toLocaleString('id-ID');
 let curFilter = '';
+let curQ = '';
+let curSort = '', curDir = 'asc';
+let _qTimer = null;
 let curPage = 1;
 const PER_PAGE = 30;
 let bayarSisa = 0;
@@ -762,18 +814,42 @@ function setFilter(f){
 }
 function closeModal(id){ document.getElementById(id).classList.remove('open'); }
 
+function onSearch(){
+  clearTimeout(_qTimer);
+  _qTimer = setTimeout(() => { curQ = document.getElementById('pSearch').value.trim(); loadList(); }, 300);
+}
+function onSortSelect(v){
+  const [k, d] = (v || ':').split(':');
+  curSort = k || ''; curDir = d || 'asc';
+  loadList();
+}
+// Klik header kolom: asc → desc → kembali default
+function sortBy(k){
+  if (curSort !== k) { curSort = k; curDir = 'asc'; }
+  else if (curDir === 'asc') { curDir = 'desc'; }
+  else { curSort = ''; curDir = 'asc'; }
+  const sel = document.getElementById('pSort');
+  if (sel) { sel.value = curSort ? curSort + ':' + curDir : ''; if (!sel.value) sel.value = ''; }
+  loadList();
+}
+
 async function loadList(append = false){
   const box = document.getElementById('listBox');
   if (!append) curPage = 1;
   try {
     const params = new URLSearchParams({page: curPage, per_page: PER_PAGE});
     if (curFilter) params.set('status', curFilter);
+    if (curQ) params.set('q', curQ);
+    if (curSort) { params.set('sort', curSort); params.set('dir', curDir); }
     const r = await fetch('piutang.php?action=list&' + params.toString());
     const d = await r.json();
     if (d.error){ box.innerHTML = `<div class="empty">⚠️ ${esc(d.error)}</div>`; return; }
     document.getElementById('sumOut').textContent  = fmtRp(d.summary.outstanding);
     document.getElementById('sumDue').textContent  = fmtRp(d.summary.due_week);
     document.getElementById('sumOver').textContent = fmtRp(d.summary.overdue);
+    if (!d.rows.length && curPage === 1 && (curQ || curFilter)){
+      box.innerHTML = `<div class="empty">Tidak ada piutang yang cocok${curQ ? ' dengan “' + esc(curQ) + '”' : ''}.</div>`; return;
+    }
     if (!d.rows.length && curPage === 1){ box.innerHTML = `<div class="hl-empty-v2">
       <div class="e-icon">💼</div>
       <div class="e-title">Belum ada piutang</div>
@@ -826,9 +902,9 @@ async function loadList(append = false){
       // Initial / filter reload — render full table shell
       box.innerHTML =
         '<div style="overflow-x:auto"><table class="tbl hl-stack-mobile"><thead><tr>' +
-        '<th>Pelanggan</th><th>Periode</th><th>Jatuh Tempo</th>' +
-        '<th style="text-align:right">Tagihan</th><th style="text-align:right">Sisa</th>' +
-        '<th>Status</th><th></th></tr></thead><tbody>' + rowsHtml +
+        thSort('pelanggan','Pelanggan') + thSort('periode','Periode') + thSort('tempo','Jatuh Tempo') +
+        thSort('tagihan','Tagihan','text-align:right') + thSort('sisa','Sisa','text-align:right') +
+        thSort('status','Status') + '<th></th></tr></thead><tbody>' + rowsHtml +
         '</tbody></table></div>' +
         '<div id="pgFooter" style="margin-top:14px;text-align:center"></div>';
     }
@@ -848,6 +924,12 @@ async function loadList(append = false){
       }
     }
   } catch(e){ box.innerHTML = `<div class="empty">⚠️ ${esc(e.message)}</div>`; }
+}
+
+function thSort(k, label, style){
+  const on = curSort === k;
+  const ar = on ? (curDir === 'asc' ? '▲' : '▼') : '';
+  return `<th class="srt" style="${style||''}" onclick="sortBy('${k}')" title="Klik untuk mengurutkan">${label} <span class="ar">${ar}</span></th>`;
 }
 
 async function loadMore(){
